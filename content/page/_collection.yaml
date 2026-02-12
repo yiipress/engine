@@ -1,0 +1,6 @@
+title: Pages
+permalink: /:slug/
+sort_by: weight
+entries_per_page: 0
+feed: false
+listing: false

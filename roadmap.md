@@ -2,7 +2,7 @@
 
 ## Priority 0: Core
 
-- [ ] Reevaluate content structure to support all features planned in the roadmap
+- [x] Reevaluate content structure to support all features planned in the roadmap
 - [ ] Draft architecture in `docs/architecture.md`
 - [ ] Implement super-fast parsing of each content file type
 - [ ] Consider that as less as possible should be loaded into memory at any time

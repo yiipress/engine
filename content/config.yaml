@@ -1,0 +1,20 @@
+title: My Site
+description: A site built with YiiPress
+base_url: https://example.com
+language: en
+charset: UTF-8
+
+default_author: john-doe
+
+date_format: F j, Y
+entries_per_page: 10
+
+permalink: /:collection/:slug/
+
+taxonomies:
+  - tags
+  - categories
+
+params:
+  github_url: https://github.com/example/mysite
+  twitter: "@example"

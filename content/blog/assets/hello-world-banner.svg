@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="200" viewBox="0 0 800 200">
+  <rect width="800" height="200" fill="#f0f0f0"/>
+  <text x="400" y="110" font-family="sans-serif" font-size="32" fill="#666" text-anchor="middle">Hello World Banner</text>
+</svg>
