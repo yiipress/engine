@@ -89,7 +89,7 @@ Prefer PHP built-ins and small, focused C extensions over large PHP libraries:
 Entry rendering (template execution + file write) consumes 40–60% of total build time.
 Each entry page is independent — no entry's rendered output depends on another entry's output.
 
-Use `pcntl_fork()` or fibers (need to benchmark which is better) to render and write entries in parallel:
+Use `pcntl_fork()` to render and write entries in parallel (benchmarked; fibers don't help since work is CPU-bound):
 
 ```
 entries = indexedEntries
@@ -198,7 +198,7 @@ raw markdown → plugins (pre-parse) → markdown-to-HTML → plugins (post-pars
 
 **Performance considerations:**
 - Render pages independently — no page depends on another page's rendered output.
-- Parallelize entry rendering via `pcntl_fork()` or fibers (need to benchmark which is better) — distribute entries across N workers (see Performance architecture above).
+- Parallelize entry rendering via `pcntl_fork()` — distribute entries across N workers (see Performance architecture above).
 - Cache parsed markdown between builds (keyed by file content hash).
 - OPCache eliminates repeated PHP template compilation. Ensure templates are stable files, not generated on the fly.
 

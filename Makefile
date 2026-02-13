@@ -107,8 +107,13 @@ bench-generate: ## Generate benchmark data (10k entries)
 endif
 
 ifeq ($(PRIMARY_GOAL),bench)
-bench: ## Run benchmarks
-	$(DOCKER_COMPOSE_DEV) run --rm app ./vendor/bin/phpbench run $(CLI_ARGS)
+bench: ## Run benchmarks (xdebug off)
+	$(DOCKER_COMPOSE_DEV) run --rm -e XDEBUG_MODE=off app ./vendor/bin/phpbench run $(CLI_ARGS)
+endif
+
+ifeq ($(PRIMARY_GOAL),php)
+php: ## Run a PHP script
+	$(DOCKER_COMPOSE_DEV) run --rm app php $(CLI_ARGS)
 endif
 
 #

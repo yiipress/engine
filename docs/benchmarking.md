@@ -42,11 +42,16 @@ make bench "--filter=ContentParserBench"
 
 | Benchmark | Time |
 |---|---|
-| Full build (parse + render + write) | ~1.5s |
-| Parse only (metadata, no body) | ~150ms |
-| Parse with body read | ~200ms |
-| Render only (markdown→HTML) | ~260ms |
-| Single short markdown render | ~2μs |
-| Single long markdown render | ~73μs |
+| Full build, sequential | ~1.52s |
+| Full build, 2 workers | ~1.32s |
+| Full build, 4 workers | ~1.19s |
+| Full build, 8 workers | ~1.12s |
+| Parse only (metadata, no body) | ~93ms |
+| Parse with body read | ~137ms |
+| Render only (markdown→HTML) | ~197ms |
+| Single short markdown render | ~1.4μs |
+| Single long markdown render | ~69μs |
 
-Measured on PHP 8.5 with `ext-md4c` and `ext-yaml`, xdebug enabled, OPCache disabled.
+Measured on PHP 8.5 with `ext-md4c`, `ext-yaml`, and `ext-pcntl`, xdebug off, OPCache disabled.
+
+Benchmarks are run with xdebug disabled automatically (`make bench` sets `XDEBUG_MODE=off`).

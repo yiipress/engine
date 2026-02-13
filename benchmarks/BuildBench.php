@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Benchmarks;
 
+use App\Build\ParallelEntryWriter;
 use App\Content\Parser\ContentParser;
 use App\Render\MarkdownRenderer;
 use PhpBench\Attributes\BeforeMethods;
 use PhpBench\Attributes\Iterations;
+use PhpBench\Attributes\ParamProviders;
 use PhpBench\Attributes\Revs;
 use PhpBench\Attributes\Warmup;
 
@@ -38,34 +40,33 @@ final class BuildBench
     #[Revs(1)]
     #[Iterations(3)]
     #[Warmup(1)]
-    public function benchFullBuild(): void
+    public function benchFullBuildSequential(): void
     {
-        $this->cleanOutputDir();
+        $this->runBuild(1);
+    }
 
-        $siteConfig = $this->parser->parseSiteConfig($this->dataDir);
-        $collections = $this->parser->parseCollections($this->dataDir);
+    #[Revs(1)]
+    #[Iterations(3)]
+    #[Warmup(1)]
+    public function benchFullBuild2Workers(): void
+    {
+        $this->runBuild(2);
+    }
 
-        foreach ($collections as $collectionName => $collection) {
-            foreach ($this->parser->parseEntries($this->dataDir, $collectionName) as $entry) {
-                $permalink = $entry->permalink !== ''
-                    ? $entry->permalink
-                    : str_replace(
-                        [':collection', ':slug'],
-                        [$collectionName, $entry->slug],
-                        $collection->permalink,
-                    );
+    #[Revs(1)]
+    #[Iterations(3)]
+    #[Warmup(1)]
+    public function benchFullBuild4Workers(): void
+    {
+        $this->runBuild(4);
+    }
 
-                $filePath = $this->outputDir . $permalink . 'index.html';
-                $dirPath = dirname($filePath);
-
-                if (!is_dir($dirPath)) {
-                    mkdir($dirPath, 0o755, true);
-                }
-
-                $html = $this->renderer->render($entry->body());
-                file_put_contents($filePath, $html);
-            }
-        }
+    #[Revs(1)]
+    #[Iterations(3)]
+    #[Warmup(1)]
+    public function benchFullBuild8Workers(): void
+    {
+        $this->runBuild(8);
     }
 
     #[Revs(1)]
@@ -94,6 +95,17 @@ final class BuildBench
                 $this->renderer->render($entry->body());
             }
         }
+    }
+
+    private function runBuild(int $workerCount): void
+    {
+        $this->cleanOutputDir();
+
+        $siteConfig = $this->parser->parseSiteConfig($this->dataDir);
+        $collections = $this->parser->parseCollections($this->dataDir);
+
+        $writer = new ParallelEntryWriter();
+        $writer->write($this->parser, $siteConfig, $collections, $this->dataDir, $this->outputDir, $workerCount);
     }
 
     private function cleanOutputDir(): void

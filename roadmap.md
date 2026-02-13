@@ -6,7 +6,7 @@
 - [x] Draft architecture in `docs/architecture.md`
 - [x] Implement super-fast parsing of each content file type
 - [x] Consider that as less as possible should be loaded into memory at any time
-- [ ] Consider using fibers for parallel processing
+- [x] Consider using fibers for parallel processing
 - [ ] Caching layer for parsed markdown/front matter between builds
 - [x] Benchmarking suite (e.g., generate 10k entries) to track performance regressions
 

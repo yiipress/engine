@@ -36,6 +36,7 @@
         "php": "^8.5",
         "ext-filter": "*",
         "ext-md4c": "*",
+        "ext-pcntl": "*",
         "ext-yaml": "*",
         "httpsoft/http-message": "^1.1.6",
         "psr/container": "^2.0.2",

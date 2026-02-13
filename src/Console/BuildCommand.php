@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace App\Console;
 
-use App\Content\Model\Entry;
-use App\Content\Model\SiteConfig;
+use App\Build\ParallelEntryWriter;
 use App\Content\Parser\ContentParser;
-use App\Render\MarkdownRenderer;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -24,8 +22,6 @@ use function str_starts_with;
 )]
 final class BuildCommand extends Command
 {
-    private const string ENTRY_TEMPLATE = __DIR__ . '/../Render/Template/entry.php';
-
     public function __construct(
         private Aliases $aliases,
     ) {
@@ -48,6 +44,13 @@ final class BuildCommand extends Command
             'Path to the output directory',
             'output',
         );
+        $this->addOption(
+            'workers',
+            'w',
+            InputOption::VALUE_REQUIRED,
+            'Number of parallel workers (1 = sequential)',
+            '1',
+        );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -61,6 +64,10 @@ final class BuildCommand extends Command
         /** @var string $outputDirOption */
         $outputDirOption = $input->getOption('output-dir');
         $outputDir = $this->resolvePath($outputDirOption, $rootPath);
+
+        /** @var string $workersOption */
+        $workersOption = $input->getOption('workers');
+        $workerCount = max(1, (int) $workersOption);
 
         if (!is_dir($contentDir)) {
             $output->writeln("<error>Content directory not found: $contentDir</error>");
@@ -80,30 +87,16 @@ final class BuildCommand extends Command
         $output->writeln('  Authors: <comment>' . count($authors) . '</comment>');
         $output->writeln('  Menus: <comment>' . count($navigation->menuNames()) . '</comment>');
 
-        $output->writeln('<info>Rendering and writing output...</info>');
+        $output->writeln(
+            $workerCount > 1
+                ? "<info>Rendering and writing output with $workerCount workers...</info>"
+                : '<info>Rendering and writing output...</info>',
+        );
 
         $this->prepareOutputDir($outputDir);
 
-        $renderer = new MarkdownRenderer();
-        $entryCount = 0;
-        foreach ($collections as $collectionName => $collection) {
-            foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
-                $permalink = $entry->permalink !== ''
-                    ? $entry->permalink
-                    : $this->resolvePermalink($collection->permalink, $collectionName, $entry->slug);
-
-                $filePath = $outputDir . $permalink . 'index.html';
-                $dirPath = dirname($filePath);
-
-                if (!is_dir($dirPath)) {
-                    mkdir($dirPath, 0o755, true);
-                }
-
-                $html = $renderer->render($entry->body());
-                file_put_contents($filePath, $this->renderTemplate($siteConfig, $entry, $html));
-                $entryCount++;
-            }
-        }
+        $writer = new ParallelEntryWriter();
+        $entryCount = $writer->write($parser, $siteConfig, $collections, $contentDir, $outputDir, $workerCount);
 
         $output->writeln("  Entries written: <comment>$entryCount</comment>");
         $output->writeln('<info>Build complete.</info>');
@@ -138,27 +131,5 @@ final class BuildCommand extends Command
         }
 
         return $rootPath . '/' . $path;
-    }
-
-    private function renderTemplate(SiteConfig $siteConfig, Entry $entry, string $content): string
-    {
-        $siteTitle = $siteConfig->title;
-        $entryTitle = $entry->title;
-        $date = $entry->date?->format('Y-m-d') ?? '';
-        $author = implode(', ', $entry->authors);
-        $collection = $entry->collection;
-
-        ob_start();
-        require self::ENTRY_TEMPLATE;
-        return ob_get_clean();
-    }
-
-    private function resolvePermalink(string $pattern, string $collection, string $slug): string
-    {
-        return str_replace(
-            [':collection', ':slug'],
-            [$collection, $slug],
-            $pattern,
-        );
     }
 }

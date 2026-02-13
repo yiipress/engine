@@ -86,6 +86,35 @@ final class BuildCommandTest extends TestCase
         assertStringContainsString('<p>It has multiple paragraphs.</p>', $html);
     }
 
+    public function testBuildWithParallelWorkers(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' --workers=2'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        $outputText = implode("\n", $output);
+
+        assertSame(0, $exitCode, "Parallel build failed: $outputText");
+        assertStringContainsString('Build complete.', $outputText);
+        assertStringContainsString('2 workers', $outputText);
+
+        $entryFile = $this->outputDir . '/blog/test-post/index.html';
+        assertFileExists($entryFile);
+
+        $html = file_get_contents($entryFile);
+        assertStringContainsString('<!DOCTYPE html>', $html);
+        assertStringContainsString('<p>This is the body of the test post.</p>', $html);
+    }
+
     public function testBuildFailsWithMissingContentDir(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';
