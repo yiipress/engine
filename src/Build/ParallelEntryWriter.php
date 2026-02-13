@@ -6,6 +6,7 @@ namespace App\Build;
 
 use App\Content\Model\Collection;
 use App\Content\Model\Entry;
+use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
 use App\Content\Parser\ContentParser;
 use App\Content\PermalinkResolver;
@@ -32,6 +33,7 @@ final class ParallelEntryWriter
         int $workerCount,
         bool $includeDrafts = false,
         bool $includeFuture = false,
+        ?Navigation $navigation = null,
     ): int {
         $tasks = $this->collectTasks($parser, $collections, $contentDir, $outputDir, $includeDrafts, $includeFuture);
 
@@ -40,11 +42,11 @@ final class ParallelEntryWriter
         }
 
         if ($workerCount <= 1) {
-            $this->writeEntries($siteConfig, $tasks);
+            $this->writeEntries($siteConfig, $tasks, $navigation);
             return count($tasks);
         }
 
-        return $this->writeParallel($siteConfig, $tasks, $workerCount);
+        return $this->writeParallel($siteConfig, $tasks, $workerCount, $navigation);
     }
 
     /**
@@ -93,19 +95,19 @@ final class ParallelEntryWriter
     /**
      * @param list<array{entry: Entry, filePath: string}> $tasks
      */
-    private function writeEntries(SiteConfig $siteConfig, array $tasks): void
+    private function writeEntries(SiteConfig $siteConfig, array $tasks, ?Navigation $navigation): void
     {
         $renderer = new EntryRenderer($this->cache);
 
         foreach ($tasks as $task) {
-            file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry']));
+            file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $navigation));
         }
     }
 
     /**
      * @param list<array{entry: Entry, filePath: string}> $tasks
      */
-    private function writeParallel(SiteConfig $siteConfig, array $tasks, int $workerCount): int
+    private function writeParallel(SiteConfig $siteConfig, array $tasks, int $workerCount, ?Navigation $navigation): int
     {
         $totalEntries = count($tasks);
         $pids = [];
@@ -122,7 +124,7 @@ final class ParallelEntryWriter
 
                 for ($i = $workerIndex; $i < $totalEntries; $i += $workerCount) {
                     $task = $tasks[$i];
-                    file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry']));
+                    file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $navigation));
                 }
 
                 exit(0);

@@ -220,7 +220,24 @@ main:
         url: /docs/getting-started/
       - title: Configuration
         url: /docs/configuration/
+footer:
+  - title: Privacy
+    url: /privacy/
 ```
+
+You can define any number of menus. Each item has `title` and `url` fields, and supports nested `children` for sub-navigation.
+
+### Using navigation in templates
+
+Templates receive a `$nav` variable (a `Navigation` object). Use `NavigationRenderer::render()` to output any menu anywhere in a template:
+
+```php
+<?php if ($nav !== null && $nav->menu('main') !== []): ?>
+    <?= \App\Render\NavigationRenderer::render($nav, 'main') ?>
+<?php endif; ?>
+```
+
+This renders a `<nav><ul><li>` structure with nested lists for children. You can render as many different menus as needed — just use the menu name from `navigation.yaml`.
 
 ## Assets
 

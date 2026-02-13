@@ -131,7 +131,7 @@ final class BuildCommand extends Command
         }
 
         $writer = new ParallelEntryWriter($cache);
-        $entryCount = $writer->write($parser, $siteConfig, $collections, $contentDir, $outputDir, $workerCount, $includeDrafts, $includeFuture);
+        $entryCount = $writer->write($parser, $siteConfig, $collections, $contentDir, $outputDir, $workerCount, $includeDrafts, $includeFuture, $navigation);
 
         $output->writeln("  Entries written: <comment>$entryCount</comment>");
 
@@ -151,7 +151,7 @@ final class BuildCommand extends Command
             if (!is_dir($dirPath)) {
                 mkdir($dirPath, 0o755, true);
             }
-            file_put_contents($filePath, $renderer->render($siteConfig, $page));
+            file_put_contents($filePath, $renderer->render($siteConfig, $page, $navigation));
         }
         if ($standalonePages !== []) {
             $output->writeln("  Standalone pages: <comment>" . count($standalonePages) . "</comment>");
@@ -208,6 +208,7 @@ final class BuildCommand extends Command
                 $collection,
                 $entriesByCollection[$collectionName] ?? [],
                 $outputDir,
+                $navigation,
             );
         }
         if ($listingPageCount > 0) {
@@ -222,7 +223,7 @@ final class BuildCommand extends Command
             $allEntries = array_merge(...array_values($entriesByCollection));
             $taxonomyData = TaxonomyCollector::collect($siteConfig->taxonomies, $allEntries);
             $taxonomyWriter = new TaxonomyPageWriter();
-            $taxonomyPageCount = $taxonomyWriter->write($siteConfig, $taxonomyData, $collections, $outputDir);
+            $taxonomyPageCount = $taxonomyWriter->write($siteConfig, $taxonomyData, $collections, $outputDir, $navigation);
             $output->writeln("  Taxonomy pages: <comment>$taxonomyPageCount</comment>");
         }
 

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Render\NavigationRenderer;
+
 /**
  * @var string $siteTitle
  * @var string $entryTitle
@@ -9,6 +11,7 @@ declare(strict_types=1);
  * @var string $date
  * @var string $author
  * @var string $collection
+ * @var ?\App\Content\Model\Navigation $nav
  */
 ?>
 <!DOCTYPE html>
@@ -20,7 +23,11 @@ declare(strict_types=1);
 </head>
 <body>
 <header>
+<?php if ($nav !== null && $nav->menu('main') !== []): ?>
+    <?= NavigationRenderer::render($nav, 'main') ?>
+<?php else: ?>
     <nav><a href="/"><?= htmlspecialchars($siteTitle) ?></a></nav>
+<?php endif; ?>
 </header>
 <main>
     <article>
@@ -36,5 +43,10 @@ declare(strict_types=1);
         </div>
     </article>
 </main>
+<?php if ($nav !== null && $nav->menu('footer') !== []): ?>
+<footer>
+    <?= NavigationRenderer::render($nav, 'footer') ?>
+</footer>
+<?php endif; ?>
 </body>
 </html>

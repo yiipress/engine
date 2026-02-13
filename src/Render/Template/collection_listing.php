@@ -2,11 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Render\NavigationRenderer;
+
 /**
  * @var string $siteTitle
  * @var string $collectionTitle
  * @var list<array{title: string, url: string, date: string, summary: string}> $entries
  * @var array{currentPage: int, totalPages: int, previousUrl: string, nextUrl: string} $pagination
+ * @var ?\App\Content\Model\Navigation $nav
  */
 ?>
 <!DOCTYPE html>
@@ -18,7 +21,11 @@ declare(strict_types=1);
 </head>
 <body>
 <header>
+<?php if ($nav !== null && $nav->menu('main') !== []): ?>
+    <?= NavigationRenderer::render($nav, 'main') ?>
+<?php else: ?>
     <nav><a href="/"><?= htmlspecialchars($siteTitle) ?></a></nav>
+<?php endif; ?>
 </header>
 <main>
     <h1><?= htmlspecialchars($collectionTitle) ?></h1>
@@ -51,5 +58,10 @@ declare(strict_types=1);
     </nav>
 <?php endif; ?>
 </main>
+<?php if ($nav !== null && $nav->menu('footer') !== []): ?>
+<footer>
+    <?= NavigationRenderer::render($nav, 'footer') ?>
+</footer>
+<?php endif; ?>
 </body>
 </html>

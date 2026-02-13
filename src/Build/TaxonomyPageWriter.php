@@ -6,6 +6,7 @@ namespace App\Build;
 
 use App\Content\Model\Collection;
 use App\Content\Model\Entry;
+use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
 use App\Content\PermalinkResolver;
 
@@ -23,6 +24,7 @@ final class TaxonomyPageWriter
         array $taxonomyData,
         array $collections,
         string $outputDir,
+        ?Navigation $navigation = null,
     ): int {
         $pageCount = 0;
 
@@ -31,11 +33,11 @@ final class TaxonomyPageWriter
                 continue;
             }
 
-            $this->writeIndexPage($siteConfig, $taxonomyName, array_keys($terms), $outputDir);
+            $this->writeIndexPage($siteConfig, $taxonomyName, array_keys($terms), $outputDir, $navigation);
             $pageCount++;
 
             foreach ($terms as $term => $entries) {
-                $this->writeTermPage($siteConfig, $taxonomyName, $term, $entries, $collections, $outputDir);
+                $this->writeTermPage($siteConfig, $taxonomyName, $term, $entries, $collections, $outputDir, $navigation);
                 $pageCount++;
             }
         }
@@ -51,8 +53,10 @@ final class TaxonomyPageWriter
         string $taxonomyName,
         array $terms,
         string $outputDir,
+        ?Navigation $navigation,
     ): void {
         $siteTitle = $siteConfig->title;
+        $nav = $navigation;
 
         ob_start();
         require self::INDEX_TEMPLATE;
@@ -77,9 +81,11 @@ final class TaxonomyPageWriter
         array $entries,
         array $collections,
         string $outputDir,
+        ?Navigation $navigation,
     ): void {
         $siteTitle = $siteConfig->title;
         $baseUrl = rtrim($siteConfig->baseUrl, '/');
+        $nav = $navigation;
 
         $entryData = [];
         foreach ($entries as $entry) {

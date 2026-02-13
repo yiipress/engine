@@ -398,6 +398,43 @@ final class BuildCommandTest extends TestCase
         assertFileExists($categoriesIndex);
     }
 
+    public function testBuildRendersNavigationInOutput(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        assertSame(0, $exitCode);
+
+        $entryHtml = file_get_contents($this->outputDir . '/blog/second-post/index.html');
+        assertStringContainsString('<nav>', $entryHtml);
+        assertStringContainsString('Home', $entryHtml);
+        assertStringContainsString('Blog', $entryHtml);
+        assertStringContainsString('href="/"', $entryHtml);
+        assertStringContainsString('href="/blog/"', $entryHtml);
+
+        assertStringContainsString('<footer>', $entryHtml);
+        assertStringContainsString('Privacy', $entryHtml);
+
+        $listingHtml = file_get_contents($this->outputDir . '/blog/index.html');
+        assertStringContainsString('Home', $listingHtml);
+        assertStringContainsString('href="/blog/"', $listingHtml);
+
+        $tagsHtml = file_get_contents($this->outputDir . '/tags/index.html');
+        assertStringContainsString('Home', $tagsHtml);
+
+        $contactHtml = file_get_contents($this->outputDir . '/contact/index.html');
+        assertStringContainsString('Home', $contactHtml);
+    }
+
     public function testBuildRendersStandalonePages(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';

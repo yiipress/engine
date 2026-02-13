@@ -6,6 +6,7 @@ namespace App\Build;
 
 use App\Content\Model\Collection;
 use App\Content\Model\Entry;
+use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
 use App\Content\PermalinkResolver;
 
@@ -21,6 +22,7 @@ final class CollectionListingWriter
         Collection $collection,
         array $entries,
         string $outputDir,
+        ?Navigation $navigation = null,
     ): int {
         $perPage = $collection->entriesPerPage;
         if ($perPage <= 0) {
@@ -52,7 +54,7 @@ final class CollectionListingWriter
                 'nextUrl' => $this->resolvePageUrl($collection->name, $pageNumber + 1, $totalPages),
             ];
 
-            $html = $this->renderPage($siteConfig, $collection, $entryData, $pagination);
+            $html = $this->renderPage($siteConfig, $collection, $entryData, $pagination, $navigation);
 
             $dir = $pageNumber === 1
                 ? $outputDir . '/' . $collection->name
@@ -78,9 +80,11 @@ final class CollectionListingWriter
         Collection $collection,
         array $entries,
         array $pagination,
+        ?Navigation $navigation,
     ): string {
         $siteTitle = $siteConfig->title;
         $collectionTitle = $collection->title;
+        $nav = $navigation;
 
         ob_start();
         require self::TEMPLATE;
