@@ -7,7 +7,7 @@ All commands are run via the `yii` CLI entry point (or `composer serve` for the 
 Generates static HTML content from source files.
 
 ```
-yii build [--content-dir=content] [--output-dir=output] [--workers=1] [--no-cache] [--drafts]
+yii build [--content-dir=content] [--output-dir=output] [--workers=1] [--no-cache] [--drafts] [--future]
 ```
 
 **Options:**
@@ -17,6 +17,7 @@ yii build [--content-dir=content] [--output-dir=output] [--workers=1] [--no-cach
 - `--workers`, `-w` — number of parallel workers (default: `1`). Uses `pcntl_fork()` to distribute entry rendering across processes.
 - `--no-cache` — disable build cache. By default, rendered HTML is cached in `runtime/cache/build/` keyed by source file content hash. Unchanged entries skip markdown rendering and template application on subsequent builds.
 - `--drafts` — include draft entries in the build. By default, entries with `draft: true` in front matter are excluded from HTML output, feeds, and sitemap.
+- `--future` — include future-dated entries in the build. By default, entries with a date in the future are excluded from HTML output, feeds, and sitemap.
 
 The command:
 

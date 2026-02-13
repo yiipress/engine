@@ -25,7 +25,7 @@
 - [x] Entry sorting options (custom sort fields like weight/order for non-blog collections)
 - [ ] Static/standalone pages (pages outside of collections, e.g., "about", "contact")
 - [ ] Navigation / menu system
-- [ ] Content scheduling (future-dated entries excluded from build by default)
+- [x] Content scheduling (future-dated entries excluded from build by default)
 - [ ] Author support (author metadata in front matter, author pages/archives)
 - [ ] Date-based archive pages (yearly, monthly)
 - [ ] Cross-references / internal linking helpers (shorthand syntax to link between entries, prevents broken links on permalink changes)

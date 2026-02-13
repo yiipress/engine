@@ -282,6 +282,59 @@ final class BuildCommandTest extends TestCase
         assertStringContainsString('No Date Post', $atom);
     }
 
+    public function testBuildExcludesFutureDatedEntriesByDefault(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        assertSame(0, $exitCode);
+
+        $futureFile = $this->outputDir . '/blog/future-post/index.html';
+        assertFalse(is_file($futureFile), 'Future-dated entry should not be built by default');
+
+        $sitemap = file_get_contents($this->outputDir . '/sitemap.xml');
+        assertStringNotContainsString('future-post', $sitemap);
+
+        $atom = file_get_contents($this->outputDir . '/blog/feed.xml');
+        assertStringNotContainsString('Future Post', $atom);
+    }
+
+    public function testBuildIncludesFutureEntriesWithFlag(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' --future'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        assertSame(0, $exitCode);
+
+        $futureFile = $this->outputDir . '/blog/future-post/index.html';
+        assertFileExists($futureFile);
+
+        $sitemap = file_get_contents($this->outputDir . '/sitemap.xml');
+        assertStringContainsString('future-post', $sitemap);
+
+        $atom = file_get_contents($this->outputDir . '/blog/feed.xml');
+        assertStringContainsString('Future Post', $atom);
+    }
+
     public function testBuildFailsWithMissingContentDir(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';

@@ -30,8 +30,9 @@ final class ParallelEntryWriter
         string $outputDir,
         int $workerCount,
         bool $includeDrafts = false,
+        bool $includeFuture = false,
     ): int {
-        $tasks = $this->collectTasks($parser, $collections, $contentDir, $outputDir, $includeDrafts);
+        $tasks = $this->collectTasks($parser, $collections, $contentDir, $outputDir, $includeDrafts, $includeFuture);
 
         if ($tasks === []) {
             return 0;
@@ -55,12 +56,17 @@ final class ParallelEntryWriter
         string $contentDir,
         string $outputDir,
         bool $includeDrafts,
+        bool $includeFuture,
     ): array {
+        $now = new \DateTimeImmutable();
         $tasks = [];
 
         foreach ($collections as $collectionName => $collection) {
             foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
                 if (!$includeDrafts && $entry->draft) {
+                    continue;
+                }
+                if (!$includeFuture && $entry->date !== null && $entry->date > $now) {
                     continue;
                 }
 

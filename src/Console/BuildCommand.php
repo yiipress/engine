@@ -68,6 +68,12 @@ final class BuildCommand extends Command
             InputOption::VALUE_NONE,
             'Include draft entries in the build',
         );
+        $this->addOption(
+            'future',
+            null,
+            InputOption::VALUE_NONE,
+            'Include future-dated entries in the build',
+        );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -87,6 +93,7 @@ final class BuildCommand extends Command
         $workerCount = max(1, (int) $workersOption);
         $noCache = (bool) $input->getOption('no-cache');
         $includeDrafts = (bool) $input->getOption('drafts');
+        $includeFuture = (bool) $input->getOption('future');
 
         if (!is_dir($contentDir)) {
             $output->writeln("<error>Content directory not found: $contentDir</error>");
@@ -121,7 +128,7 @@ final class BuildCommand extends Command
         }
 
         $writer = new ParallelEntryWriter($cache);
-        $entryCount = $writer->write($parser, $siteConfig, $collections, $contentDir, $outputDir, $workerCount, $includeDrafts);
+        $entryCount = $writer->write($parser, $siteConfig, $collections, $contentDir, $outputDir, $workerCount, $includeDrafts, $includeFuture);
 
         $output->writeln("  Entries written: <comment>$entryCount</comment>");
 
@@ -130,6 +137,10 @@ final class BuildCommand extends Command
             $entries = iterator_to_array($parser->parseEntries($contentDir, $collectionName));
             if (!$includeDrafts) {
                 $entries = array_values(array_filter($entries, static fn ($e) => !$e->draft));
+            }
+            if (!$includeFuture) {
+                $now = new \DateTimeImmutable();
+                $entries = array_values(array_filter($entries, static fn ($e) => $e->date === null || $e->date <= $now));
             }
             $entriesByCollection[$collectionName] = EntrySorter::sort($entries, $collection);
         }
