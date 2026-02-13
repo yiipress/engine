@@ -81,6 +81,26 @@ final class ContentParser
     /**
      * @return Generator<Entry>
      */
+    public function parseStandalonePages(string $contentDir): Generator
+    {
+        $iterator = new FilesystemIterator($contentDir, FilesystemIterator::SKIP_DOTS);
+        foreach ($iterator as $item) {
+            /** @var SplFileInfo $item */
+            if ($item->isDir()) {
+                continue;
+            }
+
+            if ($item->getExtension() !== 'md') {
+                continue;
+            }
+
+            yield $this->entryParser->parse($item->getPathname(), '');
+        }
+    }
+
+    /**
+     * @return Generator<Entry>
+     */
     public function parseAllEntries(string $contentDir): Generator
     {
         $iterator = new FilesystemIterator($contentDir, FilesystemIterator::SKIP_DOTS);

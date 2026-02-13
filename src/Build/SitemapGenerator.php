@@ -15,12 +15,14 @@ final class SitemapGenerator
     /**
      * @param array<string, Collection> $collections
      * @param array<string, list<Entry>> $entriesByCollection
+     * @param list<Entry> $standalonePages
      */
     public function generate(
         SiteConfig $siteConfig,
         array $collections,
         array $entriesByCollection,
         string $outputDir,
+        array $standalonePages = [],
     ): void {
         $sitemapPath = $outputDir . '/sitemap.xml';
         $baseUrl = rtrim($siteConfig->baseUrl, '/');
@@ -44,6 +46,12 @@ final class SitemapGenerator
                     $lastmod ?? null,
                 );
             }
+        }
+
+        foreach ($standalonePages as $page) {
+            $permalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
+            $lastmod = $page->date?->getTimestamp();
+            $sitemap->addItem($baseUrl . $permalink, $lastmod ?? null);
         }
 
         $sitemap->write();

@@ -398,6 +398,36 @@ final class BuildCommandTest extends TestCase
         assertFileExists($categoriesIndex);
     }
 
+    public function testBuildRendersStandalonePages(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        $outputText = implode("\n", $output);
+
+        assertSame(0, $exitCode, "Build failed: $outputText");
+        assertStringContainsString('Standalone pages:', $outputText);
+
+        $contactFile = $this->outputDir . '/contact/index.html';
+        assertFileExists($contactFile);
+
+        $html = file_get_contents($contactFile);
+        assertStringContainsString('Contact', $html);
+        assertStringContainsString('Get in touch', $html);
+
+        $sitemap = file_get_contents($this->outputDir . '/sitemap.xml');
+        assertStringContainsString('/contact/', $sitemap);
+    }
+
     public function testBuildFailsWithMissingContentDir(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';

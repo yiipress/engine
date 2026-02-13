@@ -27,8 +27,9 @@ The command:
 4. Writes each entry as `index.html` at its resolved permalink path.
 5. Generates Atom (`feed.xml`) and RSS 2.0 (`rss.xml`) feeds for each collection with `feed: true`.
 6. Generates `sitemap.xml` containing all entry URLs, collection listing URLs, and the home page.
-7. Generates paginated collection listing pages (e.g., `/blog/`, `/blog/page/2/`) for collections with `listing: true`.
-8. Generates taxonomy pages for each taxonomy defined in `config.yaml` (e.g., `/tags/`, `/tags/php/`, `/categories/`).
+7. Renders standalone pages — markdown files in the content root directory (e.g., `contact.md` → `/contact/`).
+8. Generates paginated collection listing pages (e.g., `/blog/`, `/blog/page/2/`) for collections with `listing: true`.
+9. Generates taxonomy pages for each taxonomy defined in `config.yaml` (e.g., `/tags/`, `/tags/php/`, `/categories/`).
 
 With `--workers=N` (N > 1), entry rendering and writing is parallelized across N forked processes. Feeds and sitemap are generated after entry writing in the parent process.
 

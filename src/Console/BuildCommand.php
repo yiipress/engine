@@ -135,6 +135,28 @@ final class BuildCommand extends Command
 
         $output->writeln("  Entries written: <comment>$entryCount</comment>");
 
+        $renderer = new EntryRenderer($cache);
+        $standalonePages = iterator_to_array($parser->parseStandalonePages($contentDir));
+        if (!$includeDrafts) {
+            $standalonePages = array_values(array_filter($standalonePages, static fn ($e) => !$e->draft));
+        }
+        if (!$includeFuture) {
+            $now = new \DateTimeImmutable();
+            $standalonePages = array_values(array_filter($standalonePages, static fn ($e) => $e->date === null || $e->date <= $now));
+        }
+        foreach ($standalonePages as $page) {
+            $permalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
+            $filePath = $outputDir . $permalink . 'index.html';
+            $dirPath = dirname($filePath);
+            if (!is_dir($dirPath)) {
+                mkdir($dirPath, 0o755, true);
+            }
+            file_put_contents($filePath, $renderer->render($siteConfig, $page));
+        }
+        if ($standalonePages !== []) {
+            $output->writeln("  Standalone pages: <comment>" . count($standalonePages) . "</comment>");
+        }
+
         $entriesByCollection = [];
         foreach ($collections as $collectionName => $collection) {
             $entries = iterator_to_array($parser->parseEntries($contentDir, $collectionName));
@@ -193,7 +215,7 @@ final class BuildCommand extends Command
         }
 
         $sitemapGenerator = new SitemapGenerator();
-        $sitemapGenerator->generate($siteConfig, $collections, $entriesByCollection, $outputDir);
+        $sitemapGenerator->generate($siteConfig, $collections, $entriesByCollection, $outputDir, $standalonePages);
         $output->writeln('  Sitemap generated.');
 
         if ($siteConfig->taxonomies !== []) {
