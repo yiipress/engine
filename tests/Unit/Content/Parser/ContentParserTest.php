@@ -67,6 +67,6 @@ final class ContentParserTest extends TestCase
     {
         $entries = iterator_to_array($this->parser->parseAllEntries($this->dataDir), false);
 
-        assertCount(5, $entries);
+        assertCount(6, $entries);
     }
 }

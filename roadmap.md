@@ -23,6 +23,7 @@
 - [x] Permalink customization (per-entry via front matter, site-wide patterns)
 - [x] Pagination configuration (entries per page, URL patterns)
 - [x] Entry sorting options (custom sort fields like weight/order for non-blog collections)
+- [x] Explicit collection entry order (`order` field in `_collection.yaml`)
 - [x] Static/standalone pages (pages outside of collections, e.g., "about", "contact")
 - [x] Navigation / menu system
 - [x] Content scheduling (future-dated entries excluded from build by default)

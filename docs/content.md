@@ -188,6 +188,23 @@ weight: 1
 
 Collection pages support sorting by weight, custom permalink patterns, and all other collection features.
 
+### Explicit entry order
+
+Instead of relying on `sort_by` and `weight`, you can define an explicit entry order in `_collection.yaml`. This is useful for documentation or guides where you want a specific reading order without introducing artificial sort fields:
+
+```yaml
+title: Docs
+permalink: /docs/:slug/
+listing: true
+order:
+  - introduction
+  - getting-started
+  - configuration
+  - deployment
+```
+
+When `order` is set, entries are sorted by their position in the list. The `sort_by` and `sort_order` fields are ignored. Entries not listed in `order` appear after the listed ones.
+
 ## Authors
 
 Author definitions live in `content/authors/`. Each file defines one author:

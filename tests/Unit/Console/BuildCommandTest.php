@@ -398,6 +398,30 @@ final class BuildCommandTest extends TestCase
         assertFileExists($categoriesIndex);
     }
 
+    public function testBuildRespectsExplicitCollectionOrder(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        assertSame(0, $exitCode);
+
+        $listingHtml = file_get_contents($this->outputDir . '/page/index.html');
+        $faqPos = strpos($listingHtml, 'FAQ');
+        $aboutPos = strpos($listingHtml, 'About');
+        assertNotFalse($faqPos);
+        assertNotFalse($aboutPos);
+        assertLessThan($aboutPos, $faqPos, 'FAQ should appear before About due to explicit order');
+    }
+
     public function testBuildResolvesMarkdownFileLinks(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';

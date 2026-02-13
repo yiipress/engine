@@ -98,6 +98,47 @@ final class EntrySorterTest extends TestCase
         assertSame(['undated', 'dated'], array_map(static fn (Entry $e) => $e->slug, $sorted));
     }
 
+    public function testSortByExplicitOrder(): void
+    {
+        $collection = $this->createCollection(sortBy: 'date', sortOrder: 'desc', order: ['second', 'third', 'first']);
+        $entries = [
+            $this->createEntry(slug: 'first'),
+            $this->createEntry(slug: 'second'),
+            $this->createEntry(slug: 'third'),
+        ];
+
+        $sorted = EntrySorter::sort($entries, $collection);
+
+        assertSame(['second', 'third', 'first'], array_map(static fn (Entry $e) => $e->slug, $sorted));
+    }
+
+    public function testExplicitOrderOverridesSortBy(): void
+    {
+        $collection = $this->createCollection(sortBy: 'weight', sortOrder: 'asc', order: ['heavy', 'light']);
+        $entries = [
+            $this->createEntry(slug: 'light', weight: 1),
+            $this->createEntry(slug: 'heavy', weight: 10),
+        ];
+
+        $sorted = EntrySorter::sort($entries, $collection);
+
+        assertSame(['heavy', 'light'], array_map(static fn (Entry $e) => $e->slug, $sorted));
+    }
+
+    public function testExplicitOrderUnlistedEntriesGoToEnd(): void
+    {
+        $collection = $this->createCollection(sortBy: 'date', sortOrder: 'desc', order: ['b']);
+        $entries = [
+            $this->createEntry(slug: 'a'),
+            $this->createEntry(slug: 'b'),
+            $this->createEntry(slug: 'c'),
+        ];
+
+        $sorted = EntrySorter::sort($entries, $collection);
+
+        assertSame('b', $sorted[0]->slug);
+    }
+
     public function testEmptyArrayReturnsEmpty(): void
     {
         $collection = $this->createCollection(sortBy: 'date', sortOrder: 'desc');
@@ -107,7 +148,10 @@ final class EntrySorterTest extends TestCase
         assertSame([], $sorted);
     }
 
-    private function createCollection(string $sortBy, string $sortOrder): Collection
+    /**
+     * @param list<string> $order
+     */
+    private function createCollection(string $sortBy, string $sortOrder, array $order = []): Collection
     {
         return new Collection(
             name: 'test',
@@ -119,6 +163,7 @@ final class EntrySorterTest extends TestCase
             entriesPerPage: 10,
             feed: false,
             listing: true,
+            order: $order,
         );
     }
 

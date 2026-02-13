@@ -49,6 +49,7 @@ final class CollectionConfigParserTest extends TestCase
         assertSame('weight', $collection->sortBy);
         assertSame(0, $collection->entriesPerPage);
         assertFalse($collection->feed);
-        assertFalse($collection->listing);
+        assertTrue($collection->listing);
+        assertSame(['faq', 'about'], $collection->order);
     }
 }

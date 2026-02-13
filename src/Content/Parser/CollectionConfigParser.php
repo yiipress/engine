@@ -34,6 +34,9 @@ final class CollectionConfigParser
             entriesPerPage: (int) ($data['entries_per_page'] ?? 10),
             feed: (bool) ($data['feed'] ?? false),
             listing: (bool) ($data['listing'] ?? true),
+            order: isset($data['order']) && is_array($data['order'])
+                ? array_values(array_map(strval(...), $data['order']))
+                : [],
         );
     }
 }

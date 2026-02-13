@@ -6,6 +6,9 @@ namespace App\Content\Model;
 
 final readonly class Collection
 {
+    /**
+     * @param list<string> $order
+     */
     public function __construct(
         public string $name,
         public string $title,
@@ -16,5 +19,6 @@ final readonly class Collection
         public int $entriesPerPage,
         public bool $feed,
         public bool $listing,
+        public array $order = [],
     ) {}
 }

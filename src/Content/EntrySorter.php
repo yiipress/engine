@@ -15,6 +15,10 @@ final class EntrySorter
      */
     public static function sort(array $entries, Collection $collection): array
     {
+        if ($collection->order !== []) {
+            return self::sortByExplicitOrder($entries, $collection->order);
+        }
+
         $field = $collection->sortBy;
         $descending = $collection->sortOrder === 'desc';
 
@@ -27,6 +31,26 @@ final class EntrySorter
             };
 
             return $descending ? -$result : $result;
+        });
+
+        return $entries;
+    }
+
+    /**
+     * @param list<Entry> $entries
+     * @param list<string> $order
+     * @return list<Entry>
+     */
+    private static function sortByExplicitOrder(array $entries, array $order): array
+    {
+        $slugPositions = array_flip($order);
+        $maxPosition = count($order);
+
+        usort($entries, static function (Entry $a, Entry $b) use ($slugPositions, $maxPosition): int {
+            $posA = $slugPositions[$a->slug] ?? $maxPosition;
+            $posB = $slugPositions[$b->slug] ?? $maxPosition;
+
+            return $posA <=> $posB;
         });
 
         return $entries;
