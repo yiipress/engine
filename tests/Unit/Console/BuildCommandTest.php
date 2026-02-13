@@ -9,6 +9,8 @@ use PHPUnit\Framework\TestCase;
 use function PHPUnit\Framework\assertDirectoryExists;
 use function PHPUnit\Framework\assertFalse;
 use function PHPUnit\Framework\assertFileExists;
+use function PHPUnit\Framework\assertLessThan;
+use function PHPUnit\Framework\assertNotFalse;
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
 use function PHPUnit\Framework\assertStringNotContainsString;
@@ -150,6 +152,31 @@ final class BuildCommandTest extends TestCase
         assertStringContainsString('<rss version="2.0"', $rss);
         assertStringContainsString('<title>Test Post</title>', $rss);
         assertStringContainsString('<content:encoded>', $rss);
+    }
+
+    public function testFeedEntriesAreSortedChronologically(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        assertSame(0, $exitCode);
+
+        $atom = file_get_contents($this->outputDir . '/blog/feed.xml');
+        $secondPostPos = strpos($atom, '<title>Second Post</title>');
+        $testPostPos = strpos($atom, '<title>Test Post</title>');
+
+        assertNotFalse($secondPostPos);
+        assertNotFalse($testPostPos);
+        assertLessThan($testPostPos, $secondPostPos, 'Second Post (2024-05-20) should appear before Test Post (2024-03-15) in desc order');
     }
 
     public function testBuildGeneratesSitemap(): void

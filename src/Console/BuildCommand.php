@@ -9,6 +9,7 @@ use App\Build\EntryRenderer;
 use App\Build\FeedGenerator;
 use App\Build\ParallelEntryWriter;
 use App\Build\SitemapGenerator;
+use App\Content\EntrySorter;
 use App\Content\Parser\ContentParser;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -130,7 +131,7 @@ final class BuildCommand extends Command
             if (!$includeDrafts) {
                 $entries = array_values(array_filter($entries, static fn ($e) => !$e->draft));
             }
-            $entriesByCollection[$collectionName] = $entries;
+            $entriesByCollection[$collectionName] = EntrySorter::sort($entries, $collection);
         }
 
         $feedGenerator = new FeedGenerator();
