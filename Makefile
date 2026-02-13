@@ -121,6 +121,11 @@ php: ## Run a PHP script
 	$(DOCKER_COMPOSE_DEV) run --rm app php $(CLI_ARGS)
 endif
 
+ifeq ($(PRIMARY_GOAL),build-docs)
+build-docs: ## Build documentation site from docs/ directory
+	$(DOCKER_COMPOSE_DEV) run --rm app ./yii build --content-dir=docs --output-dir=docs-output --no-cache
+endif
+
 #
 # Production
 #

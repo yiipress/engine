@@ -27,6 +27,7 @@ c3.php
 
 # Output directory
 output
+docs-output
 
 # Benchmark generated data
 benchmarks/data

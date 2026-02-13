@@ -131,11 +131,22 @@ final class BuildCommand extends Command
         $fileToPermalink = [];
         foreach ($collections as $collectionName => $collection) {
             foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
+                if ($entry->title === '') {
+                    $output->writeln('<error>  Skipping ' . $entry->sourceFilePath() . ': no title found</error>');
+                    continue;
+                }
                 $relativePath = substr($entry->sourceFilePath(), strlen($contentDir) + 1);
                 $fileToPermalink[$relativePath] = PermalinkResolver::resolve($entry, $collection);
             }
         }
-        $standalonePages = iterator_to_array($parser->parseStandalonePages($contentDir));
+        $standalonePages = [];
+        foreach ($parser->parseStandalonePages($contentDir) as $page) {
+            if ($page->title === '') {
+                $output->writeln('<error>  Skipping ' . $page->sourceFilePath() . ': no title found</error>');
+                continue;
+            }
+            $standalonePages[] = $page;
+        }
         foreach ($standalonePages as $page) {
             $relativePath = substr($page->sourceFilePath(), strlen($contentDir) + 1);
             $fileToPermalink[$relativePath] = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
@@ -176,7 +187,10 @@ final class BuildCommand extends Command
 
         $entriesByCollection = [];
         foreach ($collections as $collectionName => $collection) {
-            $entries = iterator_to_array($parser->parseEntries($contentDir, $collectionName));
+            $entries = array_values(array_filter(
+                iterator_to_array($parser->parseEntries($contentDir, $collectionName)),
+                static fn ($e) => $e->title !== '',
+            ));
             if (!$includeDrafts) {
                 $entries = array_values(array_filter($entries, static fn ($e) => !$e->draft));
             }

@@ -91,4 +91,36 @@ final class CrossReferenceResolverTest extends TestCase
 
         assertSame('Read [the post](/blog/test-post/).', $result);
     }
+
+    public function testResolvesLinkWithAnchorFragment(): void
+    {
+        $resolver = new CrossReferenceResolver([
+            'content.md' => '/content/',
+        ]);
+
+        $result = $resolver->resolve('See [Content](content.md#authors).');
+
+        assertSame('See [Content](/content/#authors).', $result);
+    }
+
+    public function testResolvesRelativeLinkWithAnchorFragment(): void
+    {
+        $resolver = new CrossReferenceResolver([
+            'config.md' => '/config/',
+        ]);
+
+        $result = $resolver->withCurrentDir('')
+            ->resolve('See [Configuration](./config.md#markdown-extensions).');
+
+        assertSame('See [Configuration](/config/#markdown-extensions).', $result);
+    }
+
+    public function testLeavesUnknownLinkWithAnchorUnchanged(): void
+    {
+        $resolver = new CrossReferenceResolver([]);
+
+        $result = $resolver->resolve('See [missing](missing.md#section).');
+
+        assertSame('See [missing](missing.md#section).', $result);
+    }
 }

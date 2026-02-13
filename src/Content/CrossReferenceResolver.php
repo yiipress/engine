@@ -22,10 +22,11 @@ final class CrossReferenceResolver
     public function resolve(string $markdown): string
     {
         return preg_replace_callback(
-            '/\[([^\]]*)\]\(([^)]+\.md)\)/',
+            '/\[([^\]]*)\]\(([^)#]+\.md)(#[^)]*)?\)/',
             function (array $matches): string {
                 $text = $matches[1];
                 $path = $matches[2];
+                $fragment = $matches[3] ?? '';
 
                 $resolved = $this->resolvePath($path);
                 $permalink = $this->fileToPermalink[$resolved] ?? null;
@@ -34,7 +35,7 @@ final class CrossReferenceResolver
                     return $matches[0];
                 }
 
-                return '[' . $text . '](' . $permalink . ')';
+                return '[' . $text . '](' . $permalink . $fragment . ')';
             },
             $markdown,
         );

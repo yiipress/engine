@@ -1,3 +1,7 @@
+---
+permalink: "/"
+---
+
 # YiiPress engine documentation
 
 - [Quickstart](quickstart.md)
@@ -7,3 +11,4 @@
 - [Templates](template.md)
 - [Console commands](commands.md)
 - [Plugins](plugins.md)
+- [Benchmarking](benchmarking.md)

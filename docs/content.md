@@ -62,7 +62,7 @@ feed: true
 
 ## Entries
 
-Each entry is a markdown file with YAML front matter.
+Each entry is a markdown file. Front matter is optional — if omitted, the title is inferred from the first `# Heading` in the markdown body.
 
 ### File naming
 
@@ -100,7 +100,7 @@ extra:
 ---
 ```
 
-- **title** (required) — entry title
+- **title** — entry title; if omitted, inferred from the first `# Heading` in the markdown body. Files with no title (neither in front matter nor as H1) are skipped with a console warning
 - **date** — publication date (`YYYY-MM-DD` or `YYYY-MM-DDTHH:MM:SS+00:00`); entries with a future date are excluded from build by default (scheduling)
 - **slug** — URL slug; overrides filename-derived slug
 - **draft** — `true` to exclude from build (default: `false`)

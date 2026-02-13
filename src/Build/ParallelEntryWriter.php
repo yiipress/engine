@@ -68,6 +68,9 @@ final class ParallelEntryWriter
 
         foreach ($collections as $collectionName => $collection) {
             foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
+                if ($entry->title === '') {
+                    continue;
+                }
                 if (!$includeDrafts && $entry->draft) {
                     continue;
                 }

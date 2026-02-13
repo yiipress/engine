@@ -8,6 +8,7 @@ use App\Content\Parser\FrontMatterParser;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertArrayHasKey;
+use function PHPUnit\Framework\assertArrayNotHasKey;
 use function PHPUnit\Framework\assertGreaterThan;
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
@@ -68,5 +69,88 @@ final class FrontMatterParserTest extends TestCase
 
         $body = file_get_contents($dataDir . '/authors/john-doe.md', offset: $result['bodyOffset'], length: $result['bodyLength']);
         assertStringContainsString('John is a PHP developer.', $body);
+    }
+
+    public function testInfersTitleFromH1WhenNoFrontMatter(): void
+    {
+        $tmpFile = $this->createTempFile("# My Page Title\n\nSome content.");
+
+        $result = (new FrontMatterParser())->parse($tmpFile);
+
+        assertSame('My Page Title', $result['frontMatter']['title']);
+
+        $body = file_get_contents($tmpFile, offset: $result['bodyOffset'], length: $result['bodyLength']);
+        assertSame("\nSome content.", $body);
+    }
+
+    public function testInfersTitleFromH1WhenFrontMatterHasNoTitle(): void
+    {
+        $tmpFile = $this->createTempFile("---\ndraft: true\n---\n\n# Inferred Title\n\nBody.");
+
+        $result = (new FrontMatterParser())->parse($tmpFile);
+
+        assertSame('Inferred Title', $result['frontMatter']['title']);
+        assertSame(true, $result['frontMatter']['draft']);
+
+        $body = file_get_contents($tmpFile, offset: $result['bodyOffset'], length: $result['bodyLength']);
+        assertSame("\nBody.", $body);
+    }
+
+    public function testInfersTitleFromH1AfterBlankLine(): void
+    {
+        $tmpFile = $this->createTempFile("\n# Title After Blank\n\nBody.");
+
+        $result = (new FrontMatterParser())->parse($tmpFile);
+
+        assertSame('Title After Blank', $result['frontMatter']['title']);
+
+        $body = file_get_contents($tmpFile, offset: $result['bodyOffset'], length: $result['bodyLength']);
+        assertSame("\nBody.", $body);
+    }
+
+    public function testNoTitleWhenNoFrontMatterAndNoHeading(): void
+    {
+        $tmpFile = $this->createTempFile("Just some text without a heading.");
+
+        $result = (new FrontMatterParser())->parse($tmpFile);
+
+        assertArrayNotHasKey('title', $result['frontMatter']);
+    }
+
+    public function testNoTitleInferenceWhenFirstNonBlankLineIsNotH1(): void
+    {
+        $tmpFile = $this->createTempFile("Some paragraph.\n# Heading");
+
+        $result = (new FrontMatterParser())->parse($tmpFile);
+
+        assertArrayNotHasKey('title', $result['frontMatter']);
+    }
+
+    public function testFrontMatterTitleTakesPrecedenceOverH1(): void
+    {
+        $tmpFile = $this->createTempFile("---\ntitle: Explicit Title\n---\n\n# H1 Title\n\nBody.");
+
+        $result = (new FrontMatterParser())->parse($tmpFile);
+
+        assertSame('Explicit Title', $result['frontMatter']['title']);
+    }
+
+    private function createTempFile(string $content): string
+    {
+        $path = tempnam(sys_get_temp_dir(), 'yiipress_fm_test_');
+        file_put_contents($path, $content);
+        $this->tempFiles[] = $path;
+        return $path;
+    }
+
+    private array $tempFiles = [];
+
+    protected function tearDown(): void
+    {
+        foreach ($this->tempFiles as $file) {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
     }
 }

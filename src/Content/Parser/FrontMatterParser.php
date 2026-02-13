@@ -50,11 +50,13 @@ final class FrontMatterParser
     {
         $firstLine = fgets($handle);
         if ($firstLine === false || !str_starts_with(trim($firstLine), '---')) {
-            return [
+            $result = [
                 'frontMatter' => [],
                 'bodyOffset' => 0,
                 'bodyLength' => $fileSize,
             ];
+
+            return $this->inferTitle($handle, $result, 0);
         }
 
         $yamlLines = [];
@@ -71,11 +73,17 @@ final class FrontMatterParser
                     $parsed = [];
                 }
 
-                return [
+                $result = [
                     'frontMatter' => $parsed,
                     'bodyOffset' => $bodyOffset,
                     'bodyLength' => $fileSize - $bodyOffset,
                 ];
+
+                if (!isset($parsed['title']) || (string) $parsed['title'] === '') {
+                    return $this->inferTitle($handle, $result, $bodyOffset);
+                }
+
+                return $result;
             }
             $yamlLines[] = $line;
         }
@@ -85,5 +93,39 @@ final class FrontMatterParser
             'bodyOffset' => 0,
             'bodyLength' => $fileSize,
         ];
+    }
+
+    /**
+     * @param resource $handle
+     * @param array{frontMatter: array<string, mixed>, bodyOffset: int, bodyLength: int} $result
+     * @return array{frontMatter: array<string, mixed>, bodyOffset: int, bodyLength: int}
+     */
+    private function inferTitle($handle, array $result, int $seekTo): array
+    {
+        fseek($handle, $seekTo);
+
+        for ($i = 0; $i < 2; $i++) {
+            $line = fgets($handle);
+            if ($line === false) {
+                break;
+            }
+
+            $trimmed = trim($line);
+            if (str_starts_with($trimmed, '# ')) {
+                $result['frontMatter']['title'] = substr($trimmed, 2);
+                $newOffset = ftell($handle);
+                if ($newOffset !== false) {
+                    $result['bodyLength'] -= ($newOffset - $result['bodyOffset']);
+                    $result['bodyOffset'] = $newOffset;
+                }
+                return $result;
+            }
+
+            if ($trimmed !== '') {
+                break;
+            }
+        }
+
+        return $result;
     }
 }
