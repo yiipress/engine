@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console;
 
 use App\Build\BuildCache;
+use App\Build\CollectionListingWriter;
 use App\Build\EntryRenderer;
 use App\Build\FeedGenerator;
 use App\Build\ParallelEntryWriter;
@@ -172,6 +173,23 @@ final class BuildCommand extends Command
 
         if ($feedCount > 0) {
             $output->writeln("  Feeds generated: <comment>$feedCount</comment> (Atom + RSS)");
+        }
+
+        $listingWriter = new CollectionListingWriter();
+        $listingPageCount = 0;
+        foreach ($collections as $collectionName => $collection) {
+            if (!$collection->listing) {
+                continue;
+            }
+            $listingPageCount += $listingWriter->write(
+                $siteConfig,
+                $collection,
+                $entriesByCollection[$collectionName] ?? [],
+                $outputDir,
+            );
+        }
+        if ($listingPageCount > 0) {
+            $output->writeln("  Listing pages: <comment>$listingPageCount</comment>");
         }
 
         $sitemapGenerator = new SitemapGenerator();

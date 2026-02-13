@@ -335,6 +335,34 @@ final class BuildCommandTest extends TestCase
         assertStringContainsString('Future Post', $atom);
     }
 
+    public function testBuildGeneratesPaginatedListingPages(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        $outputText = implode("\n", $output);
+
+        assertSame(0, $exitCode, "Build failed: $outputText");
+        assertStringContainsString('Listing pages:', $outputText);
+
+        $listingFile = $this->outputDir . '/blog/index.html';
+        assertFileExists($listingFile);
+
+        $html = file_get_contents($listingFile);
+        assertStringContainsString('Blog', $html);
+        assertStringContainsString('Test Post', $html);
+        assertStringContainsString('Second Post', $html);
+    }
+
     public function testBuildGeneratesTaxonomyPages(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';
