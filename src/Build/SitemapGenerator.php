@@ -7,6 +7,7 @@ namespace App\Build;
 use App\Content\Model\Collection;
 use App\Content\Model\Entry;
 use App\Content\Model\SiteConfig;
+use App\Content\PermalinkResolver;
 use samdark\sitemap\Sitemap;
 
 final class SitemapGenerator
@@ -35,14 +36,7 @@ final class SitemapGenerator
 
             $entries = $entriesByCollection[$collectionName] ?? [];
             foreach ($entries as $entry) {
-                $permalink = $entry->permalink !== ''
-                    ? $entry->permalink
-                    : str_replace(
-                        [':collection', ':slug'],
-                        [$collectionName, $entry->slug],
-                        $collection->permalink,
-                    );
-
+                $permalink = PermalinkResolver::resolve($entry, $collection);
                 $lastmod = $entry->date?->getTimestamp();
 
                 $sitemap->addItem(

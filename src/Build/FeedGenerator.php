@@ -7,6 +7,7 @@ namespace App\Build;
 use App\Content\Model\Collection;
 use App\Content\Model\Entry;
 use App\Content\Model\SiteConfig;
+use App\Content\PermalinkResolver;
 use App\Render\MarkdownRenderer;
 use DateTimeInterface;
 use XMLWriter;
@@ -208,15 +209,7 @@ final class FeedGenerator
 
     private function resolveEntryUrl(SiteConfig $siteConfig, Collection $collection, Entry $entry): string
     {
-        $permalink = $entry->permalink !== ''
-            ? $entry->permalink
-            : str_replace(
-                [':collection', ':slug'],
-                [$collection->name, $entry->slug],
-                $collection->permalink,
-            );
-
-        return rtrim($siteConfig->baseUrl, '/') . $permalink;
+        return rtrim($siteConfig->baseUrl, '/') . PermalinkResolver::resolve($entry, $collection);
     }
 
     /**

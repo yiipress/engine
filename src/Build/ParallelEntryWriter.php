@@ -8,6 +8,7 @@ use App\Content\Model\Collection;
 use App\Content\Model\Entry;
 use App\Content\Model\SiteConfig;
 use App\Content\Parser\ContentParser;
+use App\Content\PermalinkResolver;
 use RuntimeException;
 
 use function pcntl_fork;
@@ -70,9 +71,7 @@ final class ParallelEntryWriter
                     continue;
                 }
 
-                $permalink = $entry->permalink !== ''
-                    ? $entry->permalink
-                    : $this->resolvePermalink($collection->permalink, $collectionName, $entry->slug);
+                $permalink = PermalinkResolver::resolve($entry, $collection);
 
                 $filePath = $outputDir . $permalink . 'index.html';
                 $dirPath = dirname($filePath);
@@ -147,12 +146,4 @@ final class ParallelEntryWriter
         return $totalEntries;
     }
 
-    private function resolvePermalink(string $pattern, string $collection, string $slug): string
-    {
-        return str_replace(
-            [':collection', ':slug'],
-            [$collection, $slug],
-            $pattern,
-        );
-    }
 }
