@@ -7,8 +7,9 @@
 - [x] Implement super-fast parsing of each content file type
 - [x] Consider that as less as possible should be loaded into memory at any time
 - [x] Consider using fibers for parallel processing
-- [ ] Caching layer for parsed markdown/front matter between builds
+- [x] Caching layer for parsed markdown/front matter between builds
 - [x] Benchmarking suite (e.g., generate 10k entries) to track performance regressions
+- [x] Expand benchmark by adding a separate test for entries to include links to another entries, 10 pages of text, images, differently styled text, tables.
 
 ## Priority 1: Essential blog features
 
@@ -86,3 +87,14 @@
 - [ ] Multilingual / i18n support
 - [ ] Search as a plugin
 - [ ] Hooks / events system (before build, after build, before render, after render) for plugin architecture
+
+
+## Priority 9: Data importers
+
+- [ ] WordPress
+- [ ] Jekyll
+- [ ] Hugo
+- [ ] Medium exported Markdown
+- [ ] Ghost
+- [ ] Telegram export
+

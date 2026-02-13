@@ -15,7 +15,7 @@ use PhpBench\Attributes\Revs;
 use PhpBench\Attributes\Warmup;
 
 #[BeforeMethods('setUp')]
-final class BuildBench
+final class RealisticBuildBench
 {
     private ContentParser $parser;
     private MarkdownRenderer $renderer;
@@ -27,13 +27,13 @@ final class BuildBench
     {
         $this->parser = new ContentParser();
         $this->renderer = new MarkdownRenderer();
-        $this->dataDir = __DIR__ . '/data/content';
-        $this->outputDir = __DIR__ . '/data/output';
-        $this->cacheDir = __DIR__ . '/data/cache';
+        $this->dataDir = __DIR__ . '/data/realistic-content';
+        $this->outputDir = __DIR__ . '/data/realistic-output';
+        $this->cacheDir = __DIR__ . '/data/realistic-cache';
 
         if (!is_dir($this->dataDir)) {
             throw new \RuntimeException(
-                'Benchmark data not found. Run: make bench-generate'
+                'Realistic benchmark data not found. Run: make bench-generate-realistic'
             );
         }
 
@@ -43,39 +43,31 @@ final class BuildBench
     #[Revs(1)]
     #[Iterations(3)]
     #[Warmup(1)]
-    public function benchFullBuildSequential(): void
+    public function benchRealisticSequential(): void
     {
-        $this->runBuild(1);
+        $this->runBuild(1, false);
     }
 
     #[Revs(1)]
     #[Iterations(3)]
     #[Warmup(1)]
-    public function benchFullBuild2Workers(): void
+    public function benchRealistic4Workers(): void
     {
-        $this->runBuild(2);
+        $this->runBuild(4, false);
     }
 
     #[Revs(1)]
     #[Iterations(3)]
     #[Warmup(1)]
-    public function benchFullBuild4Workers(): void
+    public function benchRealistic8Workers(): void
     {
-        $this->runBuild(4);
+        $this->runBuild(8, false);
     }
 
     #[Revs(1)]
     #[Iterations(3)]
     #[Warmup(1)]
-    public function benchFullBuild8Workers(): void
-    {
-        $this->runBuild(8);
-    }
-
-    #[Revs(1)]
-    #[Iterations(3)]
-    #[Warmup(1)]
-    public function benchFullBuildCachedSequential(): void
+    public function benchRealisticCachedSequential(): void
     {
         $this->runBuild(1, true);
     }
@@ -83,7 +75,7 @@ final class BuildBench
     #[Revs(1)]
     #[Iterations(3)]
     #[Warmup(1)]
-    public function benchFullBuildCached4Workers(): void
+    public function benchRealisticCached4Workers(): void
     {
         $this->runBuild(4, true);
     }
@@ -91,21 +83,7 @@ final class BuildBench
     #[Revs(1)]
     #[Iterations(3)]
     #[Warmup(1)]
-    public function benchParseOnly(): void
-    {
-        $this->parser->parseSiteConfig($this->dataDir);
-        $this->parser->parseNavigation($this->dataDir);
-        $this->parser->parseCollections($this->dataDir);
-        iterator_to_array($this->parser->parseAuthors($this->dataDir));
-
-        foreach ($this->parser->parseAllEntries($this->dataDir) as $_) {
-        }
-    }
-
-    #[Revs(1)]
-    #[Iterations(3)]
-    #[Warmup(1)]
-    public function benchRenderOnly(): void
+    public function benchRealisticRenderOnly(): void
     {
         $collections = $this->parser->parseCollections($this->dataDir);
 
@@ -116,7 +94,7 @@ final class BuildBench
         }
     }
 
-    private function runBuild(int $workerCount, bool $useCache = false): void
+    private function runBuild(int $workerCount, bool $useCache): void
     {
         $this->cleanOutputDir();
 

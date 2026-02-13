@@ -1,0 +1,64 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Build;
+
+use function hash;
+use function hash_file;
+
+final class BuildCache
+{
+    private string $cacheDir;
+    private string $templateHash;
+
+    public function __construct(string $cacheDir, string $templatePath)
+    {
+        $this->cacheDir = $cacheDir;
+
+        if (!is_dir($this->cacheDir)) {
+            mkdir($this->cacheDir, 0o755, true);
+        }
+
+        $this->templateHash = hash_file('xxh128', $templatePath);
+    }
+
+    public function get(string $sourceFilePath): ?string
+    {
+        $key = $this->buildKey($sourceFilePath);
+        $cachePath = $this->cacheDir . '/' . $key;
+
+        if (!is_file($cachePath)) {
+            return null;
+        }
+
+        return file_get_contents($cachePath);
+    }
+
+    public function set(string $sourceFilePath, string $html): void
+    {
+        $key = $this->buildKey($sourceFilePath);
+        file_put_contents($this->cacheDir . '/' . $key, $html);
+    }
+
+    public function clear(): void
+    {
+        if (!is_dir($this->cacheDir)) {
+            return;
+        }
+
+        $iterator = new \DirectoryIterator($this->cacheDir);
+        foreach ($iterator as $item) {
+            if ($item->isDot()) {
+                continue;
+            }
+            unlink($item->getPathname());
+        }
+    }
+
+    private function buildKey(string $sourceFilePath): string
+    {
+        $fileHash = hash_file('xxh128', $sourceFilePath);
+        return hash('xxh128', $fileHash . $this->templateHash);
+    }
+}

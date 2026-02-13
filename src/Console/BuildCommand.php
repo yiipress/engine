@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Console;
 
+use App\Build\BuildCache;
+use App\Build\EntryRenderer;
 use App\Build\ParallelEntryWriter;
 use App\Content\Parser\ContentParser;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -51,6 +53,12 @@ final class BuildCommand extends Command
             'Number of parallel workers (1 = sequential)',
             '1',
         );
+        $this->addOption(
+            'no-cache',
+            null,
+            InputOption::VALUE_NONE,
+            'Disable build cache',
+        );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -68,6 +76,7 @@ final class BuildCommand extends Command
         /** @var string $workersOption */
         $workersOption = $input->getOption('workers');
         $workerCount = max(1, (int) $workersOption);
+        $noCache = (bool) $input->getOption('no-cache');
 
         if (!is_dir($contentDir)) {
             $output->writeln("<error>Content directory not found: $contentDir</error>");
@@ -95,7 +104,13 @@ final class BuildCommand extends Command
 
         $this->prepareOutputDir($outputDir);
 
-        $writer = new ParallelEntryWriter();
+        $cache = null;
+        if (!$noCache) {
+            $cacheDir = $rootPath . '/runtime/cache/build';
+            $cache = new BuildCache($cacheDir, EntryRenderer::ENTRY_TEMPLATE);
+        }
+
+        $writer = new ParallelEntryWriter($cache);
         $entryCount = $writer->write($parser, $siteConfig, $collections, $contentDir, $outputDir, $workerCount);
 
         $output->writeln("  Entries written: <comment>$entryCount</comment>");

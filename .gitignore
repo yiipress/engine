@@ -30,3 +30,6 @@ output
 
 # Benchmark generated data
 benchmarks/data
+
+# Build cache
+runtime/cache

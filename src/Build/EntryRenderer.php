@@ -10,19 +10,31 @@ use App\Render\MarkdownRenderer;
 
 final class EntryRenderer
 {
-    private const string ENTRY_TEMPLATE = __DIR__ . '/../Render/Template/entry.php';
+    public const string ENTRY_TEMPLATE = __DIR__ . '/../Render/Template/entry.php';
 
     private MarkdownRenderer $markdownRenderer;
 
-    public function __construct()
-    {
+    public function __construct(
+        private ?BuildCache $cache = null,
+    ) {
         $this->markdownRenderer = new MarkdownRenderer();
     }
 
     public function render(SiteConfig $siteConfig, Entry $entry): string
     {
+        if ($this->cache !== null) {
+            $cached = $this->cache->get($entry->sourceFilePath());
+            if ($cached !== null) {
+                return $cached;
+            }
+        }
+
         $content = $this->markdownRenderer->render($entry->body());
-        return $this->renderTemplate($siteConfig, $entry, $content);
+        $html = $this->renderTemplate($siteConfig, $entry, $content);
+
+        $this->cache?->set($entry->sourceFilePath(), $html);
+
+        return $html;
     }
 
     private function renderTemplate(SiteConfig $siteConfig, Entry $entry, string $content): string

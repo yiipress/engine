@@ -35,6 +35,11 @@ final readonly class Entry
         private int $bodyLength,
     ) {}
 
+    public function sourceFilePath(): string
+    {
+        return $this->filePath;
+    }
+
     public function body(): string
     {
         if ($this->bodyLength === 0) {

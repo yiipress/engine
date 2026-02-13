@@ -15,6 +15,10 @@ use function pcntl_waitpid;
 
 final class ParallelEntryWriter
 {
+    public function __construct(
+        private ?BuildCache $cache = null,
+    ) {}
+
     /**
      * @param array<string, Collection> $collections
      */
@@ -80,7 +84,7 @@ final class ParallelEntryWriter
      */
     private function writeEntries(SiteConfig $siteConfig, array $tasks): void
     {
-        $renderer = new EntryRenderer();
+        $renderer = new EntryRenderer($this->cache);
 
         foreach ($tasks as $task) {
             file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry']));
@@ -103,7 +107,7 @@ final class ParallelEntryWriter
             }
 
             if ($pid === 0) {
-                $renderer = new EntryRenderer();
+                $renderer = new EntryRenderer($this->cache);
 
                 for ($i = $workerIndex; $i < $totalEntries; $i += $workerCount) {
                     $task = $tasks[$i];

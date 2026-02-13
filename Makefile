@@ -106,9 +106,14 @@ bench-generate: ## Generate benchmark data (10k entries)
 	$(DOCKER_COMPOSE_DEV) run --rm app php benchmarks/generate_content.php $(CLI_ARGS)
 endif
 
+ifeq ($(PRIMARY_GOAL),bench-generate-realistic)
+bench-generate-realistic: ## Generate realistic benchmark data (1k large entries)
+	$(DOCKER_COMPOSE_DEV) run --rm app php benchmarks/generate_realistic_content.php $(CLI_ARGS)
+endif
+
 ifeq ($(PRIMARY_GOAL),bench)
-bench: ## Run benchmarks (xdebug off)
-	$(DOCKER_COMPOSE_DEV) run --rm -e XDEBUG_MODE=off app ./vendor/bin/phpbench run $(CLI_ARGS)
+bench: ## Run benchmarks (xdebug off). Use BENCH_FILTER=ClassName to filter.
+	$(DOCKER_COMPOSE_DEV) run --rm -e XDEBUG_MODE=off app ./vendor/bin/phpbench run $(if $(BENCH_FILTER),--filter=$(BENCH_FILTER)) $(CLI_ARGS)
 endif
 
 ifeq ($(PRIMARY_GOAL),php)
