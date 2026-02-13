@@ -26,7 +26,7 @@
 - [x] Static/standalone pages (pages outside of collections, e.g., "about", "contact")
 - [x] Navigation / menu system
 - [x] Content scheduling (future-dated entries excluded from build by default)
-- [ ] Author support (author metadata in front matter, author pages/archives)
+- [x] Author support (author metadata in front matter, author pages/archives)
 - [ ] Date-based archive pages (yearly, monthly)
 - [ ] Cross-references / internal linking helpers (shorthand syntax to link between entries, prevents broken links on permalink changes)
 - [ ] Markdown extensions configuration (enable/disable footnotes, definition lists, strikethrough, tables, etc.)

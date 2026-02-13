@@ -192,6 +192,13 @@ Author bio in markdown.
 
 Author slugs (filenames without `.md`) are referenced from entry front matter.
 
+Author pages are generated automatically:
+
+- `/authors/` — index page listing all authors with avatars
+- `/authors/:slug/` — individual author page with bio (rendered from markdown body), contact info, and a list of their entries
+
+Author pages are included in the sitemap.
+
 ## Taxonomies
 
 Tags and categories are defined inline in entry front matter. Archive pages are generated automatically:

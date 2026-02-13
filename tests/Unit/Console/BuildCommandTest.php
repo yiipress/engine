@@ -398,6 +398,45 @@ final class BuildCommandTest extends TestCase
         assertFileExists($categoriesIndex);
     }
 
+    public function testBuildGeneratesAuthorPages(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        $outputText = implode("\n", $output);
+
+        assertSame(0, $exitCode, "Build failed: $outputText");
+        assertStringContainsString('Author pages:', $outputText);
+
+        $authorsIndex = $this->outputDir . '/authors/index.html';
+        assertFileExists($authorsIndex);
+        $indexHtml = file_get_contents($authorsIndex);
+        assertStringContainsString('Authors', $indexHtml);
+        assertStringContainsString('John Doe', $indexHtml);
+        assertStringContainsString('/authors/john-doe/', $indexHtml);
+
+        $authorPage = $this->outputDir . '/authors/john-doe/index.html';
+        assertFileExists($authorPage);
+        $authorHtml = file_get_contents($authorPage);
+        assertStringContainsString('John Doe', $authorHtml);
+        assertStringContainsString('john@example.com', $authorHtml);
+        assertStringContainsString('PHP developer', $authorHtml);
+        assertStringContainsString('Test Post', $authorHtml);
+
+        $sitemap = file_get_contents($this->outputDir . '/sitemap.xml');
+        assertStringContainsString('/authors/', $sitemap);
+        assertStringContainsString('/authors/john-doe/', $sitemap);
+    }
+
     public function testBuildRendersNavigationInOutput(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';

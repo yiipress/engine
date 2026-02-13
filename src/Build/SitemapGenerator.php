@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Build;
 
+use App\Content\Model\Author;
 use App\Content\Model\Collection;
 use App\Content\Model\Entry;
 use App\Content\Model\SiteConfig;
@@ -16,6 +17,7 @@ final class SitemapGenerator
      * @param array<string, Collection> $collections
      * @param array<string, list<Entry>> $entriesByCollection
      * @param list<Entry> $standalonePages
+     * @param array<string, Author> $authors
      */
     public function generate(
         SiteConfig $siteConfig,
@@ -23,6 +25,7 @@ final class SitemapGenerator
         array $entriesByCollection,
         string $outputDir,
         array $standalonePages = [],
+        array $authors = [],
     ): void {
         $sitemapPath = $outputDir . '/sitemap.xml';
         $baseUrl = rtrim($siteConfig->baseUrl, '/');
@@ -52,6 +55,13 @@ final class SitemapGenerator
             $permalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
             $lastmod = $page->date?->getTimestamp();
             $sitemap->addItem($baseUrl . $permalink, $lastmod ?? null);
+        }
+
+        if ($authors !== []) {
+            $sitemap->addItem($baseUrl . '/authors/');
+            foreach ($authors as $slug => $author) {
+                $sitemap->addItem($baseUrl . '/authors/' . $slug . '/');
+            }
         }
 
         $sitemap->write();

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console;
 
+use App\Build\AuthorPageWriter;
 use App\Build\BuildCache;
 use App\Build\CollectionListingWriter;
 use App\Build\EntryRenderer;
@@ -216,7 +217,7 @@ final class BuildCommand extends Command
         }
 
         $sitemapGenerator = new SitemapGenerator();
-        $sitemapGenerator->generate($siteConfig, $collections, $entriesByCollection, $outputDir, $standalonePages);
+        $sitemapGenerator->generate($siteConfig, $collections, $entriesByCollection, $outputDir, $standalonePages, $authors);
         $output->writeln('  Sitemap generated.');
 
         if ($siteConfig->taxonomies !== []) {
@@ -225,6 +226,19 @@ final class BuildCommand extends Command
             $taxonomyWriter = new TaxonomyPageWriter();
             $taxonomyPageCount = $taxonomyWriter->write($siteConfig, $taxonomyData, $collections, $outputDir, $navigation);
             $output->writeln("  Taxonomy pages: <comment>$taxonomyPageCount</comment>");
+        }
+
+        if ($authors !== []) {
+            $allEntries = isset($allEntries) ? $allEntries : array_merge(...array_values($entriesByCollection));
+            $entriesByAuthor = [];
+            foreach ($allEntries as $entry) {
+                foreach ($entry->authors as $authorSlug) {
+                    $entriesByAuthor[$authorSlug][] = $entry;
+                }
+            }
+            $authorWriter = new AuthorPageWriter();
+            $authorPageCount = $authorWriter->write($siteConfig, $authors, $entriesByAuthor, $collections, $outputDir, $navigation);
+            $output->writeln("  Author pages: <comment>$authorPageCount</comment>");
         }
 
         $output->writeln('<info>Build complete.</info>');
