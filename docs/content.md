@@ -18,7 +18,7 @@ content/
 │   ├── _collection.yaml
 │   ├── getting-started.md
 │   └── configuration.md
-├── page/                          # Collection: standalone pages (no listing, no feed)
+├── page/                          # Collection: pages (no listing, no feed)
 │   ├── _collection.yaml
 │   ├── about.md
 │   └── contact.md
@@ -28,7 +28,8 @@ content/
 │   ├── john-doe.md
 │   └── jane-smith.md
 ├── config.yaml                    # Site-wide settings (see docs/config.md)
-└── navigation.yaml                # Menu definitions
+├── navigation.yaml                # Menu definitions
+└── standalone-page.md             # Standalone page (not in any collection)
 ```
 
 ## Collections
@@ -118,10 +119,11 @@ extra:
 
 Permalink patterns support the following placeholders:
 
-- `:year`, `:month`, `:day` — from entry date
-- `:slug` — entry slug
 - `:collection` — collection name
-- `:title` — slugified title
+- `:slug` — entry slug
+- `:year` — four-digit year from entry date
+- `:month` — two-digit month from entry date
+- `:day` — two-digit day from entry date
 
 Default pattern: `/:collection/:slug/`
 
@@ -129,10 +131,28 @@ Examples:
 - `/:collection/:year/:month/:slug/` → `/blog/2024/01/hello-world/`
 - `/:year/:slug/` → `/2024/hello-world/`
 
+If an entry has no date, date placeholders remain as-is in the URL.
+
 ## Pages
 
-Standalone pages ("about", "contact") are simply entries in the `page` collection.
-The `page` collection uses different defaults: no listing page, no feed, no pagination, permalink `/:slug/`, sorted by weight.
+There are two ways to create pages:
+
+### Standalone pages (root-level)
+
+Markdown files placed directly in the content root directory (not inside any collection) are rendered as standalone pages. The slug is derived from the filename.
+
+```
+content/
+├── contact.md          # → /contact/
+├── privacy-policy.md   # → /privacy-policy/
+└── ...
+```
+
+Standalone pages support all front matter fields including `permalink` for custom URLs. They are included in the sitemap and respect `--drafts` and `--future` flags.
+
+### Collection pages
+
+For more control, use a `page` collection with its own `_collection.yaml`:
 
 `content/page/_collection.yaml`:
 
@@ -150,10 +170,11 @@ A page entry:
 ```yaml
 ---
 title: About
-layout: page
 weight: 1
 ---
 ```
+
+Collection pages support sorting by weight, custom permalink patterns, and all other collection features.
 
 ## Authors
 
@@ -170,7 +191,6 @@ Author bio in markdown.
 ```
 
 Author slugs (filenames without `.md`) are referenced from entry front matter.
-Author archive pages are generated automatically at `/authors/:slug/`.
 
 ## Taxonomies
 
@@ -180,13 +200,6 @@ Tags and categories are defined inline in entry front matter. Archive pages are 
 - `/tags/:slug/` — entries with a specific tag
 - `/categories/` — all categories
 - `/categories/:slug/` — entries with a specific category
-
-## Date-based archives
-
-Date-based archive pages are generated automatically for collections sorted by date:
-
-- `/:collection/2024/` — yearly archive
-- `/:collection/2024/01/` — monthly archive
 
 ## Navigation
 

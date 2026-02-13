@@ -33,11 +33,11 @@
 
 ## Priority 2: Documentation
 
-- [ ] `docs/configuration.md` — document all configuration options (site name, charset, locale, base URL, pagination, etc.)
-- [ ] `docs/front-matter.md` — document supported front matter fields (title, date, slug, draft, tags, categories, custom fields)
-- [ ] `docs/structure.md` — document expected project directory layout (`content/`, `templates/`, `public/`, `assets/`, `plugins/`, `config/`)
+- [x] `docs/configuration.md` — document all configuration options (site name, charset, locale, base URL, pagination, etc.) — covered in `docs/config.md`
+- [x] `docs/front-matter.md` — document supported front matter fields (title, date, slug, draft, tags, categories, custom fields) — covered in `docs/content.md`
+- [x] `docs/structure.md` — document expected project directory layout (`content/`, `templates/`, `public/`, `assets/`, `plugins/`, `config/`) — covered in `docs/content.md`
 - [ ] `docs/quickstart.md` — step-by-step guide: create first post, run dev server, build static site
-- [ ] Expand `docs/commands.md` — add flags, options, and usage examples for each command
+- [x] Expand `docs/commands.md` — add flags, options, and usage examples for each command
 - [ ] Expand `docs/plugins.md` — document plugin API, lifecycle hooks, registration, configuration
 - [ ] Expand `docs/template.md` — document available template variables, partials/includes, example templates
 

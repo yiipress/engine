@@ -50,14 +50,7 @@ params:
 
 ### Usage in templates
 
-All fields are accessible via `$config`:
-
-```php
-<title><?= $config['title'] ?></title>
-<meta name="description" content="<?= $config['description'] ?>">
-<link rel="canonical" href="<?= $config['base_url'] . $entry->getPermalink() ?>">
-<p>Follow us on Twitter: <?= $config['params']['twitter'] ?></p>
-```
+Currently, the entry template receives individual variables (`$siteTitle`, `$entryTitle`, `$content`, `$date`, `$author`, `$collection`). Full `$config` access in templates is planned for the theming system.
 
 ### Defaults and overrides
 
