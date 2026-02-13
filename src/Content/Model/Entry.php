@@ -24,7 +24,7 @@ final readonly class Entry
         public array $tags,
         public array $categories,
         public array $authors,
-        public string $summary,
+        private string $summary,
         public string $permalink,
         public string $layout,
         public int $weight,
@@ -38,6 +38,50 @@ final readonly class Entry
     public function sourceFilePath(): string
     {
         return $this->filePath;
+    }
+
+    private const int SUMMARY_LENGTH = 300;
+
+    public function summary(): string
+    {
+        if ($this->summary !== '') {
+            return $this->summary;
+        }
+
+        $body = $this->body();
+        if ($body === '') {
+            return '';
+        }
+
+        $plain = self::stripMarkdown($body);
+        if (mb_strlen($plain) <= self::SUMMARY_LENGTH) {
+            return $plain;
+        }
+
+        $truncated = mb_substr($plain, 0, self::SUMMARY_LENGTH);
+        $lastSpace = mb_strrpos($truncated, ' ');
+        if ($lastSpace !== false && $lastSpace > self::SUMMARY_LENGTH / 2) {
+            $truncated = mb_substr($truncated, 0, $lastSpace);
+        }
+
+        return $truncated . '…';
+    }
+
+    private static function stripMarkdown(string $markdown): string
+    {
+        $text = preg_replace('/```.*?```/s', '', $markdown);
+        $text = preg_replace('/^#{1,6}\s+/m', '', $text);
+        $text = preg_replace('/\*\*(.+?)\*\*/', '$1', $text);
+        $text = preg_replace('/\*(.+?)\*/', '$1', $text);
+        $text = preg_replace('/`(.+?)`/', '$1', $text);
+        $text = preg_replace('/!?\[([^\]]*)\]\([^)]+\)/', '$1', $text);
+        $text = preg_replace('/^\s*[-*+]\s+/m', '', $text);
+        $text = preg_replace('/^\s*\d+\.\s+/m', '', $text);
+        $text = preg_replace('/^>\s?/m', '', $text);
+        $text = preg_replace('/\n{2,}/', ' ', $text);
+        $text = preg_replace('/\n/', ' ', $text);
+
+        return trim(preg_replace('/\s+/', ' ', $text));
     }
 
     public function body(): string

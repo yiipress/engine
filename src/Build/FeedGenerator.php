@@ -160,8 +160,9 @@ final class FeedGenerator
             $xml->endElement();
         }
 
-        if ($entry->summary !== '') {
-            $xml->writeElement('summary', $entry->summary);
+        $summary = $entry->summary();
+        if ($summary !== '') {
+            $xml->writeElement('summary', $summary);
         }
 
         $html = $this->markdownRenderer->render($entry->body());
@@ -192,8 +193,9 @@ final class FeedGenerator
             $xml->writeElement('pubDate', $entry->date->format(DateTimeInterface::RSS));
         }
 
-        if ($entry->summary !== '') {
-            $xml->writeElement('description', $entry->summary);
+        $summary = $entry->summary();
+        if ($summary !== '') {
+            $xml->writeElement('description', $summary);
         }
 
         $html = $this->markdownRenderer->render($entry->body());

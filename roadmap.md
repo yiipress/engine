@@ -18,7 +18,7 @@
 - [ ] Tags and categories (taxonomies)
 - [x] Draft support (front matter `draft: true` flag, exclude from build by default)
 - [x] Entry date handling and chronological sorting
-- [ ] Entry summary/excerpt (auto-generated or manual via front matter)
+- [x] Entry summary/excerpt (auto-generated or manual via front matter)
 - [ ] Syntax highlighting for code blocks that is a plugin and is server-rendered
 - [ ] Permalink customization (per-entry via front matter, site-wide patterns)
 - [ ] Pagination configuration (entries per page, URL patterns)

@@ -36,7 +36,7 @@ final class EntryParserTest extends TestCase
         assertSame(['php', 'testing'], $entry->tags);
         assertSame(['tutorials'], $entry->categories);
         assertSame(['john-doe'], $entry->authors);
-        assertSame('A test post summary.', $entry->summary);
+        assertSame('A test post summary.', $entry->summary());
         assertFalse($entry->draft);
     }
 
