@@ -6,6 +6,7 @@ namespace App\Console;
 
 use App\Build\BuildCache;
 use App\Build\EntryRenderer;
+use App\Build\FeedGenerator;
 use App\Build\ParallelEntryWriter;
 use App\Content\Parser\ContentParser;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -114,6 +115,36 @@ final class BuildCommand extends Command
         $entryCount = $writer->write($parser, $siteConfig, $collections, $contentDir, $outputDir, $workerCount);
 
         $output->writeln("  Entries written: <comment>$entryCount</comment>");
+
+        $feedGenerator = new FeedGenerator();
+        $feedCount = 0;
+        foreach ($collections as $collectionName => $collection) {
+            if (!$collection->feed) {
+                continue;
+            }
+
+            $entries = iterator_to_array($parser->parseEntries($contentDir, $collectionName));
+
+            $feedDir = $outputDir . '/' . $collectionName;
+            if (!is_dir($feedDir)) {
+                mkdir($feedDir, 0o755, true);
+            }
+
+            file_put_contents(
+                $feedDir . '/feed.xml',
+                $feedGenerator->generateAtom($siteConfig, $collection, $entries),
+            );
+            file_put_contents(
+                $feedDir . '/rss.xml',
+                $feedGenerator->generateRss($siteConfig, $collection, $entries),
+            );
+            $feedCount++;
+        }
+
+        if ($feedCount > 0) {
+            $output->writeln("  Feeds generated: <comment>$feedCount</comment> (Atom + RSS)");
+        }
+
         $output->writeln('<info>Build complete.</info>');
 
         return ExitCode::OK;

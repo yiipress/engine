@@ -13,7 +13,7 @@
 
 ## Priority 1: Essential blog features
 
-- [ ] RSS/Atom feed generation. Content should be generated using same plugins as for HTML content
+- [x] RSS/Atom feed generation. Content should be generated using same plugins as for HTML content
 - [ ] Sitemap generation
 - [ ] Tags and categories (taxonomies)
 - [ ] Draft support (front matter `draft: true` flag, exclude from build by default)

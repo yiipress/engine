@@ -7,6 +7,7 @@ namespace App\Tests\Unit\Console;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertDirectoryExists;
+use function PHPUnit\Framework\assertFalse;
 use function PHPUnit\Framework\assertFileExists;
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
@@ -113,6 +114,61 @@ final class BuildCommandTest extends TestCase
         $html = file_get_contents($entryFile);
         assertStringContainsString('<!DOCTYPE html>', $html);
         assertStringContainsString('<p>This is the body of the test post.</p>', $html);
+    }
+
+    public function testBuildGeneratesFeedsForCollectionsWithFeedEnabled(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        $outputText = implode("\n", $output);
+
+        assertSame(0, $exitCode, "Build failed: $outputText");
+        assertStringContainsString('Feeds generated:', $outputText);
+
+        $atomFile = $this->outputDir . '/blog/feed.xml';
+        assertFileExists($atomFile);
+        $atom = file_get_contents($atomFile);
+        assertStringContainsString('<feed xmlns="http://www.w3.org/2005/Atom">', $atom);
+        assertStringContainsString('<title>Blog</title>', $atom);
+        assertStringContainsString('<title>Test Post</title>', $atom);
+        assertStringContainsString('<content type="html">', $atom);
+
+        $rssFile = $this->outputDir . '/blog/rss.xml';
+        assertFileExists($rssFile);
+        $rss = file_get_contents($rssFile);
+        assertStringContainsString('<rss version="2.0"', $rss);
+        assertStringContainsString('<title>Test Post</title>', $rss);
+        assertStringContainsString('<content:encoded>', $rss);
+    }
+
+    public function testBuildSkipsFeedForCollectionsWithFeedDisabled(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        assertSame(0, $exitCode);
+
+        $pageFeed = $this->outputDir . '/page/feed.xml';
+        assertFalse(is_file($pageFeed), 'Feed should not be generated for collections with feed: false');
     }
 
     public function testBuildFailsWithMissingContentDir(): void
