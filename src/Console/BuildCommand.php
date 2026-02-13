@@ -8,6 +8,7 @@ use App\Build\BuildCache;
 use App\Build\EntryRenderer;
 use App\Build\FeedGenerator;
 use App\Build\ParallelEntryWriter;
+use App\Build\SitemapGenerator;
 use App\Content\Parser\ContentParser;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -116,14 +117,19 @@ final class BuildCommand extends Command
 
         $output->writeln("  Entries written: <comment>$entryCount</comment>");
 
+        $entriesByCollection = [];
+        foreach ($collections as $collectionName => $collection) {
+            $entriesByCollection[$collectionName] = iterator_to_array(
+                $parser->parseEntries($contentDir, $collectionName),
+            );
+        }
+
         $feedGenerator = new FeedGenerator();
         $feedCount = 0;
         foreach ($collections as $collectionName => $collection) {
             if (!$collection->feed) {
                 continue;
             }
-
-            $entries = iterator_to_array($parser->parseEntries($contentDir, $collectionName));
 
             $feedDir = $outputDir . '/' . $collectionName;
             if (!is_dir($feedDir)) {
@@ -132,11 +138,11 @@ final class BuildCommand extends Command
 
             file_put_contents(
                 $feedDir . '/feed.xml',
-                $feedGenerator->generateAtom($siteConfig, $collection, $entries),
+                $feedGenerator->generateAtom($siteConfig, $collection, $entriesByCollection[$collectionName]),
             );
             file_put_contents(
                 $feedDir . '/rss.xml',
-                $feedGenerator->generateRss($siteConfig, $collection, $entries),
+                $feedGenerator->generateRss($siteConfig, $collection, $entriesByCollection[$collectionName]),
             );
             $feedCount++;
         }
@@ -144,6 +150,10 @@ final class BuildCommand extends Command
         if ($feedCount > 0) {
             $output->writeln("  Feeds generated: <comment>$feedCount</comment> (Atom + RSS)");
         }
+
+        $sitemapGenerator = new SitemapGenerator();
+        $sitemapGenerator->generate($siteConfig, $collections, $entriesByCollection, $outputDir);
+        $output->writeln('  Sitemap generated.');
 
         $output->writeln('<info>Build complete.</info>');
 

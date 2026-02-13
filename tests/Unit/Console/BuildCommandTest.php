@@ -151,6 +151,33 @@ final class BuildCommandTest extends TestCase
         assertStringContainsString('<content:encoded>', $rss);
     }
 
+    public function testBuildGeneratesSitemap(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        $outputText = implode("\n", $output);
+
+        assertSame(0, $exitCode, "Build failed: $outputText");
+        assertStringContainsString('Sitemap generated.', $outputText);
+
+        $sitemapFile = $this->outputDir . '/sitemap.xml';
+        assertFileExists($sitemapFile);
+
+        $xml = file_get_contents($sitemapFile);
+        assertStringContainsString('https://test.example.com/', $xml);
+        assertStringContainsString('https://test.example.com/blog/test-post/', $xml);
+    }
+
     public function testBuildSkipsFeedForCollectionsWithFeedDisabled(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';

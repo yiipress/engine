@@ -24,8 +24,9 @@ The command:
 3. Converts markdown to HTML via MD4C and applies the entry template.
 4. Writes each entry as `index.html` at its resolved permalink path.
 5. Generates Atom (`feed.xml`) and RSS 2.0 (`rss.xml`) feeds for each collection with `feed: true`.
+6. Generates `sitemap.xml` containing all entry URLs, collection listing URLs, and the home page.
 
-With `--workers=N` (N > 1), entry rendering and writing is parallelized across N forked processes. Feed generation runs after entry writing in the parent process.
+With `--workers=N` (N > 1), entry rendering and writing is parallelized across N forked processes. Feeds and sitemap are generated after entry writing in the parent process.
 
 ## `yii serve`
 
