@@ -9,8 +9,10 @@ use App\Build\EntryRenderer;
 use App\Build\FeedGenerator;
 use App\Build\ParallelEntryWriter;
 use App\Build\SitemapGenerator;
+use App\Build\TaxonomyPageWriter;
 use App\Content\EntrySorter;
 use App\Content\Parser\ContentParser;
+use App\Content\TaxonomyCollector;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -175,6 +177,14 @@ final class BuildCommand extends Command
         $sitemapGenerator = new SitemapGenerator();
         $sitemapGenerator->generate($siteConfig, $collections, $entriesByCollection, $outputDir);
         $output->writeln('  Sitemap generated.');
+
+        if ($siteConfig->taxonomies !== []) {
+            $allEntries = array_merge(...array_values($entriesByCollection));
+            $taxonomyData = TaxonomyCollector::collect($siteConfig->taxonomies, $allEntries);
+            $taxonomyWriter = new TaxonomyPageWriter();
+            $taxonomyPageCount = $taxonomyWriter->write($siteConfig, $taxonomyData, $collections, $outputDir);
+            $output->writeln("  Taxonomy pages: <comment>$taxonomyPageCount</comment>");
+        }
 
         $output->writeln('<info>Build complete.</info>');
 

@@ -335,6 +335,41 @@ final class BuildCommandTest extends TestCase
         assertStringContainsString('Future Post', $atom);
     }
 
+    public function testBuildGeneratesTaxonomyPages(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        $outputText = implode("\n", $output);
+
+        assertSame(0, $exitCode, "Build failed: $outputText");
+        assertStringContainsString('Taxonomy pages:', $outputText);
+
+        $tagsIndex = $this->outputDir . '/tags/index.html';
+        assertFileExists($tagsIndex);
+        $tagsHtml = file_get_contents($tagsIndex);
+        assertStringContainsString('Tags', $tagsHtml);
+        assertStringContainsString('php', $tagsHtml);
+
+        $phpTagPage = $this->outputDir . '/tags/php/index.html';
+        assertFileExists($phpTagPage);
+        $phpHtml = file_get_contents($phpTagPage);
+        assertStringContainsString('php', $phpHtml);
+        assertStringContainsString('Test Post', $phpHtml);
+
+        $categoriesIndex = $this->outputDir . '/categories/index.html';
+        assertFileExists($categoriesIndex);
+    }
+
     public function testBuildFailsWithMissingContentDir(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';
