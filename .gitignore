@@ -27,3 +27,6 @@ c3.php
 
 # Output directory
 output
+
+# Benchmark generated data
+benchmarks/data

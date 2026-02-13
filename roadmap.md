@@ -8,7 +8,7 @@
 - [x] Consider that as less as possible should be loaded into memory at any time
 - [ ] Consider using fibers for parallel processing
 - [ ] Caching layer for parsed markdown/front matter between builds
-- [ ] Benchmarking suite (e.g., generate 10k entries) to track performance regressions
+- [x] Benchmarking suite (e.g., generate 10k entries) to track performance regressions
 
 ## Priority 1: Essential blog features
 

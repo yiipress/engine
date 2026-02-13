@@ -1,0 +1,12 @@
+{
+    "runner.bootstrap": "vendor/autoload.php",
+    "runner.path": "benchmarks",
+    "runner.retry_threshold": 5,
+    "report.generators": {
+        "default": {
+            "generator": "component",
+            "component": "table_aggregate",
+            "title": "YiiPress Benchmarks"
+        }
+    }
+}

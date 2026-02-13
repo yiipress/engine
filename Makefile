@@ -101,6 +101,16 @@ composer-dependency-analyser: ## Run Composer Dependency Analyser
 	$(DOCKER_COMPOSE_DEV) run --rm app ./vendor/bin/composer-dependency-analyser --config=composer-dependency-analyser.php $(CLI_ARGS)
 endif
 
+ifeq ($(PRIMARY_GOAL),bench-generate)
+bench-generate: ## Generate benchmark data (10k entries)
+	$(DOCKER_COMPOSE_DEV) run --rm app php benchmarks/generate_content.php $(CLI_ARGS)
+endif
+
+ifeq ($(PRIMARY_GOAL),bench)
+bench: ## Run benchmarks
+	$(DOCKER_COMPOSE_DEV) run --rm app ./vendor/bin/phpbench run $(CLI_ARGS)
+endif
+
 #
 # Production
 #
