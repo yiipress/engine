@@ -5,7 +5,7 @@
 - [x] Reevaluate content structure to support all features planned in the roadmap
 - [x] Draft architecture in `docs/architecture.md`
 - [x] Implement super-fast parsing of each content file type
-- [ ] Consider that as less as possible should be loaded into memory at any time
+- [x] Consider that as less as possible should be loaded into memory at any time
 - [ ] Consider using fibers for parallel processing
 - [ ] Caching layer for parsed markdown/front matter between builds
 - [ ] Benchmarking suite (e.g., generate 10k entries) to track performance regressions

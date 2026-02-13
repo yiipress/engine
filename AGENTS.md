@@ -8,3 +8,11 @@
 - For each feature add documentation.
 - Do not care about running locally. Consider Docker-only environment.
 - Use features of PHP version specified in `composer.json`.
+
+
+# Running commands and testing website
+
+Consider current DEV_PORT from `.env` file when testing website.
+
+Use `make` commands to run commands and test website.
+Do not try to run docker or php or composer commands directly.

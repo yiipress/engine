@@ -81,6 +81,32 @@ final class ContentParser
     /**
      * @return Generator<Entry>
      */
+    public function parseAllEntries(string $contentDir): Generator
+    {
+        $iterator = new FilesystemIterator($contentDir, FilesystemIterator::SKIP_DOTS);
+        foreach ($iterator as $item) {
+            /** @var SplFileInfo $item */
+            if (!$item->isDir()) {
+                continue;
+            }
+
+            $name = $item->getFilename();
+            if ($name === 'assets' || $name === 'authors') {
+                continue;
+            }
+
+            $configPath = $item->getPathname() . '/_collection.yaml';
+            if (!file_exists($configPath)) {
+                continue;
+            }
+
+            yield from $this->parseEntries($contentDir, $name);
+        }
+    }
+
+    /**
+     * @return Generator<Entry>
+     */
     public function parseEntries(string $contentDir, string $collectionName): Generator
     {
         $collectionDir = $contentDir . '/' . $collectionName;
@@ -101,16 +127,15 @@ final class ContentParser
     }
 
     /**
-     * @return array<string, Author>
+     * @return Generator<string, Author>
      */
-    public function parseAuthors(string $contentDir): array
+    public function parseAuthors(string $contentDir): Generator
     {
         $authorsDir = $contentDir . '/authors';
         if (!is_dir($authorsDir)) {
-            return [];
+            return;
         }
 
-        $authors = [];
         $iterator = new FilesystemIterator($authorsDir, FilesystemIterator::SKIP_DOTS);
         foreach ($iterator as $item) {
             /** @var SplFileInfo $item */
@@ -123,9 +148,7 @@ final class ContentParser
             }
 
             $author = $this->authorParser->parse($item->getPathname());
-            $authors[$author->slug] = $author;
+            yield $author->slug => $author;
         }
-
-        return $authors;
     }
 }

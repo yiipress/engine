@@ -67,7 +67,7 @@ Prefer PHP built-ins and small, focused C extensions over large PHP libraries:
 - **YAML parsing** — use PHP's `yaml_parse()` (PECL yaml extension) instead of pure-PHP YAML parsers.
   The `yaml_parse()` function wraps libyaml (C) and is significantly faster.
   Front matter parsing is called once per entry, so this is on the hot path for large sites.
-- **Markdown-to-HTML** — use [MD4C](https://github.com/mity/md4c) via FFI (`FFI::cdef`) or a PECL extension
+- **Markdown-to-HTML** — use [MD4C](https://github.com/mity/md4c) via PECL `ext-md4c` (`md4c_toHtml()`)
   instead of pure-PHP parsers like Parsedown. MD4C is a C library that is an order of magnitude faster.  
 - **Templating** — use plain PHP templates. PHP itself is a template language.  
   YiiPress uses Yii3 view renderer, which renders plain PHP files with no compilation step.
@@ -143,6 +143,13 @@ Parsing is file-level and stateless. Each file is parsed independently.
 - Consider fibers to parse files concurrently when I/O bound.
 - Consider using FFI or PECL extensions to parse YAML front matter faster.
 
+**Memory strategy:**
+
+- `FrontMatterParser` reads only front matter bytes via `fgets()` line-by-line. The markdown body is never loaded into memory during parsing.
+- `Entry` and `Author` store `bodyOffset` and `bodyLength` instead of the body string. The `body()` method reads from disk on demand via `fseek()`/`fread()`.
+- `parseEntries()`, `parseAllEntries()`, and `parseAuthors()` return `Generator` instances. Entries and authors are yielded one at a time, never collected into arrays by the parser. Consumers decide whether to collect or stream.
+- YAML config files (`config.yaml`, `_collection.yaml`, `navigation.yaml`) are small and loaded fully — this is intentional since their size is negligible.
+
 ### Stage 2: Index
 
 Builds the in-memory site model from parsed data.
@@ -180,7 +187,7 @@ Converts the indexed site model into output pages.
   - Redirect pages (for entries with `redirect_to`)
   - Error pages (404)
 
-- **MarkdownRenderer** — converts raw markdown to HTML via MD4C (FFI or PECL extension), applying plugins before and after conversion
+- **MarkdownRenderer** — converts raw markdown to HTML via MD4C (PECL `ext-md4c`), applying plugins before and after conversion
 - **TemplateRenderer** — renders plain PHP templates via Yii view component, resolving template by type and collection name. No intermediate template language — PHP is the template language
 
 Render order:

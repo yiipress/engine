@@ -17,7 +17,8 @@ RUN install-php-extensions \
     xml \
     xmlwriter \
     simplexml \
-    yaml
+    yaml \
+    md4c
 
 #
 # Development

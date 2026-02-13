@@ -56,10 +56,17 @@ final class ContentParserTest extends TestCase
 
     public function testParseAuthors(): void
     {
-        $authors = $this->parser->parseAuthors($this->dataDir);
+        $authors = iterator_to_array($this->parser->parseAuthors($this->dataDir));
 
         assertCount(1, $authors);
         assertArrayHasKey('john-doe', $authors);
         assertSame('John Doe', $authors['john-doe']->title);
+    }
+
+    public function testParseAllEntries(): void
+    {
+        $entries = iterator_to_array($this->parser->parseAllEntries($this->dataDir), false);
+
+        assertCount(3, $entries);
     }
 }
