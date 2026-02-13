@@ -6,3 +6,5 @@
 - For each piece of code add a test using phpunit.
 - For each significant feature add benchmark using phpbench.
 - For each feature add documentation.
+- Do not care about running locally. Consider Docker-only environment.
+- Use features of PHP version specified in `composer.json`.
