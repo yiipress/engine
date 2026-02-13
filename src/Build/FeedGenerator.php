@@ -14,11 +14,11 @@ use XMLWriter;
 
 final class FeedGenerator
 {
-    private MarkdownRenderer $markdownRenderer;
+    private ?MarkdownRenderer $markdownRendererInstance = null;
 
-    public function __construct()
+    private function markdownRenderer(SiteConfig $siteConfig): MarkdownRenderer
     {
-        $this->markdownRenderer = new MarkdownRenderer();
+        return $this->markdownRendererInstance ??= new MarkdownRenderer($siteConfig->markdown);
     }
 
     /**
@@ -166,7 +166,7 @@ final class FeedGenerator
             $xml->writeElement('summary', $summary);
         }
 
-        $html = $this->markdownRenderer->render($entry->body());
+        $html = $this->markdownRenderer($siteConfig)->render($entry->body());
         if ($html !== '') {
             $xml->startElement('content');
             $xml->writeAttribute('type', 'html');
@@ -199,7 +199,7 @@ final class FeedGenerator
             $xml->writeElement('description', $summary);
         }
 
-        $html = $this->markdownRenderer->render($entry->body());
+        $html = $this->markdownRenderer($siteConfig)->render($entry->body());
         if ($html !== '') {
             $xml->writeElement('content:encoded', $html);
         }

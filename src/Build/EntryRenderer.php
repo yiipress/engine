@@ -6,6 +6,7 @@ namespace App\Build;
 
 use App\Content\CrossReferenceResolver;
 use App\Content\Model\Entry;
+use App\Content\Model\MarkdownConfig;
 use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
 use App\Render\MarkdownRenderer;
@@ -14,13 +15,22 @@ final class EntryRenderer
 {
     public const string ENTRY_TEMPLATE = __DIR__ . '/../Render/Template/entry.php';
 
-    private MarkdownRenderer $markdownRenderer;
+    private ?MarkdownRenderer $markdownRenderer = null;
+    private ?MarkdownConfig $lastConfig = null;
 
     public function __construct(
         private ?BuildCache $cache = null,
         private string $contentDir = '',
-    ) {
-        $this->markdownRenderer = new MarkdownRenderer();
+    ) {}
+
+    private function markdownRenderer(MarkdownConfig $config): MarkdownRenderer
+    {
+        if ($this->markdownRenderer === null || $this->lastConfig !== $config) {
+            $this->markdownRenderer = new MarkdownRenderer($config);
+            $this->lastConfig = $config;
+        }
+
+        return $this->markdownRenderer;
     }
 
     public function render(
@@ -40,7 +50,7 @@ final class EntryRenderer
         if ($crossRefResolver !== null) {
             $body = $crossRefResolver->withCurrentDir($this->resolveContentDir($entry))->resolve($body);
         }
-        $content = $this->markdownRenderer->render($body);
+        $content = $this->markdownRenderer($siteConfig->markdown)->render($body);
         $html = $this->renderTemplate($siteConfig, $entry, $content, $navigation);
 
         $this->cache?->set($entry->sourceFilePath(), $html);

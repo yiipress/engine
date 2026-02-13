@@ -22,5 +22,6 @@ final readonly class SiteConfig
         public string $permalink,
         public array $taxonomies,
         public array $params,
+        public MarkdownConfig $markdown = new MarkdownConfig(),
     ) {}
 }

@@ -12,17 +12,14 @@ use App\Content\Model\SiteConfig;
 use App\Content\PermalinkResolver;
 use App\Render\MarkdownRenderer;
 
+use function dirname;
+
 final class AuthorPageWriter
 {
     private const string INDEX_TEMPLATE = __DIR__ . '/../Render/Template/author_index.php';
     private const string AUTHOR_TEMPLATE = __DIR__ . '/../Render/Template/author.php';
 
-    private MarkdownRenderer $markdownRenderer;
-
-    public function __construct()
-    {
-        $this->markdownRenderer = new MarkdownRenderer();
-    }
+    private ?MarkdownRenderer $markdownRenderer = null;
 
     /**
      * @param array<string, Author> $authors
@@ -106,6 +103,9 @@ final class AuthorPageWriter
         $authorEmail = $author->email;
         $authorUrl = $author->url;
         $authorAvatar = $author->avatar;
+        if ($this->markdownRenderer === null) {
+            $this->markdownRenderer = new MarkdownRenderer($siteConfig->markdown);
+        }
         $authorBio = $this->markdownRenderer->render($author->body());
 
         $entryData = [];

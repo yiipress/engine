@@ -29,7 +29,7 @@
 - [x] Author support (author metadata in front matter, author pages/archives)
 - [x] Date-based archive pages (yearly, monthly)
 - [x] Cross-references / internal linking helpers (shorthand syntax to link between entries, prevents broken links on permalink changes)
-- [ ] Markdown extensions configuration (enable/disable footnotes, definition lists, strikethrough, tables, etc.)
+- [x] Markdown extensions configuration (enable/disable footnotes, definition lists, strikethrough, tables, etc.)
 
 ## Priority 2: Documentation
 

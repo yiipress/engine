@@ -47,10 +47,42 @@ params:
 - **permalink** — default permalink pattern (overridden by collection or entry)
 - **taxonomies** — list of enabled taxonomy types
 - **params** — arbitrary key-value pairs for use in templates
+- **markdown** — markdown extensions configuration (see below)
 
 ### Usage in templates
 
 Currently, the entry template receives individual variables (`$siteTitle`, `$entryTitle`, `$content`, `$date`, `$author`, `$collection`). Full `$config` access in templates is planned for the theming system.
+
+### Markdown extensions
+
+The `markdown` section controls which markdown extensions are enabled. All options are boolean.
+
+```yaml
+markdown:
+  tables: true
+  strikethrough: true
+  tasklists: true
+  autolinks: true
+  collapse_whitespace: false
+  latex_math: false
+  wikilinks: false
+  underline: false
+  html_blocks: true
+  html_spans: true
+```
+
+- **tables** — GitHub-style tables (default: `true`)
+- **strikethrough** — strikethrough with `~text~` (default: `true`)
+- **tasklists** — GitHub-style task lists (default: `true`)
+- **autolinks** — permissive URL autolinks without `<>` (default: `true`)
+- **collapse_whitespace** — collapse non-trivial whitespace into a single space (default: `false`)
+- **latex_math** — LaTeX math spans `$...$` and `$$...$$` (default: `false`)
+- **wikilinks** — wiki-style links `[[link]]` (default: `false`)
+- **underline** — underscore `_` denotes underline instead of emphasis (default: `false`)
+- **html_blocks** — allow raw HTML blocks (default: `true`)
+- **html_spans** — allow inline raw HTML (default: `true`)
+
+If the `markdown` section is omitted, all defaults apply.
 
 ### Defaults and overrides
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Content\Parser;
 
+use App\Content\Model\MarkdownConfig;
 use App\Content\Model\SiteConfig;
 use RuntimeException;
 
@@ -40,6 +41,30 @@ final class SiteConfigParser
             params: isset($data['params']) && is_array($data['params'])
                 ? $data['params']
                 : [],
+            markdown: self::parseMarkdownConfig($data['markdown'] ?? []),
+        );
+    }
+
+    /**
+     * @param mixed $data
+     */
+    private static function parseMarkdownConfig(mixed $data): MarkdownConfig
+    {
+        if (!is_array($data)) {
+            return new MarkdownConfig();
+        }
+
+        return new MarkdownConfig(
+            tables: (bool) ($data['tables'] ?? true),
+            strikethrough: (bool) ($data['strikethrough'] ?? true),
+            tasklists: (bool) ($data['tasklists'] ?? true),
+            autolinks: (bool) ($data['autolinks'] ?? true),
+            collapseWhitespace: (bool) ($data['collapse_whitespace'] ?? false),
+            latexMath: (bool) ($data['latex_math'] ?? false),
+            wikilinks: (bool) ($data['wikilinks'] ?? false),
+            underline: (bool) ($data['underline'] ?? false),
+            htmlBlocks: (bool) ($data['html_blocks'] ?? true),
+            htmlSpans: (bool) ($data['html_spans'] ?? true),
         );
     }
 }
