@@ -398,6 +398,47 @@ final class BuildCommandTest extends TestCase
         assertFileExists($categoriesIndex);
     }
 
+    public function testBuildGeneratesDateArchivePages(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        $outputText = implode("\n", $output);
+
+        assertSame(0, $exitCode, "Build failed: $outputText");
+        assertStringContainsString('Archive pages:', $outputText);
+
+        $yearlyPage = $this->outputDir . '/blog/2024/index.html';
+        assertFileExists($yearlyPage);
+        $yearlyHtml = file_get_contents($yearlyPage);
+        assertStringContainsString('Blog', $yearlyHtml);
+        assertStringContainsString('2024', $yearlyHtml);
+        assertStringContainsString('Test Post', $yearlyHtml);
+        assertStringContainsString('Second Post', $yearlyHtml);
+
+        $monthlyPage = $this->outputDir . '/blog/2024/03/index.html';
+        assertFileExists($monthlyPage);
+        $monthlyHtml = file_get_contents($monthlyPage);
+        assertStringContainsString('March', $monthlyHtml);
+        assertStringContainsString('2024', $monthlyHtml);
+        assertStringContainsString('Test Post', $monthlyHtml);
+
+        $monthlyPage2 = $this->outputDir . '/blog/2024/05/index.html';
+        assertFileExists($monthlyPage2);
+        $monthlyHtml2 = file_get_contents($monthlyPage2);
+        assertStringContainsString('May', $monthlyHtml2);
+        assertStringContainsString('Second Post', $monthlyHtml2);
+    }
+
     public function testBuildGeneratesAuthorPages(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';

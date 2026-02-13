@@ -199,6 +199,15 @@ Author pages are generated automatically:
 
 Author pages are included in the sitemap.
 
+## Date-based archives
+
+For collections sorted by date (`sort_by: date`), date-based archive pages are generated automatically:
+
+- `/:collection/:year/` — yearly archive listing all entries for that year, with links to monthly archives
+- `/:collection/:year/:month/` — monthly archive listing entries for that month, with a back-link to the yearly archive
+
+For example, a blog collection produces `/blog/2024/`, `/blog/2024/03/`, `/blog/2024/05/`, etc.
+
 ## Taxonomies
 
 Tags and categories are defined inline in entry front matter. Archive pages are generated automatically:

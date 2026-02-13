@@ -7,6 +7,7 @@ namespace App\Console;
 use App\Build\AuthorPageWriter;
 use App\Build\BuildCache;
 use App\Build\CollectionListingWriter;
+use App\Build\DateArchiveWriter;
 use App\Build\EntryRenderer;
 use App\Build\FeedGenerator;
 use App\Build\ParallelEntryWriter;
@@ -214,6 +215,24 @@ final class BuildCommand extends Command
         }
         if ($listingPageCount > 0) {
             $output->writeln("  Listing pages: <comment>$listingPageCount</comment>");
+        }
+
+        $archiveWriter = new DateArchiveWriter();
+        $archivePageCount = 0;
+        foreach ($collections as $collectionName => $collection) {
+            if ($collection->sortBy !== 'date') {
+                continue;
+            }
+            $archivePageCount += $archiveWriter->write(
+                $siteConfig,
+                $collection,
+                $entriesByCollection[$collectionName] ?? [],
+                $outputDir,
+                $navigation,
+            );
+        }
+        if ($archivePageCount > 0) {
+            $output->writeln("  Archive pages: <comment>$archivePageCount</comment>");
         }
 
         $sitemapGenerator = new SitemapGenerator();
