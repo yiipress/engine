@@ -16,7 +16,7 @@
 - [x] RSS/Atom feed generation. Content should be generated using same plugins as for HTML content
 - [x] Sitemap generation
 - [ ] Tags and categories (taxonomies)
-- [ ] Draft support (front matter `draft: true` flag, exclude from build by default)
+- [x] Draft support (front matter `draft: true` flag, exclude from build by default)
 - [ ] Entry date handling and chronological sorting
 - [ ] Entry summary/excerpt (auto-generated or manual via front matter)
 - [ ] Syntax highlighting for code blocks that is a plugin and is server-rendered

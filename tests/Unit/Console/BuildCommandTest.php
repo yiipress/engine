@@ -11,6 +11,7 @@ use function PHPUnit\Framework\assertFalse;
 use function PHPUnit\Framework\assertFileExists;
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
+use function PHPUnit\Framework\assertStringNotContainsString;
 
 final class BuildCommandTest extends TestCase
 {
@@ -196,6 +197,62 @@ final class BuildCommandTest extends TestCase
 
         $pageFeed = $this->outputDir . '/page/feed.xml';
         assertFalse(is_file($pageFeed), 'Feed should not be generated for collections with feed: false');
+    }
+
+    public function testBuildExcludesDraftEntriesByDefault(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        assertSame(0, $exitCode);
+
+        $draftFile = $this->outputDir . '/blog/custom-slug/index.html';
+        assertFalse(is_file($draftFile), 'Draft entry should not be built by default');
+
+        $publishedFile = $this->outputDir . '/blog/test-post/index.html';
+        assertFileExists($publishedFile);
+
+        $sitemap = file_get_contents($this->outputDir . '/sitemap.xml');
+        assertStringNotContainsString('custom-slug', $sitemap);
+
+        $atom = file_get_contents($this->outputDir . '/blog/feed.xml');
+        assertStringNotContainsString('No Date Post', $atom);
+    }
+
+    public function testBuildIncludesDraftsWithFlag(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' --drafts'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        assertSame(0, $exitCode);
+
+        $draftFile = $this->outputDir . '/blog/custom-slug/index.html';
+        assertFileExists($draftFile);
+
+        $sitemap = file_get_contents($this->outputDir . '/sitemap.xml');
+        assertStringContainsString('custom-slug', $sitemap);
+
+        $atom = file_get_contents($this->outputDir . '/blog/feed.xml');
+        assertStringContainsString('No Date Post', $atom);
     }
 
     public function testBuildFailsWithMissingContentDir(): void

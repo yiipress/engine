@@ -29,8 +29,9 @@ final class ParallelEntryWriter
         string $contentDir,
         string $outputDir,
         int $workerCount,
+        bool $includeDrafts = false,
     ): int {
-        $tasks = $this->collectTasks($parser, $collections, $contentDir, $outputDir);
+        $tasks = $this->collectTasks($parser, $collections, $contentDir, $outputDir, $includeDrafts);
 
         if ($tasks === []) {
             return 0;
@@ -53,11 +54,16 @@ final class ParallelEntryWriter
         array $collections,
         string $contentDir,
         string $outputDir,
+        bool $includeDrafts,
     ): array {
         $tasks = [];
 
         foreach ($collections as $collectionName => $collection) {
             foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
+                if (!$includeDrafts && $entry->draft) {
+                    continue;
+                }
+
                 $permalink = $entry->permalink !== ''
                     ? $entry->permalink
                     : $this->resolvePermalink($collection->permalink, $collectionName, $entry->slug);

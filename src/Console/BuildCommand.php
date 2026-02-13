@@ -61,6 +61,12 @@ final class BuildCommand extends Command
             InputOption::VALUE_NONE,
             'Disable build cache',
         );
+        $this->addOption(
+            'drafts',
+            null,
+            InputOption::VALUE_NONE,
+            'Include draft entries in the build',
+        );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -79,6 +85,7 @@ final class BuildCommand extends Command
         $workersOption = $input->getOption('workers');
         $workerCount = max(1, (int) $workersOption);
         $noCache = (bool) $input->getOption('no-cache');
+        $includeDrafts = (bool) $input->getOption('drafts');
 
         if (!is_dir($contentDir)) {
             $output->writeln("<error>Content directory not found: $contentDir</error>");
@@ -113,15 +120,17 @@ final class BuildCommand extends Command
         }
 
         $writer = new ParallelEntryWriter($cache);
-        $entryCount = $writer->write($parser, $siteConfig, $collections, $contentDir, $outputDir, $workerCount);
+        $entryCount = $writer->write($parser, $siteConfig, $collections, $contentDir, $outputDir, $workerCount, $includeDrafts);
 
         $output->writeln("  Entries written: <comment>$entryCount</comment>");
 
         $entriesByCollection = [];
         foreach ($collections as $collectionName => $collection) {
-            $entriesByCollection[$collectionName] = iterator_to_array(
-                $parser->parseEntries($contentDir, $collectionName),
-            );
+            $entries = iterator_to_array($parser->parseEntries($contentDir, $collectionName));
+            if (!$includeDrafts) {
+                $entries = array_values(array_filter($entries, static fn ($e) => !$e->draft));
+            }
+            $entriesByCollection[$collectionName] = $entries;
         }
 
         $feedGenerator = new FeedGenerator();
