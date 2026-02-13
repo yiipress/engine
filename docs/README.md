@@ -1,5 +1,6 @@
 # YiiPress engine documentation
 
+- [Quickstart](quickstart.md)
 - [Architecture](architecture.md)
 - [Configuration](config.md)
 - [Content](content.md)
