@@ -264,6 +264,15 @@ src/
 │   ├── BuildCommand.php          # `yiipress build`
 │   └── ServeCommand.php          # `yiipress serve`
 ├── Content/
+│   ├── Model/
+│   │   ├── SiteConfig.php
+│   │   ├── Collection.php
+│   │   ├── Entry.php
+│   │   ├── Author.php
+│   │   ├── Taxonomy.php
+│   │   ├── TaxonomyTerm.php
+│   │   ├── Navigation.php
+│   │   └── Page.php
 │   ├── Parser/
 │   │   ├── ContentParser.php     # Orchestrates all parsing
 │   │   ├── FrontMatterParser.php
@@ -273,15 +282,6 @@ src/
 │   │   └── FilenameParser.php
 │   ├── SiteIndex.php             # Indexed site model
 │   └── SiteIndexBuilder.php      # Builds the index from parsed data
-├── Model/
-│   ├── SiteConfig.php
-│   ├── Collection.php
-│   ├── Entry.php
-│   ├── Author.php
-│   ├── Taxonomy.php
-│   ├── TaxonomyTerm.php
-│   ├── Navigation.php
-│   └── Page.php
 ├── Plugin/
 │   ├── ContentPlugin.php         # Plugin interface
 │   └── PluginRegistry.php        # Loads and orders plugins

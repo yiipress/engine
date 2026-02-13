@@ -1,0 +1,14 @@
+title: "Test Site"
+description: "A test site"
+base_url: "https://test.example.com"
+language: "en"
+charset: "UTF-8"
+default_author: "john-doe"
+date_format: "F j, Y"
+entries_per_page: 5
+permalink: "/:collection/:slug/"
+taxonomies:
+  - tags
+  - categories
+params:
+  github_url: "https://github.com/test"

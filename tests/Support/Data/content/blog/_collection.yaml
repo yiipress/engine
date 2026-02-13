@@ -1,0 +1,8 @@
+title: "Blog"
+description: "Latest posts"
+permalink: "/blog/:slug/"
+sort_by: "date"
+sort_order: "desc"
+entries_per_page: 10
+feed: true
+listing: true

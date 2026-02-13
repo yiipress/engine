@@ -1,0 +1,13 @@
+main:
+  - title: "Home"
+    url: "/"
+  - title: "Blog"
+    url: "/blog/"
+  - title: "Docs"
+    url: "/docs/"
+    children:
+      - title: "Getting Started"
+        url: "/docs/getting-started/"
+footer:
+  - title: "Privacy"
+    url: "/privacy/"

@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Tests\Unit;
 
 use App\Environment;
-use Codeception\Test\Unit;
+use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;
 
-final class EnvironmentTest extends Unit
+final class EnvironmentTest extends TestCase
 {
-    protected function _before(): void
+    protected function setUp(): void
     {
         Environment::prepare();
     }

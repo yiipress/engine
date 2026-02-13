@@ -82,18 +82,13 @@ endif
 #
 
 ifeq ($(PRIMARY_GOAL),test)
-test:
-	$(DOCKER_COMPOSE_TEST) run --rm app ./vendor/bin/codecept run $(CLI_ARGS)
+test: ## Run tests
+	$(DOCKER_COMPOSE_TEST) run --rm app ./vendor/bin/phpunit $(CLI_ARGS)
 endif
 
 ifeq ($(PRIMARY_GOAL),test-coverage)
-test-coverage:
-	$(DOCKER_COMPOSE_TEST) run --rm app ./vendor/bin/codecept run --coverage --coverage-html --disable-coverage-php
-endif
-
-ifeq ($(PRIMARY_GOAL),codecept)
-codecept: ## Run Codeception
-	$(DOCKER_COMPOSE_TEST) run --rm app ./vendor/bin/codecept $(CLI_ARGS)
+test-coverage: ## Run tests with coverage
+	$(DOCKER_COMPOSE_TEST) run --rm app ./vendor/bin/phpunit --coverage-html runtime/coverage $(CLI_ARGS)
 endif
 
 ifeq ($(PRIMARY_GOAL),psalm)
