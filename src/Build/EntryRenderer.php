@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Build;
 
+use App\Content\CrossReferenceResolver;
 use App\Content\Model\Entry;
 use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
@@ -17,12 +18,17 @@ final class EntryRenderer
 
     public function __construct(
         private ?BuildCache $cache = null,
+        private string $contentDir = '',
     ) {
         $this->markdownRenderer = new MarkdownRenderer();
     }
 
-    public function render(SiteConfig $siteConfig, Entry $entry, ?Navigation $navigation = null): string
-    {
+    public function render(
+        SiteConfig $siteConfig,
+        Entry $entry,
+        ?Navigation $navigation = null,
+        ?CrossReferenceResolver $crossRefResolver = null,
+    ): string {
         if ($this->cache !== null) {
             $cached = $this->cache->get($entry->sourceFilePath());
             if ($cached !== null) {
@@ -30,12 +36,23 @@ final class EntryRenderer
             }
         }
 
-        $content = $this->markdownRenderer->render($entry->body());
+        $body = $entry->body();
+        if ($crossRefResolver !== null) {
+            $body = $crossRefResolver->withCurrentDir($this->resolveContentDir($entry))->resolve($body);
+        }
+        $content = $this->markdownRenderer->render($body);
         $html = $this->renderTemplate($siteConfig, $entry, $content, $navigation);
 
         $this->cache?->set($entry->sourceFilePath(), $html);
 
         return $html;
+    }
+
+    private function resolveContentDir(Entry $entry): string
+    {
+        $relative = substr($entry->sourceFilePath(), strlen($this->contentDir) + 1);
+        $dir = dirname($relative);
+        return $dir === '.' ? '' : $dir;
     }
 
     private function renderTemplate(SiteConfig $siteConfig, Entry $entry, string $content, ?Navigation $navigation): string

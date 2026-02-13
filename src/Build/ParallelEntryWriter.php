@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Build;
 
+use App\Content\CrossReferenceResolver;
 use App\Content\Model\Collection;
 use App\Content\Model\Entry;
 use App\Content\Model\Navigation;
@@ -34,6 +35,7 @@ final class ParallelEntryWriter
         bool $includeDrafts = false,
         bool $includeFuture = false,
         ?Navigation $navigation = null,
+        ?CrossReferenceResolver $crossRefResolver = null,
     ): int {
         $tasks = $this->collectTasks($parser, $collections, $contentDir, $outputDir, $includeDrafts, $includeFuture);
 
@@ -42,11 +44,11 @@ final class ParallelEntryWriter
         }
 
         if ($workerCount <= 1) {
-            $this->writeEntries($siteConfig, $tasks, $navigation);
+            $this->writeEntries($siteConfig, $tasks, $contentDir, $navigation, $crossRefResolver);
             return count($tasks);
         }
 
-        return $this->writeParallel($siteConfig, $tasks, $workerCount, $navigation);
+        return $this->writeParallel($siteConfig, $tasks, $contentDir, $workerCount, $navigation, $crossRefResolver);
     }
 
     /**
@@ -95,19 +97,19 @@ final class ParallelEntryWriter
     /**
      * @param list<array{entry: Entry, filePath: string}> $tasks
      */
-    private function writeEntries(SiteConfig $siteConfig, array $tasks, ?Navigation $navigation): void
+    private function writeEntries(SiteConfig $siteConfig, array $tasks, string $contentDir, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver): void
     {
-        $renderer = new EntryRenderer($this->cache);
+        $renderer = new EntryRenderer($this->cache, $contentDir);
 
         foreach ($tasks as $task) {
-            file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $navigation));
+            file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $navigation, $crossRefResolver));
         }
     }
 
     /**
      * @param list<array{entry: Entry, filePath: string}> $tasks
      */
-    private function writeParallel(SiteConfig $siteConfig, array $tasks, int $workerCount, ?Navigation $navigation): int
+    private function writeParallel(SiteConfig $siteConfig, array $tasks, string $contentDir, int $workerCount, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver): int
     {
         $totalEntries = count($tasks);
         $pids = [];
@@ -120,11 +122,11 @@ final class ParallelEntryWriter
             }
 
             if ($pid === 0) {
-                $renderer = new EntryRenderer($this->cache);
+                $renderer = new EntryRenderer($this->cache, $contentDir);
 
                 for ($i = $workerIndex; $i < $totalEntries; $i += $workerCount) {
                     $task = $tasks[$i];
-                    file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $navigation));
+                    file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $navigation, $crossRefResolver));
                 }
 
                 exit(0);

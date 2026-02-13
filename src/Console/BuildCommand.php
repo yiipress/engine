@@ -13,8 +13,10 @@ use App\Build\FeedGenerator;
 use App\Build\ParallelEntryWriter;
 use App\Build\SitemapGenerator;
 use App\Build\TaxonomyPageWriter;
+use App\Content\CrossReferenceResolver;
 use App\Content\EntrySorter;
 use App\Content\Parser\ContentParser;
+use App\Content\PermalinkResolver;
 use App\Content\TaxonomyCollector;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -126,6 +128,20 @@ final class BuildCommand extends Command
 
         $this->prepareOutputDir($outputDir);
 
+        $fileToPermalink = [];
+        foreach ($collections as $collectionName => $collection) {
+            foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
+                $relativePath = substr($entry->sourceFilePath(), strlen($contentDir) + 1);
+                $fileToPermalink[$relativePath] = PermalinkResolver::resolve($entry, $collection);
+            }
+        }
+        $standalonePages = iterator_to_array($parser->parseStandalonePages($contentDir));
+        foreach ($standalonePages as $page) {
+            $relativePath = substr($page->sourceFilePath(), strlen($contentDir) + 1);
+            $fileToPermalink[$relativePath] = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
+        }
+        $crossRefResolver = new CrossReferenceResolver($fileToPermalink);
+
         $cache = null;
         if (!$noCache) {
             $cacheDir = $rootPath . '/runtime/cache/build';
@@ -133,12 +149,10 @@ final class BuildCommand extends Command
         }
 
         $writer = new ParallelEntryWriter($cache);
-        $entryCount = $writer->write($parser, $siteConfig, $collections, $contentDir, $outputDir, $workerCount, $includeDrafts, $includeFuture, $navigation);
+        $entryCount = $writer->write($parser, $siteConfig, $collections, $contentDir, $outputDir, $workerCount, $includeDrafts, $includeFuture, $navigation, $crossRefResolver);
 
         $output->writeln("  Entries written: <comment>$entryCount</comment>");
 
-        $renderer = new EntryRenderer($cache);
-        $standalonePages = iterator_to_array($parser->parseStandalonePages($contentDir));
         if (!$includeDrafts) {
             $standalonePages = array_values(array_filter($standalonePages, static fn ($e) => !$e->draft));
         }
@@ -146,6 +160,7 @@ final class BuildCommand extends Command
             $now = new \DateTimeImmutable();
             $standalonePages = array_values(array_filter($standalonePages, static fn ($e) => $e->date === null || $e->date <= $now));
         }
+        $renderer = new EntryRenderer($cache, $contentDir);
         foreach ($standalonePages as $page) {
             $permalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
             $filePath = $outputDir . $permalink . 'index.html';
@@ -153,7 +168,7 @@ final class BuildCommand extends Command
             if (!is_dir($dirPath)) {
                 mkdir($dirPath, 0o755, true);
             }
-            file_put_contents($filePath, $renderer->render($siteConfig, $page, $navigation));
+            file_put_contents($filePath, $renderer->render($siteConfig, $page, $navigation, $crossRefResolver));
         }
         if ($standalonePages !== []) {
             $output->writeln("  Standalone pages: <comment>" . count($standalonePages) . "</comment>");

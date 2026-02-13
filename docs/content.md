@@ -115,6 +115,18 @@ extra:
 - **redirect_to** — URL to redirect to (generates redirect HTML instead of content)
 - **extra** — arbitrary key-value pairs accessible in templates
 
+### Internal links
+
+Link to other entries and pages using standard markdown links with relative `.md` file paths:
+
+```markdown
+Check out [my other post](./2024-03-15-hello-world.md) and the [contact page](../contact.md).
+```
+
+At build time, `.md` paths are resolved to the actual permalinks. Relative paths (`./`, `../`) are resolved from the current file's directory within the content folder. Non-relative content paths like `blog/hello.md` also work.
+
+If a `.md` path does not match any known content file, the link is left unchanged.
+
 ### Permalinks
 
 Permalink patterns support the following placeholders:

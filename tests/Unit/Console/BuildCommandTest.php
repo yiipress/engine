@@ -398,6 +398,28 @@ final class BuildCommandTest extends TestCase
         assertFileExists($categoriesIndex);
     }
 
+    public function testBuildResolvesMarkdownFileLinks(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        assertSame(0, $exitCode);
+
+        $html = file_get_contents($this->outputDir . '/blog/second-post/index.html');
+        assertStringContainsString('href="/blog/test-post/"', $html);
+        assertStringContainsString('href="/contact/"', $html);
+        assertStringNotContainsString('.md', $html);
+    }
+
     public function testBuildGeneratesDateArchivePages(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';
