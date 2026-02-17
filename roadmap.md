@@ -46,7 +46,7 @@
 
 - [x] Live reload / file watching during `yiipress serve`
 - [ ] `yiipress new` command — scaffold new entries from archetypes/templates
-- [ ] Incremental builds (only rebuild changed files)
+- [x] Incremental builds (only rebuild changed files)
 - [ ] Environment-specific configuration documentation (document existing `config/environments/`)
 - [ ] Build diagnostics (warn on broken internal links, missing images, invalid front matter)
 - [x] `yiipress clean` command — clear build output and caches

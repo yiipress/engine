@@ -6,6 +6,7 @@ namespace App\Console;
 
 use App\Build\AuthorPageWriter;
 use App\Build\BuildCache;
+use App\Build\BuildManifest;
 use App\Build\CollectionListingWriter;
 use App\Build\DateArchiveWriter;
 use App\Build\EntryRenderer;
@@ -138,13 +139,15 @@ final class BuildCommand extends Command
             return $this->dryRun($output, $parser, $siteConfig, $collections, $authors, $contentDir, $outputDir, $includeDrafts, $includeFuture, $navigation);
         }
 
-        $output->writeln(
-            $workerCount > 1
-                ? "<info>Rendering and writing output with $workerCount workers...</info>"
-                : '<info>Rendering and writing output...</info>',
-        );
+        $manifest = null;
+        $changedSourceFiles = null;
+        $incremental = false;
 
-        $this->prepareOutputDir($outputDir);
+        if (!$noCache) {
+            $manifestPath = $rootPath . '/runtime/cache/build-manifest-' . hash('xxh128', $outputDir) . '.json';
+            $manifest = new BuildManifest($manifestPath);
+            $manifest->load();
+        }
 
         $fileToPermalink = [];
         foreach ($collections as $collectionName => $collection) {
@@ -171,16 +174,108 @@ final class BuildCommand extends Command
         }
         $crossRefResolver = new CrossReferenceResolver($fileToPermalink);
 
+        $allSourceFiles = array_map(
+            static fn ($page) => $page->sourceFilePath(),
+            $standalonePages,
+        );
+        foreach ($collections as $collectionName => $collection) {
+            foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
+                if ($entry->title !== '') {
+                    $allSourceFiles[] = $entry->sourceFilePath();
+                }
+            }
+        }
+
+        $configFiles = array_filter([
+            $contentDir . '/config.yaml',
+            $contentDir . '/navigation.yaml',
+        ], 'is_file');
+        foreach ($collections as $collectionName => $collection) {
+            $collectionConfig = $contentDir . '/' . $collectionName . '/_collection.yaml';
+            if (is_file($collectionConfig)) {
+                $configFiles[] = $collectionConfig;
+            }
+        }
+
+        if ($manifest !== null) {
+            $configChanged = false;
+            foreach ($configFiles as $configFile) {
+                if ($manifest->isChanged($configFile)) {
+                    $configChanged = true;
+                    break;
+                }
+            }
+
+            if ($configChanged) {
+                $changedSourceFiles = null;
+            } else {
+                $changedSourceFiles = $manifest->changedFiles($allSourceFiles);
+            }
+
+            $staleOutputs = $manifest->removedOutputs($allSourceFiles);
+
+            foreach ($staleOutputs as $staleFile) {
+                if (is_file($staleFile)) {
+                    unlink($staleFile);
+                }
+            }
+
+            if ($changedSourceFiles !== null && $changedSourceFiles === [] && $staleOutputs === []) {
+                $output->writeln('<info>No changes detected, nothing to build.</info>');
+                return ExitCode::OK;
+            }
+
+            if ($changedSourceFiles !== null) {
+                $incremental = true;
+                $output->writeln(
+                    $workerCount > 1
+                        ? '<info>Incremental build with ' . $workerCount . ' workers (' . count($changedSourceFiles) . ' changed)...</info>'
+                        : '<info>Incremental build (' . count($changedSourceFiles) . ' changed)...</info>',
+                );
+            } else {
+                $output->writeln(
+                    $workerCount > 1
+                        ? "<info>Full rebuild with $workerCount workers (config changed)...</info>"
+                        : '<info>Full rebuild (config changed)...</info>',
+                );
+            }
+
+            if (!is_dir($outputDir)) {
+                mkdir($outputDir, 0o755, true);
+            }
+        } else {
+            $output->writeln(
+                $workerCount > 1
+                    ? "<info>Rendering and writing output with $workerCount workers...</info>"
+                    : '<info>Rendering and writing output...</info>',
+            );
+
+            $this->prepareOutputDir($outputDir);
+        }
+
         $cache = null;
         if (!$noCache) {
             $cacheDir = $rootPath . '/runtime/cache/build';
             $cache = new BuildCache($cacheDir, EntryRenderer::ENTRY_TEMPLATE);
         }
 
-        $writer = new ParallelEntryWriter($this->contentPipeline, $cache);
-        $entryCount = $writer->write($parser, $siteConfig, $collections, $contentDir, $outputDir, $workerCount, $includeDrafts, $includeFuture, $navigation, $crossRefResolver);
+        $changedSet = $changedSourceFiles !== null ? array_flip($changedSourceFiles) : null;
 
-        $output->writeln("  Entries written: <comment>$entryCount</comment>");
+        $writer = new ParallelEntryWriter($this->contentPipeline, $cache);
+        $result = $writer->write($parser, $siteConfig, $collections, $contentDir, $outputDir, $workerCount, $includeDrafts, $includeFuture, $navigation, $crossRefResolver, $changedSourceFiles);
+
+        $output->writeln("  Entries written: <comment>{$result['written']}</comment>" . ($incremental ? ' (of ' . count($result['tasks']) . ' total)' : ''));
+
+        if ($manifest !== null) {
+            foreach ($result['tasks'] as $task) {
+                $manifest->record($task['entry']->sourceFilePath(), [$task['filePath']]);
+            }
+            foreach ($result['allEntries'] as $entry) {
+                if (!isset($manifest->entries()[$entry->sourceFilePath()])) {
+                    $manifest->record($entry->sourceFilePath(), []);
+                }
+            }
+        }
 
         if (!$includeDrafts) {
             $standalonePages = array_values(array_filter($standalonePages, static fn ($e) => !$e->draft));
@@ -190,17 +285,31 @@ final class BuildCommand extends Command
             $standalonePages = array_values(array_filter($standalonePages, static fn ($e) => $e->date === null || $e->date <= $now));
         }
         $renderer = new EntryRenderer($this->contentPipeline, $cache, $contentDir);
+        $standalonePagesWritten = 0;
         foreach ($standalonePages as $page) {
             $permalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
             $filePath = $outputDir . $permalink . 'index.html';
+
+            if ($changedSet !== null && !isset($changedSet[$page->sourceFilePath()])) {
+                if ($manifest !== null) {
+                    $manifest->record($page->sourceFilePath(), [$filePath]);
+                }
+                continue;
+            }
+
             $dirPath = dirname($filePath);
             if (!is_dir($dirPath)) {
                 mkdir($dirPath, 0o755, true);
             }
             file_put_contents($filePath, $renderer->render($siteConfig, $page, $navigation, $crossRefResolver));
+            $standalonePagesWritten++;
+
+            if ($manifest !== null) {
+                $manifest->record($page->sourceFilePath(), [$filePath]);
+            }
         }
         if ($standalonePages !== []) {
-            $output->writeln("  Standalone pages: <comment>" . count($standalonePages) . "</comment>");
+            $output->writeln("  Standalone pages: <comment>$standalonePagesWritten</comment>" . ($incremental ? ' (of ' . count($standalonePages) . ' total)' : ''));
         }
 
         $entriesByCollection = [];
@@ -305,6 +414,13 @@ final class BuildCommand extends Command
             $authorWriter = new AuthorPageWriter();
             $authorPageCount = $authorWriter->write($siteConfig, $authors, $entriesByAuthor, $collections, $outputDir, $navigation);
             $output->writeln("  Author pages: <comment>$authorPageCount</comment>");
+        }
+
+        if ($manifest !== null) {
+            foreach ($configFiles as $configFile) {
+                $manifest->record($configFile, []);
+            }
+            $manifest->save();
         }
 
         $output->writeln('<info>Build complete.</info>');

@@ -26,6 +26,8 @@ final class ParallelEntryWriter
 
     /**
      * @param array<string, Collection> $collections
+     * @param list<string>|null $changedSourceFiles
+     * @return array{written: int, tasks: list<array{entry: Entry, filePath: string}>, allEntries: list<Entry>}
      */
     public function write(
         ContentParser $parser,
@@ -38,19 +40,47 @@ final class ParallelEntryWriter
         bool $includeFuture = false,
         ?Navigation $navigation = null,
         ?CrossReferenceResolver $crossRefResolver = null,
-    ): int {
-        $tasks = $this->collectTasks($parser, $collections, $contentDir, $outputDir, $includeDrafts, $includeFuture);
+        ?array $changedSourceFiles = null,
+    ): array {
+        $allEntries = $this->collectAllEntries($parser, $collections, $contentDir);
+        $allTasks = $this->collectTasks($parser, $collections, $contentDir, $outputDir, $includeDrafts, $includeFuture);
 
-        if ($tasks === []) {
-            return 0;
+        if ($changedSourceFiles !== null) {
+            $changedSet = array_flip($changedSourceFiles);
+            $tasks = array_values(array_filter(
+                $allTasks,
+                static fn (array $task) => isset($changedSet[$task['entry']->sourceFilePath()]),
+            ));
+        } else {
+            $tasks = $allTasks;
         }
 
-        if ($workerCount <= 1) {
-            $this->writeEntries($siteConfig, $tasks, $contentDir, $navigation, $crossRefResolver);
-            return count($tasks);
+        if ($tasks !== []) {
+            if ($workerCount <= 1) {
+                $this->writeEntries($siteConfig, $tasks, $contentDir, $navigation, $crossRefResolver);
+            } else {
+                $this->writeParallel($siteConfig, $tasks, $contentDir, $workerCount, $navigation, $crossRefResolver);
+            }
         }
 
-        return $this->writeParallel($siteConfig, $tasks, $contentDir, $workerCount, $navigation, $crossRefResolver);
+        return ['written' => count($tasks), 'tasks' => $allTasks, 'allEntries' => $allEntries];
+    }
+
+    /**
+     * @param array<string, Collection> $collections
+     * @return list<Entry>
+     */
+    private function collectAllEntries(ContentParser $parser, array $collections, string $contentDir): array
+    {
+        $entries = [];
+        foreach ($collections as $collectionName => $collection) {
+            foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
+                if ($entry->title !== '') {
+                    $entries[] = $entry;
+                }
+            }
+        }
+        return $entries;
     }
 
     /**

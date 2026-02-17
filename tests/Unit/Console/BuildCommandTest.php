@@ -41,6 +41,11 @@ final class BuildCommandTest extends TestCase
             }
             rmdir($this->outputDir);
         }
+
+        $manifestPath = $this->manifestPath();
+        if (is_file($manifestPath)) {
+            unlink($manifestPath);
+        }
     }
 
     public function testBuildGeneratesOutputFiles(): void
@@ -631,5 +636,101 @@ final class BuildCommandTest extends TestCase
         assertStringContainsString('sitemap.xml', $outputText);
         assertStringContainsString('Total:', $outputText);
         assertFalse(is_dir($this->outputDir));
+    }
+
+    public function testIncrementalBuildSkipsUnchangedEntries(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+        $manifestPath = $this->manifestPath();
+
+        if (is_file($manifestPath)) {
+            unlink($manifestPath);
+        }
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' 2>&1',
+            $firstOutput,
+            $firstExitCode,
+        );
+
+        $firstOutputText = implode("\n", $firstOutput);
+        assertSame(0, $firstExitCode, "First build failed: $firstOutputText");
+        assertStringContainsString('Build complete', $firstOutputText);
+
+        $secondOutput = [];
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' 2>&1',
+            $secondOutput,
+            $secondExitCode,
+        );
+
+        $secondOutputText = implode("\n", $secondOutput);
+        assertSame(0, $secondExitCode, "Second build failed: $secondOutputText");
+        assertStringContainsString('No changes detected', $secondOutputText);
+
+        if (is_file($manifestPath)) {
+            unlink($manifestPath);
+        }
+    }
+
+    public function testIncrementalBuildRebuildsChangedEntry(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+        $manifestPath = $this->manifestPath();
+
+        if (is_file($manifestPath)) {
+            unlink($manifestPath);
+        }
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' 2>&1',
+            $firstOutput,
+            $firstExitCode,
+        );
+
+        assertSame(0, $firstExitCode, 'First build failed: ' . implode("\n", $firstOutput));
+
+        $entryFile = $contentDir . '/blog/2024-03-15-test-post.md';
+        $originalContent = file_get_contents($entryFile);
+        assertNotFalse($originalContent);
+
+        file_put_contents($entryFile, $originalContent . "\n<!-- touched -->");
+
+        try {
+            $secondOutput = [];
+            exec(
+                $yii . ' build'
+                . ' --content-dir=' . escapeshellarg($contentDir)
+                . ' --output-dir=' . escapeshellarg($this->outputDir)
+                . ' 2>&1',
+                $secondOutput,
+                $secondExitCode,
+            );
+
+            $secondOutputText = implode("\n", $secondOutput);
+            assertSame(0, $secondExitCode, "Incremental build failed: $secondOutputText");
+            assertStringContainsString('Incremental build', $secondOutputText);
+        } finally {
+            file_put_contents($entryFile, $originalContent);
+            if (is_file($manifestPath)) {
+                unlink($manifestPath);
+            }
+        }
+    }
+
+    private function manifestPath(): string
+    {
+        return dirname(__DIR__, 3) . '/runtime/cache/build-manifest-' . hash('xxh128', $this->outputDir) . '.json';
     }
 }

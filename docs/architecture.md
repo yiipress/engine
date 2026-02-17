@@ -302,10 +302,11 @@ src/
 │   ├── PageGenerator.php         # Produces Page objects from site index
 │   ├── MarkdownRenderer.php      # Low-level md4c wrapper
 │   └── TemplateRenderer.php      # PHP template rendering via Yii view
-├── Output/
-│   ├── StaticWriter.php          # Writes pages to output/
-│   ├── AssetCopier.php           # Copies assets to output/
-│   └── HttpResponder.php         # Returns pages as HTTP responses
+├── Build/
+│   ├── AuthorPageWriter.php      # Writes author index and individual pages
+│   ├── BuildCache.php            # Content-hash based render cache
+│   ├── BuildManifest.php         # Tracks source→output mappings for incremental builds
+│   ├── CollectionListingWriter.php # Paginated collection listing pages
 ├── Shared/
 │   └── ApplicationParams.php
 ├── Web/                          # Yii3 web actions for serve mode

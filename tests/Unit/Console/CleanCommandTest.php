@@ -27,6 +27,11 @@ final class CleanCommandTest extends TestCase
     {
         $this->removeDir($this->outputDir);
         $this->removeDir($this->cacheDir);
+
+        $manifestPath = dirname(__DIR__, 3) . '/runtime/cache/build-manifest-' . hash('xxh128', $this->outputDir) . '.json';
+        if (is_file($manifestPath)) {
+            unlink($manifestPath);
+        }
     }
 
     public function testCleanRemovesOutputDirectory(): void

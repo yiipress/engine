@@ -15,15 +15,25 @@ yii build [--content-dir=content] [--output-dir=output] [--workers=1] [--no-cach
 - `--content-dir`, `-c` — path to the content directory (default: `content`). Absolute or relative to project root.
 - `--output-dir`, `-o` — path to the output directory (default: `output`). Absolute or relative to project root.
 - `--workers`, `-w` — number of parallel workers (default: `1`). Uses `pcntl_fork()` to distribute entry rendering across processes.
-- `--no-cache` — disable build cache. By default, rendered HTML is cached in `runtime/cache/build/` keyed by source file content hash. Unchanged entries skip markdown rendering and template application on subsequent builds.
+- `--no-cache` — disable build cache and incremental builds. Forces a full rebuild, clearing the output directory. By default, rendered HTML is cached in `runtime/cache/build/` and a build manifest tracks source file hashes for incremental builds.
 - `--drafts` — include draft entries in the build. By default, entries with `draft: true` in front matter are excluded from HTML output, feeds, and sitemap.
 - `--future` — include future-dated entries in the build. By default, entries with a date in the future are excluded from HTML output, feeds, and sitemap.
 - `--dry-run` — list all files that would be generated without writing anything. The output directory is not created or modified.
 
+### Incremental builds
+
+By default, subsequent builds are incremental — only changed source files are re-rendered and re-written. A build manifest (`runtime/cache/build-manifest-*.json`) tracks source file hashes between builds. If no files changed, the build exits immediately with "No changes detected".
+
+Aggregate pages (feeds, listings, archives, sitemap, taxonomy, author pages) are always regenerated since they depend on the full entry set.
+
+If config files (`config.yaml`, `navigation.yaml`, `_collection.yaml`) change, a full rebuild is triggered automatically.
+
+Use `--no-cache` to force a full rebuild.
+
 The command:
 
 1. Parses site config, navigation, collections, authors, and entries from the content directory.
-2. Cleans the output directory.
+2. Cleans the output directory (or skips unchanged entries on incremental builds).
 3. Renders collection entries — converts markdown to HTML via MD4C, applies the entry template, writes each entry as `index.html` at its resolved permalink path. Drafts and future-dated entries are excluded by default.
 4. Renders standalone pages — markdown files in the content root directory (e.g., `contact.md` → `/contact/`).
 5. Generates Atom (`feed.xml`) and RSS 2.0 (`rss.xml`) feeds for each collection with `feed: true`.
