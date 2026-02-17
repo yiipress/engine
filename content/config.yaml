@@ -1,6 +1,6 @@
 title: My Site
 description: A site built with YiiPress
-base_url: https://example.com
+base_url:
 language: en
 charset: UTF-8
 

@@ -8,6 +8,7 @@ use App\Build\AuthorPageWriter;
 use App\Build\BuildCache;
 use App\Build\BuildManifest;
 use App\Build\CollectionListingWriter;
+use App\Build\ContentAssetCopier;
 use App\Build\DateArchiveWriter;
 use App\Build\EntryRenderer;
 use App\Build\FeedGenerator;
@@ -310,6 +311,12 @@ final class BuildCommand extends Command
         }
         if ($standalonePages !== []) {
             $output->writeln("  Standalone pages: <comment>$standalonePagesWritten</comment>" . ($incremental ? ' (of ' . count($standalonePages) . ' total)' : ''));
+        }
+
+        $assetCopier = new ContentAssetCopier();
+        $assetsCopied = $assetCopier->copy($contentDir, $outputDir);
+        if ($assetsCopied > 0) {
+            $output->writeln("  Assets copied: <comment>$assetsCopied</comment>");
         }
 
         $entriesByCollection = [];
