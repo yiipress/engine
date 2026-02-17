@@ -269,6 +269,7 @@ Cache storage: filesystem (`runtime/cache/`). No external dependencies.
 src/
 ├── Console/
 │   ├── BuildCommand.php          # `yiipress build`
+│   ├── ImportCommand.php         # `yiipress import` — import from external sources
 │   ├── NewCommand.php            # `yiipress new` — scaffold entries/pages
 │   └── ServeCommand.php          # `yiipress serve`
 ├── Content/
@@ -290,6 +291,11 @@ src/
 │   │   └── FilenameParser.php
 │   ├── SiteIndex.php             # Indexed site model
 │   └── SiteIndexBuilder.php      # Builds the index from parsed data
+├── Import/
+│   ├── ContentImporterInterface.php  # Interface for content importers
+│   ├── ImporterOption.php            # Value object declaring an importer CLI option
+│   ├── ImportResult.php              # Value object for import results
+│   └── TelegramContentImporter.php   # Telegram channel export importer
 ├── Highlighter/
 │   ├── Cargo.toml                # Rust crate config (syntect + rayon)
 │   ├── src/lib.rs                # Rust FFI library for code highlighting

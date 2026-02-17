@@ -102,6 +102,67 @@ yii new "Draft Ideas" --collection=blog --draft
 yii new "About Us"
 ```
 
+## `yii import`
+
+Imports content from external sources into a YiiPress collection.
+
+```
+yii import <source> [--collection=blog] [--content-dir=content] [--<importer-options>...]
+```
+
+**Arguments:**
+
+- `source` — source type to import from (required). Currently supported: `telegram`.
+
+**Common options:**
+
+- `--collection`, `-c` — target collection name (default: `blog`).
+- `--content-dir`, `-d` — path to the content directory (default: `content`).
+
+Each importer declares its own options (see below). The command dynamically registers them based on the selected source.
+
+**Behavior:**
+
+- Each importer reads source-specific data and converts it to markdown files with front matter.
+- If the target collection directory doesn't exist, it is created along with a default `_collection.yaml`.
+- Existing `_collection.yaml` files are not overwritten.
+- Media files (photos, attachments) are copied to the collection's `assets/` directory.
+
+### Telegram import
+
+Imports messages from a Telegram Desktop channel export. Export a channel via Telegram Desktop: Settings > Advanced > Export Telegram data (select JSON format).
+
+**Importer options:**
+
+- `--directory` — path to the Telegram export directory containing `result.json` (required). Absolute or relative to project root.
+
+The importer reads `result.json` from the export directory and converts each message to a markdown file:
+
+- **Hashtags** → `tags` in front matter (e.g., `#php` becomes tag `php`). Hashtags are removed from the body text.
+- **Bold** → `**text**`
+- **Italic** → `*text*`
+- **Strikethrough** → `~~text~~`
+- **Inline code** → `` `code` ``
+- **Pre-formatted blocks** → fenced code blocks
+- **Text links** → `[text](url)`
+- **Photos** → copied to `assets/` and referenced as `![](/collection/assets/filename.jpg)`
+
+The title is extracted from the first line of the message. The filename is prefixed with the message date (e.g., `2024-03-15-my-post.md`).
+
+Supports both single-chat exports (`result.json` with `messages` array) and full exports (`result.json` with `chats.list` structure).
+
+**Examples:**
+
+```bash
+yii import telegram --directory=/path/to/telegram-export
+yii import telegram --directory=/path/to/telegram-export --collection=channel
+yii import telegram --directory=./telegram-data --content-dir=content
+```
+
+### Adding custom importers
+
+Importers implement `App\Import\ContentImporterInterface` and are registered via Yii3 DI in `config/common/di/importer.php`. Each importer declares its own options via the `options()` method. See [plugins.md](plugins.md#content-importers) for details.
+
 ## `yii clean`
 
 Clears build output and caches.

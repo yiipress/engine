@@ -97,5 +97,5 @@
 - [ ] Hugo
 - [ ] Medium exported Markdown
 - [ ] Ghost
-- [ ] Telegram export
+- [x] Telegram export
 
