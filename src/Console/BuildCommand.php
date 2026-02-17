@@ -7,6 +7,7 @@ namespace App\Console;
 use App\Build\AuthorPageWriter;
 use App\Build\BuildCache;
 use App\Build\BuildManifest;
+use App\Build\BuildDiagnostics;
 use App\Build\CollectionListingWriter;
 use App\Build\ContentAssetCopier;
 use App\Build\DateArchiveWriter;
@@ -174,6 +175,19 @@ final class BuildCommand extends Command
             $fileToPermalink[$relativePath] = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
         }
         $crossRefResolver = new CrossReferenceResolver($fileToPermalink);
+
+        $diagnostics = new BuildDiagnostics($contentDir, $fileToPermalink, $siteConfig, $authors);
+        foreach ($collections as $collectionName => $collection) {
+            foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
+                $diagnostics->check($entry);
+            }
+        }
+        foreach ($standalonePages as $page) {
+            $diagnostics->check($page);
+        }
+        foreach ($diagnostics->warnings() as $warning) {
+            $output->writeln("<comment>  ⚠ $warning</comment>");
+        }
 
         $allSourceFiles = array_map(
             static fn ($page) => $page->sourceFilePath(),

@@ -305,8 +305,10 @@ src/
 ├── Build/
 │   ├── AuthorPageWriter.php      # Writes author index and individual pages
 │   ├── BuildCache.php            # Content-hash based render cache
+│   ├── BuildDiagnostics.php      # Warns on broken links, missing images, invalid front matter
 │   ├── BuildManifest.php         # Tracks source→output mappings for incremental builds
 │   ├── CollectionListingWriter.php # Paginated collection listing pages
+│   ├── ContentAssetCopier.php    # Copies non-md/yaml assets to output directory
 ├── Shared/
 │   └── ApplicationParams.php
 ├── Web/                          # Yii3 web actions for serve mode

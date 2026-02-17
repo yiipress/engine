@@ -30,16 +30,29 @@ If config files (`config.yaml`, `navigation.yaml`, `_collection.yaml`) change, a
 
 Use `--no-cache` to force a full rebuild.
 
+### Build diagnostics
+
+During the build, diagnostics are run on all entries and standalone pages. Warnings are printed before output generation:
+
+- **Broken internal links** — markdown links to `.md` files that don't resolve to any known entry or page.
+- **Missing images** — `![...](path)` references to local files that don't exist in the content directory.
+- **Unknown authors** — `authors` front matter values that don't match any author file in `content/authors/`.
+- **Empty taxonomy values** — empty strings in `tags` or `categories` arrays.
+
+Diagnostics are informational and do not prevent the build from completing.
+
 The command:
 
 1. Parses site config, navigation, collections, authors, and entries from the content directory.
-2. Cleans the output directory (or skips unchanged entries on incremental builds).
-3. Renders collection entries — converts markdown to HTML via MD4C, applies the entry template, writes each entry as `index.html` at its resolved permalink path. Drafts and future-dated entries are excluded by default.
-4. Renders standalone pages — markdown files in the content root directory (e.g., `contact.md` → `/contact/`).
-5. Generates Atom (`feed.xml`) and RSS 2.0 (`rss.xml`) feeds for each collection with `feed: true`.
-6. Generates paginated collection listing pages (e.g., `/blog/`, `/blog/page/2/`) for collections with `listing: true`.
-7. Generates `sitemap.xml` containing all entry URLs, standalone page URLs, collection listing URLs, and the home page.
-8. Generates taxonomy pages for each taxonomy defined in `config.yaml` (e.g., `/tags/`, `/tags/php/`, `/categories/`).
+2. Runs build diagnostics and prints warnings.
+3. Cleans the output directory (or skips unchanged entries on incremental builds).
+4. Renders collection entries — converts markdown to HTML via MD4C, applies the entry template, writes each entry as `index.html` at its resolved permalink path. Drafts and future-dated entries are excluded by default.
+5. Renders standalone pages — markdown files in the content root directory (e.g., `contact.md` → `/contact/`).
+6. Copies content assets (images, SVGs, etc.) to the output directory.
+7. Generates Atom (`feed.xml`) and RSS 2.0 (`rss.xml`) feeds for each collection with `feed: true`.
+8. Generates paginated collection listing pages (e.g., `/blog/`, `/blog/page/2/`) for collections with `listing: true`.
+9. Generates `sitemap.xml` containing all entry URLs, standalone page URLs, collection listing URLs, and the home page.
+10. Generates taxonomy pages for each taxonomy defined in `config.yaml` (e.g., `/tags/`, `/tags/php/`, `/categories/`).
 
 With `--workers=N` (N > 1), entry rendering and writing is parallelized across N forked processes. Feeds and sitemap are generated after entry writing in the parent process.
 
