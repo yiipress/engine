@@ -49,30 +49,30 @@ BENCH_FILTER=RealisticBuildBench make bench
 
 ### 10k small entries (~1KB each)
 
-| Benchmark | Time |
-|---|---|
-| Full build, sequential | ~1.54s |
-| Full build, 2 workers | ~1.30s |
-| Full build, 4 workers | ~1.18s |
-| Full build, 8 workers | ~1.12s |
+| Benchmark                      | Time   |
+|--------------------------------|--------|
+| Full build, sequential         | ~1.54s |
+| Full build, 2 workers          | ~1.30s |
+| Full build, 4 workers          | ~1.18s |
+| Full build, 8 workers          | ~1.12s |
 | Full build, cached, sequential | ~1.47s |
-| Full build, cached, 4 workers | ~1.14s |
-| Parse only (metadata, no body) | ~96ms |
-| Parse with body read | ~137ms |
-| Render only (markdown→HTML) | ~196ms |
-| Single short markdown render | ~1.4μs |
-| Single long markdown render | ~73μs |
+| Full build, cached, 4 workers  | ~1.14s |
+| Parse only (metadata, no body) | ~96ms  |
+| Parse with body read           | ~137ms |
+| Render only (markdown→HTML)    | ~196ms |
+| Single short markdown render   | ~1.4μs |
+| Single long markdown render    | ~73μs  |
 
 ### 1k realistic entries (~27KB each)
 
-| Benchmark | Time |
-|---|---|
-| Full build, sequential | ~250ms |
-| Full build, 4 workers | ~150ms |
-| Full build, 8 workers | ~131ms |
+| Benchmark                      | Time   |
+|--------------------------------|--------|
+| Full build, sequential         | ~250ms |
+| Full build, 4 workers          | ~150ms |
+| Full build, 8 workers          | ~131ms |
 | Full build, cached, sequential | ~151ms |
-| Full build, cached, 4 workers | ~122ms |
-| Render only (markdown→HTML) | ~103ms |
+| Full build, cached, 4 workers  | ~122ms |
+| Render only (markdown→HTML)    | ~103ms |
 
 Caching provides ~40% speedup for sequential builds with realistic content. Combined with parallel workers, the total speedup is ~2x.
 

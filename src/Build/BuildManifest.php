@@ -12,7 +12,7 @@ final class BuildManifest
     private array $entries = [];
 
     public function __construct(
-        private string $manifestPath,
+        private readonly string $manifestPath,
     ) {}
 
     public function load(): void
@@ -28,7 +28,7 @@ final class BuildManifest
             return;
         }
 
-        $data = json_decode($json, true);
+        $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
         if (!is_array($data)) {
             $this->entries = [];
             return;
@@ -46,7 +46,7 @@ final class BuildManifest
 
         file_put_contents(
             $this->manifestPath,
-            json_encode($this->entries, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+            json_encode($this->entries, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
         );
     }
 

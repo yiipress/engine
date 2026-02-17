@@ -195,7 +195,7 @@ MD;
         $sections[] = <<<MD
 ## Chapter $page: Extended Content
 
-### Section {$page}.1: Background
+### Section $page.1: Background
 
 Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium,
 totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae
@@ -213,7 +213,7 @@ deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati 
 provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum
 fuga. Et harum quidem rerum facilis est et expedita distinctio.
 
-### Section {$page}.2: Implementation Details
+### Section $page.2: Implementation Details
 
 Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod
 maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus
@@ -249,11 +249,11 @@ independently, which enables *parallel execution* across multiple `pcntl_fork()`
 | Metric | Chapter $page | Previous | Delta |
 |--------|-------------|----------|-------|
 | Lines of code | {$page}42 | {$page}38 | +4 |
-| Test coverage | 9{$page}% | 8{$page}% | +10% |
+| Test coverage | 9$page% | 8{$page}% | +10% |
 | Build time impact | +{$page}ms | — | — |
 | Memory overhead | +{$page}KB | — | — |
 
-### Section {$page}.3: Analysis
+### Section $page.3: Analysis
 
 Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
 pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt
@@ -268,7 +268,7 @@ eiusmod tempor incididunt ut labore et dolore magna aliqua.
 
 ![Chapter $page Diagram](https://example.com/images/chapter-$page-diagram.png)
 
-See also [Entry {$linkedEntries[0]}](/collection-0/entry-{$linkedEntries[0]}/) for more details
+See also [Entry $linkedEntries[0]](/collection-0/entry-$linkedEntries[0]/) for more details
 on this topic, and [the architecture docs](https://example.com/docs/architecture) for the
 overall design.
 MD;

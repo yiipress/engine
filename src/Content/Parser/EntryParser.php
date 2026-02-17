@@ -10,8 +10,8 @@ use DateTimeImmutable;
 final class EntryParser
 {
     public function __construct(
-        private FrontMatterParser $frontMatterParser,
-        private FilenameParser $filenameParser,
+        private readonly FrontMatterParser $frontMatterParser,
+        private readonly FilenameParser $filenameParser,
     ) {}
 
     public function parse(string $filePath, string $collectionName): Entry

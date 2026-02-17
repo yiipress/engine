@@ -22,7 +22,7 @@ use function str_starts_with;
 )]
 final class NewCommand extends Command
 {
-    public function __construct(private string $rootPath)
+    public function __construct(private readonly string $rootPath)
     {
         parent::__construct();
     }
@@ -100,7 +100,7 @@ final class NewCommand extends Command
             return ExitCode::DATAERR;
         }
 
-        $collection = (new CollectionConfigParser())->parse($configPath, $collectionName);
+        $collection = new CollectionConfigParser()->parse($configPath, $collectionName);
 
         $filename = $slug . '.md';
         if ($collection->sortBy === 'date') {
@@ -186,8 +186,7 @@ final class NewCommand extends Command
             return '';
         }
 
-        $siteConfig = (new SiteConfigParser())->parse($configPath);
-        return $siteConfig->defaultAuthor;
+        return new SiteConfigParser()->parse($configPath)->defaultAuthor;
     }
 
     private function resolvePath(string $path, string $rootPath): string

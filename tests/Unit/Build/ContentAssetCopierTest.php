@@ -5,7 +5,12 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Build;
 
 use App\Build\ContentAssetCopier;
+use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
+
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 
 use function PHPUnit\Framework\assertCount;
 use function PHPUnit\Framework\assertFileExists;
@@ -95,12 +100,12 @@ final class ContentAssetCopierTest extends TestCase
             return;
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST,
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
         );
         foreach ($iterator as $item) {
-            /** @var \SplFileInfo $item */
+            /** @var SplFileInfo $item */
             if ($item->isDir()) {
                 rmdir($item->getPathname());
             } else {

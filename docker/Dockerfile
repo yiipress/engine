@@ -8,10 +8,8 @@ FROM composer/composer:2-bin AS composer
 FROM dunglas/frankenphp:1-php8.5-bookworm AS base
 
 COPY --from=rust-builder /build/target/release/libyiipress_highlighter.so /usr/local/lib/libyiipress_highlighter.so
-RUN ldconfig
 
-RUN apt update && apt -y install \
-    unzip
+RUN ldconfig && apt-get update && apt-get -y install unzip --no-install-recommends
 
 COPY docker/php.ini $PHP_INI_DIR/conf.d/99-yiipress.ini
 

@@ -13,10 +13,15 @@ use App\Content\Parser\ContentParser;
 use App\Processor\ContentProcessorPipeline;
 use App\Processor\MarkdownProcessor;
 use App\Render\MarkdownRenderer;
+use FilesystemIterator;
 use PhpBench\Attributes\BeforeMethods;
 use PhpBench\Attributes\Iterations;
 use PhpBench\Attributes\Revs;
 use PhpBench\Attributes\Warmup;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use RuntimeException;
+use SplFileInfo;
 
 #[BeforeMethods('setUp')]
 final class RealisticBuildBench
@@ -44,7 +49,7 @@ final class RealisticBuildBench
         $this->cacheDir = __DIR__ . '/data/realistic-cache';
 
         if (!is_dir($this->dataDir)) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 'Realistic benchmark data not found. Run: make bench-generate-realistic'
             );
         }
@@ -132,12 +137,12 @@ final class RealisticBuildBench
             return;
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($this->outputDir, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST,
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($this->outputDir, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
         );
         foreach ($iterator as $item) {
-            /** @var \SplFileInfo $item */
+            /** @var SplFileInfo $item */
             if ($item->isDir()) {
                 rmdir($item->getPathname());
             } else {

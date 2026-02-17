@@ -48,6 +48,7 @@ final class SiteConfigParser
 
     /**
      * @param mixed $data
+     * @return MarkdownConfig
      */
     private static function parseMarkdownConfig(mixed $data): MarkdownConfig
     {

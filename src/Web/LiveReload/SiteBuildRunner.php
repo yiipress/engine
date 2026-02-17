@@ -7,9 +7,9 @@ namespace App\Web\LiveReload;
 final class SiteBuildRunner
 {
     public function __construct(
-        private string $yiiBinary,
-        private string $contentDir,
-        private string $outputDir,
+        private readonly string $yiiBinary,
+        private readonly string $contentDir,
+        private readonly string $outputDir,
     ) {}
 
     public function build(): bool

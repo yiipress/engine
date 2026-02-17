@@ -60,7 +60,7 @@ final class TelegramContentImporter implements ContentImporterInterface
             );
         }
 
-        $data = json_decode($json, true);
+        $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
         if (!is_array($data)) {
             return new ImportResult(
                 totalMessages: 0,
@@ -175,15 +175,16 @@ final class TelegramContentImporter implements ContentImporterInterface
             return is_array($data['messages']) ? $data['messages'] : [];
         }
 
-        if (array_key_exists('chats', $data) && is_array($data['chats'])) {
-            if (array_key_exists('list', $data['chats']) && is_array($data['chats']['list'])) {
+        if (array_key_exists('chats', $data) && is_array($data['chats']) && array_key_exists(
+                'list',
+                $data['chats']
+            ) && is_array($data['chats']['list'])) {
                 foreach ($data['chats']['list'] as $chat) {
                     if (is_array($chat) && array_key_exists('messages', $chat) && is_array($chat['messages'])) {
                         return $chat['messages'];
                     }
                 }
             }
-        }
 
         return [];
     }

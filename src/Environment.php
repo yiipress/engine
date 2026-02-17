@@ -26,7 +26,6 @@ final class Environment
     public static function prepare(): void
     {
         self::setEnvironment();
-        self::setBoolean('APP_C3', false);
         self::setBoolean('APP_DEBUG', false);
         self::setNonEmptyStringOrNull('APP_HOST_PATH', null);
     }
@@ -63,13 +62,6 @@ final class Environment
         /** @var non-empty-string|null */
         return self::$values['APP_HOST_PATH'];
     }
-
-    public static function appC3(): bool
-    {
-        /** @var bool */
-        return self::$values['APP_C3'];
-    }
-
     public static function appDebug(): bool
     {
         /** @var bool */

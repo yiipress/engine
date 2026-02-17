@@ -25,8 +25,8 @@ final class ImportCommand extends Command
      * @param array<string, ContentImporterInterface> $importers
      */
     public function __construct(
-        private string $rootPath,
-        private array $importers,
+        private readonly string $rootPath,
+        private readonly array $importers,
     ) {
         parent::__construct();
     }
@@ -150,7 +150,7 @@ final class ImportCommand extends Command
             }
 
             if ($option->required && ($value === null || $value === '')) {
-                $output->writeln("<error>Missing required option --{$option->name} for {$importer->name()} importer</error>");
+                $output->writeln("<error>Missing required option --$option->name for {$importer->name()} importer</error>");
                 $this->printImporterUsage($importer, $output);
                 return null;
             }
@@ -167,8 +167,8 @@ final class ImportCommand extends Command
         $output->writeln("<info>Options for {$importer->name()} importer:</info>");
         foreach ($importer->options() as $option) {
             $required = $option->required ? ' <comment>(required)</comment>' : '';
-            $default = $option->default !== null ? " [default: {$option->default}]" : '';
-            $output->writeln("  --{$option->name}  {$option->description}{$required}{$default}");
+            $default = $option->default !== null ? " [default: $option->default]" : '';
+            $output->writeln("  --$option->name  {$option->description}{$required}{$default}");
         }
     }
 

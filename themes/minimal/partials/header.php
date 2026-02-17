@@ -1,10 +1,11 @@
 <?php
 
+use App\Content\Model\Navigation;
 use App\Render\NavigationRenderer;
 
 /**
  * @var string $siteTitle
- * @var ?\App\Content\Model\Navigation $nav
+ * @var ?Navigation $nav
  */
 ?>
 <header class="site-header">

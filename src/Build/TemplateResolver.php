@@ -8,7 +8,7 @@ use RuntimeException;
 
 final class TemplateResolver
 {
-    public function __construct(private ThemeRegistry $themeRegistry) {}
+    public function __construct(private readonly ThemeRegistry $themeRegistry) {}
 
     public function resolve(string $templateName, string $themeName = ''): string
     {

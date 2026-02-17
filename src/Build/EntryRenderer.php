@@ -9,14 +9,15 @@ use App\Content\Model\Entry;
 use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
 use App\Processor\ContentProcessorPipeline;
+use RuntimeException;
 
 final class EntryRenderer
 {
     public function __construct(
-        private ContentProcessorPipeline $pipeline,
-        private TemplateResolver $templateResolver,
-        private ?BuildCache $cache = null,
-        private string $contentDir = '',
+        private readonly ContentProcessorPipeline $pipeline,
+        private readonly TemplateResolver $templateResolver,
+        private readonly ?BuildCache $cache = null,
+        private readonly string $contentDir = '',
     ) {}
 
     public function render(
@@ -57,7 +58,7 @@ final class EntryRenderer
         $templateName = $entry->layout !== '' ? $entry->layout : 'entry';
         try {
             $templatePath = $this->templateResolver->resolve($templateName, $themeName);
-        } catch (\RuntimeException) {
+        } catch (RuntimeException) {
             $templatePath = $this->templateResolver->resolve('entry', $themeName);
         }
 

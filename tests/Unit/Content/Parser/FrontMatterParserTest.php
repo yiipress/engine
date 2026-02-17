@@ -75,7 +75,7 @@ final class FrontMatterParserTest extends TestCase
     {
         $tmpFile = $this->createTempFile("# My Page Title\n\nSome content.");
 
-        $result = (new FrontMatterParser())->parse($tmpFile);
+        $result = new FrontMatterParser()->parse($tmpFile);
 
         assertSame('My Page Title', $result['frontMatter']['title']);
 
@@ -87,7 +87,7 @@ final class FrontMatterParserTest extends TestCase
     {
         $tmpFile = $this->createTempFile("---\ndraft: true\n---\n\n# Inferred Title\n\nBody.");
 
-        $result = (new FrontMatterParser())->parse($tmpFile);
+        $result = new FrontMatterParser()->parse($tmpFile);
 
         assertSame('Inferred Title', $result['frontMatter']['title']);
         assertSame(true, $result['frontMatter']['draft']);
@@ -100,7 +100,7 @@ final class FrontMatterParserTest extends TestCase
     {
         $tmpFile = $this->createTempFile("\n# Title After Blank\n\nBody.");
 
-        $result = (new FrontMatterParser())->parse($tmpFile);
+        $result = new FrontMatterParser()->parse($tmpFile);
 
         assertSame('Title After Blank', $result['frontMatter']['title']);
 
@@ -112,7 +112,7 @@ final class FrontMatterParserTest extends TestCase
     {
         $tmpFile = $this->createTempFile("Just some text without a heading.");
 
-        $result = (new FrontMatterParser())->parse($tmpFile);
+        $result = new FrontMatterParser()->parse($tmpFile);
 
         assertArrayNotHasKey('title', $result['frontMatter']);
     }
@@ -121,7 +121,7 @@ final class FrontMatterParserTest extends TestCase
     {
         $tmpFile = $this->createTempFile("Some paragraph.\n# Heading");
 
-        $result = (new FrontMatterParser())->parse($tmpFile);
+        $result = new FrontMatterParser()->parse($tmpFile);
 
         assertArrayNotHasKey('title', $result['frontMatter']);
     }
@@ -130,7 +130,7 @@ final class FrontMatterParserTest extends TestCase
     {
         $tmpFile = $this->createTempFile("---\ntitle: Explicit Title\n---\n\n# H1 Title\n\nBody.");
 
-        $result = (new FrontMatterParser())->parse($tmpFile);
+        $result = new FrontMatterParser()->parse($tmpFile);
 
         assertSame('Explicit Title', $result['frontMatter']['title']);
     }

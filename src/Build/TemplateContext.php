@@ -7,8 +7,8 @@ namespace App\Build;
 final class TemplateContext
 {
     public function __construct(
-        private TemplateResolver $templateResolver,
-        private string $themeName = '',
+        private readonly TemplateResolver $templateResolver,
+        private readonly string $themeName = '',
     ) {}
 
     /**

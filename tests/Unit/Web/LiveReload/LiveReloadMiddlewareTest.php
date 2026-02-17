@@ -93,14 +93,14 @@ final class LiveReloadMiddlewareTest extends TestCase
     {
         return new class ($body, $contentType) implements RequestHandlerInterface {
             public function __construct(
-                private string $body,
-                private string $contentType,
+                private readonly string $body,
+                private readonly string $contentType,
             ) {}
 
             public function handle(ServerRequestInterface $request): ResponseInterface
             {
                 $streamFactory = new StreamFactory();
-                return (new Response())
+                return new Response()
                     ->withHeader('Content-Type', $this->contentType)
                     ->withBody($streamFactory->createStream($this->body));
             }

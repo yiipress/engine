@@ -10,8 +10,8 @@ final class CrossReferenceResolver
      * @param array<string, string> $fileToPermalink content-relative .md path => permalink URL
      */
     public function __construct(
-        private array $fileToPermalink,
-        private string $currentDir = '',
+        private readonly array $fileToPermalink,
+        private readonly string $currentDir = '',
     ) {}
 
     public function withCurrentDir(string $dir): self

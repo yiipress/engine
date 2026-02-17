@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Console;
 
+use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
+
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 
 use function PHPUnit\Framework\assertFileExists;
 use function PHPUnit\Framework\assertSame;
@@ -170,12 +175,12 @@ YAML);
             return;
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST,
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
         );
         foreach ($iterator as $item) {
-            /** @var \SplFileInfo $item */
+            /** @var SplFileInfo $item */
             if ($item->isDir()) {
                 rmdir($item->getPathname());
             } else {

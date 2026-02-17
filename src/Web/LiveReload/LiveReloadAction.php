@@ -13,10 +13,10 @@ final class LiveReloadAction
     private const int RETRY_MILLISECONDS = 500;
 
     public function __construct(
-        private ResponseFactoryInterface $responseFactory,
-        private StreamFactoryInterface $streamFactory,
-        private FileWatcher $fileWatcher,
-        private SiteBuildRunner $buildRunner,
+        private readonly ResponseFactoryInterface $responseFactory,
+        private readonly StreamFactoryInterface $streamFactory,
+        private readonly FileWatcher $fileWatcher,
+        private readonly SiteBuildRunner $buildRunner,
     ) {}
 
     public function __invoke(): ResponseInterface

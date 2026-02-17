@@ -5,7 +5,12 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Import;
 
 use App\Import\TelegramContentImporter;
+use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
+
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 
 use function PHPUnit\Framework\assertCount;
 use function PHPUnit\Framework\assertFileExists;
@@ -537,7 +542,7 @@ final class TelegramContentImporterTest extends TestCase
     {
         file_put_contents(
             $this->sourceDir . '/result.json',
-            json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+            data: json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
         );
     }
 
@@ -547,12 +552,12 @@ final class TelegramContentImporterTest extends TestCase
             return;
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST,
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
         );
         foreach ($iterator as $item) {
-            /** @var \SplFileInfo $item */
+            /** @var SplFileInfo $item */
             if ($item->isDir()) {
                 rmdir($item->getPathname());
             } else {

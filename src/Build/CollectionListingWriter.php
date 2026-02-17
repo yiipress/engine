@@ -12,7 +12,7 @@ use App\Content\PermalinkResolver;
 
 final class CollectionListingWriter
 {
-    public function __construct(private TemplateResolver $templateResolver) {}
+    public function __construct(private readonly TemplateResolver $templateResolver) {}
 
     /**
      * @param list<Entry> $entries

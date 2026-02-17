@@ -12,7 +12,7 @@ use App\Content\PermalinkResolver;
 
 final class TaxonomyPageWriter
 {
-    public function __construct(private TemplateResolver $templateResolver) {}
+    public function __construct(private readonly TemplateResolver $templateResolver) {}
 
     /**
      * @param array<string, array<string, list<Entry>>> $taxonomyData

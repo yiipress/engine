@@ -12,7 +12,7 @@ use App\Content\PermalinkResolver;
 
 final class DateArchiveWriter
 {
-    public function __construct(private TemplateResolver $templateResolver) {}
+    public function __construct(private readonly TemplateResolver $templateResolver) {}
 
     /**
      * @param list<Entry> $entries

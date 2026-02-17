@@ -5,9 +5,12 @@ declare(strict_types=1);
 /**
  * @var string $siteTitle
  * @var list<array{title: string, url: string, avatar: string}> $authorList
- * @var ?\App\Content\Model\Navigation $nav
+ * @var ?Navigation $nav
  * @var Closure(string, array): string $partial
  */
+
+use App\Content\Model\Navigation;
+
 ?>
 <!DOCTYPE html>
 <html lang="en">

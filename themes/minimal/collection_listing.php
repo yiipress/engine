@@ -7,9 +7,12 @@ declare(strict_types=1);
  * @var string $collectionTitle
  * @var list<array{title: string, url: string, date: string, summary: string}> $entries
  * @var array{currentPage: int, totalPages: int, previousUrl: string, nextUrl: string} $pagination
- * @var ?\App\Content\Model\Navigation $nav
+ * @var ?Navigation $nav
  * @var Closure(string, array): string $partial
  */
+
+use App\Content\Model\Navigation;
+
 $pageTitle = $collectionTitle . ($pagination['currentPage'] > 1 ? ' — Page ' . $pagination['currentPage'] : '') . ' — ' . $siteTitle;
 ?>
 <!DOCTYPE html>

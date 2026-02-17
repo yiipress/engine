@@ -121,7 +121,7 @@ YAML);
             break;
         }
 
-        $date = date('Y-m-d', strtotime("2024-01-01 +{$globalIndex} days"));
+        $date = date('Y-m-d', strtotime("2024-01-01 +$globalIndex days"));
         $slug = "entry-$globalIndex";
         $author = $authorSlugs[$globalIndex % $authorCount];
         $entryTags = [$tags[$globalIndex % count($tags)], $tags[($globalIndex + 7) % count($tags)]];

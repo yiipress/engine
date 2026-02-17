@@ -30,6 +30,11 @@ use App\Content\Parser\ContentParser;
 use App\Content\PermalinkResolver;
 use App\Content\TaxonomyCollector;
 use App\Processor\ContentProcessorPipeline;
+use DateTimeImmutable;
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -46,11 +51,11 @@ use function str_starts_with;
 final class BuildCommand extends Command
 {
     public function __construct(
-        private string $rootPath,
-        private ContentProcessorPipeline $contentPipeline,
-        private ContentProcessorPipeline $feedPipeline,
-        private ThemeRegistry $themeRegistry,
-        private TemplateResolver $templateResolver,
+        private readonly string $rootPath,
+        private readonly ContentProcessorPipeline $contentPipeline,
+        private readonly ContentProcessorPipeline $feedPipeline,
+        private readonly ThemeRegistry $themeRegistry,
+        private readonly TemplateResolver $templateResolver,
     ) {
         parent::__construct();
     }
@@ -142,7 +147,7 @@ final class BuildCommand extends Command
         $collections = $parser->parseCollections($contentDir);
         $authors = iterator_to_array($parser->parseAuthors($contentDir));
 
-        $output->writeln("  Site: <comment>{$siteConfig->title}</comment>");
+        $output->writeln("  Site: <comment>$siteConfig->title</comment>");
         $output->writeln('  Collections: <comment>' . count($collections) . '</comment>');
         $output->writeln('  Authors: <comment>' . count($authors) . '</comment>');
         $output->writeln('  Menus: <comment>' . count($navigation->menuNames()) . '</comment>');
@@ -245,7 +250,7 @@ final class BuildCommand extends Command
                 }
             }
 
-            if ($changedSourceFiles !== null && $changedSourceFiles === [] && $staleOutputs === []) {
+            if ($changedSourceFiles === [] && $staleOutputs === []) {
                 $output->writeln('<info>No changes detected, nothing to build.</info>');
                 return ExitCode::OK;
             }
@@ -306,7 +311,7 @@ final class BuildCommand extends Command
             $standalonePages = array_values(array_filter($standalonePages, static fn ($e) => !$e->draft));
         }
         if (!$includeFuture) {
-            $now = new \DateTimeImmutable();
+            $now = new DateTimeImmutable();
             $standalonePages = array_values(array_filter($standalonePages, static fn ($e) => $e->date === null || $e->date <= $now));
         }
         $renderer = new EntryRenderer($this->contentPipeline, $this->templateResolver, $cache, $contentDir);
@@ -316,9 +321,7 @@ final class BuildCommand extends Command
             $filePath = $outputDir . $permalink . 'index.html';
 
             if ($changedSet !== null && !isset($changedSet[$page->sourceFilePath()])) {
-                if ($manifest !== null) {
-                    $manifest->record($page->sourceFilePath(), [$filePath]);
-                }
+                $manifest?->record($page->sourceFilePath(), [$filePath]);
                 continue;
             }
 
@@ -329,9 +332,7 @@ final class BuildCommand extends Command
             file_put_contents($filePath, $renderer->render($siteConfig, $page, $navigation, $crossRefResolver));
             $standalonePagesWritten++;
 
-            if ($manifest !== null) {
-                $manifest->record($page->sourceFilePath(), [$filePath]);
-            }
+            $manifest?->record($page->sourceFilePath(), [$filePath]);
         }
         if ($standalonePages !== []) {
             $output->writeln("  Standalone pages: <comment>$standalonePagesWritten</comment>" . ($incremental ? ' (of ' . count($standalonePages) . ' total)' : ''));
@@ -357,7 +358,7 @@ final class BuildCommand extends Command
                 $entries = array_values(array_filter($entries, static fn ($e) => !$e->draft));
             }
             if (!$includeFuture) {
-                $now = new \DateTimeImmutable();
+                $now = new DateTimeImmutable();
                 $entries = array_values(array_filter($entries, static fn ($e) => $e->date === null || $e->date <= $now));
             }
             $entriesByCollection[$collectionName] = EntrySorter::sort($entries, $collection);
@@ -439,7 +440,7 @@ final class BuildCommand extends Command
         }
 
         if ($authors !== []) {
-            $allEntries = isset($allEntries) ? $allEntries : array_merge(...array_values($entriesByCollection));
+            $allEntries = $allEntries ?? array_merge(...array_values($entriesByCollection));
             $entriesByAuthor = [];
             foreach ($allEntries as $entry) {
                 foreach ($entry->authors as $authorSlug) {
@@ -480,7 +481,7 @@ final class BuildCommand extends Command
         ?Navigation $navigation,
     ): int {
         $output->writeln('<info>Dry run — files that would be generated:</info>');
-        $now = new \DateTimeImmutable();
+        $now = new DateTimeImmutable();
         $files = [];
 
         foreach ($collections as $collectionName => $collection) {
@@ -538,7 +539,6 @@ final class BuildCommand extends Command
             }
         }
 
-        $standalonePages = [];
         foreach ($parser->parseStandalonePages($contentDir) as $page) {
             if ($page->title === '') {
                 continue;
@@ -551,7 +551,6 @@ final class BuildCommand extends Command
             }
             $permalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
             $files[] = $outputDir . $permalink . 'index.html';
-            $standalonePages[] = $page;
         }
 
         $files[] = $outputDir . '/sitemap.xml';
@@ -602,12 +601,12 @@ final class BuildCommand extends Command
     private function prepareOutputDir(string $outputDir): void
     {
         if (is_dir($outputDir)) {
-            $iterator = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($outputDir, \FilesystemIterator::SKIP_DOTS),
-                \RecursiveIteratorIterator::CHILD_FIRST,
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($outputDir, FilesystemIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::CHILD_FIRST,
             );
             foreach ($iterator as $item) {
-                /** @var \SplFileInfo $item */
+                /** @var SplFileInfo $item */
                 if ($item->isDir()) {
                     rmdir($item->getPathname());
                 } else {

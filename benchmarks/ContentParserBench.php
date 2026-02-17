@@ -9,6 +9,7 @@ use PhpBench\Attributes\BeforeMethods;
 use PhpBench\Attributes\Iterations;
 use PhpBench\Attributes\Revs;
 use PhpBench\Attributes\Warmup;
+use RuntimeException;
 
 #[BeforeMethods('setUp')]
 final class ContentParserBench
@@ -22,7 +23,7 @@ final class ContentParserBench
         $this->dataDir = __DIR__ . '/data/content';
 
         if (!is_dir($this->dataDir)) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 'Benchmark data not found. Run: make bench-generate'
             );
         }
@@ -58,6 +59,7 @@ final class ContentParserBench
     public function benchParseAuthors(): void
     {
         foreach ($this->parser->parseAuthors($this->dataDir) as $_) {
+            // do nothing
         }
     }
 
@@ -67,6 +69,7 @@ final class ContentParserBench
     public function benchParseAllEntries(): void
     {
         foreach ($this->parser->parseAllEntries($this->dataDir) as $_) {
+            // do nothing
         }
     }
 

@@ -9,13 +9,17 @@ use App\Build\Theme;
 use App\Build\ThemeRegistry;
 use App\Build\TemplateResolver;
 use App\Content\Model\Entry;
-use App\Content\Model\MarkdownConfig;
 use App\Content\Model\SiteConfig;
 use App\Processor\ContentProcessorPipeline;
+use DateTimeImmutable;
+use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
 
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
+
 use function PHPUnit\Framework\assertStringContainsString;
-use function PHPUnit\Framework\assertStringNotContainsString;
 
 final class EntryRendererTest extends TestCase
 {
@@ -169,7 +173,7 @@ PHP);
             collection: $collection,
             slug: 'post',
             title: $title,
-            date: new \DateTimeImmutable('2024-01-01'),
+            date: new DateTimeImmutable('2024-01-01'),
             draft: false,
             tags: [],
             categories: [],
@@ -193,12 +197,12 @@ PHP);
             return;
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST,
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
         );
         foreach ($iterator as $item) {
-            /** @var \SplFileInfo $item */
+            /** @var SplFileInfo $item */
             if ($item->isDir()) {
                 rmdir($item->getPathname());
             } else {

@@ -9,7 +9,7 @@ use App\Content\Model\Author;
 final class AuthorParser
 {
     public function __construct(
-        private FrontMatterParser $frontMatterParser,
+        private readonly FrontMatterParser $frontMatterParser,
     ) {}
 
     public function parse(string $filePath): Author

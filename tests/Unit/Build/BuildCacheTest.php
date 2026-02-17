@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Build;
 
 use App\Build\BuildCache;
+use DirectoryIterator;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertNull;
@@ -24,7 +25,7 @@ final class BuildCacheTest extends TestCase
     protected function tearDown(): void
     {
         if (is_dir($this->cacheDir)) {
-            $iterator = new \DirectoryIterator($this->cacheDir);
+            $iterator = new DirectoryIterator($this->cacheDir);
             foreach ($iterator as $item) {
                 if (!$item->isDot()) {
                     unlink($item->getPathname());

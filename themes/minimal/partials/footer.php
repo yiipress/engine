@@ -1,9 +1,10 @@
 <?php
 
+use App\Content\Model\Navigation;
 use App\Render\NavigationRenderer;
 
 /**
- * @var ?\App\Content\Model\Navigation $nav
+ * @var ?Navigation $nav
  */
 ?>
 <?php if ($nav !== null && $nav->menu('footer') !== []): ?>

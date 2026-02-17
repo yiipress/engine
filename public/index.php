@@ -14,13 +14,6 @@ $root = dirname(__DIR__);
 
 require_once $root . '/src/autoload.php';
 
-if (Environment::appC3()) {
-    $c3 = $root . '/c3.php';
-    if (file_exists($c3)) {
-        require_once $c3;
-    }
-}
-
 /**
  * @psalm-var string $_SERVER['REQUEST_URI']
  */
@@ -46,7 +39,7 @@ $runner = new HttpApplicationRunner(
     temporaryErrorHandler: new ErrorHandler(
         new Logger(
             [
-                (new StreamTarget('php://stderr'))->setLevels([
+                new StreamTarget('php://stderr')->setLevels([
                     LogLevel::EMERGENCY,
                     LogLevel::ERROR,
                     LogLevel::WARNING,

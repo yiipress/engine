@@ -12,7 +12,12 @@ use App\Content\Model\Collection;
 use App\Content\Model\Entry;
 use App\Content\Model\SiteConfig;
 use DateTimeImmutable;
+use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
+
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 
 use function PHPUnit\Framework\assertFileExists;
 use function PHPUnit\Framework\assertSame;
@@ -55,12 +60,12 @@ final class CollectionListingWriterTest extends TestCase
         }
 
         if (is_dir($this->outputDir)) {
-            $iterator = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($this->outputDir, \FilesystemIterator::SKIP_DOTS),
-                \RecursiveIteratorIterator::CHILD_FIRST,
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($this->outputDir, FilesystemIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::CHILD_FIRST,
             );
             foreach ($iterator as $item) {
-                /** @var \SplFileInfo $item */
+                /** @var SplFileInfo $item */
                 if ($item->isDir()) {
                     rmdir($item->getPathname());
                 } else {

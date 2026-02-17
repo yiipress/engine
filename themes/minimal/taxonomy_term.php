@@ -7,9 +7,12 @@ declare(strict_types=1);
  * @var string $taxonomyName
  * @var string $term
  * @var list<array{title: string, url: string, date: string}> $entries
- * @var ?\App\Content\Model\Navigation $nav
+ * @var ?Navigation $nav
  * @var Closure(string, array): string $partial
  */
+
+use App\Content\Model\Navigation;
+
 ?>
 <!DOCTYPE html>
 <html lang="en">

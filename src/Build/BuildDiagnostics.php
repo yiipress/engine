@@ -18,10 +18,10 @@ final class BuildDiagnostics
      * @param array<string, Author> $authors
      */
     public function __construct(
-        private string $contentDir,
-        private array $fileToPermalink,
-        private SiteConfig $siteConfig,
-        private array $authors,
+        private readonly string $contentDir,
+        private readonly array $fileToPermalink,
+        private readonly SiteConfig $siteConfig,
+        private readonly array $authors,
     ) {}
 
     public function check(Entry $entry): void
@@ -122,8 +122,7 @@ final class BuildDiagnostics
     {
         $body = preg_replace('/````.*?````/s', '', $body);
         $body = preg_replace('/```.*?```/s', '', $body);
-        $body = preg_replace('/`[^`]+`/', '', $body);
-        return $body;
+        return preg_replace('/`[^`]+`/', '', $body);
     }
 
     private function relativeSource(Entry $entry): string

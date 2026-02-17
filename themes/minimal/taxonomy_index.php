@@ -6,9 +6,12 @@ declare(strict_types=1);
  * @var string $siteTitle
  * @var string $taxonomyName
  * @var list<string> $terms
- * @var ?\App\Content\Model\Navigation $nav
+ * @var ?Navigation $nav
  * @var Closure(string, array): string $partial
  */
+
+use App\Content\Model\Navigation;
+
 ?>
 <!DOCTYPE html>
 <html lang="en">

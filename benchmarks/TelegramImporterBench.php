@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace App\Benchmarks;
 
 use App\Import\TelegramContentImporter;
+use DateTimeImmutable;
+use FilesystemIterator;
 use PhpBench\Attributes\BeforeMethods;
 use PhpBench\Attributes\AfterMethods;
 use PhpBench\Attributes\Iterations;
 use PhpBench\Attributes\Revs;
 use PhpBench\Attributes\Warmup;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 
 #[BeforeMethods('setUp')]
 #[AfterMethods('tearDown')]
@@ -60,7 +65,7 @@ final class TelegramImporterBench
     {
         $messages = [];
         $tags = ['php', 'webdev', 'programming', 'tutorial', 'news', 'release', 'framework', 'performance'];
-        $baseDate = new \DateTimeImmutable('2024-01-01T10:00:00');
+        $baseDate = new DateTimeImmutable('2024-01-01T10:00:00');
 
         for ($i = 1; $i <= $count; $i++) {
             $date = $baseDate->modify('+' . $i . ' hours');
@@ -94,7 +99,7 @@ final class TelegramImporterBench
 
         file_put_contents(
             $this->sourceDir . '/result.json',
-            json_encode(['messages' => $messages], JSON_UNESCAPED_UNICODE),
+            json_encode(['messages' => $messages], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
         );
     }
 
@@ -104,12 +109,12 @@ final class TelegramImporterBench
             return;
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST,
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
         );
         foreach ($iterator as $item) {
-            /** @var \SplFileInfo $item */
+            /** @var SplFileInfo $item */
             if ($item->isDir()) {
                 rmdir($item->getPathname());
             } else {

@@ -9,12 +9,13 @@ use App\Content\Model\Entry;
 use App\Content\Model\SiteConfig;
 use App\Content\PermalinkResolver;
 use App\Processor\ContentProcessorPipeline;
+use DateTimeImmutable;
 use DateTimeInterface;
 use XMLWriter;
 
 final class FeedGenerator
 {
-    public function __construct(private ContentProcessorPipeline $pipeline)
+    public function __construct(private readonly ContentProcessorPipeline $pipeline)
     {}
 
     /**
@@ -211,7 +212,7 @@ final class FeedGenerator
     /**
      * @param list<Entry> $entries
      */
-    private function resolveLatestDate(array $entries): ?\DateTimeImmutable
+    private function resolveLatestDate(array $entries): ?DateTimeImmutable
     {
         $latest = null;
         foreach ($entries as $entry) {

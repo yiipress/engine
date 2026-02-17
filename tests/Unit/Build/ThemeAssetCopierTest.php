@@ -7,7 +7,11 @@ namespace App\Tests\Unit\Build;
 use App\Build\Theme;
 use App\Build\ThemeAssetCopier;
 use App\Build\ThemeRegistry;
+use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
+
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 use function PHPUnit\Framework\assertFileExists;
 use function PHPUnit\Framework\assertSame;
@@ -77,9 +81,9 @@ final class ThemeAssetCopierTest extends TestCase
         if (!is_dir($dir)) {
             return;
         }
-        $items = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST,
+        $items = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
         );
         foreach ($items as $item) {
             if ($item->isDir()) {

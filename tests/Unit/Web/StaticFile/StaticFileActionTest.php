@@ -6,10 +6,15 @@ namespace App\Tests\Unit\Web\StaticFile;
 
 use App\Web\LiveReload\SiteBuildRunner;
 use App\Web\StaticFile\StaticFileAction;
+use FilesystemIterator;
 use HttpSoft\Message\ResponseFactory;
 use HttpSoft\Message\ServerRequest;
 use HttpSoft\Message\StreamFactory;
 use PHPUnit\Framework\TestCase;
+
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
@@ -137,13 +142,13 @@ final class StaticFileActionTest extends TestCase
             return;
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST,
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
         );
 
         foreach ($iterator as $item) {
-            /** @var \SplFileInfo $item */
+            /** @var SplFileInfo $item */
             if ($item->isDir()) {
                 rmdir($item->getPathname());
             } else {

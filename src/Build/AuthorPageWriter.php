@@ -12,13 +12,11 @@ use App\Content\Model\SiteConfig;
 use App\Content\PermalinkResolver;
 use App\Render\MarkdownRenderer;
 
-use function dirname;
-
 final class AuthorPageWriter
 {
     private ?MarkdownRenderer $markdownRenderer = null;
 
-    public function __construct(private TemplateResolver $templateResolver) {}
+    public function __construct(private readonly TemplateResolver $templateResolver) {}
 
     /**
      * @param array<string, Author> $authors

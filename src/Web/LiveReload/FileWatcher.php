@@ -7,6 +7,7 @@ namespace App\Web\LiveReload;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use FilesystemIterator;
+use SplFileInfo;
 
 final class FileWatcher
 {
@@ -15,7 +16,7 @@ final class FileWatcher
     /**
      * @param list<string> $directories
      */
-    public function __construct(private array $directories)
+    public function __construct(private readonly array $directories)
     {
         $this->checksumFile = sys_get_temp_dir() . '/yiipress-filewatcher-' . md5(implode('|', $directories)) . '.checksum';
     }
@@ -71,7 +72,7 @@ final class FileWatcher
             );
 
             foreach ($iterator as $file) {
-                /** @var \SplFileInfo $file */
+                /** @var SplFileInfo $file */
                 if (!$file->isFile()) {
                     continue;
                 }

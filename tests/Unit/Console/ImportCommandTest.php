@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Console;
 
+use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
+
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
@@ -60,7 +65,7 @@ final class ImportCommandTest extends TestCase
                         ],
                     ],
                 ],
-            ]),
+            ], JSON_THROW_ON_ERROR),
         );
 
         $result = $this->runImport('telegram', ['--directory' => $this->sourceDir]);
@@ -87,7 +92,7 @@ final class ImportCommandTest extends TestCase
                         ],
                     ],
                 ],
-            ]),
+            ], JSON_THROW_ON_ERROR),
         );
 
         $result = $this->runImport('telegram', ['--directory' => $this->sourceDir, '--collection' => 'channel']);
@@ -135,12 +140,12 @@ final class ImportCommandTest extends TestCase
             return;
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST,
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
         );
         foreach ($iterator as $item) {
-            /** @var \SplFileInfo $item */
+            /** @var SplFileInfo $item */
             if ($item->isDir()) {
                 rmdir($item->getPathname());
             } else {

@@ -7,6 +7,7 @@ namespace App\Tests\Unit\Processor;
 use App\Content\Model\Entry;
 use App\Processor\ContentProcessorInterface;
 use App\Processor\ContentProcessorPipeline;
+use Closure;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 
@@ -74,10 +75,10 @@ final class ContentProcessorPipelineTest extends TestCase
         );
     }
 
-    private function createProcessor(\Closure $fn): ContentProcessorInterface
+    private function createProcessor(Closure $fn): ContentProcessorInterface
     {
         return new class ($fn) implements ContentProcessorInterface {
-            public function __construct(private \Closure $fn) {}
+            public function __construct(private readonly Closure $fn) {}
 
             public function process(string $content, Entry $entry): string
             {

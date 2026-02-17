@@ -13,10 +13,15 @@ use App\Content\Parser\ContentParser;
 use App\Processor\ContentProcessorPipeline;
 use App\Processor\MarkdownProcessor;
 use App\Render\MarkdownRenderer;
+use FilesystemIterator;
 use PhpBench\Attributes\BeforeMethods;
 use PhpBench\Attributes\Iterations;
 use PhpBench\Attributes\Revs;
 use PhpBench\Attributes\Warmup;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use RuntimeException;
+use SplFileInfo;
 
 #[BeforeMethods('setUp')]
 final class BuildBench
@@ -44,7 +49,7 @@ final class BuildBench
         $this->cacheDir = __DIR__ . '/data/cache';
 
         if (!is_dir($this->dataDir)) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 'Benchmark data not found. Run: make bench-generate'
             );
         }
@@ -111,6 +116,7 @@ final class BuildBench
         iterator_to_array($this->parser->parseAuthors($this->dataDir));
 
         foreach ($this->parser->parseAllEntries($this->dataDir) as $_) {
+            // do nothing
         }
     }
 
@@ -154,12 +160,12 @@ final class BuildBench
             return;
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($this->outputDir, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST,
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($this->outputDir, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
         );
         foreach ($iterator as $item) {
-            /** @var \SplFileInfo $item */
+            /** @var SplFileInfo $item */
             if ($item->isDir()) {
                 rmdir($item->getPathname());
             } else {

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Build;
 
+use DirectoryIterator;
+
 use function hash;
 use function hash_file;
 
@@ -50,7 +52,7 @@ final class BuildCache
             return;
         }
 
-        $iterator = new \DirectoryIterator($this->cacheDir);
+        $iterator = new DirectoryIterator($this->cacheDir);
         foreach ($iterator as $item) {
             if ($item->isDot()) {
                 continue;

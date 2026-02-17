@@ -7,9 +7,14 @@ namespace App\Tests\Unit\Build;
 use App\Build\BuildDiagnostics;
 use App\Content\Model\Author;
 use App\Content\Model\Entry;
-use App\Content\Model\MarkdownConfig;
 use App\Content\Model\SiteConfig;
+use DateTimeImmutable;
+use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
+
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 
 use function PHPUnit\Framework\assertContains;
 use function PHPUnit\Framework\assertCount;
@@ -219,7 +224,7 @@ final class BuildDiagnosticsTest extends TestCase
             collection: $collection,
             slug: $slug,
             title: $title,
-            date: new \DateTimeImmutable('2024-01-01'),
+            date: new DateTimeImmutable('2024-01-01'),
             draft: false,
             tags: $tags,
             categories: $categories,
@@ -243,12 +248,12 @@ final class BuildDiagnosticsTest extends TestCase
             return;
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST,
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
         );
         foreach ($iterator as $item) {
-            /** @var \SplFileInfo $item */
+            /** @var SplFileInfo $item */
             if ($item->isDir()) {
                 rmdir($item->getPathname());
             } else {

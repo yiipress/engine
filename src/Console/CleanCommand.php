@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Console;
 
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -22,7 +26,7 @@ final class CleanCommand extends Command
     private const string DEFAULT_OUTPUT_DIR = 'output';
     private const string CACHE_DIR = 'runtime/cache/build';
 
-    public function __construct(private string $rootPath)
+    public function __construct(private readonly string $rootPath)
     {
         parent::__construct();
     }
@@ -71,13 +75,13 @@ final class CleanCommand extends Command
             return false;
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST,
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
         );
 
         foreach ($iterator as $item) {
-            /** @var \SplFileInfo $item */
+            /** @var SplFileInfo $item */
             if ($item->isDir()) {
                 rmdir($item->getPathname());
             } else {

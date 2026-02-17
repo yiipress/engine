@@ -28,7 +28,7 @@ final readonly class NotFoundHandler implements RequestHandlerInterface
             <head><meta charset="UTF-8"><title>404</title></head>
             <body>
             <h1>404</h1>
-            <p>The page <strong>{$path}</strong> was not found.</p>
+            <p>The page <strong>$path</strong> was not found.</p>
             </body>
             </html>
             HTML;

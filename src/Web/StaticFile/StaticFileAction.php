@@ -35,10 +35,10 @@ final class StaticFileAction
     private bool $buildAttempted = false;
 
     public function __construct(
-        private ResponseFactoryInterface $responseFactory,
-        private StreamFactoryInterface $streamFactory,
-        private string $documentRoot,
-        private SiteBuildRunner $buildRunner,
+        private readonly ResponseFactoryInterface $responseFactory,
+        private readonly StreamFactoryInterface $streamFactory,
+        private readonly string $documentRoot,
+        private readonly SiteBuildRunner $buildRunner,
     ) {}
 
     public function __invoke(ServerRequestInterface $request): ResponseInterface
@@ -97,7 +97,7 @@ final class StaticFileAction
             return null;
         }
 
-        if (!str_starts_with($realPath, $realRoot . '/') && $realPath !== $realRoot) {
+        if ($realPath !== $realRoot && !str_starts_with($realPath, $realRoot . '/')) {
             return null;
         }
 

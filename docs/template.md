@@ -72,15 +72,15 @@ themes/minimal/
 
 ### Entry template (`entry.php`)
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `$siteTitle` | `string` | Site title from `config.yaml` |
-| `$entryTitle` | `string` | Entry title |
-| `$content` | `string` | Rendered HTML content |
-| `$date` | `string` | Formatted date (`Y-m-d`) or empty string |
-| `$author` | `string` | Comma-separated author names |
-| `$collection` | `string` | Collection name the entry belongs to |
-| `$nav` | `?Navigation` | Navigation object or `null` |
+| Variable      | Type          | Description                              |
+|---------------|---------------|------------------------------------------|
+| `$siteTitle`  | `string`      | Site title from `config.yaml`            |
+| `$entryTitle` | `string`      | Entry title                              |
+| `$content`    | `string`      | Rendered HTML content                    |
+| `$date`       | `string`      | Formatted date (`Y-m-d`) or empty string |
+| `$author`     | `string`      | Comma-separated author names             |
+| `$collection` | `string`      | Collection name the entry belongs to     |
+| `$nav`        | `?Navigation` | Navigation object or `null`              |
 
 Example:
 
@@ -99,13 +99,13 @@ Example:
 
 ### Collection listing template (`collection_listing.php`)
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `$siteTitle` | `string` | Site title |
-| `$collectionTitle` | `string` | Collection title |
-| `$entries` | `list<array{title: string, url: string, date: string, summary: string}>` | Entries for the current page |
-| `$pagination` | `array{currentPage: int, totalPages: int, previousUrl: string, nextUrl: string}` | Pagination data |
-| `$nav` | `?Navigation` | Navigation object or `null` |
+| Variable           | Type                                                                             | Description                  |
+|--------------------|----------------------------------------------------------------------------------|------------------------------|
+| `$siteTitle`       | `string`                                                                         | Site title                   |
+| `$collectionTitle` | `string`                                                                         | Collection title             |
+| `$entries`         | `list<array{title: string, url: string, date: string, summary: string}>`         | Entries for the current page |
+| `$pagination`      | `array{currentPage: int, totalPages: int, previousUrl: string, nextUrl: string}` | Pagination data              |
+| `$nav`             | `?Navigation`                                                                    | Navigation object or `null`  |
 
 Example:
 
@@ -139,12 +139,12 @@ Example:
 
 ### Taxonomy index template (`taxonomy_index.php`)
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `$siteTitle` | `string` | Site title |
-| `$taxonomyName` | `string` | Taxonomy name (e.g. `tags`, `categories`) |
-| `$terms` | `list<string>` | All terms in this taxonomy |
-| `$nav` | `?Navigation` | Navigation object or `null` |
+| Variable        | Type           | Description                               |
+|-----------------|----------------|-------------------------------------------|
+| `$siteTitle`    | `string`       | Site title                                |
+| `$taxonomyName` | `string`       | Taxonomy name (e.g. `tags`, `categories`) |
+| `$terms`        | `list<string>` | All terms in this taxonomy                |
+| `$nav`          | `?Navigation`  | Navigation object or `null`               |
 
 Example:
 
@@ -159,59 +159,59 @@ Example:
 
 ### Taxonomy term template (`taxonomy_term.php`)
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `$siteTitle` | `string` | Site title |
-| `$taxonomyName` | `string` | Taxonomy name |
-| `$term` | `string` | Term value |
-| `$entries` | `list<array{title: string, url: string, date: string}>` | Entries with this term |
-| `$nav` | `?Navigation` | Navigation object or `null` |
+| Variable        | Type                                                    | Description                 |
+|-----------------|---------------------------------------------------------|-----------------------------|
+| `$siteTitle`    | `string`                                                | Site title                  |
+| `$taxonomyName` | `string`                                                | Taxonomy name               |
+| `$term`         | `string`                                                | Term value                  |
+| `$entries`      | `list<array{title: string, url: string, date: string}>` | Entries with this term      |
+| `$nav`          | `?Navigation`                                           | Navigation object or `null` |
 
 ### Author page template (`author.php`)
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `$siteTitle` | `string` | Site title |
-| `$authorTitle` | `string` | Author display name |
-| `$authorEmail` | `string` | Author email (may be empty) |
-| `$authorUrl` | `string` | Author URL (may be empty) |
-| `$authorAvatar` | `string` | Author avatar path (may be empty) |
-| `$authorBio` | `string` | Author bio rendered as HTML |
-| `$entries` | `list<array{title: string, url: string, date: string}>` | Author's entries |
-| `$nav` | `?Navigation` | Navigation object or `null` |
+| Variable        | Type                                                    | Description                       |
+|-----------------|---------------------------------------------------------|-----------------------------------|
+| `$siteTitle`    | `string`                                                | Site title                        |
+| `$authorTitle`  | `string`                                                | Author display name               |
+| `$authorEmail`  | `string`                                                | Author email (may be empty)       |
+| `$authorUrl`    | `string`                                                | Author URL (may be empty)         |
+| `$authorAvatar` | `string`                                                | Author avatar path (may be empty) |
+| `$authorBio`    | `string`                                                | Author bio rendered as HTML       |
+| `$entries`      | `list<array{title: string, url: string, date: string}>` | Author's entries                  |
+| `$nav`          | `?Navigation`                                           | Navigation object or `null`       |
 
 ### Author index template (`author_index.php`)
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `$siteTitle` | `string` | Site title |
-| `$authorList` | `list<array{title: string, url: string, avatar: string}>` | All authors |
-| `$nav` | `?Navigation` | Navigation object or `null` |
+| Variable      | Type                                                      | Description                 |
+|---------------|-----------------------------------------------------------|-----------------------------|
+| `$siteTitle`  | `string`                                                  | Site title                  |
+| `$authorList` | `list<array{title: string, url: string, avatar: string}>` | All authors                 |
+| `$nav`        | `?Navigation`                                             | Navigation object or `null` |
 
 ### Yearly archive template (`archive_yearly.php`)
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `$siteTitle` | `string` | Site title |
-| `$collectionName` | `string` | Collection name |
-| `$collectionTitle` | `string` | Collection title |
-| `$year` | `string` | Year |
-| `$months` | `list<string>` | Months with entries (descending) |
-| `$entries` | `list<array{title: string, url: string, date: string}>` | Entries for this year |
-| `$nav` | `?Navigation` | Navigation object or `null` |
+| Variable           | Type                                                    | Description                      |
+|--------------------|---------------------------------------------------------|----------------------------------|
+| `$siteTitle`       | `string`                                                | Site title                       |
+| `$collectionName`  | `string`                                                | Collection name                  |
+| `$collectionTitle` | `string`                                                | Collection title                 |
+| `$year`            | `string`                                                | Year                             |
+| `$months`          | `list<string>`                                          | Months with entries (descending) |
+| `$entries`         | `list<array{title: string, url: string, date: string}>` | Entries for this year            |
+| `$nav`             | `?Navigation`                                           | Navigation object or `null`      |
 
 ### Monthly archive template (`archive_monthly.php`)
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `$siteTitle` | `string` | Site title |
-| `$collectionName` | `string` | Collection name |
-| `$collectionTitle` | `string` | Collection title |
-| `$year` | `string` | Year |
-| `$month` | `string` | Month number (zero-padded) |
-| `$monthName` | `string` | Month name (e.g. `January`) |
-| `$entries` | `list<array{title: string, url: string, date: string}>` | Entries for this month |
-| `$nav` | `?Navigation` | Navigation object or `null` |
+| Variable           | Type                                                    | Description                 |
+|--------------------|---------------------------------------------------------|-----------------------------|
+| `$siteTitle`       | `string`                                                | Site title                  |
+| `$collectionName`  | `string`                                                | Collection name             |
+| `$collectionTitle` | `string`                                                | Collection title            |
+| `$year`            | `string`                                                | Year                        |
+| `$month`           | `string`                                                | Month number (zero-padded)  |
+| `$monthName`       | `string`                                                | Month name (e.g. `January`) |
+| `$entries`         | `list<array{title: string, url: string, date: string}>` | Entries for this month      |
+| `$nav`             | `?Navigation`                                           | Navigation object or `null` |
 
 ## Navigation
 
@@ -271,16 +271,16 @@ Partials can include other partials — the `$partial` function is automatically
 
 ### Built-in partials (minimal theme)
 
-| Partial | Variables | Description |
-|---------|-----------|-------------|
-| `head` | `$title` | `<meta>` tags, `<title>`, stylesheet link |
-| `header` | `$siteTitle`, `$nav` | Site header with navigation and dark mode toggle |
-| `footer` | `$nav` | Footer navigation and dark mode script |
-| `navigation` | `$navigation` | Main navigation `<nav>` list |
-| `author-card` | `$author` | Author name and bio card |
-| `entry-card` | `$entry` | Entry summary card with date |
-| `pagination` | `$collection` | Previous/next pagination links |
-| `sidebar` | `$entry` | Sidebar with author cards |
+| Partial       | Variables            | Description                                      |
+|---------------|----------------------|--------------------------------------------------|
+| `head`        | `$title`             | `<meta>` tags, `<title>`, stylesheet link        |
+| `header`      | `$siteTitle`, `$nav` | Site header with navigation and dark mode toggle |
+| `footer`      | `$nav`               | Footer navigation and dark mode script           |
+| `navigation`  | `$navigation`        | Main navigation `<nav>` list                     |
+| `author-card` | `$author`            | Author name and bio card                         |
+| `entry-card`  | `$entry`             | Entry summary card with date                     |
+| `pagination`  | `$collection`        | Previous/next pagination links                   |
+| `sidebar`     | `$entry`             | Sidebar with author cards                        |
 
 ### Theme resolution
 
@@ -290,16 +290,16 @@ Partials follow the same theme resolution as templates: the active theme is chec
 
 All templates receive the following helper functions as local variables:
 
-| Function | Signature | Description |
-|----------|-----------|-------------|
+| Function   | Signature                                       | Description                                              |
+|------------|-------------------------------------------------|----------------------------------------------------------|
 | `$partial` | `(string $name, array $variables = []): string` | Render a partial template from the `partials/` directory |
 
 Additional helpers available via static methods:
 
-| Helper | Usage | Description |
-|--------|-------|-------------|
+| Helper                         | Usage                                      | Description                                             |
+|--------------------------------|--------------------------------------------|---------------------------------------------------------|
 | `NavigationRenderer::render()` | `NavigationRenderer::render($nav, 'main')` | Render a navigation menu as nested `<nav><ul><li>` HTML |
-| `htmlspecialchars()` | `htmlspecialchars($text)` | PHP built-in for escaping HTML output |
+| `htmlspecialchars()`           | `htmlspecialchars($text)`                  | PHP built-in for escaping HTML output                   |
 
 ## Customizing templates
 

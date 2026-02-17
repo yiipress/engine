@@ -12,6 +12,7 @@ use App\Content\Model\SiteConfig;
 use App\Content\Parser\ContentParser;
 use App\Content\PermalinkResolver;
 use App\Processor\ContentProcessorPipeline;
+use DateTimeImmutable;
 use RuntimeException;
 
 use function pcntl_fork;
@@ -20,9 +21,9 @@ use function pcntl_waitpid;
 final class ParallelEntryWriter
 {
     public function __construct(
-        private ContentProcessorPipeline $pipeline,
-        private TemplateResolver $templateResolver,
-        private ?BuildCache $cache = null,
+        private readonly ContentProcessorPipeline $pipeline,
+        private readonly TemplateResolver $templateResolver,
+        private readonly ?BuildCache $cache = null,
     ) {}
 
     /**
@@ -96,7 +97,7 @@ final class ParallelEntryWriter
         bool $includeDrafts,
         bool $includeFuture,
     ): array {
-        $now = new \DateTimeImmutable();
+        $now = new DateTimeImmutable();
         $tasks = [];
 
         foreach ($collections as $collectionName => $collection) {

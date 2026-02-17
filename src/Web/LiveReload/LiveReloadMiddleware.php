@@ -27,8 +27,8 @@ final class LiveReloadMiddleware implements MiddlewareInterface
 JS;
 
     public function __construct(
-        private StreamFactoryInterface $streamFactory,
-        private bool $enabled = true,
+        private readonly StreamFactoryInterface $streamFactory,
+        private readonly bool $enabled = true,
     ) {}
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
