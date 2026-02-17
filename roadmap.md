@@ -45,7 +45,7 @@
 ## Priority 3: Developer experience
 
 - [x] Live reload / file watching during `yiipress serve`
-- [ ] `yiipress new` command — scaffold new entries from archetypes/templates
+- [x] `yiipress new` command — scaffold new entries from archetypes/templates
 - [x] Incremental builds (only rebuild changed files)
 - [ ] Environment-specific configuration documentation (document existing `config/environments/`)
 - [x] Build diagnostics (warn on broken internal links, missing images, invalid front matter)

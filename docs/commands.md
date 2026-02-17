@@ -68,6 +68,40 @@ Alternatively, use `composer serve` which disables the process timeout.
 
 See [Web application](web-app.md) for details on static file serving and live reload.
 
+## `yii new`
+
+Scaffolds a new content entry or standalone page.
+
+```
+yii new <title> [--collection=<name>] [--content-dir=content] [--draft]
+```
+
+**Arguments:**
+
+- `title` — title of the new entry (required).
+
+**Options:**
+
+- `--collection`, `-c` — collection to create the entry in. If omitted, creates a standalone page in the content root.
+- `--content-dir`, `-d` — path to the content directory (default: `content`).
+- `--draft` — mark the entry as a draft (`draft: true` in front matter).
+
+**Behavior:**
+
+- For collections with `sort_by: date`, the filename is prefixed with today's date (e.g., `2024-03-15-my-post.md`).
+- For other collections, the filename is the slugified title (e.g., `my-post.md`).
+- Standalone pages get a `permalink` field set to `/<slug>/`.
+- If `default_author` is set in `config.yaml`, it is added to the `authors` front matter.
+- The command fails if the target file already exists or the collection is not found.
+
+**Examples:**
+
+```bash
+yii new "My First Post" --collection=blog
+yii new "Draft Ideas" --collection=blog --draft
+yii new "About Us"
+```
+
 ## `yii clean`
 
 Clears build output and caches.

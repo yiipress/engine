@@ -269,6 +269,7 @@ Cache storage: filesystem (`runtime/cache/`). No external dependencies.
 src/
 ├── Console/
 │   ├── BuildCommand.php          # `yiipress build`
+│   ├── NewCommand.php            # `yiipress new` — scaffold entries/pages
 │   └── ServeCommand.php          # `yiipress serve`
 ├── Content/
 │   ├── Model/

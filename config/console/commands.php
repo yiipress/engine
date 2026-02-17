@@ -8,4 +8,5 @@ return [
     'hello' => Console\HelloCommand::class,
     'build' => Console\BuildCommand::class,
     'clean' => Console\CleanCommand::class,
+    'new' => Console\NewCommand::class,
 ];
