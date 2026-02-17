@@ -10,28 +10,51 @@ use FilesystemIterator;
 
 final class FileWatcher
 {
-    private int $lastChecksum = 0;
+    private string $checksumFile;
 
     /**
      * @param list<string> $directories
      */
-    public function __construct(private array $directories) {}
+    public function __construct(private array $directories)
+    {
+        $this->checksumFile = sys_get_temp_dir() . '/yiipress-filewatcher-' . md5(implode('|', $directories)) . '.checksum';
+    }
 
     public function hasChanges(): bool
     {
         $checksum = $this->computeChecksum();
+        $lastChecksum = $this->loadChecksum();
 
-        if ($this->lastChecksum === 0) {
-            $this->lastChecksum = $checksum;
+        if ($lastChecksum === null) {
+            $this->saveChecksum($checksum);
             return false;
         }
 
-        if ($checksum === $this->lastChecksum) {
+        if ($checksum === $lastChecksum) {
             return false;
         }
 
-        $this->lastChecksum = $checksum;
+        $this->saveChecksum($checksum);
         return true;
+    }
+
+    private function loadChecksum(): ?int
+    {
+        if (!is_file($this->checksumFile)) {
+            return null;
+        }
+
+        $content = file_get_contents($this->checksumFile);
+        if ($content === false) {
+            return null;
+        }
+
+        return (int) $content;
+    }
+
+    private function saveChecksum(int $checksum): void
+    {
+        file_put_contents($this->checksumFile, (string) $checksum);
     }
 
     private function computeChecksum(): int

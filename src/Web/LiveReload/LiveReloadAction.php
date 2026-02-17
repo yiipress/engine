@@ -10,8 +10,7 @@ use Psr\Http\Message\StreamFactoryInterface;
 
 final class LiveReloadAction
 {
-    private const int POLL_INTERVAL_MICROSECONDS = 500_000;
-    private const int MAX_DURATION_SECONDS = 30;
+    private const int RETRY_MILLISECONDS = 500;
 
     public function __construct(
         private ResponseFactoryInterface $responseFactory,
@@ -22,7 +21,14 @@ final class LiveReloadAction
 
     public function __invoke(): ResponseInterface
     {
-        $body = $this->poll();
+        $body = 'retry: ' . self::RETRY_MILLISECONDS . "\n";
+
+        if ($this->fileWatcher->hasChanges()) {
+            $this->buildRunner->build();
+            $body .= "event: reload\ndata: changed\n\n";
+        } else {
+            $body .= "event: ping\ndata: ok\n\n";
+        }
 
         return $this->responseFactory->createResponse()
             ->withHeader('Content-Type', 'text/event-stream')
@@ -30,21 +36,5 @@ final class LiveReloadAction
             ->withHeader('Connection', 'keep-alive')
             ->withHeader('X-Accel-Buffering', 'no')
             ->withBody($this->streamFactory->createStream($body));
-    }
-
-    private function poll(): string
-    {
-        $deadline = time() + self::MAX_DURATION_SECONDS;
-
-        while (time() < $deadline) {
-            if ($this->fileWatcher->hasChanges()) {
-                $this->buildRunner->build();
-                return "event: reload\ndata: changed\n\n";
-            }
-
-            usleep(self::POLL_INTERVAL_MICROSECONDS);
-        }
-
-        return "event: ping\ndata: timeout\n\n";
     }
 }

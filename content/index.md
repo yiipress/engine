@@ -5,7 +5,7 @@ permalink: /
 
 Hello, world!
 
-This is YiiPress preview mode. It reloads automatically when you change files in the `content` directory.
+This is YiiPress preview mode. It rebuilds and reloads automatically when you change files in the `content` directory.
 
 Use markdown to format your content. Here is an example:
 
