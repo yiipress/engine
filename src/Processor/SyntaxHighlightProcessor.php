@@ -9,12 +9,9 @@ use App\Highlighter\SyntaxHighlighter;
 
 final class SyntaxHighlightProcessor implements ContentProcessorInterface
 {
-    private SyntaxHighlighter $highlighter;
-
-    public function __construct()
-    {
-        $this->highlighter = new SyntaxHighlighter();
-    }
+    public function __construct(
+        private readonly SyntaxHighlighter $highlighter,
+    ) {}
 
     public function process(string $content, Entry $entry): string
     {
