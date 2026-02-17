@@ -35,7 +35,6 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Yiisoft\Aliases\Aliases;
 use Yiisoft\Yii\Console\ExitCode;
 
 use function str_starts_with;
@@ -47,7 +46,7 @@ use function str_starts_with;
 final class BuildCommand extends Command
 {
     public function __construct(
-        private Aliases $aliases,
+        private string $rootPath,
         private ContentProcessorPipeline $contentPipeline,
         private ContentProcessorPipeline $feedPipeline,
         private ThemeRegistry $themeRegistry,
@@ -107,7 +106,7 @@ final class BuildCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $rootPath = $this->aliases->get('@root');
+        $rootPath = $this->rootPath;
 
         /** @var string $contentDirOption */
         $contentDirOption = $input->getOption('content-dir');

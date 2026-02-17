@@ -9,7 +9,6 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Yiisoft\Aliases\Aliases;
 use Yiisoft\Yii\Console\ExitCode;
 
 use function str_starts_with;
@@ -23,7 +22,7 @@ final class CleanCommand extends Command
     private const string DEFAULT_OUTPUT_DIR = 'output';
     private const string CACHE_DIR = 'runtime/cache/build';
 
-    public function __construct(private Aliases $aliases)
+    public function __construct(private string $rootPath)
     {
         parent::__construct();
     }
@@ -41,7 +40,7 @@ final class CleanCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $rootPath = $this->aliases->get('@root');
+        $rootPath = $this->rootPath;
 
         /** @var string $outputDirOption */
         $outputDirOption = $input->getOption('output-dir');

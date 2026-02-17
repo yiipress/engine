@@ -314,8 +314,6 @@ src/
 │   ├── ThemeAssetCopier.php      # Copies theme assets/ to output directory
 │   ├── ThemeRegistry.php         # Named theme registry, configured via DI
 │   ├── TemplateResolver.php      # Resolves template names via ThemeRegistry
-├── Shared/
-│   └── ApplicationParams.php
 ├── Web/                          # Yii3 web actions for serve mode
 │   ├── LiveReload/
 │   │   ├── FileWatcher.php       # Polls directories for file changes
