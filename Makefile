@@ -58,7 +58,7 @@ endif
 
 ifeq ($(PRIMARY_GOAL),yii)
 yii: ## Execute Yii command
-	$(DOCKER_COMPOSE_DEV) run --rm app ./yii $(CLI_ARGS)
+	$(DOCKER_COMPOSE_DEV) run --rm -e XDEBUG_MODE=off app ./yii $(CLI_ARGS)
 .PHONY: yii
 endif
 
@@ -114,6 +114,12 @@ endif
 ifeq ($(PRIMARY_GOAL),bench)
 bench: ## Run benchmarks (xdebug off). Use BENCH_FILTER=ClassName to filter.
 	$(DOCKER_COMPOSE_DEV) run --rm -e XDEBUG_MODE=off app ./vendor/bin/phpbench run $(if $(BENCH_FILTER),--filter=$(BENCH_FILTER)) $(CLI_ARGS)
+endif
+
+ifeq ($(PRIMARY_GOAL),bench-profile)
+bench-profile: ## Run benchmarks with XDebug profiling. Use BENCH_FILTER=ClassName to filter.
+	@mkdir -p runtime/xdebug
+	$(DOCKER_COMPOSE_DEV) run --rm -e XDEBUG_MODE=profile -e XDEBUG_OUTPUT_DIR=/app/runtime/xdebug app ./vendor/bin/phpbench run --iterations=1 --revs=1 --warmup=1 --php-config='{"xdebug.output_dir":"/app/runtime/xdebug"}' $(if $(BENCH_FILTER),--filter=$(BENCH_FILTER)) $(CLI_ARGS)
 endif
 
 ifeq ($(PRIMARY_GOAL),php)

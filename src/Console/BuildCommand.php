@@ -147,6 +147,7 @@ final class BuildCommand extends Command
         $navigation = $parser->parseNavigation($contentDir);
         $collections = $parser->parseCollections($contentDir);
         $authors = iterator_to_array($parser->parseAuthors($contentDir));
+        $parser->setAuthors($authors);
 
         $output->writeln("  Site: <comment>$siteConfig->title</comment>");
         $output->writeln('  Collections: <comment>' . count($collections) . '</comment>');
@@ -321,7 +322,7 @@ final class BuildCommand extends Command
         }
 
         $writer = new ParallelEntryWriter($this->contentPipeline, $this->templateResolver, $cache);
-        $entriesWritten = $writer->write($siteConfig, $tasksToWrite, $contentDir, $workerCount, $navigation, $crossRefResolver);
+        $entriesWritten = $writer->write($siteConfig, $tasksToWrite, $contentDir, $workerCount, $navigation, $crossRefResolver, $authors);
 
         $output->writeln("  Entries written: <comment>$entriesWritten</comment>" . ($incremental ? ' (of ' . count($allTasks) . ' total)' : ''));
 
@@ -344,7 +345,7 @@ final class BuildCommand extends Command
         if (!$includeFuture) {
             $standalonePages = array_values(array_filter($standalonePages, static fn ($e) => $e->date === null || $e->date <= $now));
         }
-        $renderer = new EntryRenderer($this->contentPipeline, $this->templateResolver, $cache, $contentDir);
+        $renderer = new EntryRenderer($this->contentPipeline, $this->templateResolver, $cache, $contentDir, $authors);
         $standalonePagesWritten = 0;
         foreach ($standalonePages as $page) {
             $permalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
@@ -378,7 +379,7 @@ final class BuildCommand extends Command
             $output->writeln("  Assets copied: <comment>$assetsCopied</comment>");
         }
 
-        $feedGenerator = new FeedGenerator($this->feedPipeline);
+        $feedGenerator = new FeedGenerator($this->feedPipeline, $authors);
         $feedCount = 0;
         foreach ($collections as $collectionName => $collection) {
             if (!$collection->feed) {

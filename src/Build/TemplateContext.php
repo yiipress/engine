@@ -6,6 +6,9 @@ namespace App\Build;
 
 final class TemplateContext
 {
+    /** @var array<string, \Closure> */
+    private array $closureCache = [];
+
     public function __construct(
         private readonly TemplateResolver $templateResolver,
         private readonly string $themeName = '',
@@ -16,14 +19,18 @@ final class TemplateContext
      */
     public function partial(string $name, array $variables = []): string
     {
-        $__path = $this->templateResolver->resolvePartial($name, $this->themeName);
         $variables['partial'] = $this->partial(...);
 
-        return (static function (string $__file, array $__vars): string {
-            extract($__vars, EXTR_SKIP);
-            ob_start();
-            require $__file;
-            return ob_get_clean();
-        })($__path, $variables);
+        if (!isset($this->closureCache[$name])) {
+            $path = $this->templateResolver->resolvePartial($name, $this->themeName);
+            $this->closureCache[$name] = static function (array $__vars) use ($path): string {
+                extract($__vars, EXTR_SKIP);
+                ob_start();
+                require $path;
+                return ob_get_clean();
+            };
+        }
+
+        return ($this->closureCache[$name])($variables);
     }
 }

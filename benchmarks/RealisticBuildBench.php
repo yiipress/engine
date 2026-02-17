@@ -139,7 +139,7 @@ final class RealisticBuildBench
         }
 
         $writer = new ParallelEntryWriter($this->pipeline, $this->templateResolver, $cache);
-        $writer->write($siteConfig, $tasks, $this->dataDir, $workerCount);
+        $writer->write($siteConfig, $tasks, $this->dataDir, $workerCount, null, null, []);
     }
 
     private function cleanOutputDir(): void

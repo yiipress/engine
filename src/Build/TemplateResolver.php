@@ -8,14 +8,22 @@ use RuntimeException;
 
 final class TemplateResolver
 {
+    /** @var array<string, string> */
+    private array $cache = [];
+
     public function __construct(private readonly ThemeRegistry $themeRegistry) {}
 
     public function resolve(string $templateName, string $themeName = ''): string
     {
+        $key = $themeName . "\0" . $templateName;
+        if (isset($this->cache[$key])) {
+            return $this->cache[$key];
+        }
+
         if ($themeName !== '' && $this->themeRegistry->has($themeName)) {
             $path = $this->themeRegistry->get($themeName)->path . '/' . $templateName . '.php';
             if (is_file($path)) {
-                return $path;
+                return $this->cache[$key] = $path;
             }
         }
 
@@ -25,7 +33,7 @@ final class TemplateResolver
             }
             $path = $theme->path . '/' . $templateName . '.php';
             if (is_file($path)) {
-                return $path;
+                return $this->cache[$key] = $path;
             }
         }
 

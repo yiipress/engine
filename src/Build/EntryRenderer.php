@@ -13,11 +13,21 @@ use RuntimeException;
 
 final class EntryRenderer
 {
+    /** @var array<string, \Closure> */
+    private array $templateClosures = [];
+
+    /** @var array<string, TemplateContext> */
+    private array $templateContexts = [];
+
+    /** @var array<string, \Closure> */
+    private array $partialClosures = [];
+
     public function __construct(
         private readonly ContentProcessorPipeline $pipeline,
         private readonly TemplateResolver $templateResolver,
         private readonly ?BuildCache $cache = null,
         private readonly string $contentDir = '',
+        private readonly array $authors = [],
     ) {}
 
     public function render(
@@ -62,16 +72,32 @@ final class EntryRenderer
             $templatePath = $this->templateResolver->resolve('entry', $themeName);
         }
 
-        $siteTitle = $siteConfig->title;
-        $entryTitle = $entry->title;
-        $date = $entry->date?->format('Y-m-d') ?? '';
-        $author = implode(', ', $entry->authors);
-        $collection = $entry->collection;
-        $nav = $navigation;
-        $partial = (new TemplateContext($this->templateResolver, $themeName))->partial(...);
+        if (!isset($this->templateClosures[$templatePath])) {
+            $this->templateClosures[$templatePath] = static function (array $__vars) use ($templatePath): string {
+                extract($__vars, EXTR_SKIP);
+                ob_start();
+                require $templatePath;
+                return ob_get_clean();
+            };
+        }
 
-        ob_start();
-        require $templatePath;
-        return ob_get_clean();
+        if (!isset($this->templateContexts[$themeName])) {
+            $this->templateContexts[$themeName] = new TemplateContext($this->templateResolver, $themeName);
+            $this->partialClosures[$themeName] = $this->templateContexts[$themeName]->partial(...);
+        }
+
+        return ($this->templateClosures[$templatePath])([
+            'siteTitle' => $siteConfig->title,
+            'entryTitle' => $entry->title,
+            'content' => $content,
+            'date' => $entry->date?->format('Y-m-d') ?? '',
+            'author' => implode(', ', array_map(
+                fn (string $authorSlug) => $this->authors[$authorSlug]->title ?? $authorSlug,
+                $entry->authors
+            )),
+            'collection' => $entry->collection,
+            'nav' => $navigation,
+            'partial' => $this->partialClosures[$themeName],
+        ]);
     }
 }

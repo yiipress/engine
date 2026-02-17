@@ -33,22 +33,26 @@ final class ParallelEntryWriter
         int $workerCount,
         ?Navigation $navigation = null,
         ?CrossReferenceResolver $crossRefResolver = null,
+        array $authors = [],
     ): int {
         if ($tasks === []) {
             return 0;
         }
 
+        $dirs = [];
         foreach ($tasks as $task) {
-            $dirPath = dirname($task['filePath']);
+            $dirs[dirname($task['filePath'])] = true;
+        }
+        foreach ($dirs as $dirPath => $_) {
             if (!is_dir($dirPath)) {
                 mkdir($dirPath, 0o755, true);
             }
         }
 
         if ($workerCount <= 1) {
-            $this->writeEntries($siteConfig, $tasks, $contentDir, $navigation, $crossRefResolver);
+            $this->writeEntries($siteConfig, $tasks, $contentDir, $navigation, $crossRefResolver, $authors);
         } else {
-            $this->writeParallel($siteConfig, $tasks, $contentDir, $workerCount, $navigation, $crossRefResolver);
+            $this->writeParallel($siteConfig, $tasks, $contentDir, $workerCount, $navigation, $crossRefResolver, $authors);
         }
 
         return count($tasks);
@@ -57,9 +61,9 @@ final class ParallelEntryWriter
     /**
      * @param list<array{entry: Entry, filePath: string}> $tasks
      */
-    private function writeEntries(SiteConfig $siteConfig, array $tasks, string $contentDir, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver): void
+    private function writeEntries(SiteConfig $siteConfig, array $tasks, string $contentDir, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors): void
     {
-        $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir);
+        $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors);
 
         foreach ($tasks as $task) {
             file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $navigation, $crossRefResolver));
@@ -69,7 +73,7 @@ final class ParallelEntryWriter
     /**
      * @param list<array{entry: Entry, filePath: string}> $tasks
      */
-    private function writeParallel(SiteConfig $siteConfig, array $tasks, string $contentDir, int $workerCount, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver): int
+    private function writeParallel(SiteConfig $siteConfig, array $tasks, string $contentDir, int $workerCount, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors): int
     {
         $totalEntries = count($tasks);
         $pids = [];
@@ -82,7 +86,7 @@ final class ParallelEntryWriter
             }
 
             if ($pid === 0) {
-                $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir);
+                $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors);
 
                 for ($i = $workerIndex; $i < $totalEntries; $i += $workerCount) {
                     $task = $tasks[$i];

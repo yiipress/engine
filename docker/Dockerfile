@@ -11,7 +11,7 @@ COPY --from=rust-builder /build/target/release/libyiipress_highlighter.so /usr/l
 
 RUN ldconfig && apt-get update && apt-get -y install unzip --no-install-recommends
 
-COPY docker/php.ini $PHP_INI_DIR/conf.d/99-yiipress.ini
+COPY docker/php.ini $PHP_INI_DIR/conf.d/98-yiipress.ini
 
 RUN install-php-extensions \
     opcache \
@@ -68,5 +68,6 @@ RUN --mount=type=cache,target=/tmp/cache \
 
 FROM base AS prod
 ENV APP_ENV=prod
+COPY docker/php-prod.ini $PHP_INI_DIR/conf.d/99-yiipress-prod.ini
 COPY --from=prod-builder --chown=www-data:www-data /app /app
 USER www-data

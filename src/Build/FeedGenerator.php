@@ -15,8 +15,10 @@ use XMLWriter;
 
 final class FeedGenerator
 {
-    public function __construct(private readonly ContentProcessorPipeline $pipeline)
-    {}
+    public function __construct(
+        private readonly ContentProcessorPipeline $pipeline,
+        private readonly array $authors = [],
+    ) {}
 
     /**
      * @param list<Entry> $entries
@@ -152,7 +154,8 @@ final class FeedGenerator
             $xml->writeElement('updated', $entry->date->format(DateTimeInterface::ATOM));
         }
 
-        foreach ($entry->authors as $authorName) {
+        foreach ($entry->authors as $authorSlug) {
+            $authorName = $this->authors[$authorSlug]->title ?? $authorSlug;
             $xml->startElement('author');
             $xml->writeElement('name', $authorName);
             $xml->endElement();

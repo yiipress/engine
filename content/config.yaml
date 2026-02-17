@@ -1,6 +1,6 @@
 title: YiiPress
 description: A site built with YiiPress
-base_url:
+base_url: http://localhost:8087
 language: en
 charset: UTF-8
 
