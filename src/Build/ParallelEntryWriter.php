@@ -11,6 +11,7 @@ use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
 use App\Content\Parser\ContentParser;
 use App\Content\PermalinkResolver;
+use App\Processor\ContentProcessorPipeline;
 use RuntimeException;
 
 use function pcntl_fork;
@@ -19,6 +20,7 @@ use function pcntl_waitpid;
 final class ParallelEntryWriter
 {
     public function __construct(
+        private ContentProcessorPipeline $pipeline,
         private ?BuildCache $cache = null,
     ) {}
 
@@ -102,7 +104,7 @@ final class ParallelEntryWriter
      */
     private function writeEntries(SiteConfig $siteConfig, array $tasks, string $contentDir, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver): void
     {
-        $renderer = new EntryRenderer($this->cache, $contentDir);
+        $renderer = new EntryRenderer($this->pipeline, $this->cache, $contentDir);
 
         foreach ($tasks as $task) {
             file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $navigation, $crossRefResolver));
@@ -125,7 +127,7 @@ final class ParallelEntryWriter
             }
 
             if ($pid === 0) {
-                $renderer = new EntryRenderer($this->cache, $contentDir);
+                $renderer = new EntryRenderer($this->pipeline, $this->cache, $contentDir);
 
                 for ($i = $workerIndex; $i < $totalEntries; $i += $workerCount) {
                     $task = $tasks[$i];

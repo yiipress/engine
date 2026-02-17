@@ -1,3 +1,4 @@
+- Postfix interfaces with `Interface`.
 - Stick to Yii3 and PHP best practices.
 - Performance should be exceptional.
 - Refer to [README.md](README.md) and [/docs](docs) directory for documentation. If it could be improved or any feature is not documented yet, please change documentation.

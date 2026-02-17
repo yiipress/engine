@@ -18,6 +18,7 @@ use App\Content\EntrySorter;
 use App\Content\Parser\ContentParser;
 use App\Content\PermalinkResolver;
 use App\Content\TaxonomyCollector;
+use App\Processor\ContentProcessorPipeline;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -36,6 +37,8 @@ final class BuildCommand extends Command
 {
     public function __construct(
         private Aliases $aliases,
+        private ContentProcessorPipeline $contentPipeline,
+        private ContentProcessorPipeline $feedPipeline,
     ) {
         parent::__construct();
     }
@@ -159,7 +162,7 @@ final class BuildCommand extends Command
             $cache = new BuildCache($cacheDir, EntryRenderer::ENTRY_TEMPLATE);
         }
 
-        $writer = new ParallelEntryWriter($cache);
+        $writer = new ParallelEntryWriter($this->contentPipeline, $cache);
         $entryCount = $writer->write($parser, $siteConfig, $collections, $contentDir, $outputDir, $workerCount, $includeDrafts, $includeFuture, $navigation, $crossRefResolver);
 
         $output->writeln("  Entries written: <comment>$entryCount</comment>");
@@ -171,7 +174,7 @@ final class BuildCommand extends Command
             $now = new \DateTimeImmutable();
             $standalonePages = array_values(array_filter($standalonePages, static fn ($e) => $e->date === null || $e->date <= $now));
         }
-        $renderer = new EntryRenderer($cache, $contentDir);
+        $renderer = new EntryRenderer($this->contentPipeline, $cache, $contentDir);
         foreach ($standalonePages as $page) {
             $permalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
             $filePath = $outputDir . $permalink . 'index.html';
@@ -201,7 +204,7 @@ final class BuildCommand extends Command
             $entriesByCollection[$collectionName] = EntrySorter::sort($entries, $collection);
         }
 
-        $feedGenerator = new FeedGenerator();
+        $feedGenerator = new FeedGenerator($this->feedPipeline);
         $feedCount = 0;
         foreach ($collections as $collectionName => $collection) {
             if (!$collection->feed) {

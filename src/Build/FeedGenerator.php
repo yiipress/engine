@@ -8,18 +8,14 @@ use App\Content\Model\Collection;
 use App\Content\Model\Entry;
 use App\Content\Model\SiteConfig;
 use App\Content\PermalinkResolver;
-use App\Render\MarkdownRenderer;
+use App\Processor\ContentProcessorPipeline;
 use DateTimeInterface;
 use XMLWriter;
 
 final class FeedGenerator
 {
-    private ?MarkdownRenderer $markdownRendererInstance = null;
-
-    private function markdownRenderer(SiteConfig $siteConfig): MarkdownRenderer
-    {
-        return $this->markdownRendererInstance ??= new MarkdownRenderer($siteConfig->markdown);
-    }
+    public function __construct(private ContentProcessorPipeline $pipeline)
+    {}
 
     /**
      * @param list<Entry> $entries
@@ -166,7 +162,7 @@ final class FeedGenerator
             $xml->writeElement('summary', $summary);
         }
 
-        $html = $this->markdownRenderer($siteConfig)->render($entry->body());
+        $html = $this->pipeline->process($entry->body(), $entry);
         if ($html !== '') {
             $xml->startElement('content');
             $xml->writeAttribute('type', 'html');
@@ -199,7 +195,7 @@ final class FeedGenerator
             $xml->writeElement('description', $summary);
         }
 
-        $html = $this->markdownRenderer($siteConfig)->render($entry->body());
+        $html = $this->pipeline->process($entry->body(), $entry);
         if ($html !== '') {
             $xml->writeElement('content:encoded', $html);
         }

@@ -212,37 +212,37 @@ Outputs rendered pages to their destination.
 - **AssetCopier** — copies `content/assets/`, `content/<collection>/assets/`, and processed build assets to `output/`
 - **HttpResponder** — in serve mode, returns the rendered page as an HTTP response instead of writing to disk
 
-## Plugin system
+## Content processor pipeline
 
-Plugins extend content processing. They are PHP classes stored in the `plugins/` directory.
+Content processors transform entry content through a sequential pipeline. Each processor implements `ContentProcessorInterface` with a single `process(string $content, Entry $entry): string` method.
 
-### Plugin types
+### ContentProcessorPipeline
 
-- **ContentPlugin** — transforms content during markdown rendering
-  - `preProcess(string $markdown, Entry $entry): string` — runs before markdown-to-HTML (e.g., shortcode expansion)
-  - `postProcess(string $html, Entry $entry): string` — runs after markdown-to-HTML (e.g., syntax highlighting, ToC generation)
+`ContentProcessorPipeline` chains processors in order. Each processor receives the output of the previous one:
 
-### Plugin lifecycle
-
-```
-foreach entry:
-    markdown = entry.rawMarkdown
-    foreach plugin:
-        markdown = plugin.preProcess(markdown, entry)
-    html = markdownToHtml(markdown)
-    foreach plugin:
-        html = plugin.postProcess(html, entry)
+```php
+$content = $entry->body();
+foreach ($processors as $processor) {
+    $content = $processor->process($content, $entry);
+}
 ```
 
-Plugins are registered via configuration and executed in defined order.
+Two separate pipelines are configured via Yii3 DI container in `config/common/di/content-pipeline.php`:
 
-### Built-in plugins (planned)
+- **contentPipeline** — used by `EntryRenderer` for entry pages: `MarkdownProcessor` → `SyntaxHighlightProcessor`
+- **feedPipeline** — used by `FeedGenerator` for feeds: `MarkdownProcessor` only (no syntax highlighting in feeds)
 
-- **SyntaxHighlightPlugin** — server-rendered code block highlighting (post-process)
-- **ShortcodePlugin** — `[youtube id="..."  /]`, `[figure ... /]` expansion (pre-process)
-- **TableOfContentsPlugin** — heading extraction and ToC generation (post-process)
-- **MermaidPlugin** — diagram rendering (post-process)
-- **OEmbedPlugin** — URL-to-embed expansion (pre-process)
+### Built-in processors
+
+- **MarkdownProcessor** — converts markdown to HTML using md4c. Accepts `MarkdownConfig` for feature toggles
+- **SyntaxHighlightProcessor** — server-rendered code block highlighting via Rust FFI. Uses syntect + rayon compiled to a shared library (`src/Highlighter/`)
+
+### Planned processors
+
+- **ShortcodeProcessor** — `[youtube id="..."  /]`, `[figure ... /]` expansion (before markdown)
+- **TableOfContentsProcessor** — heading extraction and ToC generation (after markdown)
+- **MermaidProcessor** — diagram rendering (after markdown)
+- **OEmbedProcessor** — URL-to-embed expansion (before markdown)
 
 ## Serve mode
 
@@ -289,12 +289,18 @@ src/
 │   │   └── FilenameParser.php
 │   ├── SiteIndex.php             # Indexed site model
 │   └── SiteIndexBuilder.php      # Builds the index from parsed data
-├── Plugin/
-│   ├── ContentPlugin.php         # Plugin interface
-│   └── PluginRegistry.php        # Loads and orders plugins
+├── Highlighter/
+│   ├── Cargo.toml                # Rust crate config (syntect + rayon)
+│   ├── src/lib.rs                # Rust FFI library for code highlighting
+│   └── SyntaxHighlighter.php     # PHP FFI binding
+├── Processor/
+│   ├── ContentProcessorInterface.php  # Processor interface
+│   ├── ContentProcessorPipeline.php   # Chains processors in order
+│   ├── MarkdownProcessor.php          # Markdown-to-HTML via md4c
+│   └── SyntaxHighlightProcessor.php   # Code block highlighting
 ├── Render/
 │   ├── PageGenerator.php         # Produces Page objects from site index
-│   ├── MarkdownRenderer.php      # Markdown-to-HTML with plugin hooks
+│   ├── MarkdownRenderer.php      # Low-level md4c wrapper
 │   └── TemplateRenderer.php      # PHP template rendering via Yii view
 ├── Output/
 │   ├── StaticWriter.php          # Writes pages to output/

@@ -19,7 +19,7 @@
 - [x] Draft support (front matter `draft: true` flag, exclude from build by default)
 - [x] Entry date handling and chronological sorting
 - [x] Entry summary/excerpt (auto-generated or manual via front matter)
-- [x] Syntax highlighting for code blocks that is a plugin and is server-rendered
+- [x] Syntax highlighting for code blocks that is a processor and is server-rendered
 - [x] Permalink customization (per-entry via front matter, site-wide patterns)
 - [x] Pagination configuration (entries per page, URL patterns)
 - [x] Entry sorting options (custom sort fields like weight/order for non-blog collections)
@@ -39,7 +39,7 @@
 - [x] `docs/structure.md` — document expected project directory layout (`content/`, `templates/`, `public/`, `assets/`, `plugins/`, `config/`) — covered in `docs/content.md`
 - [x] `docs/quickstart.md` — step-by-step guide: create first post, run dev server, build static site
 - [x] Expand `docs/commands.md` — add flags, options, and usage examples for each command
-- [ ] Expand `docs/plugins.md` — document plugin API, lifecycle hooks, registration, configuration
+- [x] Expand `docs/plugins.md` — document plugin API, lifecycle hooks, registration, configuration
 - [ ] Expand `docs/template.md` — document available template variables, partials/includes, example templates
 
 ## Priority 3: Developer experience

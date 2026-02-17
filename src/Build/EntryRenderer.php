@@ -6,37 +6,19 @@ namespace App\Build;
 
 use App\Content\CrossReferenceResolver;
 use App\Content\Model\Entry;
-use App\Content\Model\MarkdownConfig;
 use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
-use App\Highlighter\SyntaxHighlighter;
-use App\Render\MarkdownRenderer;
+use App\Processor\ContentProcessorPipeline;
 
 final class EntryRenderer
 {
     public const string ENTRY_TEMPLATE = __DIR__ . '/../Render/Template/entry.php';
 
-    private ?MarkdownRenderer $markdownRenderer = null;
-    private ?MarkdownConfig $lastConfig = null;
-
-    private SyntaxHighlighter $highlighter;
-
     public function __construct(
+        private ContentProcessorPipeline $pipeline,
         private ?BuildCache $cache = null,
         private string $contentDir = '',
-    ) {
-        $this->highlighter = new SyntaxHighlighter();
-    }
-
-    private function markdownRenderer(MarkdownConfig $config): MarkdownRenderer
-    {
-        if ($this->markdownRenderer === null || $this->lastConfig !== $config) {
-            $this->markdownRenderer = new MarkdownRenderer($config);
-            $this->lastConfig = $config;
-        }
-
-        return $this->markdownRenderer;
-    }
+    ) {}
 
     public function render(
         SiteConfig $siteConfig,
@@ -55,8 +37,7 @@ final class EntryRenderer
         if ($crossRefResolver !== null) {
             $body = $crossRefResolver->withCurrentDir($this->resolveContentDir($entry))->resolve($body);
         }
-        $content = $this->markdownRenderer($siteConfig->markdown)->render($body);
-        $content = $this->highlighter->highlight($content);
+        $content = $this->pipeline->process($body, $entry);
         $html = $this->renderTemplate($siteConfig, $entry, $content, $navigation);
 
         $this->cache?->set($entry->sourceFilePath(), $html);
