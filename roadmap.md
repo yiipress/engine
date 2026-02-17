@@ -40,7 +40,7 @@
 - [x] `docs/quickstart.md` — step-by-step guide: create first post, run dev server, build static site
 - [x] Expand `docs/commands.md` — add flags, options, and usage examples for each command
 - [x] Expand `docs/plugins.md` — document plugin API, lifecycle hooks, registration, configuration
-- [ ] Expand `docs/template.md` — document available template variables, partials/includes, example templates
+- [x] Expand `docs/template.md` — document available template variables, partials/includes, example templates
 
 ## Priority 3: Developer experience
 
