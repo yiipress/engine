@@ -15,6 +15,10 @@ use App\Build\SitemapGenerator;
 use App\Build\TaxonomyPageWriter;
 use App\Content\CrossReferenceResolver;
 use App\Content\EntrySorter;
+use App\Content\Model\Author;
+use App\Content\Model\Collection;
+use App\Content\Model\Navigation;
+use App\Content\Model\SiteConfig;
 use App\Content\Parser\ContentParser;
 use App\Content\PermalinkResolver;
 use App\Content\TaxonomyCollector;
@@ -84,6 +88,12 @@ final class BuildCommand extends Command
             InputOption::VALUE_NONE,
             'Include future-dated entries in the build',
         );
+        $this->addOption(
+            'dry-run',
+            null,
+            InputOption::VALUE_NONE,
+            'Show what would be generated without writing files',
+        );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -104,6 +114,7 @@ final class BuildCommand extends Command
         $noCache = (bool) $input->getOption('no-cache');
         $includeDrafts = (bool) $input->getOption('drafts');
         $includeFuture = (bool) $input->getOption('future');
+        $dryRun = (bool) $input->getOption('dry-run');
 
         if (!is_dir($contentDir)) {
             $output->writeln("<error>Content directory not found: $contentDir</error>");
@@ -122,6 +133,10 @@ final class BuildCommand extends Command
         $output->writeln('  Collections: <comment>' . count($collections) . '</comment>');
         $output->writeln('  Authors: <comment>' . count($authors) . '</comment>');
         $output->writeln('  Menus: <comment>' . count($navigation->menuNames()) . '</comment>');
+
+        if ($dryRun) {
+            return $this->dryRun($output, $parser, $siteConfig, $collections, $authors, $contentDir, $outputDir, $includeDrafts, $includeFuture, $navigation);
+        }
 
         $output->writeln(
             $workerCount > 1
@@ -293,6 +308,142 @@ final class BuildCommand extends Command
         }
 
         $output->writeln('<info>Build complete.</info>');
+
+        return ExitCode::OK;
+    }
+
+    /**
+     * @param array<string, Collection> $collections
+     * @param array<string, Author> $authors
+     */
+    private function dryRun(
+        OutputInterface $output,
+        ContentParser $parser,
+        SiteConfig $siteConfig,
+        array $collections,
+        array $authors,
+        string $contentDir,
+        string $outputDir,
+        bool $includeDrafts,
+        bool $includeFuture,
+        ?Navigation $navigation,
+    ): int {
+        $output->writeln('<info>Dry run — files that would be generated:</info>');
+        $now = new \DateTimeImmutable();
+        $files = [];
+
+        foreach ($collections as $collectionName => $collection) {
+            $entries = [];
+            foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
+                if ($entry->title === '') {
+                    continue;
+                }
+                if (!$includeDrafts && $entry->draft) {
+                    continue;
+                }
+                if (!$includeFuture && $entry->date !== null && $entry->date > $now) {
+                    continue;
+                }
+                $permalink = PermalinkResolver::resolve($entry, $collection);
+                $files[] = $outputDir . $permalink . 'index.html';
+                $entries[] = $entry;
+            }
+
+            if ($collection->feed) {
+                $files[] = $outputDir . '/' . $collectionName . '/feed.xml';
+                $files[] = $outputDir . '/' . $collectionName . '/rss.xml';
+            }
+
+            if ($collection->listing) {
+                $perPage = $collection->entriesPerPage;
+                if ($perPage <= 0) {
+                    $perPage = count($entries) ?: 1;
+                }
+                $totalPages = $entries !== [] ? (int) ceil(count($entries) / $perPage) : 1;
+                $files[] = $outputDir . '/' . $collectionName . '/index.html';
+                for ($p = 2; $p <= $totalPages; $p++) {
+                    $files[] = $outputDir . '/' . $collectionName . '/page/' . $p . '/index.html';
+                }
+            }
+
+            if ($collection->sortBy === 'date') {
+                $byYear = [];
+                $byMonth = [];
+                foreach ($entries as $entry) {
+                    if ($entry->date === null) {
+                        continue;
+                    }
+                    $year = $entry->date->format('Y');
+                    $month = $entry->date->format('m');
+                    $byYear[$year] = true;
+                    $byMonth[$year . '/' . $month] = true;
+                }
+                foreach (array_keys($byYear) as $year) {
+                    $files[] = $outputDir . '/' . $collectionName . '/' . $year . '/index.html';
+                }
+                foreach (array_keys($byMonth) as $yearMonth) {
+                    $files[] = $outputDir . '/' . $collectionName . '/' . $yearMonth . '/index.html';
+                }
+            }
+        }
+
+        $standalonePages = [];
+        foreach ($parser->parseStandalonePages($contentDir) as $page) {
+            if ($page->title === '') {
+                continue;
+            }
+            if (!$includeDrafts && $page->draft) {
+                continue;
+            }
+            if (!$includeFuture && $page->date !== null && $page->date > $now) {
+                continue;
+            }
+            $permalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
+            $files[] = $outputDir . $permalink . 'index.html';
+            $standalonePages[] = $page;
+        }
+
+        $files[] = $outputDir . '/sitemap.xml';
+
+        if ($siteConfig->taxonomies !== []) {
+            $allEntries = [];
+            foreach ($collections as $collectionName => $collection) {
+                foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
+                    if ($entry->title === '' || (!$includeDrafts && $entry->draft)) {
+                        continue;
+                    }
+                    if (!$includeFuture && $entry->date !== null && $entry->date > $now) {
+                        continue;
+                    }
+                    $allEntries[] = $entry;
+                }
+            }
+            $taxonomyData = TaxonomyCollector::collect($siteConfig->taxonomies, $allEntries);
+            foreach ($taxonomyData as $taxonomyName => $terms) {
+                if ($terms === []) {
+                    continue;
+                }
+                $files[] = $outputDir . '/' . $taxonomyName . '/index.html';
+                foreach (array_keys($terms) as $term) {
+                    $files[] = $outputDir . '/' . $taxonomyName . '/' . $term . '/index.html';
+                }
+            }
+        }
+
+        if ($authors !== []) {
+            $files[] = $outputDir . '/authors/index.html';
+            foreach (array_keys($authors) as $slug) {
+                $files[] = $outputDir . '/authors/' . $slug . '/index.html';
+            }
+        }
+
+        sort($files);
+        foreach ($files as $file) {
+            $output->writeln('  ' . $file);
+        }
+
+        $output->writeln('');
+        $output->writeln('<info>Total: ' . count($files) . ' files</info>');
 
         return ExitCode::OK;
     }

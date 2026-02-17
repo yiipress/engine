@@ -607,4 +607,29 @@ final class BuildCommandTest extends TestCase
         assertSame(65, $exitCode);
         assertStringContainsString('Content directory not found', implode("\n", $output));
     }
+
+    public function testDryRunListsFilesWithoutWriting(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' --dry-run'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        $outputText = implode("\n", $output);
+
+        assertSame(0, $exitCode, "Dry run failed: $outputText");
+        assertStringContainsString('Dry run', $outputText);
+        assertStringContainsString('index.html', $outputText);
+        assertStringContainsString('sitemap.xml', $outputText);
+        assertStringContainsString('Total:', $outputText);
+        assertFalse(is_dir($this->outputDir));
+    }
 }
