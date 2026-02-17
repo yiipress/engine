@@ -11,6 +11,7 @@ use App\Highlighter\SyntaxHighlighter;
 use App\Processor\ContentProcessorPipeline;
 use App\Processor\MarkdownProcessor;
 use App\Processor\SyntaxHighlightProcessor;
+use App\Render\MarkdownRenderer;
 use Yiisoft\Definitions\Reference;
 
 return [
@@ -20,14 +21,14 @@ return [
     'contentPipeline' => [
         'class' => ContentProcessorPipeline::class,
         '__construct()' => [
-            new MarkdownProcessor(),
+            Reference::to(MarkdownProcessor::class),
             Reference::to(SyntaxHighlightProcessor::class),
         ],
     ],
     'feedPipeline' => [
         'class' => ContentProcessorPipeline::class,
         '__construct()' => [
-            new MarkdownProcessor(),
+            Reference::to(MarkdownProcessor::class),
         ],
     ],
     BuildCommand::class => [

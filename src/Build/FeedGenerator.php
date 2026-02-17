@@ -15,10 +15,17 @@ use XMLWriter;
 
 final class FeedGenerator
 {
+    private XMLWriter $xml;
+
     public function __construct(
         private readonly ContentProcessorPipeline $pipeline,
         private readonly array $authors = [],
-    ) {}
+    ) {
+        $this->xml = new XMLWriter();
+        $this->xml->openMemory();
+        $this->xml->setIndent(true);
+        $this->xml->setIndentString('  ');
+    }
 
     /**
      * @param list<Entry> $entries
@@ -28,55 +35,53 @@ final class FeedGenerator
         Collection $collection,
         array $entries,
     ): string {
-        $xml = new XMLWriter();
-        $xml->openMemory();
-        $xml->startDocument('1.0', 'UTF-8');
-        $xml->setIndent(true);
-        $xml->setIndentString('  ');
+        // Reset XMLWriter for reuse
+        $this->xml->openMemory();
+        $this->xml->startDocument('1.0', 'UTF-8');
 
-        $xml->startElement('feed');
-        $xml->writeAttribute('xmlns', 'http://www.w3.org/2005/Atom');
+        $this->xml->startElement('feed');
+        $this->xml->writeAttribute('xmlns', 'http://www.w3.org/2005/Atom');
 
         $feedUrl = rtrim($siteConfig->baseUrl, '/') . '/' . $collection->name . '/feed.xml';
         $collectionUrl = rtrim($siteConfig->baseUrl, '/') . '/' . $collection->name . '/';
 
-        $xml->writeElement('title', $collection->title);
+        $this->xml->writeElement('title', $collection->title);
         if ($collection->description !== '') {
-            $xml->writeElement('subtitle', $collection->description);
+            $this->xml->writeElement('subtitle', $collection->description);
         }
 
-        $xml->startElement('link');
-        $xml->writeAttribute('href', $collectionUrl);
-        $xml->endElement();
+        $this->xml->startElement('link');
+        $this->xml->writeAttribute('href', $collectionUrl);
+        $this->xml->endElement();
 
-        $xml->startElement('link');
-        $xml->writeAttribute('href', $feedUrl);
-        $xml->writeAttribute('rel', 'self');
-        $xml->writeAttribute('type', 'application/atom+xml');
-        $xml->endElement();
+        $this->xml->startElement('link');
+        $this->xml->writeAttribute('href', $feedUrl);
+        $this->xml->writeAttribute('rel', 'self');
+        $this->xml->writeAttribute('type', 'application/atom+xml');
+        $this->xml->endElement();
 
-        $xml->writeElement('id', $collectionUrl);
+        $this->xml->writeElement('id', $collectionUrl);
 
         $updated = $this->resolveLatestDate($entries);
         if ($updated !== null) {
-            $xml->writeElement('updated', $updated->format(DateTimeInterface::ATOM));
+            $this->xml->writeElement('updated', $updated->format(DateTimeInterface::ATOM));
         }
 
         if ($siteConfig->language !== '') {
-            $xml->startElement('generator');
-            $xml->writeAttribute('uri', 'https://github.com/yiisoft/yiipress');
-            $xml->text('YiiPress');
-            $xml->endElement();
+            $this->xml->startElement('generator');
+            $this->xml->writeAttribute('uri', 'https://github.com/yiisoft/yiipress');
+            $this->xml->text('YiiPress');
+            $this->xml->endElement();
         }
 
         foreach ($entries as $entry) {
-            $this->writeAtomEntry($xml, $siteConfig, $collection, $entry);
+            $this->writeAtomEntry($this->xml, $siteConfig, $collection, $entry);
         }
 
-        $xml->endElement();
-        $xml->endDocument();
+        $this->xml->endElement();
+        $this->xml->endDocument();
 
-        return $xml->outputMemory();
+        return $this->xml->outputMemory();
     }
 
     /**
@@ -87,49 +92,49 @@ final class FeedGenerator
         Collection $collection,
         array $entries,
     ): string {
-        $xml = new XMLWriter();
-        $xml->openMemory();
-        $xml->startDocument('1.0', 'UTF-8');
-        $xml->setIndent(true);
-        $xml->setIndentString('  ');
+        $this->xml = new XMLWriter();
+        $this->xml->openMemory();
+        $this->xml->startDocument('1.0', 'UTF-8');
+        $this->xml->setIndent(true);
+        $this->xml->setIndentString('  ');
 
-        $xml->startElement('rss');
-        $xml->writeAttribute('version', '2.0');
-        $xml->writeAttribute('xmlns:atom', 'http://www.w3.org/2005/Atom');
-        $xml->writeAttribute('xmlns:content', 'http://purl.org/rss/1.0/modules/content/');
+        $this->xml->startElement('rss');
+        $this->xml->writeAttribute('version', '2.0');
+        $this->xml->writeAttribute('xmlns:atom', 'http://www.w3.org/2005/Atom');
+        $this->xml->writeAttribute('xmlns:content', 'http://purl.org/rss/1.0/modules/content/');
 
         $feedUrl = rtrim($siteConfig->baseUrl, '/') . '/' . $collection->name . '/rss.xml';
         $collectionUrl = rtrim($siteConfig->baseUrl, '/') . '/' . $collection->name . '/';
 
-        $xml->startElement('channel');
-        $xml->writeElement('title', $collection->title);
-        $xml->writeElement('description', $collection->description !== '' ? $collection->description : $siteConfig->description);
-        $xml->writeElement('link', $collectionUrl);
+        $this->xml->startElement('channel');
+        $this->xml->writeElement('title', $collection->title);
+        $this->xml->writeElement('description', $collection->description !== '' ? $collection->description : $siteConfig->description);
+        $this->xml->writeElement('link', $collectionUrl);
 
         if ($siteConfig->language !== '') {
-            $xml->writeElement('language', $siteConfig->language);
+            $this->xml->writeElement('language', $siteConfig->language);
         }
 
-        $xml->startElement('atom:link');
-        $xml->writeAttribute('href', $feedUrl);
-        $xml->writeAttribute('rel', 'self');
-        $xml->writeAttribute('type', 'application/rss+xml');
-        $xml->endElement();
+        $this->xml->startElement('atom:link');
+        $this->xml->writeAttribute('href', $feedUrl);
+        $this->xml->writeAttribute('rel', 'self');
+        $this->xml->writeAttribute('type', 'application/rss+xml');
+        $this->xml->endElement();
 
         $updated = $this->resolveLatestDate($entries);
         if ($updated !== null) {
-            $xml->writeElement('lastBuildDate', $updated->format(DateTimeInterface::RSS));
+            $this->xml->writeElement('lastBuildDate', $updated->format(DateTimeInterface::RSS));
         }
 
         foreach ($entries as $entry) {
-            $this->writeRssItem($xml, $siteConfig, $collection, $entry);
+            $this->writeRssItem($this->xml, $siteConfig, $collection, $entry);
         }
 
-        $xml->endElement();
-        $xml->endElement();
-        $xml->endDocument();
+        $this->xml->endElement();
+        $this->xml->endElement();
+        $this->xml->endDocument();
 
-        return $xml->outputMemory();
+        return $this->xml->outputMemory();
     }
 
     private function writeAtomEntry(
@@ -140,41 +145,41 @@ final class FeedGenerator
     ): void {
         $entryUrl = $this->resolveEntryUrl($siteConfig, $collection, $entry);
 
-        $xml->startElement('entry');
-        $xml->writeElement('title', $entry->title);
+        $this->xml->startElement('entry');
+        $this->xml->writeElement('title', $entry->title);
 
-        $xml->startElement('link');
-        $xml->writeAttribute('href', $entryUrl);
-        $xml->endElement();
+        $this->xml->startElement('link');
+        $this->xml->writeAttribute('href', $entryUrl);
+        $this->xml->endElement();
 
-        $xml->writeElement('id', $entryUrl);
+        $this->xml->writeElement('id', $entryUrl);
 
         if ($entry->date !== null) {
-            $xml->writeElement('published', $entry->date->format(DateTimeInterface::ATOM));
-            $xml->writeElement('updated', $entry->date->format(DateTimeInterface::ATOM));
+            $this->xml->writeElement('published', $entry->date->format(DateTimeInterface::ATOM));
+            $this->xml->writeElement('updated', $entry->date->format(DateTimeInterface::ATOM));
         }
 
         foreach ($entry->authors as $authorSlug) {
             $authorName = $this->authors[$authorSlug]->title ?? $authorSlug;
-            $xml->startElement('author');
-            $xml->writeElement('name', $authorName);
-            $xml->endElement();
+            $this->xml->startElement('author');
+            $this->xml->writeElement('name', $authorName);
+            $this->xml->endElement();
         }
 
         $summary = $entry->summary();
         if ($summary !== '') {
-            $xml->writeElement('summary', $summary);
+            $this->xml->writeElement('summary', $summary);
         }
 
         $html = $this->pipeline->process($entry->body(), $entry);
         if ($html !== '') {
-            $xml->startElement('content');
-            $xml->writeAttribute('type', 'html');
-            $xml->text($html);
-            $xml->endElement();
+            $this->xml->startElement('content');
+            $this->xml->writeAttribute('type', 'html');
+            $this->xml->text($html);
+            $this->xml->endElement();
         }
 
-        $xml->endElement();
+        $this->xml->endElement();
     }
 
     private function writeRssItem(
@@ -185,26 +190,26 @@ final class FeedGenerator
     ): void {
         $entryUrl = $this->resolveEntryUrl($siteConfig, $collection, $entry);
 
-        $xml->startElement('item');
-        $xml->writeElement('title', $entry->title);
-        $xml->writeElement('link', $entryUrl);
-        $xml->writeElement('guid', $entryUrl);
+        $this->xml->startElement('item');
+        $this->xml->writeElement('title', $entry->title);
+        $this->xml->writeElement('link', $entryUrl);
+        $this->xml->writeElement('guid', $entryUrl);
 
         if ($entry->date !== null) {
-            $xml->writeElement('pubDate', $entry->date->format(DateTimeInterface::RSS));
+            $this->xml->writeElement('pubDate', $entry->date->format(DateTimeInterface::RSS));
         }
 
         $summary = $entry->summary();
         if ($summary !== '') {
-            $xml->writeElement('description', $summary);
+            $this->xml->writeElement('description', $summary);
         }
 
         $html = $this->pipeline->process($entry->body(), $entry);
         if ($html !== '') {
-            $xml->writeElement('content:encoded', $html);
+            $this->xml->writeElement('content:encoded', $html);
         }
 
-        $xml->endElement();
+        $this->xml->endElement();
     }
 
     private function resolveEntryUrl(SiteConfig $siteConfig, Collection $collection, Entry $entry): string

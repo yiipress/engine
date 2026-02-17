@@ -10,6 +10,7 @@ use App\Content\Model\Entry;
 use App\Content\Model\SiteConfig;
 use App\Processor\ContentProcessorPipeline;
 use App\Processor\MarkdownProcessor;
+use App\Render\MarkdownRenderer;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 
@@ -64,7 +65,7 @@ final class FeedGeneratorTest extends TestCase
 
     public function testAtomFeedContainsValidStructure(): void
     {
-        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor()));
+        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())));
         $entries = $this->createEntries();
 
         $atom = $generator->generateAtom($this->siteConfig, $this->collection, $entries);
@@ -81,7 +82,7 @@ final class FeedGeneratorTest extends TestCase
 
     public function testAtomFeedContainsEntries(): void
     {
-        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor()));
+        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())));
         $entries = $this->createEntries();
 
         $atom = $generator->generateAtom($this->siteConfig, $this->collection, $entries);
@@ -96,7 +97,7 @@ final class FeedGeneratorTest extends TestCase
 
     public function testAtomFeedContainsRenderedHtmlContent(): void
     {
-        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor()));
+        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())));
         $entries = $this->createEntries();
 
         $atom = $generator->generateAtom($this->siteConfig, $this->collection, $entries);
@@ -107,7 +108,7 @@ final class FeedGeneratorTest extends TestCase
 
     public function testAtomFeedUpdatedUsesLatestEntryDate(): void
     {
-        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor()));
+        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())));
         $entries = $this->createEntries();
 
         $atom = $generator->generateAtom($this->siteConfig, $this->collection, $entries);
@@ -117,7 +118,7 @@ final class FeedGeneratorTest extends TestCase
 
     public function testRssFeedContainsValidStructure(): void
     {
-        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor()));
+        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())));
         $entries = $this->createEntries();
 
         $rss = $generator->generateRss($this->siteConfig, $this->collection, $entries);
@@ -134,7 +135,7 @@ final class FeedGeneratorTest extends TestCase
 
     public function testRssFeedContainsItems(): void
     {
-        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor()));
+        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())));
         $entries = $this->createEntries();
 
         $rss = $generator->generateRss($this->siteConfig, $this->collection, $entries);
@@ -149,7 +150,7 @@ final class FeedGeneratorTest extends TestCase
 
     public function testEmptyEntriesProducesValidFeed(): void
     {
-        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor()));
+        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())));
 
         $atom = $generator->generateAtom($this->siteConfig, $this->collection, []);
         $rss = $generator->generateRss($this->siteConfig, $this->collection, []);
@@ -163,7 +164,7 @@ final class FeedGeneratorTest extends TestCase
 
     public function testCollectionWithoutDescriptionUsesSiteDescription(): void
     {
-        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor()));
+        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())));
         $collection = new Collection(
             name: 'news',
             title: 'News',

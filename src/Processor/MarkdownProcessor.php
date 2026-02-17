@@ -10,12 +10,9 @@ use App\Render\MarkdownRenderer;
 
 final class MarkdownProcessor implements ContentProcessorInterface
 {
-    private MarkdownRenderer $renderer;
-
-    public function __construct(MarkdownConfig $config = new MarkdownConfig())
-    {
-        $this->renderer = new MarkdownRenderer($config);
-    }
+    public function __construct(
+        private readonly MarkdownRenderer $renderer,
+    ) {}
 
     public function process(string $content, Entry $entry): string
     {

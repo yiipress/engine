@@ -39,7 +39,7 @@ final class BuildBench
     {
         $this->parser = new ContentParser();
         $this->renderer = new MarkdownRenderer();
-        $this->pipeline = new ContentProcessorPipeline(new MarkdownProcessor());
+        $this->pipeline = new ContentProcessorPipeline(new MarkdownProcessor($this->renderer));
 
         $registry = new ThemeRegistry();
         $registry->register(new Theme('minimal', dirname(__DIR__) . '/themes/minimal'));
