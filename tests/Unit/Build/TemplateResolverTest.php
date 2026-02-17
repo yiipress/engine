@@ -21,7 +21,7 @@ final class TemplateResolverTest extends TestCase
 
         $path = $resolver->resolve('entry');
 
-        assertStringEndsWith('/templates/entry.php', $path);
+        assertStringEndsWith('/themes/minimal/entry.php', $path);
     }
 
     public function testResolvesFromNamedThemeWhenSpecified(): void
@@ -32,7 +32,7 @@ final class TemplateResolverTest extends TestCase
 
         try {
             $registry = new ThemeRegistry();
-            $registry->register(new Theme('default', dirname(__DIR__, 3) . '/templates'));
+            $registry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
             $registry->register(new Theme('custom', $tempDir));
             $resolver = new TemplateResolver($registry);
 
@@ -52,13 +52,13 @@ final class TemplateResolverTest extends TestCase
 
         try {
             $registry = new ThemeRegistry();
-            $registry->register(new Theme('default', dirname(__DIR__, 3) . '/templates'));
+            $registry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
             $registry->register(new Theme('custom', $tempDir));
             $resolver = new TemplateResolver($registry);
 
             $path = $resolver->resolve('entry', 'custom');
 
-            assertStringEndsWith('/templates/entry.php', $path);
+            assertStringEndsWith('/themes/minimal/entry.php', $path);
         } finally {
             rmdir($tempDir);
         }
@@ -86,7 +86,7 @@ final class TemplateResolverTest extends TestCase
     private function createResolver(): TemplateResolver
     {
         $registry = new ThemeRegistry();
-        $registry->register(new Theme('default', dirname(__DIR__, 3) . '/templates'));
+        $registry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
         return new TemplateResolver($registry);
     }
 }

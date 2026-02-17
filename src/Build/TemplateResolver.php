@@ -19,8 +19,11 @@ final class TemplateResolver
             }
         }
 
-        if ($this->themeRegistry->has('default')) {
-            $path = $this->themeRegistry->get('default')->path . '/' . $templateName . '.php';
+        foreach ($this->themeRegistry->all() as $theme) {
+            if ($theme->name === $themeName) {
+                continue;
+            }
+            $path = $theme->path . '/' . $templateName . '.php';
             if (is_file($path)) {
                 return $path;
             }

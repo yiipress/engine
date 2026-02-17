@@ -123,7 +123,7 @@ PHP);
     private function createTemplateResolver(string $extraThemePath = ''): TemplateResolver
     {
         $registry = new ThemeRegistry();
-        $registry->register(new Theme('default', dirname(__DIR__, 3) . '/templates'));
+        $registry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
         if ($extraThemePath !== '') {
             $registry->register(new Theme('custom', $extraThemePath));
         }

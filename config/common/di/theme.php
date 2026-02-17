@@ -10,7 +10,7 @@ use Yiisoft\Definitions\DynamicReference;
 return [
     ThemeRegistry::class => DynamicReference::to(static function (): ThemeRegistry {
         $registry = new ThemeRegistry();
-        $registry->register(new Theme('default', dirname(__DIR__, 3) . '/templates'));
+        $registry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
         return $registry;
     }),
     TemplateResolver::class => [

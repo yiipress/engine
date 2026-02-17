@@ -158,7 +158,7 @@ final class CollectionListingWriterTest extends TestCase
     private function createTemplateResolver(): TemplateResolver
     {
         $registry = new ThemeRegistry();
-        $registry->register(new Theme('default', dirname(__DIR__, 3) . '/templates'));
+        $registry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
         return new TemplateResolver($registry);
     }
 

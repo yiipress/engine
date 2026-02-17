@@ -4,7 +4,7 @@ Templates are plain PHP files. Variables are passed via `require` inside an `ob_
 
 ## Themes
 
-A theme is a named set of templates. Themes are registered in the Yii3 DI configuration (`config/common/di/theme.php`). The built-in `default` theme ships in the `templates/` directory at the project root.
+A theme is a named set of templates. Themes are registered in the Yii3 DI configuration (`config/common/di/theme.php`). The built-in `minimal` theme ships in the `themes/minimal/` directory at the project root.
 
 ### Theme resolution order
 
@@ -12,9 +12,9 @@ When resolving a template, the build process checks:
 
 1. **Entry-level theme** — set via `theme` in front matter.
 2. **Site-level default theme** — set via `theme` in `config.yaml`.
-3. **Built-in `default` theme** — always used as a fallback.
+3. **Built-in `minimal` theme** — always used as a fallback.
 
-Within a theme, if the requested template file is not found, the `default` theme is checked as a fallback.
+Within a theme, if the requested template file is not found, other registered themes are checked as a fallback.
 
 ### Local theme
 
@@ -47,8 +47,8 @@ use Yiisoft\Definitions\DynamicReference;
 return [
     ThemeRegistry::class => DynamicReference::to(static function (): ThemeRegistry {
         $registry = new ThemeRegistry();
-        $registry->register(new Theme('default', dirname(__DIR__, 3) . '/templates'));
-        $registry->register(new Theme('fancy', '/path/to/fancy-theme/templates'));
+        $registry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
+        $registry->register(new Theme('fancy', '/path/to/fancy-theme'));
         return $registry;
     }),
 ];
@@ -57,7 +57,7 @@ return [
 ## Built-in templates
 
 ```
-templates/
+themes/minimal/
 ├── entry.php               # Single entry page
 ├── collection_listing.php  # Collection listing with pagination
 ├── taxonomy_index.php      # Taxonomy index (all terms)
@@ -229,7 +229,7 @@ This renders a `<nav><ul><li>` structure with nested lists for children. Menu na
 
 ## Customizing templates
 
-To customize a built-in template, create a theme with a file of the same name. The active theme takes priority over the `default` theme.
+To customize a built-in template, create a theme with a file of the same name. The active theme takes priority over other registered themes.
 
 ## Custom layouts
 

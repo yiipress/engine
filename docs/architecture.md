@@ -9,7 +9,7 @@ Both modes share the same content pipeline but differ in output target.
 content/          ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
   *.md        ──▶ │  Parse   │──▶ │  Index   │──▶ │  Render  │──▶ │  Write   │
   *.yaml          └──────────┘    └──────────┘    └──────────┘    └──────────┘
-templates/                                              │           output/
+themes/                                                 │           output/
 plugins/                                           (templates)      (build)
                                                                   or HTTP response
                                                                     (serve)
