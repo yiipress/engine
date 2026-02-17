@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace App\Benchmarks;
 
 use App\Build\BuildCache;
-use App\Build\EntryRenderer;
 use App\Build\ParallelEntryWriter;
+use App\Build\TemplateResolver;
+use App\Build\Theme;
+use App\Build\ThemeRegistry;
 use App\Content\Parser\ContentParser;
+use App\Processor\ContentProcessorPipeline;
+use App\Processor\MarkdownProcessor;
 use App\Render\MarkdownRenderer;
 use PhpBench\Attributes\BeforeMethods;
 use PhpBench\Attributes\Iterations;
@@ -19,6 +23,8 @@ final class BuildBench
 {
     private ContentParser $parser;
     private MarkdownRenderer $renderer;
+    private ContentProcessorPipeline $pipeline;
+    private TemplateResolver $templateResolver;
     private string $dataDir;
     private string $outputDir;
     private string $cacheDir;
@@ -27,6 +33,12 @@ final class BuildBench
     {
         $this->parser = new ContentParser();
         $this->renderer = new MarkdownRenderer();
+        $this->pipeline = new ContentProcessorPipeline(new MarkdownProcessor());
+
+        $registry = new ThemeRegistry();
+        $registry->register(new Theme('minimal', dirname(__DIR__) . '/themes/minimal'));
+        $this->templateResolver = new TemplateResolver($registry);
+
         $this->dataDir = __DIR__ . '/data/content';
         $this->outputDir = __DIR__ . '/data/output';
         $this->cacheDir = __DIR__ . '/data/cache';
@@ -125,13 +137,13 @@ final class BuildBench
             if (!is_dir($this->cacheDir)) {
                 mkdir($this->cacheDir, 0o755, true);
             }
-            $cache = new BuildCache($this->cacheDir, EntryRenderer::ENTRY_TEMPLATE);
+            $cache = new BuildCache($this->cacheDir, $this->templateResolver->templateDirs());
         }
 
         $siteConfig = $this->parser->parseSiteConfig($this->dataDir);
         $collections = $this->parser->parseCollections($this->dataDir);
 
-        $writer = new ParallelEntryWriter($cache);
+        $writer = new ParallelEntryWriter($this->pipeline, $this->templateResolver, $cache);
         $writer->write($this->parser, $siteConfig, $collections, $this->dataDir, $this->outputDir, $workerCount);
     }
 
