@@ -54,8 +54,8 @@
 ## Priority 4: Templates and theming
 
 - [x] Theme system — installable/distributable themes
-- [ ] Template partials/includes support
-- [ ] Template helper functions documentation
+- [x] Template partials/includes support
+- [x] Template helper functions documentation
 - [x] Multiple layout support (per-entry layout selection via front matter)
 - [x] Beautiful default theme
 

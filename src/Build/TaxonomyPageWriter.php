@@ -56,6 +56,7 @@ final class TaxonomyPageWriter
     ): void {
         $siteTitle = $siteConfig->title;
         $nav = $navigation;
+        $partial = (new TemplateContext($this->templateResolver, $siteConfig->theme))->partial(...);
 
         ob_start();
         require $this->templateResolver->resolve('taxonomy_index');
@@ -85,6 +86,7 @@ final class TaxonomyPageWriter
         $siteTitle = $siteConfig->title;
         $baseUrl = rtrim($siteConfig->baseUrl, '/');
         $nav = $navigation;
+        $partial = (new TemplateContext($this->templateResolver, $siteConfig->theme))->partial(...);
 
         $entryData = [];
         foreach ($entries as $entry) {

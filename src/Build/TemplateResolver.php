@@ -32,6 +32,11 @@ final class TemplateResolver
         throw new RuntimeException("Template \"$templateName\" not found.");
     }
 
+    public function resolvePartial(string $partialName, string $themeName = ''): string
+    {
+        return $this->resolve('partials/' . $partialName, $themeName);
+    }
+
     /**
      * @return list<string>
      */

@@ -67,6 +67,7 @@ final class EntryRenderer
         $author = implode(', ', $entry->authors);
         $collection = $entry->collection;
         $nav = $navigation;
+        $partial = (new TemplateContext($this->templateResolver, $themeName))->partial(...);
 
         ob_start();
         require $templatePath;

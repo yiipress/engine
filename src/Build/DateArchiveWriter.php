@@ -100,6 +100,7 @@ final class DateArchiveWriter
         $collectionName = $collection->name;
         $collectionTitle = $collection->title;
         $nav = $navigation;
+        $partial = (new TemplateContext($this->templateResolver, $siteConfig->theme))->partial(...);
 
         rsort($months);
 
@@ -143,6 +144,7 @@ final class DateArchiveWriter
         $collectionName = $collection->name;
         $collectionTitle = $collection->title;
         $nav = $navigation;
+        $partial = (new TemplateContext($this->templateResolver, $siteConfig->theme))->partial(...);
 
         $monthName = date('F', mktime(0, 0, 0, (int) $month, 1));
 

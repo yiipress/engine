@@ -60,6 +60,7 @@ final class AuthorPageWriter
     ): void {
         $siteTitle = $siteConfig->title;
         $nav = $navigation;
+        $partial = (new TemplateContext($this->templateResolver, $siteConfig->theme))->partial(...);
 
         $authorList = [];
         foreach ($authors as $slug => $author) {
@@ -96,6 +97,7 @@ final class AuthorPageWriter
     ): void {
         $siteTitle = $siteConfig->title;
         $nav = $navigation;
+        $partial = (new TemplateContext($this->templateResolver, $siteConfig->theme))->partial(...);
         $baseUrl = rtrim($siteConfig->baseUrl, '/');
 
         $authorTitle = $author->title;

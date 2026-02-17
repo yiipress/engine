@@ -227,6 +227,80 @@ Use `NavigationRenderer` for HTML output:
 
 This renders a `<nav><ul><li>` structure with nested lists for children. Menu names correspond to top-level keys in `content/navigation.yaml`.
 
+## Partials
+
+Partials are reusable template fragments stored in a `partials/` subdirectory of a theme. Every template receives a `$partial` helper function that renders a partial with isolated variable scope.
+
+### Usage
+
+```php
+<?= $partial('head', ['title' => $entryTitle . ' — ' . $siteTitle]) ?>
+```
+
+This resolves `partials/head.php` from the active theme (with fallback to other registered themes), renders it with the given variables, and returns the HTML string.
+
+### Creating a partial
+
+Create a PHP file in `themes/<name>/partials/`:
+
+```php
+<?php
+/** @var string $title */
+?>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?= htmlspecialchars($title) ?></title>
+    <link rel="stylesheet" href="/assets/theme/style.css">
+```
+
+### Variable isolation
+
+Partials receive **only** the variables passed via the second argument. Parent template variables do not leak into partials. This prevents accidental coupling between templates and partials.
+
+### Nesting partials
+
+Partials can include other partials — the `$partial` function is automatically available inside every partial:
+
+```php
+<div class="page">
+    <?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav]) ?>
+    <main><?= $content ?></main>
+    <?= $partial('footer', ['nav' => $nav]) ?>
+</div>
+```
+
+### Built-in partials (minimal theme)
+
+| Partial | Variables | Description |
+|---------|-----------|-------------|
+| `head` | `$title` | `<meta>` tags, `<title>`, stylesheet link |
+| `header` | `$siteTitle`, `$nav` | Site header with navigation and dark mode toggle |
+| `footer` | `$nav` | Footer navigation and dark mode script |
+| `navigation` | `$navigation` | Main navigation `<nav>` list |
+| `author-card` | `$author` | Author name and bio card |
+| `entry-card` | `$entry` | Entry summary card with date |
+| `pagination` | `$collection` | Previous/next pagination links |
+| `sidebar` | `$entry` | Sidebar with author cards |
+
+### Theme resolution
+
+Partials follow the same theme resolution as templates: the active theme is checked first, then other registered themes as fallback.
+
+## Template helper functions
+
+All templates receive the following helper functions as local variables:
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `$partial` | `(string $name, array $variables = []): string` | Render a partial template from the `partials/` directory |
+
+Additional helpers available via static methods:
+
+| Helper | Usage | Description |
+|--------|-------|-------------|
+| `NavigationRenderer::render()` | `NavigationRenderer::render($nav, 'main')` | Render a navigation menu as nested `<nav><ul><li>` HTML |
+| `htmlspecialchars()` | `htmlspecialchars($text)` | PHP built-in for escaping HTML output |
+
 ## Customizing templates
 
 To customize a built-in template, create a theme with a file of the same name. The active theme takes priority over other registered themes.

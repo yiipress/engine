@@ -85,6 +85,7 @@ final class CollectionListingWriter
         $siteTitle = $siteConfig->title;
         $collectionTitle = $collection->title;
         $nav = $navigation;
+        $partial = (new TemplateContext($this->templateResolver, $siteConfig->theme))->partial(...);
 
         ob_start();
         require $this->templateResolver->resolve('collection_listing');
