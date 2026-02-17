@@ -26,11 +26,11 @@ final class CollectionListingWriter
     ): int {
         $perPage = $collection->entriesPerPage;
         if ($perPage <= 0) {
-            $perPage = count($entries) ?: 1;
+            $perPage = \count($entries) ?: 1;
         }
 
         $pages = $entries !== [] ? array_chunk($entries, $perPage) : [[]];
-        $totalPages = count($pages);
+        $totalPages = \count($pages);
         $baseUrl = rtrim($siteConfig->baseUrl, '/');
         $pageCount = 0;
 

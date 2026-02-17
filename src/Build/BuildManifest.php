@@ -29,7 +29,7 @@ final class BuildManifest
         }
 
         $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
-        if (!is_array($data)) {
+        if (!\is_array($data)) {
             $this->entries = [];
             return;
         }
@@ -39,7 +39,7 @@ final class BuildManifest
 
     public function save(): void
     {
-        $dir = dirname($this->manifestPath);
+        $dir = \dirname($this->manifestPath);
         if (!is_dir($dir)) {
             mkdir($dir, 0o755, true);
         }

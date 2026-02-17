@@ -44,7 +44,7 @@ final class EntrySorter
     private static function sortByExplicitOrder(array $entries, array $order): array
     {
         $slugPositions = array_flip($order);
-        $maxPosition = count($order);
+        $maxPosition = \count($order);
 
         usort($entries, static function (Entry $a, Entry $b) use ($slugPositions, $maxPosition): int {
             $posA = $slugPositions[$a->slug] ?? $maxPosition;

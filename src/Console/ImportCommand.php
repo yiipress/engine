@@ -97,7 +97,7 @@ final class ImportCommand extends Command
         }
 
         if ($result->skippedFiles() !== []) {
-            $output->writeln('  Skipped: <comment>' . count($result->skippedFiles()) . '</comment>');
+            $output->writeln('  Skipped: <comment>' . \count($result->skippedFiles()) . '</comment>');
         }
 
         $output->writeln("  Total messages: <comment>{$result->totalMessages()}</comment>");

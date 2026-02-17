@@ -9,6 +9,10 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 
+use function dirname;
+use function in_array;
+use function strlen;
+
 final class ContentAssetCopier
 {
     private const array EXCLUDED_EXTENSIONS = ['md', 'yaml', 'yml'];

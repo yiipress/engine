@@ -14,12 +14,12 @@ use RuntimeException;
 use function pcntl_fork;
 use function pcntl_waitpid;
 
-final class ParallelEntryWriter
+final readonly class ParallelEntryWriter
 {
     public function __construct(
-        private readonly ContentProcessorPipeline $pipeline,
-        private readonly TemplateResolver $templateResolver,
-        private readonly ?BuildCache $cache = null,
+        private ContentProcessorPipeline $pipeline,
+        private TemplateResolver $templateResolver,
+        private ?BuildCache $cache = null,
     ) {}
 
     /**
@@ -41,7 +41,7 @@ final class ParallelEntryWriter
 
         $dirs = [];
         foreach ($tasks as $task) {
-            $dirs[dirname($task['filePath'])] = true;
+            $dirs[\dirname($task['filePath'])] = true;
         }
         foreach ($dirs as $dirPath => $_) {
             if (!is_dir($dirPath)) {
@@ -55,7 +55,7 @@ final class ParallelEntryWriter
             $this->writeParallel($siteConfig, $tasks, $contentDir, $workerCount, $navigation, $crossRefResolver, $authors);
         }
 
-        return count($tasks);
+        return \count($tasks);
     }
 
     /**
@@ -75,7 +75,7 @@ final class ParallelEntryWriter
      */
     private function writeParallel(SiteConfig $siteConfig, array $tasks, string $contentDir, int $workerCount, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors): int
     {
-        $totalEntries = count($tasks);
+        $totalEntries = \count($tasks);
         $pids = [];
 
         for ($workerIndex = 0; $workerIndex < $workerCount; $workerIndex++) {

@@ -43,7 +43,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Yiisoft\Yii\Console\ExitCode;
 
+use function count;
+use function dirname;
 use function str_starts_with;
+use function strlen;
 
 #[AsCommand(
     name: 'build',

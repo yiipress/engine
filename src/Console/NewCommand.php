@@ -125,7 +125,7 @@ final class NewCommand extends Command
         }
         $frontMatter .= "---\n\n";
 
-        $dir = dirname($filePath);
+        $dir = \dirname($filePath);
         if (!is_dir($dir)) {
             mkdir($dir, 0o755, true);
         }

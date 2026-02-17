@@ -57,8 +57,8 @@ final class EntryRenderer
 
     private function resolveContentDir(Entry $entry): string
     {
-        $relative = substr($entry->sourceFilePath(), strlen($this->contentDir) + 1);
-        $dir = dirname($relative);
+        $relative = substr($entry->sourceFilePath(), \strlen($this->contentDir) + 1);
+        $dir = \dirname($relative);
         return $dir === '.' ? '' : $dir;
     }
 

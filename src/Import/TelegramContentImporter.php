@@ -502,7 +502,7 @@ final class TelegramContentImporter implements ContentImporterInterface
             return;
         }
 
-        $config = "title: " . ucfirst($collection) . "\n";
+        $config = 'title: ' . ucfirst($collection) . "\n";
         $config .= "sort_by: date\n";
         $config .= "sort_order: desc\n";
         $config .= "entries_per_page: 10\n";

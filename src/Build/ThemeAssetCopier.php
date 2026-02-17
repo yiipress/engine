@@ -35,9 +35,9 @@ final class ThemeAssetCopier
                     continue;
                 }
 
-                $relativePath = substr($item->getPathname(), strlen($assetsDir) + 1);
+                $relativePath = substr($item->getPathname(), \strlen($assetsDir) + 1);
                 $targetPath = $targetBase . '/' . $relativePath;
-                $targetDir = dirname($targetPath);
+                $targetDir = \dirname($targetPath);
 
                 if (!is_dir($targetDir)) {
                     mkdir($targetDir, 0o755, true);

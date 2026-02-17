@@ -28,13 +28,13 @@ final class CollectionConfigParser
             name: $collectionName,
             title: (string) ($data['title'] ?? $collectionName),
             description: (string) ($data['description'] ?? ''),
-            permalink: (string) ($data['permalink'] ?? "/:collection/:slug/"),
+            permalink: (string) ($data['permalink'] ?? '/:collection/:slug/'),
             sortBy: (string) ($data['sort_by'] ?? 'date'),
             sortOrder: (string) ($data['sort_order'] ?? 'desc'),
             entriesPerPage: (int) ($data['entries_per_page'] ?? 10),
             feed: (bool) ($data['feed'] ?? false),
             listing: (bool) ($data['listing'] ?? true),
-            order: isset($data['order']) && is_array($data['order'])
+            order: isset($data['order']) && \is_array($data['order'])
                 ? array_values(array_map(strval(...), $data['order']))
                 : [],
         );
