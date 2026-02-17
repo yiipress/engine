@@ -7,4 +7,5 @@ use App\Console;
 return [
     'hello' => Console\HelloCommand::class,
     'build' => Console\BuildCommand::class,
+    'clean' => Console\CleanCommand::class,
 ];

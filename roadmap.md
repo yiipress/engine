@@ -49,7 +49,7 @@
 - [ ] Incremental builds (only rebuild changed files)
 - [ ] Environment-specific configuration documentation (document existing `config/environments/`)
 - [ ] Build diagnostics (warn on broken internal links, missing images, invalid front matter)
-- [ ] `yiipress clean` command — clear build output and caches
+- [x] `yiipress clean` command — clear build output and caches
 - [ ] Dry run mode for build — show what would be generated without writing files
 
 ## Priority 4: Templates and theming

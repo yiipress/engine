@@ -42,6 +42,25 @@ yii serve [--port=8080]
 
 Alternatively, use `composer serve` which disables the process timeout.
 
+## `yii clean`
+
+Clears build output and caches.
+
+```
+yii clean [--output-dir=output]
+```
+
+**Options:**
+
+- `--output-dir`, `-o` — path to the output directory (default: `output`). Absolute or relative to project root.
+
+The command removes:
+
+1. The output directory (default: `output/`).
+2. The build cache directory (`runtime/cache/build/`).
+
+If a directory does not exist, it is skipped with a notice.
+
 ## `yii` / `yii list`
 
 Shows available commands and help.
