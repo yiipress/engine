@@ -10,6 +10,7 @@ use App\Build\TemplateResolver;
 use App\Build\Theme;
 use App\Build\ThemeRegistry;
 use App\Content\Parser\ContentParser;
+use App\Content\PermalinkResolver;
 use App\Processor\ContentProcessorPipeline;
 use App\Processor\MarkdownProcessor;
 use App\Render\MarkdownRenderer;
@@ -126,8 +127,19 @@ final class RealisticBuildBench
         $siteConfig = $this->parser->parseSiteConfig($this->dataDir);
         $collections = $this->parser->parseCollections($this->dataDir);
 
+        $tasks = [];
+        foreach ($collections as $collectionName => $collection) {
+            foreach ($this->parser->parseEntries($this->dataDir, $collectionName) as $entry) {
+                $permalink = PermalinkResolver::resolve($entry, $collection);
+                $tasks[] = [
+                    'entry' => $entry,
+                    'filePath' => $this->outputDir . $permalink . 'index.html',
+                ];
+            }
+        }
+
         $writer = new ParallelEntryWriter($this->pipeline, $this->templateResolver, $cache);
-        $writer->write($this->parser, $siteConfig, $collections, $this->dataDir, $this->outputDir, $workerCount);
+        $writer->write($siteConfig, $tasks, $this->dataDir, $workerCount);
     }
 
     private function cleanOutputDir(): void

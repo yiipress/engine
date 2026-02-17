@@ -24,6 +24,7 @@ use App\Content\CrossReferenceResolver;
 use App\Content\EntrySorter;
 use App\Content\Model\Author;
 use App\Content\Model\Collection;
+use App\Content\Model\Entry;
 use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
 use App\Content\Parser\ContentParser;
@@ -156,27 +157,26 @@ final class BuildCommand extends Command
             return $this->dryRun($output, $parser, $siteConfig, $collections, $authors, $contentDir, $outputDir, $includeDrafts, $includeFuture, $navigation);
         }
 
-        $manifest = null;
-        $changedSourceFiles = null;
-        $incremental = false;
-
-        if (!$noCache) {
-            $manifestPath = $rootPath . '/runtime/cache/build-manifest-' . hash('xxh128', $outputDir) . '.json';
-            $manifest = new BuildManifest($manifestPath);
-            $manifest->load();
-        }
-
+        /** @var array<string, list<Entry>> $rawEntriesByCollection */
+        $rawEntriesByCollection = [];
         $fileToPermalink = [];
+        $allSourceFiles = [];
+
         foreach ($collections as $collectionName => $collection) {
+            $collectionEntries = [];
             foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
                 if ($entry->title === '') {
                     $output->writeln('<error>  Skipping ' . $entry->sourceFilePath() . ': no title found</error>');
                     continue;
                 }
+                $collectionEntries[] = $entry;
                 $relativePath = substr($entry->sourceFilePath(), strlen($contentDir) + 1);
                 $fileToPermalink[$relativePath] = PermalinkResolver::resolve($entry, $collection);
+                $allSourceFiles[] = $entry->sourceFilePath();
             }
+            $rawEntriesByCollection[$collectionName] = $collectionEntries;
         }
+
         $standalonePages = [];
         foreach ($parser->parseStandalonePages($contentDir) as $page) {
             if ($page->title === '') {
@@ -184,16 +184,16 @@ final class BuildCommand extends Command
                 continue;
             }
             $standalonePages[] = $page;
-        }
-        foreach ($standalonePages as $page) {
             $relativePath = substr($page->sourceFilePath(), strlen($contentDir) + 1);
             $fileToPermalink[$relativePath] = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
+            $allSourceFiles[] = $page->sourceFilePath();
         }
+
         $crossRefResolver = new CrossReferenceResolver($fileToPermalink);
 
         $diagnostics = new BuildDiagnostics($contentDir, $fileToPermalink, $siteConfig, $authors);
-        foreach ($collections as $collectionName => $collection) {
-            foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
+        foreach ($rawEntriesByCollection as $entries) {
+            foreach ($entries as $entry) {
                 $diagnostics->check($entry);
             }
         }
@@ -204,17 +204,9 @@ final class BuildCommand extends Command
             $output->writeln("<comment>  ⚠ $warning</comment>");
         }
 
-        $allSourceFiles = array_map(
-            static fn ($page) => $page->sourceFilePath(),
-            $standalonePages,
-        );
-        foreach ($collections as $collectionName => $collection) {
-            foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
-                if ($entry->title !== '') {
-                    $allSourceFiles[] = $entry->sourceFilePath();
-                }
-            }
-        }
+        $manifest = null;
+        $changedSourceFiles = null;
+        $incremental = false;
 
         $configFiles = array_filter([
             $contentDir . '/config.yaml',
@@ -227,7 +219,11 @@ final class BuildCommand extends Command
             }
         }
 
-        if ($manifest !== null) {
+        if (!$noCache) {
+            $manifestPath = $rootPath . '/runtime/cache/build-manifest-' . hash('xxh128', $outputDir) . '.json';
+            $manifest = new BuildManifest($manifestPath);
+            $manifest->load();
+
             $configChanged = false;
             foreach ($configFiles as $configFile) {
                 if ($manifest->isChanged($configFile)) {
@@ -283,6 +279,30 @@ final class BuildCommand extends Command
             $this->prepareOutputDir($outputDir);
         }
 
+        $now = new DateTimeImmutable();
+
+        $allTasks = [];
+        $entriesByCollection = [];
+        foreach ($collections as $collectionName => $collection) {
+            $filtered = [];
+            foreach ($rawEntriesByCollection[$collectionName] as $entry) {
+                if (!$includeDrafts && $entry->draft) {
+                    continue;
+                }
+                if (!$includeFuture && $entry->date !== null && $entry->date > $now) {
+                    continue;
+                }
+                $filtered[] = $entry;
+
+                $relativePath = substr($entry->sourceFilePath(), strlen($contentDir) + 1);
+                $allTasks[] = [
+                    'entry' => $entry,
+                    'filePath' => $outputDir . $fileToPermalink[$relativePath] . 'index.html',
+                ];
+            }
+            $entriesByCollection[$collectionName] = EntrySorter::sort($filtered, $collection);
+        }
+
         $cache = null;
         if (!$noCache) {
             $cacheDir = $rootPath . '/runtime/cache/build';
@@ -291,18 +311,29 @@ final class BuildCommand extends Command
 
         $changedSet = $changedSourceFiles !== null ? array_flip($changedSourceFiles) : null;
 
-        $writer = new ParallelEntryWriter($this->contentPipeline, $this->templateResolver, $cache);
-        $result = $writer->write($parser, $siteConfig, $collections, $contentDir, $outputDir, $workerCount, $includeDrafts, $includeFuture, $navigation, $crossRefResolver, $changedSourceFiles);
+        if ($changedSet !== null) {
+            $tasksToWrite = array_values(array_filter(
+                $allTasks,
+                static fn (array $task) => isset($changedSet[$task['entry']->sourceFilePath()]),
+            ));
+        } else {
+            $tasksToWrite = $allTasks;
+        }
 
-        $output->writeln("  Entries written: <comment>{$result['written']}</comment>" . ($incremental ? ' (of ' . count($result['tasks']) . ' total)' : ''));
+        $writer = new ParallelEntryWriter($this->contentPipeline, $this->templateResolver, $cache);
+        $entriesWritten = $writer->write($siteConfig, $tasksToWrite, $contentDir, $workerCount, $navigation, $crossRefResolver);
+
+        $output->writeln("  Entries written: <comment>$entriesWritten</comment>" . ($incremental ? ' (of ' . count($allTasks) . ' total)' : ''));
 
         if ($manifest !== null) {
-            foreach ($result['tasks'] as $task) {
+            foreach ($allTasks as $task) {
                 $manifest->record($task['entry']->sourceFilePath(), [$task['filePath']]);
             }
-            foreach ($result['allEntries'] as $entry) {
-                if (!isset($manifest->entries()[$entry->sourceFilePath()])) {
-                    $manifest->record($entry->sourceFilePath(), []);
+            foreach ($rawEntriesByCollection as $entries) {
+                foreach ($entries as $entry) {
+                    if (!isset($manifest->entries()[$entry->sourceFilePath()])) {
+                        $manifest->record($entry->sourceFilePath(), []);
+                    }
                 }
             }
         }
@@ -311,7 +342,6 @@ final class BuildCommand extends Command
             $standalonePages = array_values(array_filter($standalonePages, static fn ($e) => !$e->draft));
         }
         if (!$includeFuture) {
-            $now = new DateTimeImmutable();
             $standalonePages = array_values(array_filter($standalonePages, static fn ($e) => $e->date === null || $e->date <= $now));
         }
         $renderer = new EntryRenderer($this->contentPipeline, $this->templateResolver, $cache, $contentDir);
@@ -346,22 +376,6 @@ final class BuildCommand extends Command
 
         if ($assetsCopied > 0) {
             $output->writeln("  Assets copied: <comment>$assetsCopied</comment>");
-        }
-
-        $entriesByCollection = [];
-        foreach ($collections as $collectionName => $collection) {
-            $entries = array_values(array_filter(
-                iterator_to_array($parser->parseEntries($contentDir, $collectionName)),
-                static fn ($e) => $e->title !== '',
-            ));
-            if (!$includeDrafts) {
-                $entries = array_values(array_filter($entries, static fn ($e) => !$e->draft));
-            }
-            if (!$includeFuture) {
-                $now = new DateTimeImmutable();
-                $entries = array_values(array_filter($entries, static fn ($e) => $e->date === null || $e->date <= $now));
-            }
-            $entriesByCollection[$collectionName] = EntrySorter::sort($entries, $collection);
         }
 
         $feedGenerator = new FeedGenerator($this->feedPipeline);
