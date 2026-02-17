@@ -21,49 +21,63 @@ use App\Render\NavigationRenderer;
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= htmlspecialchars($authorTitle) ?> — <?= htmlspecialchars($siteTitle) ?></title>
+    <link rel="stylesheet" href="/assets/theme/style.css">
 </head>
 <body>
-<header>
+<header class="site-header">
+    <div class="container">
+        <a class="site-name" href="/"><?= htmlspecialchars($siteTitle) ?></a>
 <?php if ($nav !== null && $nav->menu('main') !== []): ?>
-    <?= NavigationRenderer::render($nav, 'main') ?>
-<?php else: ?>
-    <nav><a href="/"><?= htmlspecialchars($siteTitle) ?></a></nav>
+        <?= NavigationRenderer::render($nav, 'main') ?>
 <?php endif; ?>
+        <button class="theme-toggle" type="button" aria-label="Toggle dark mode"></button>
+    </div>
 </header>
 <main>
-    <article class="author">
+    <div class="container">
+        <div class="author-profile">
 <?php if ($authorAvatar !== ''): ?>
-        <img src="<?= htmlspecialchars($authorAvatar) ?>" alt="<?= htmlspecialchars($authorTitle) ?>">
+            <img src="<?= htmlspecialchars($authorAvatar) ?>" alt="<?= htmlspecialchars($authorTitle) ?>">
 <?php endif; ?>
-        <h1><?= htmlspecialchars($authorTitle) ?></h1>
+            <div class="author-info">
+                <h1><?= htmlspecialchars($authorTitle) ?></h1>
+<?php if ($authorEmail !== '' || $authorUrl !== ''): ?>
+                <div class="author-links">
 <?php if ($authorEmail !== ''): ?>
-        <p><a href="mailto:<?= htmlspecialchars($authorEmail) ?>"><?= htmlspecialchars($authorEmail) ?></a></p>
+                    <a href="mailto:<?= htmlspecialchars($authorEmail) ?>"><?= htmlspecialchars($authorEmail) ?></a>
 <?php endif; ?>
 <?php if ($authorUrl !== ''): ?>
-        <p><a href="<?= htmlspecialchars($authorUrl) ?>"><?= htmlspecialchars($authorUrl) ?></a></p>
+                    <a href="<?= htmlspecialchars($authorUrl) ?>"><?= htmlspecialchars($authorUrl) ?></a>
+<?php endif; ?>
+                </div>
 <?php endif; ?>
 <?php if ($authorBio !== ''): ?>
-        <div class="bio"><?= $authorBio ?></div>
+                <div class="bio content"><?= $authorBio ?></div>
 <?php endif; ?>
-    </article>
+            </div>
+        </div>
 <?php if ($entries !== []): ?>
-    <h2>Posts</h2>
-    <ul>
+        <h2>Posts</h2>
+        <ul class="entry-list">
 <?php foreach ($entries as $entry): ?>
-        <li>
-            <a href="<?= htmlspecialchars($entry['url']) ?>"><?= htmlspecialchars($entry['title']) ?></a>
+            <li>
+                <a href="<?= htmlspecialchars($entry['url']) ?>"><?= htmlspecialchars($entry['title']) ?></a>
 <?php if ($entry['date'] !== ''): ?>
-            <time><?= htmlspecialchars($entry['date']) ?></time>
+                <time><?= htmlspecialchars($entry['date']) ?></time>
 <?php endif; ?>
-        </li>
+            </li>
 <?php endforeach; ?>
-    </ul>
+        </ul>
 <?php endif; ?>
+    </div>
 </main>
 <?php if ($nav !== null && $nav->menu('footer') !== []): ?>
-<footer>
-    <?= NavigationRenderer::render($nav, 'footer') ?>
+<footer class="site-footer">
+    <div class="container">
+        <?= NavigationRenderer::render($nav, 'footer') ?>
+    </div>
 </footer>
 <?php endif; ?>
+<script src="/assets/theme/dark-mode.js"></script>
 </body>
 </html>

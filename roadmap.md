@@ -57,7 +57,7 @@
 - [ ] Template partials/includes support
 - [ ] Template helper functions documentation
 - [x] Multiple layout support (per-entry layout selection via front matter)
-- [ ] Beatiful default theme
+- [x] Beautiful default theme
 
 ## Priority 5: Asset pipeline
 

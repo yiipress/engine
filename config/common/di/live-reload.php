@@ -17,7 +17,7 @@ return [
 
         return new FileWatcher([
             $root . '/content',
-            $root . '/src/Render/Template',
+            $root . '/themes',
         ]);
     },
     SiteBuildRunner::class => static function (Aliases $aliases): SiteBuildRunner {

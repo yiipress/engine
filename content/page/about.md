@@ -4,4 +4,6 @@ layout: page
 weight: 1
 ---
 
-This is a sample about page.
+YiiPress was born out of the need for a simple, fast, and easy-to-use static site generator.
+
+It is built with Yii 3.

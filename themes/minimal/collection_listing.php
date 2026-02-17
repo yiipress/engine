@@ -18,50 +18,58 @@ use App\Render\NavigationRenderer;
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= htmlspecialchars($collectionTitle) ?><?= $pagination['currentPage'] > 1 ? ' — Page ' . $pagination['currentPage'] : '' ?> — <?= htmlspecialchars($siteTitle) ?></title>
+    <link rel="stylesheet" href="/assets/theme/style.css">
 </head>
 <body>
-<header>
+<header class="site-header">
+    <div class="container">
+        <a class="site-name" href="/"><?= htmlspecialchars($siteTitle) ?></a>
 <?php if ($nav !== null && $nav->menu('main') !== []): ?>
-    <?= NavigationRenderer::render($nav, 'main') ?>
-<?php else: ?>
-    <nav><a href="/"><?= htmlspecialchars($siteTitle) ?></a></nav>
+        <?= NavigationRenderer::render($nav, 'main') ?>
 <?php endif; ?>
+        <button class="theme-toggle" type="button" aria-label="Toggle dark mode"></button>
+    </div>
 </header>
 <main>
-    <h1><?= htmlspecialchars($collectionTitle) ?></h1>
+    <div class="container">
+        <h1><?= htmlspecialchars($collectionTitle) ?></h1>
 <?php if ($entries === []): ?>
-    <p>No entries.</p>
+        <p>No entries.</p>
 <?php else: ?>
-    <ul>
+        <ul class="entry-list">
 <?php foreach ($entries as $entry): ?>
-        <li>
-            <a href="<?= htmlspecialchars($entry['url']) ?>"><?= htmlspecialchars($entry['title']) ?></a>
+            <li>
+                <a href="<?= htmlspecialchars($entry['url']) ?>"><?= htmlspecialchars($entry['title']) ?></a>
 <?php if ($entry['date'] !== ''): ?>
-            <time><?= htmlspecialchars($entry['date']) ?></time>
+                <time><?= htmlspecialchars($entry['date']) ?></time>
 <?php endif; ?>
 <?php if ($entry['summary'] !== ''): ?>
-            <p><?= htmlspecialchars($entry['summary']) ?></p>
+                <p><?= htmlspecialchars($entry['summary']) ?></p>
 <?php endif; ?>
-        </li>
+            </li>
 <?php endforeach; ?>
-    </ul>
+        </ul>
 <?php endif; ?>
 <?php if ($pagination['totalPages'] > 1): ?>
-    <nav class="pagination">
+        <nav class="pagination">
 <?php if ($pagination['previousUrl'] !== ''): ?>
-        <a href="<?= htmlspecialchars($pagination['previousUrl']) ?>" rel="prev">← Previous</a>
+            <a href="<?= htmlspecialchars($pagination['previousUrl']) ?>" rel="prev">&larr; Previous</a>
 <?php endif; ?>
-        <span>Page <?= $pagination['currentPage'] ?> of <?= $pagination['totalPages'] ?></span>
+            <span>Page <?= $pagination['currentPage'] ?> of <?= $pagination['totalPages'] ?></span>
 <?php if ($pagination['nextUrl'] !== ''): ?>
-        <a href="<?= htmlspecialchars($pagination['nextUrl']) ?>" rel="next">Next →</a>
+            <a href="<?= htmlspecialchars($pagination['nextUrl']) ?>" rel="next">Next &rarr;</a>
 <?php endif; ?>
-    </nav>
+        </nav>
 <?php endif; ?>
+    </div>
 </main>
 <?php if ($nav !== null && $nav->menu('footer') !== []): ?>
-<footer>
-    <?= NavigationRenderer::render($nav, 'footer') ?>
+<footer class="site-footer">
+    <div class="container">
+        <?= NavigationRenderer::render($nav, 'footer') ?>
+    </div>
 </footer>
 <?php endif; ?>
+<script src="/assets/theme/dark-mode.js"></script>
 </body>
 </html>

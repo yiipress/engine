@@ -1,17 +1,17 @@
 ---
-title: Home
+title: Welcome to YiiPress
 permalink: /
 ---
 
 Hello, world!
 
-This is YiiPress preview mode. It rebuilds and reloads automatically when you change files in the `content` directory.
+This is YiiPress preview mode. It rebuilds and reloads automatically when you change files in the `content` or `themes` directories.
 
 Use markdown to format your content. Here is an example:
 
 ````markdown
 ---
-title: Home
+title: Hello!
 permalink: /
 ---
 

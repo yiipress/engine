@@ -22,15 +22,15 @@ final class NavigationParserTest extends TestCase
         assertSame(['main', 'footer'], $navigation->menuNames());
 
         $main = $navigation->menu('main');
-        assertCount(3, $main);
-        assertSame('Home', $main[0]->title);
-        assertSame('/', $main[0]->url);
+        assertCount(2, $main);
+        assertSame('Blog', $main[0]->title);
+        assertSame('/blog/', $main[0]->url);
         assertCount(0, $main[0]->children);
 
-        assertSame('Docs', $main[2]->title);
-        assertCount(1, $main[2]->children);
-        assertSame('Getting Started', $main[2]->children[0]->title);
-        assertSame('/docs/getting-started/', $main[2]->children[0]->url);
+        assertSame('Docs', $main[1]->title);
+        assertCount(1, $main[1]->children);
+        assertSame('Getting Started', $main[1]->children[0]->title);
+        assertSame('/docs/getting-started/', $main[1]->children[0]->url);
     }
 
     public function testNonExistentMenuReturnsEmptyArray(): void

@@ -311,6 +311,7 @@ src/
 │   ├── CollectionListingWriter.php # Paginated collection listing pages
 │   ├── ContentAssetCopier.php    # Copies non-md/yaml assets to output directory
 │   ├── Theme.php                 # Theme model (name + path)
+│   ├── ThemeAssetCopier.php      # Copies theme assets/ to output directory
 │   ├── ThemeRegistry.php         # Named theme registry, configured via DI
 │   ├── TemplateResolver.php      # Resolves template names via ThemeRegistry
 ├── Shared/

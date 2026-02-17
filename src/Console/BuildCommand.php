@@ -11,6 +11,7 @@ use App\Build\BuildDiagnostics;
 use App\Build\CollectionListingWriter;
 use App\Build\ContentAssetCopier;
 use App\Build\DateArchiveWriter;
+use App\Build\ThemeAssetCopier;
 use App\Build\EntryRenderer;
 use App\Build\FeedGenerator;
 use App\Build\ParallelEntryWriter;
@@ -339,6 +340,10 @@ final class BuildCommand extends Command
 
         $assetCopier = new ContentAssetCopier();
         $assetsCopied = $assetCopier->copy($contentDir, $outputDir);
+
+        $themeAssetCopier = new ThemeAssetCopier();
+        $assetsCopied += $themeAssetCopier->copy($this->themeRegistry, $outputDir);
+
         if ($assetsCopied > 0) {
             $output->writeln("  Assets copied: <comment>$assetsCopied</comment>");
         }

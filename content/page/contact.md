@@ -4,4 +4,4 @@ layout: page
 weight: 2
 ---
 
-Get in touch via email or social media.
+Feel free to contact me via `sam@rmcreative.ru` or `@samdark` Telegram.

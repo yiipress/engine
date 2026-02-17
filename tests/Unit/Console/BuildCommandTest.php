@@ -547,23 +547,23 @@ final class BuildCommandTest extends TestCase
 
         $entryHtml = file_get_contents($this->outputDir . '/blog/second-post/index.html');
         assertStringContainsString('<nav>', $entryHtml);
-        assertStringContainsString('Home', $entryHtml);
+        assertStringContainsString('Test Site', $entryHtml);
         assertStringContainsString('Blog', $entryHtml);
         assertStringContainsString('href="/"', $entryHtml);
         assertStringContainsString('href="/blog/"', $entryHtml);
 
-        assertStringContainsString('<footer>', $entryHtml);
+        assertStringContainsString('<footer', $entryHtml);
         assertStringContainsString('Privacy', $entryHtml);
 
         $listingHtml = file_get_contents($this->outputDir . '/blog/index.html');
-        assertStringContainsString('Home', $listingHtml);
+        assertStringContainsString('Test Site', $listingHtml);
         assertStringContainsString('href="/blog/"', $listingHtml);
 
         $tagsHtml = file_get_contents($this->outputDir . '/tags/index.html');
-        assertStringContainsString('Home', $tagsHtml);
+        assertStringContainsString('Test Site', $tagsHtml);
 
         $contactHtml = file_get_contents($this->outputDir . '/contact/index.html');
-        assertStringContainsString('Home', $contactHtml);
+        assertStringContainsString('Test Site', $contactHtml);
     }
 
     public function testBuildRendersStandalonePages(): void
