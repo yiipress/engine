@@ -7,7 +7,7 @@ default_author: "john-doe"
 date_format: "F j, Y"
 entries_per_page: 5
 permalink: "/:collection/:slug/"
-template_dir: "templates"
+theme: "local"
 taxonomies:
   - tags
   - categories

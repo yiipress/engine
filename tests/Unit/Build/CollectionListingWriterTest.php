@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Build;
 
 use App\Build\CollectionListingWriter;
+use App\Build\Theme;
+use App\Build\ThemeRegistry;
 use App\Build\TemplateResolver;
 use App\Content\Model\Collection;
 use App\Content\Model\Entry;
@@ -77,7 +79,7 @@ final class CollectionListingWriterTest extends TestCase
             $this->createEntry('second-post', 'Second Post', '2024-03-20'),
         ];
 
-        $writer = new CollectionListingWriter(new TemplateResolver());
+        $writer = new CollectionListingWriter($this->createTemplateResolver());
         $pageCount = $writer->write($this->siteConfig, $collection, $entries, $this->outputDir);
 
         assertSame(1, $pageCount);
@@ -99,7 +101,7 @@ final class CollectionListingWriterTest extends TestCase
             $this->createEntry('post-3', 'Post 3', '2024-03-03'),
         ];
 
-        $writer = new CollectionListingWriter(new TemplateResolver());
+        $writer = new CollectionListingWriter($this->createTemplateResolver());
         $pageCount = $writer->write($this->siteConfig, $collection, $entries, $this->outputDir);
 
         assertSame(2, $pageCount);
@@ -125,7 +127,7 @@ final class CollectionListingWriterTest extends TestCase
     {
         $collection = $this->createCollection(entriesPerPage: 10);
 
-        $writer = new CollectionListingWriter(new TemplateResolver());
+        $writer = new CollectionListingWriter($this->createTemplateResolver());
         $pageCount = $writer->write($this->siteConfig, $collection, [], $this->outputDir);
 
         assertSame(1, $pageCount);
@@ -143,7 +145,7 @@ final class CollectionListingWriterTest extends TestCase
             $this->createEntry('post-2', 'Post 2', '2024-03-02'),
         ];
 
-        $writer = new CollectionListingWriter(new TemplateResolver());
+        $writer = new CollectionListingWriter($this->createTemplateResolver());
         $writer->write($this->siteConfig, $collection, $entries, $this->outputDir);
 
         $page1 = file_get_contents($this->outputDir . '/blog/index.html');
@@ -151,6 +153,13 @@ final class CollectionListingWriterTest extends TestCase
 
         $page2 = file_get_contents($this->outputDir . '/blog/page/2/index.html');
         assertStringContainsString('<title>Blog — Page 2 — Test Site</title>', $page2);
+    }
+
+    private function createTemplateResolver(): TemplateResolver
+    {
+        $registry = new ThemeRegistry();
+        $registry->register(new Theme('default', dirname(__DIR__, 3) . '/templates'));
+        return new TemplateResolver($registry);
     }
 
     private function createCollection(int $entriesPerPage): Collection
@@ -183,6 +192,7 @@ final class CollectionListingWriterTest extends TestCase
             summary: '',
             permalink: '',
             layout: '',
+            theme: '',
             weight: 0,
             language: '',
             redirectTo: '',

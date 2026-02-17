@@ -29,5 +29,6 @@ final class SiteConfigParserTest extends TestCase
         assertSame('/:collection/:slug/', $config->permalink);
         assertSame(['tags', 'categories'], $config->taxonomies);
         assertSame(['github_url' => 'https://github.com/test'], $config->params);
+        assertSame('local', $config->theme);
     }
 }

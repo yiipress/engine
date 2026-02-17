@@ -117,6 +117,7 @@ final class EntrySummaryTest extends TestCase
             summary: $summary,
             permalink: '',
             layout: '',
+            theme: '',
             weight: 0,
             language: '',
             redirectTo: '',

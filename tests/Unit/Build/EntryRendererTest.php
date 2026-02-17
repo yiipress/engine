@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Build;
 
 use App\Build\EntryRenderer;
+use App\Build\Theme;
+use App\Build\ThemeRegistry;
 use App\Build\TemplateResolver;
 use App\Content\Model\Entry;
 use App\Content\Model\MarkdownConfig;
@@ -36,7 +38,7 @@ final class EntryRendererTest extends TestCase
         file_put_contents($entryFile, "---\ntitle: Test Post\n---\n\nHello world.\n");
 
         $entry = $this->createEntry(filePath: $entryFile, title: 'Test Post');
-        $renderer = new EntryRenderer($this->createPipeline(), new TemplateResolver(), contentDir: $this->contentDir);
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver(), contentDir: $this->contentDir);
         $html = $renderer->render($this->createSiteConfig(), $entry);
 
         assertStringContainsString('<h1>Test Post</h1>', $html);
@@ -58,8 +60,8 @@ PHP);
         file_put_contents($entryFile, "---\ntitle: Wide Post\nlayout: wide\n---\n\nWide content.\n");
 
         $entry = $this->createEntry(filePath: $entryFile, title: 'Wide Post', layout: 'wide');
-        $renderer = new EntryRenderer($this->createPipeline(), new TemplateResolver([$this->contentDir . '/templates']), contentDir: $this->contentDir);
-        $html = $renderer->render($this->createSiteConfig(), $entry);
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver($this->contentDir . '/templates'), contentDir: $this->contentDir);
+        $html = $renderer->render($this->createSiteConfig(theme: 'custom'), $entry);
 
         assertStringContainsString('wide-layout', $html);
         assertStringContainsString('<h1>Wide Post</h1>', $html);
@@ -72,7 +74,7 @@ PHP);
         file_put_contents($entryFile, "---\ntitle: Missing Layout\nlayout: nonexistent\n---\n\nContent.\n");
 
         $entry = $this->createEntry(filePath: $entryFile, title: 'Missing Layout', layout: 'nonexistent');
-        $renderer = new EntryRenderer($this->createPipeline(), new TemplateResolver(), contentDir: $this->contentDir);
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver(), contentDir: $this->contentDir);
         $html = $renderer->render($this->createSiteConfig(), $entry);
 
         assertStringContainsString('<h1>Missing Layout</h1>', $html);
@@ -104,8 +106,8 @@ PHP);
             collection: 'blog',
             authors: ['alice'],
         );
-        $renderer = new EntryRenderer($this->createPipeline(), new TemplateResolver([$this->contentDir . '/templates']), contentDir: $this->contentDir);
-        $html = $renderer->render($this->createSiteConfig(), $entry);
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver($this->contentDir . '/templates'), contentDir: $this->contentDir);
+        $html = $renderer->render($this->createSiteConfig(theme: 'custom'), $entry);
 
         assertStringContainsString('data-site="Test Site"', $html);
         assertStringContainsString('data-date="2024-01-01"', $html);
@@ -118,7 +120,17 @@ PHP);
         return new ContentProcessorPipeline();
     }
 
-    private function createSiteConfig(): SiteConfig
+    private function createTemplateResolver(string $extraThemePath = ''): TemplateResolver
+    {
+        $registry = new ThemeRegistry();
+        $registry->register(new Theme('default', dirname(__DIR__, 3) . '/templates'));
+        if ($extraThemePath !== '') {
+            $registry->register(new Theme('custom', $extraThemePath));
+        }
+        return new TemplateResolver($registry);
+    }
+
+    private function createSiteConfig(string $theme = ''): SiteConfig
     {
         return new SiteConfig(
             title: 'Test Site',
@@ -132,6 +144,7 @@ PHP);
             permalink: '/:collection/:slug/',
             taxonomies: [],
             params: [],
+            theme: $theme,
         );
     }
 
@@ -164,6 +177,7 @@ PHP);
             summary: '',
             permalink: '',
             layout: $layout,
+            theme: '',
             weight: 0,
             language: '',
             redirectTo: '',

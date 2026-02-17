@@ -14,9 +14,11 @@ use App\Build\DateArchiveWriter;
 use App\Build\EntryRenderer;
 use App\Build\FeedGenerator;
 use App\Build\ParallelEntryWriter;
-use App\Build\TemplateResolver;
 use App\Build\SitemapGenerator;
+use App\Build\TemplateResolver;
 use App\Build\TaxonomyPageWriter;
+use App\Build\Theme;
+use App\Build\ThemeRegistry;
 use App\Content\CrossReferenceResolver;
 use App\Content\EntrySorter;
 use App\Content\Model\Author;
@@ -47,6 +49,8 @@ final class BuildCommand extends Command
         private Aliases $aliases,
         private ContentProcessorPipeline $contentPipeline,
         private ContentProcessorPipeline $feedPipeline,
+        private ThemeRegistry $themeRegistry,
+        private TemplateResolver $templateResolver,
     ) {
         parent::__construct();
     }
@@ -123,6 +127,11 @@ final class BuildCommand extends Command
         if (!is_dir($contentDir)) {
             $output->writeln("<error>Content directory not found: $contentDir</error>");
             return ExitCode::DATAERR;
+        }
+
+        $localTemplatesDir = $contentDir . '/templates';
+        if (is_dir($localTemplatesDir)) {
+            $this->themeRegistry->register(new Theme('local', $localTemplatesDir));
         }
 
         $output->writeln('<info>Parsing content...</info>');
@@ -269,21 +278,15 @@ final class BuildCommand extends Command
             $this->prepareOutputDir($outputDir);
         }
 
-        $templateDirs = [];
-        if ($siteConfig->templateDir !== '') {
-            $templateDirs[] = $this->resolvePath($siteConfig->templateDir, $contentDir);
-        }
-        $templateResolver = new TemplateResolver($templateDirs);
-
         $cache = null;
         if (!$noCache) {
             $cacheDir = $rootPath . '/runtime/cache/build';
-            $cache = new BuildCache($cacheDir, $templateDirs);
+            $cache = new BuildCache($cacheDir, $this->templateResolver->templateDirs());
         }
 
         $changedSet = $changedSourceFiles !== null ? array_flip($changedSourceFiles) : null;
 
-        $writer = new ParallelEntryWriter($this->contentPipeline, $templateResolver, $cache);
+        $writer = new ParallelEntryWriter($this->contentPipeline, $this->templateResolver, $cache);
         $result = $writer->write($parser, $siteConfig, $collections, $contentDir, $outputDir, $workerCount, $includeDrafts, $includeFuture, $navigation, $crossRefResolver, $changedSourceFiles);
 
         $output->writeln("  Entries written: <comment>{$result['written']}</comment>" . ($incremental ? ' (of ' . count($result['tasks']) . ' total)' : ''));
@@ -306,7 +309,7 @@ final class BuildCommand extends Command
             $now = new \DateTimeImmutable();
             $standalonePages = array_values(array_filter($standalonePages, static fn ($e) => $e->date === null || $e->date <= $now));
         }
-        $renderer = new EntryRenderer($this->contentPipeline, $templateResolver, $cache, $contentDir);
+        $renderer = new EntryRenderer($this->contentPipeline, $this->templateResolver, $cache, $contentDir);
         $standalonePagesWritten = 0;
         foreach ($standalonePages as $page) {
             $permalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
@@ -383,7 +386,7 @@ final class BuildCommand extends Command
             $output->writeln("  Feeds generated: <comment>$feedCount</comment> (Atom + RSS)");
         }
 
-        $listingWriter = new CollectionListingWriter($templateResolver);
+        $listingWriter = new CollectionListingWriter($this->templateResolver);
         $listingPageCount = 0;
         foreach ($collections as $collectionName => $collection) {
             if (!$collection->listing) {
@@ -401,7 +404,7 @@ final class BuildCommand extends Command
             $output->writeln("  Listing pages: <comment>$listingPageCount</comment>");
         }
 
-        $archiveWriter = new DateArchiveWriter($templateResolver);
+        $archiveWriter = new DateArchiveWriter($this->templateResolver);
         $archivePageCount = 0;
         foreach ($collections as $collectionName => $collection) {
             if ($collection->sortBy !== 'date') {
@@ -426,7 +429,7 @@ final class BuildCommand extends Command
         if ($siteConfig->taxonomies !== []) {
             $allEntries = array_merge(...array_values($entriesByCollection));
             $taxonomyData = TaxonomyCollector::collect($siteConfig->taxonomies, $allEntries);
-            $taxonomyWriter = new TaxonomyPageWriter($templateResolver);
+            $taxonomyWriter = new TaxonomyPageWriter($this->templateResolver);
             $taxonomyPageCount = $taxonomyWriter->write($siteConfig, $taxonomyData, $collections, $outputDir, $navigation);
             $output->writeln("  Taxonomy pages: <comment>$taxonomyPageCount</comment>");
         }
@@ -439,7 +442,7 @@ final class BuildCommand extends Command
                     $entriesByAuthor[$authorSlug][] = $entry;
                 }
             }
-            $authorWriter = new AuthorPageWriter($templateResolver);
+            $authorWriter = new AuthorPageWriter($this->templateResolver);
             $authorPageCount = $authorWriter->write($siteConfig, $authors, $entriesByAuthor, $collections, $outputDir, $navigation);
             $output->writeln("  Author pages: <comment>$authorPageCount</comment>");
         }

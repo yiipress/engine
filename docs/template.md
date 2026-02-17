@@ -2,24 +2,57 @@
 
 Templates are plain PHP files. Variables are passed via `require` inside an `ob_start()`/`ob_get_clean()` block, so each template has direct access to its variables as local PHP variables.
 
-## Template resolution
+## Themes
 
-The build process resolves templates in this order:
+A theme is a named set of templates. Themes are registered in the Yii3 DI configuration (`config/common/di/theme.php`). The built-in `default` theme ships in the `templates/` directory at the project root.
 
-1. **User template directory** — configured via `template_dir` in `config.yaml` (resolved relative to the content directory).
-2. **Built-in templates** — shipped in the `templates/` directory at the project root.
+### Theme resolution order
 
-To override any built-in template, place a file with the same name in your `template_dir`.
+When resolving a template, the build process checks:
 
-### Configuration
+1. **Entry-level theme** — set via `theme` in front matter.
+2. **Site-level default theme** — set via `theme` in `config.yaml`.
+3. **Built-in `default` theme** — always used as a fallback.
 
-In `config.yaml`:
+Within a theme, if the requested template file is not found, the `default` theme is checked as a fallback.
+
+### Local theme
+
+If a `templates/` directory exists inside the content directory, it is automatically registered as a theme named `local`. To use it as the site default:
 
 ```yaml
-template_dir: templates
+theme: local
 ```
 
-This resolves to `content/templates/` (relative to the content directory). You can also use an absolute path.
+### Per-entry theme
+
+An entry can override the site default theme via front matter:
+
+```yaml
+---
+title: My Post
+theme: custom
+---
+```
+
+### Registering themes in DI
+
+Themes are registered in `config/common/di/theme.php`:
+
+```php
+use App\Build\Theme;
+use App\Build\ThemeRegistry;
+use Yiisoft\Definitions\DynamicReference;
+
+return [
+    ThemeRegistry::class => DynamicReference::to(static function (): ThemeRegistry {
+        $registry = new ThemeRegistry();
+        $registry->register(new Theme('default', dirname(__DIR__, 3) . '/templates'));
+        $registry->register(new Theme('fancy', '/path/to/fancy-theme/templates'));
+        return $registry;
+    }),
+];
+```
 
 ## Built-in templates
 
@@ -196,7 +229,7 @@ This renders a `<nav><ul><li>` structure with nested lists for children. Menu na
 
 ## Customizing templates
 
-To customize a built-in template, copy it from `templates/` into your configured `template_dir` and edit it there. The user directory takes priority over built-in templates.
+To customize a built-in template, create a theme with a file of the same name. The active theme takes priority over the `default` theme.
 
 ## Custom layouts
 
@@ -209,13 +242,13 @@ layout: wide
 ---
 ```
 
-The build process looks for `wide.php` in the configured `template_dir`, then falls back to the built-in `entry.php` if not found.
+The build process looks for `wide.php` in the active theme, then falls back to the built-in `entry.php` if not found.
 
 Custom layout templates receive the same variables as the default entry template (`$siteTitle`, `$entryTitle`, `$content`, `$date`, `$author`, `$collection`, `$nav`).
 
 ### Example
 
-Create `content/templates/wide.php` (assuming `template_dir: templates` in config):
+Create `content/templates/wide.php` (with `theme: local` in config):
 
 ```php
 <?php

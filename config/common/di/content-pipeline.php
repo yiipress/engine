@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Build\TemplateResolver;
+use App\Build\ThemeRegistry;
 use App\Console\BuildCommand;
 use App\Processor\ContentProcessorPipeline;
 use App\Processor\MarkdownProcessor;
@@ -26,6 +28,8 @@ return [
         '__construct()' => [
             'contentPipeline' => Reference::to('contentPipeline'),
             'feedPipeline' => Reference::to('feedPipeline'),
+            'themeRegistry' => Reference::to(ThemeRegistry::class),
+            'templateResolver' => Reference::to(TemplateResolver::class),
         ],
     ],
 ];

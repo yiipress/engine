@@ -23,6 +23,6 @@ final readonly class SiteConfig
         public array $taxonomies,
         public array $params,
         public MarkdownConfig $markdown = new MarkdownConfig(),
-        public string $templateDir = '',
+        public string $theme = '',
     ) {}
 }

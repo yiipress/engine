@@ -64,6 +64,7 @@ final class ContentProcessorPipelineTest extends TestCase
             summary: '',
             permalink: '',
             layout: '',
+            theme: '',
             weight: 0,
             language: '',
             redirectTo: '',

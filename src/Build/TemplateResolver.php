@@ -4,29 +4,40 @@ declare(strict_types=1);
 
 namespace App\Build;
 
+use RuntimeException;
+
 final class TemplateResolver
 {
-    private const string DEFAULT_TEMPLATE_DIR = __DIR__ . '/../../templates';
+    public function __construct(private ThemeRegistry $themeRegistry) {}
 
-    /**
-     * @param list<string> $templateDirs Directories to search, in priority order.
-     */
-    public function __construct(private array $templateDirs = []) {}
-
-    public function resolve(string $templateName): string
+    public function resolve(string $templateName, string $themeName = ''): string
     {
-        foreach ($this->templateDirs as $dir) {
-            $path = $dir . '/' . $templateName . '.php';
+        if ($themeName !== '' && $this->themeRegistry->has($themeName)) {
+            $path = $this->themeRegistry->get($themeName)->path . '/' . $templateName . '.php';
             if (is_file($path)) {
                 return $path;
             }
         }
 
-        $defaultPath = self::DEFAULT_TEMPLATE_DIR . '/' . $templateName . '.php';
-        if (is_file($defaultPath)) {
-            return $defaultPath;
+        if ($this->themeRegistry->has('default')) {
+            $path = $this->themeRegistry->get('default')->path . '/' . $templateName . '.php';
+            if (is_file($path)) {
+                return $path;
+            }
         }
 
-        throw new \RuntimeException("Template \"$templateName\" not found.");
+        throw new RuntimeException("Template \"$templateName\" not found.");
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function templateDirs(): array
+    {
+        $dirs = [];
+        foreach ($this->themeRegistry->all() as $theme) {
+            $dirs[] = $theme->path;
+        }
+        return $dirs;
     }
 }

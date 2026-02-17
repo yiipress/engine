@@ -53,11 +53,12 @@ final class EntryRenderer
 
     private function renderTemplate(SiteConfig $siteConfig, Entry $entry, string $content, ?Navigation $navigation): string
     {
+        $themeName = $entry->theme !== '' ? $entry->theme : $siteConfig->theme;
         $templateName = $entry->layout !== '' ? $entry->layout : 'entry';
         try {
-            $templatePath = $this->templateResolver->resolve($templateName);
+            $templatePath = $this->templateResolver->resolve($templateName, $themeName);
         } catch (\RuntimeException) {
-            $templatePath = $this->templateResolver->resolve('entry');
+            $templatePath = $this->templateResolver->resolve('entry', $themeName);
         }
 
         $siteTitle = $siteConfig->title;

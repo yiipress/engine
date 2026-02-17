@@ -46,7 +46,7 @@ params:
 - **entries_per_page** — default pagination size (overridden by collection `_collection.yaml`)
 - **permalink** — default permalink pattern (overridden by collection or entry)
 - **taxonomies** — list of enabled taxonomy types
-- **template_dir** — path to custom templates directory, resolved relative to the content directory (see [Templates](template.md))
+- **theme** — default theme name for the site (see [Templates](template.md))
 - **params** — arbitrary key-value pairs for use in templates
 - **markdown** — markdown extensions configuration (see below)
 

@@ -116,6 +116,7 @@ final class PermalinkResolverTest extends TestCase
             summary: '',
             permalink: $permalink,
             layout: '',
+            theme: '',
             weight: 0,
             language: '',
             redirectTo: '',

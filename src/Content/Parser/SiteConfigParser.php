@@ -42,7 +42,7 @@ final class SiteConfigParser
                 ? $data['params']
                 : [],
             markdown: self::parseMarkdownConfig($data['markdown'] ?? []),
-            templateDir: (string) ($data['template_dir'] ?? ''),
+            theme: (string) ($data['theme'] ?? ''),
         );
     }
 

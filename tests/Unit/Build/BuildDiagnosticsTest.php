@@ -227,6 +227,7 @@ final class BuildDiagnosticsTest extends TestCase
             summary: '',
             permalink: '',
             layout: '',
+            theme: '',
             weight: 0,
             language: '',
             redirectTo: '',

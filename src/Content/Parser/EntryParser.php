@@ -45,6 +45,7 @@ final class EntryParser
             summary: (string) ($fields['summary'] ?? ''),
             permalink: (string) ($fields['permalink'] ?? ''),
             layout: (string) ($fields['layout'] ?? ''),
+            theme: (string) ($fields['theme'] ?? ''),
             weight: (int) ($fields['weight'] ?? 0),
             language: (string) ($fields['language'] ?? ''),
             redirectTo: (string) ($fields['redirect_to'] ?? ''),

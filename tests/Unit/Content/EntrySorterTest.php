@@ -188,6 +188,7 @@ final class EntrySorterTest extends TestCase
             summary: '',
             permalink: '',
             layout: '',
+            theme: '',
             weight: $weight,
             language: '',
             redirectTo: '',

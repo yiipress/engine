@@ -27,6 +27,7 @@ final readonly class Entry
         private string $summary,
         public string $permalink,
         public string $layout,
+        public string $theme,
         public int $weight,
         public string $language,
         public string $redirectTo,
