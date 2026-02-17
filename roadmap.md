@@ -19,7 +19,7 @@
 - [x] Draft support (front matter `draft: true` flag, exclude from build by default)
 - [x] Entry date handling and chronological sorting
 - [x] Entry summary/excerpt (auto-generated or manual via front matter)
-- [ ] Syntax highlighting for code blocks that is a plugin and is server-rendered
+- [x] Syntax highlighting for code blocks that is a plugin and is server-rendered
 - [x] Permalink customization (per-entry via front matter, site-wide patterns)
 - [x] Pagination configuration (entries per page, URL patterns)
 - [x] Entry sorting options (custom sort fields like weight/order for non-blog collections)

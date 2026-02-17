@@ -9,6 +9,7 @@ use App\Content\Model\Entry;
 use App\Content\Model\MarkdownConfig;
 use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
+use App\Highlighter\SyntaxHighlighter;
 use App\Render\MarkdownRenderer;
 
 final class EntryRenderer
@@ -18,10 +19,14 @@ final class EntryRenderer
     private ?MarkdownRenderer $markdownRenderer = null;
     private ?MarkdownConfig $lastConfig = null;
 
+    private SyntaxHighlighter $highlighter;
+
     public function __construct(
         private ?BuildCache $cache = null,
         private string $contentDir = '',
-    ) {}
+    ) {
+        $this->highlighter = new SyntaxHighlighter();
+    }
 
     private function markdownRenderer(MarkdownConfig $config): MarkdownRenderer
     {
@@ -51,6 +56,7 @@ final class EntryRenderer
             $body = $crossRefResolver->withCurrentDir($this->resolveContentDir($entry))->resolve($body);
         }
         $content = $this->markdownRenderer($siteConfig->markdown)->render($body);
+        $content = $this->highlighter->highlight($content);
         $html = $this->renderTemplate($siteConfig, $entry, $content, $navigation);
 
         $this->cache?->set($entry->sourceFilePath(), $html);

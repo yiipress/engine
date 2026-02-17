@@ -34,6 +34,7 @@
     },
     "require": {
         "php": "^8.5",
+        "ext-ffi": "*",
         "ext-filter": "*",
         "ext-md4c": "*",
         "ext-pcntl": "*",

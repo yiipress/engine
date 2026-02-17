@@ -1,6 +1,14 @@
+FROM rust:bookworm AS rust-builder
+WORKDIR /build
+COPY src/Highlighter/ .
+RUN cargo build --release
+
 FROM composer/composer:2-bin AS composer
 
 FROM dunglas/frankenphp:1-php8.5-bookworm AS base
+
+COPY --from=rust-builder /build/target/release/libyiipress_highlighter.so /usr/local/lib/libyiipress_highlighter.so
+RUN ldconfig
 
 RUN apt update && apt -y install \
     unzip
@@ -19,7 +27,8 @@ RUN install-php-extensions \
     simplexml \
     yaml \
     md4c \
-    pcntl
+    pcntl \
+    ffi
 
 #
 # Development
