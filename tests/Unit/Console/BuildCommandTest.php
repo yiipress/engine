@@ -729,6 +729,33 @@ final class BuildCommandTest extends TestCase
         }
     }
 
+    public function testBuildUsesCustomLayoutFromFrontMatter(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' --no-cache'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        assertSame(0, $exitCode, implode("\n", $output));
+
+        $entryFile = $this->outputDir . '/blog/layout-test/index.html';
+        assertFileExists($entryFile);
+
+        $html = file_get_contents($entryFile);
+        assertNotFalse($html);
+        assertStringContainsString('minimal-layout', $html);
+        assertStringContainsString('<h1>Layout Test</h1>', $html);
+        assertStringContainsString('This entry uses a custom layout.', $html);
+    }
+
     private function manifestPath(): string
     {
         return dirname(__DIR__, 3) . '/runtime/cache/build-manifest-' . hash('xxh128', $this->outputDir) . '.json';

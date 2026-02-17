@@ -14,6 +14,7 @@ use App\Build\DateArchiveWriter;
 use App\Build\EntryRenderer;
 use App\Build\FeedGenerator;
 use App\Build\ParallelEntryWriter;
+use App\Build\TemplateResolver;
 use App\Build\SitemapGenerator;
 use App\Build\TaxonomyPageWriter;
 use App\Content\CrossReferenceResolver;
@@ -268,15 +269,21 @@ final class BuildCommand extends Command
             $this->prepareOutputDir($outputDir);
         }
 
+        $templateDirs = [];
+        if ($siteConfig->templateDir !== '') {
+            $templateDirs[] = $this->resolvePath($siteConfig->templateDir, $contentDir);
+        }
+        $templateResolver = new TemplateResolver($templateDirs);
+
         $cache = null;
         if (!$noCache) {
             $cacheDir = $rootPath . '/runtime/cache/build';
-            $cache = new BuildCache($cacheDir, EntryRenderer::ENTRY_TEMPLATE);
+            $cache = new BuildCache($cacheDir, $templateDirs);
         }
 
         $changedSet = $changedSourceFiles !== null ? array_flip($changedSourceFiles) : null;
 
-        $writer = new ParallelEntryWriter($this->contentPipeline, $cache);
+        $writer = new ParallelEntryWriter($this->contentPipeline, $templateResolver, $cache);
         $result = $writer->write($parser, $siteConfig, $collections, $contentDir, $outputDir, $workerCount, $includeDrafts, $includeFuture, $navigation, $crossRefResolver, $changedSourceFiles);
 
         $output->writeln("  Entries written: <comment>{$result['written']}</comment>" . ($incremental ? ' (of ' . count($result['tasks']) . ' total)' : ''));
@@ -299,7 +306,7 @@ final class BuildCommand extends Command
             $now = new \DateTimeImmutable();
             $standalonePages = array_values(array_filter($standalonePages, static fn ($e) => $e->date === null || $e->date <= $now));
         }
-        $renderer = new EntryRenderer($this->contentPipeline, $cache, $contentDir);
+        $renderer = new EntryRenderer($this->contentPipeline, $templateResolver, $cache, $contentDir);
         $standalonePagesWritten = 0;
         foreach ($standalonePages as $page) {
             $permalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
@@ -376,7 +383,7 @@ final class BuildCommand extends Command
             $output->writeln("  Feeds generated: <comment>$feedCount</comment> (Atom + RSS)");
         }
 
-        $listingWriter = new CollectionListingWriter();
+        $listingWriter = new CollectionListingWriter($templateResolver);
         $listingPageCount = 0;
         foreach ($collections as $collectionName => $collection) {
             if (!$collection->listing) {
@@ -394,7 +401,7 @@ final class BuildCommand extends Command
             $output->writeln("  Listing pages: <comment>$listingPageCount</comment>");
         }
 
-        $archiveWriter = new DateArchiveWriter();
+        $archiveWriter = new DateArchiveWriter($templateResolver);
         $archivePageCount = 0;
         foreach ($collections as $collectionName => $collection) {
             if ($collection->sortBy !== 'date') {
@@ -419,7 +426,7 @@ final class BuildCommand extends Command
         if ($siteConfig->taxonomies !== []) {
             $allEntries = array_merge(...array_values($entriesByCollection));
             $taxonomyData = TaxonomyCollector::collect($siteConfig->taxonomies, $allEntries);
-            $taxonomyWriter = new TaxonomyPageWriter();
+            $taxonomyWriter = new TaxonomyPageWriter($templateResolver);
             $taxonomyPageCount = $taxonomyWriter->write($siteConfig, $taxonomyData, $collections, $outputDir, $navigation);
             $output->writeln("  Taxonomy pages: <comment>$taxonomyPageCount</comment>");
         }
@@ -432,7 +439,7 @@ final class BuildCommand extends Command
                     $entriesByAuthor[$authorSlug][] = $entry;
                 }
             }
-            $authorWriter = new AuthorPageWriter();
+            $authorWriter = new AuthorPageWriter($templateResolver);
             $authorPageCount = $authorWriter->write($siteConfig, $authors, $entriesByAuthor, $collections, $outputDir, $navigation);
             $output->writeln("  Author pages: <comment>$authorPageCount</comment>");
         }

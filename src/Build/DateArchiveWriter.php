@@ -12,8 +12,7 @@ use App\Content\PermalinkResolver;
 
 final class DateArchiveWriter
 {
-    private const string YEARLY_TEMPLATE = __DIR__ . '/../Render/Template/archive_yearly.php';
-    private const string MONTHLY_TEMPLATE = __DIR__ . '/../Render/Template/archive_monthly.php';
+    public function __construct(private TemplateResolver $templateResolver) {}
 
     /**
      * @param list<Entry> $entries
@@ -116,7 +115,7 @@ final class DateArchiveWriter
         $entries = $entryData;
 
         ob_start();
-        require self::YEARLY_TEMPLATE;
+        require $this->templateResolver->resolve('archive_yearly');
         $html = ob_get_clean();
 
         $dir = $outputDir . '/' . $collection->name . '/' . $year;
@@ -159,7 +158,7 @@ final class DateArchiveWriter
         $entries = $entryData;
 
         ob_start();
-        require self::MONTHLY_TEMPLATE;
+        require $this->templateResolver->resolve('archive_monthly');
         $html = ob_get_clean();
 
         $dir = $outputDir . '/' . $collection->name . '/' . $year . '/' . $month;

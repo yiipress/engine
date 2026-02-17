@@ -1,11 +1,30 @@
 # Templates
 
-Templates are plain PHP files in `src/Render/Template/`. Variables are passed via `require` inside an `ob_start()`/`ob_get_clean()` block, so each template has direct access to its variables as local PHP variables.
+Templates are plain PHP files. Variables are passed via `require` inside an `ob_start()`/`ob_get_clean()` block, so each template has direct access to its variables as local PHP variables.
 
-## Directory structure
+## Template resolution
+
+The build process resolves templates in this order:
+
+1. **User template directory** — configured via `template_dir` in `config.yaml` (resolved relative to the content directory).
+2. **Built-in templates** — shipped in the `templates/` directory at the project root.
+
+To override any built-in template, place a file with the same name in your `template_dir`.
+
+### Configuration
+
+In `config.yaml`:
+
+```yaml
+template_dir: templates
+```
+
+This resolves to `content/templates/` (relative to the content directory). You can also use an absolute path.
+
+## Built-in templates
 
 ```
-src/Render/Template/
+templates/
 ├── entry.php               # Single entry page
 ├── collection_listing.php  # Collection listing with pagination
 ├── taxonomy_index.php      # Taxonomy index (all terms)
@@ -177,4 +196,46 @@ This renders a `<nav><ul><li>` structure with nested lists for children. Menu na
 
 ## Customizing templates
 
-To customize a template, edit the corresponding file in `src/Render/Template/`. Each template is a self-contained PHP file that produces a full HTML page.
+To customize a built-in template, copy it from `templates/` into your configured `template_dir` and edit it there. The user directory takes priority over built-in templates.
+
+## Custom layouts
+
+Entries can use a custom layout by setting `layout` in front matter:
+
+```yaml
+---
+title: My Post
+layout: wide
+---
+```
+
+The build process looks for `wide.php` in the configured `template_dir`, then falls back to the built-in `entry.php` if not found.
+
+Custom layout templates receive the same variables as the default entry template (`$siteTitle`, `$entryTitle`, `$content`, `$date`, `$author`, `$collection`, `$nav`).
+
+### Example
+
+Create `content/templates/wide.php` (assuming `template_dir: templates` in config):
+
+```php
+<?php
+/** @var string $siteTitle */
+/** @var string $entryTitle */
+/** @var string $content */
+/** @var string $date */
+/** @var string $author */
+/** @var ?\App\Content\Model\Navigation $nav */
+?>
+<!DOCTYPE html>
+<html>
+<head><title><?= htmlspecialchars($entryTitle) ?> — <?= htmlspecialchars($siteTitle) ?></title></head>
+<body>
+<div class="wide-container">
+    <h1><?= htmlspecialchars($entryTitle) ?></h1>
+    <div class="content"><?= $content ?></div>
+</div>
+</body>
+</html>
+```
+
+Then reference it in any entry's front matter with `layout: wide`.

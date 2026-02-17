@@ -36,16 +36,16 @@ final class BuildCacheTest extends TestCase
 
     public function testReturnNullOnCacheMiss(): void
     {
-        $templatePath = dirname(__DIR__, 3) . '/src/Render/Template/entry.php';
-        $cache = new BuildCache($this->cacheDir, $templatePath);
+        $templateDirs = [dirname(__DIR__, 3) . '/templates'];
+        $cache = new BuildCache($this->cacheDir, $templateDirs);
 
         assertNull($cache->get($this->fixtureDir . '/2024-03-15-test-post.md'));
     }
 
     public function testReturnCachedValueOnHit(): void
     {
-        $templatePath = dirname(__DIR__, 3) . '/src/Render/Template/entry.php';
-        $cache = new BuildCache($this->cacheDir, $templatePath);
+        $templateDirs = [dirname(__DIR__, 3) . '/templates'];
+        $cache = new BuildCache($this->cacheDir, $templateDirs);
 
         $sourceFile = $this->fixtureDir . '/2024-03-15-test-post.md';
         $cache->set($sourceFile, '<html>cached</html>');
@@ -55,8 +55,8 @@ final class BuildCacheTest extends TestCase
 
     public function testClearRemovesAllEntries(): void
     {
-        $templatePath = dirname(__DIR__, 3) . '/src/Render/Template/entry.php';
-        $cache = new BuildCache($this->cacheDir, $templatePath);
+        $templateDirs = [dirname(__DIR__, 3) . '/templates'];
+        $cache = new BuildCache($this->cacheDir, $templateDirs);
 
         $sourceFile = $this->fixtureDir . '/2024-03-15-test-post.md';
         $cache->set($sourceFile, '<html>cached</html>');

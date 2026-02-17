@@ -310,6 +310,7 @@ src/
 │   ├── BuildManifest.php         # Tracks source→output mappings for incremental builds
 │   ├── CollectionListingWriter.php # Paginated collection listing pages
 │   ├── ContentAssetCopier.php    # Copies non-md/yaml assets to output directory
+│   ├── TemplateResolver.php      # Resolves template names to file paths (user dir → built-in)
 ├── Shared/
 │   └── ApplicationParams.php
 ├── Web/                          # Yii3 web actions for serve mode

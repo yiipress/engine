@@ -12,7 +12,10 @@ final class BuildCache
     private string $cacheDir;
     private string $templateHash;
 
-    public function __construct(string $cacheDir, string $templatePath)
+    /**
+     * @param list<string> $templateDirs
+     */
+    public function __construct(string $cacheDir, array $templateDirs)
     {
         $this->cacheDir = $cacheDir;
 
@@ -20,7 +23,7 @@ final class BuildCache
             mkdir($this->cacheDir, 0o755, true);
         }
 
-        $this->templateHash = hash_file('xxh128', $templatePath);
+        $this->templateHash = $this->hashTemplateDirs($templateDirs);
     }
 
     public function get(string $sourceFilePath): ?string
@@ -60,5 +63,25 @@ final class BuildCache
     {
         $fileHash = hash_file('xxh128', $sourceFilePath);
         return hash('xxh128', $fileHash . $this->templateHash);
+    }
+
+    /**
+     * @param list<string> $templateDirs
+     */
+    private function hashTemplateDirs(array $templateDirs): string
+    {
+        $hashes = '';
+        foreach ($templateDirs as $dir) {
+            if (!is_dir($dir)) {
+                continue;
+            }
+            $files = glob($dir . '/*.php');
+            sort($files);
+            foreach ($files as $file) {
+                $hashes .= hash_file('xxh128', $file);
+            }
+        }
+
+        return hash('xxh128', $hashes);
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Build;
 
 use App\Build\CollectionListingWriter;
+use App\Build\TemplateResolver;
 use App\Content\Model\Collection;
 use App\Content\Model\Entry;
 use App\Content\Model\SiteConfig;
@@ -76,7 +77,7 @@ final class CollectionListingWriterTest extends TestCase
             $this->createEntry('second-post', 'Second Post', '2024-03-20'),
         ];
 
-        $writer = new CollectionListingWriter();
+        $writer = new CollectionListingWriter(new TemplateResolver());
         $pageCount = $writer->write($this->siteConfig, $collection, $entries, $this->outputDir);
 
         assertSame(1, $pageCount);
@@ -98,7 +99,7 @@ final class CollectionListingWriterTest extends TestCase
             $this->createEntry('post-3', 'Post 3', '2024-03-03'),
         ];
 
-        $writer = new CollectionListingWriter();
+        $writer = new CollectionListingWriter(new TemplateResolver());
         $pageCount = $writer->write($this->siteConfig, $collection, $entries, $this->outputDir);
 
         assertSame(2, $pageCount);
@@ -124,7 +125,7 @@ final class CollectionListingWriterTest extends TestCase
     {
         $collection = $this->createCollection(entriesPerPage: 10);
 
-        $writer = new CollectionListingWriter();
+        $writer = new CollectionListingWriter(new TemplateResolver());
         $pageCount = $writer->write($this->siteConfig, $collection, [], $this->outputDir);
 
         assertSame(1, $pageCount);
@@ -142,7 +143,7 @@ final class CollectionListingWriterTest extends TestCase
             $this->createEntry('post-2', 'Post 2', '2024-03-02'),
         ];
 
-        $writer = new CollectionListingWriter();
+        $writer = new CollectionListingWriter(new TemplateResolver());
         $writer->write($this->siteConfig, $collection, $entries, $this->outputDir);
 
         $page1 = file_get_contents($this->outputDir . '/blog/index.html');

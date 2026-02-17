@@ -12,8 +12,7 @@ use App\Content\PermalinkResolver;
 
 final class TaxonomyPageWriter
 {
-    private const string INDEX_TEMPLATE = __DIR__ . '/../Render/Template/taxonomy_index.php';
-    private const string TERM_TEMPLATE = __DIR__ . '/../Render/Template/taxonomy_term.php';
+    public function __construct(private TemplateResolver $templateResolver) {}
 
     /**
      * @param array<string, array<string, list<Entry>>> $taxonomyData
@@ -59,7 +58,7 @@ final class TaxonomyPageWriter
         $nav = $navigation;
 
         ob_start();
-        require self::INDEX_TEMPLATE;
+        require $this->templateResolver->resolve('taxonomy_index');
         $html = ob_get_clean();
 
         $dir = $outputDir . '/' . $taxonomyName;
@@ -104,7 +103,7 @@ final class TaxonomyPageWriter
         $entries = $entryData;
 
         ob_start();
-        require self::TERM_TEMPLATE;
+        require $this->templateResolver->resolve('taxonomy_term');
         $html = ob_get_clean();
 
         $dir = $outputDir . '/' . $taxonomyName . '/' . $term;

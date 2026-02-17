@@ -16,10 +16,9 @@ use function dirname;
 
 final class AuthorPageWriter
 {
-    private const string INDEX_TEMPLATE = __DIR__ . '/../Render/Template/author_index.php';
-    private const string AUTHOR_TEMPLATE = __DIR__ . '/../Render/Template/author.php';
-
     private ?MarkdownRenderer $markdownRenderer = null;
+
+    public function __construct(private TemplateResolver $templateResolver) {}
 
     /**
      * @param array<string, Author> $authors
@@ -72,7 +71,7 @@ final class AuthorPageWriter
         }
 
         ob_start();
-        require self::INDEX_TEMPLATE;
+        require $this->templateResolver->resolve('author_index');
         $html = ob_get_clean();
 
         $dir = $outputDir . '/authors';
@@ -125,7 +124,7 @@ final class AuthorPageWriter
         $entries = $entryData;
 
         ob_start();
-        require self::AUTHOR_TEMPLATE;
+        require $this->templateResolver->resolve('author');
         $html = ob_get_clean();
 
         $dir = $outputDir . '/authors/' . $author->slug;

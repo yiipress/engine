@@ -47,7 +47,6 @@
 - [x] Live reload / file watching during `yiipress serve`
 - [x] `yiipress new` command — scaffold new entries from archetypes/templates
 - [x] Incremental builds (only rebuild changed files)
-- [ ] Environment-specific configuration documentation (document existing `config/environments/`)
 - [x] Build diagnostics (warn on broken internal links, missing images, invalid front matter)
 - [x] `yiipress clean` command — clear build output and caches
 - [x] Dry run mode for build — show what would be generated without writing files
@@ -57,7 +56,8 @@
 - [ ] Theme system — installable/distributable themes
 - [ ] Template partials/includes support
 - [ ] Template helper functions documentation
-- [ ] Multiple layout support (per-entry layout selection via front matter)
+- [x] Multiple layout support (per-entry layout selection via front matter)
+- [ ] Beatiful default theme
 
 ## Priority 5: Asset pipeline
 

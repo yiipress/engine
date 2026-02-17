@@ -12,7 +12,7 @@ use App\Content\PermalinkResolver;
 
 final class CollectionListingWriter
 {
-    private const string TEMPLATE = __DIR__ . '/../Render/Template/collection_listing.php';
+    public function __construct(private TemplateResolver $templateResolver) {}
 
     /**
      * @param list<Entry> $entries
@@ -87,7 +87,7 @@ final class CollectionListingWriter
         $nav = $navigation;
 
         ob_start();
-        require self::TEMPLATE;
+        require $this->templateResolver->resolve('collection_listing');
         return ob_get_clean();
     }
 

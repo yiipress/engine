@@ -12,10 +12,9 @@ use App\Processor\ContentProcessorPipeline;
 
 final class EntryRenderer
 {
-    public const string ENTRY_TEMPLATE = __DIR__ . '/../Render/Template/entry.php';
-
     public function __construct(
         private ContentProcessorPipeline $pipeline,
+        private TemplateResolver $templateResolver,
         private ?BuildCache $cache = null,
         private string $contentDir = '',
     ) {}
@@ -54,6 +53,13 @@ final class EntryRenderer
 
     private function renderTemplate(SiteConfig $siteConfig, Entry $entry, string $content, ?Navigation $navigation): string
     {
+        $templateName = $entry->layout !== '' ? $entry->layout : 'entry';
+        try {
+            $templatePath = $this->templateResolver->resolve($templateName);
+        } catch (\RuntimeException) {
+            $templatePath = $this->templateResolver->resolve('entry');
+        }
+
         $siteTitle = $siteConfig->title;
         $entryTitle = $entry->title;
         $date = $entry->date?->format('Y-m-d') ?? '';
@@ -62,7 +68,7 @@ final class EntryRenderer
         $nav = $navigation;
 
         ob_start();
-        require self::ENTRY_TEMPLATE;
+        require $templatePath;
         return ob_get_clean();
     }
 }
