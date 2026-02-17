@@ -10,5 +10,6 @@ permalink: "/"
 - [Content](content.md)
 - [Templates](template.md)
 - [Console commands](commands.md)
+- [Web application](web-app.md)
 - [Plugins](plugins.md)
 - [Benchmarking](benchmarking.md)

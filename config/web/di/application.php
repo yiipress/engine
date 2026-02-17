@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Web\LiveReload\LiveReloadMiddleware;
 use App\Web\NotFound\NotFoundHandler;
 use Yiisoft\Csrf\CsrfTokenMiddleware;
 use Yiisoft\DataResponse\Middleware\FormatDataResponse;
@@ -32,6 +33,7 @@ return [
                         CsrfTokenMiddleware::class,
                         FormatDataResponse::class,
                         RequestCatcherMiddleware::class,
+                        LiveReloadMiddleware::class,
                         Router::class,
                     ],
                 ],

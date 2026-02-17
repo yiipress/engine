@@ -42,6 +42,8 @@ yii serve [--port=8080]
 
 Alternatively, use `composer serve` which disables the process timeout.
 
+See [Web application](web-app.md) for details on static file serving and live reload.
+
 ## `yii clean`
 
 Clears build output and caches.

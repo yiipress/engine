@@ -309,7 +309,13 @@ src/
 ├── Shared/
 │   └── ApplicationParams.php
 ├── Web/                          # Yii3 web actions for serve mode
-│   ├── HomePage/
+│   ├── LiveReload/
+│   │   ├── FileWatcher.php       # Polls directories for file changes
+│   │   ├── LiveReloadAction.php  # SSE endpoint streaming reload events
+│   │   ├── LiveReloadMiddleware.php # Injects live-reload JS into HTML
+│   │   └── SiteBuildRunner.php   # Triggers yii build on file changes
+│   ├── StaticFile/
+│   │   └── StaticFileAction.php  # Serves files from output directory
 │   ├── NotFound/
 │   └── Shared/
 └── Environment.php

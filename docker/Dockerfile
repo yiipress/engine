@@ -13,6 +13,8 @@ RUN ldconfig
 RUN apt update && apt -y install \
     unzip
 
+COPY docker/php.ini $PHP_INI_DIR/conf.d/99-yiipress.ini
+
 RUN install-php-extensions \
     opcache \
     mbstring \

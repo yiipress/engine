@@ -9,8 +9,11 @@ use Yiisoft\Router\Route;
 return [
     Group::create()
         ->routes(
-            Route::get('/')
-                ->action(Web\HomePage\Action::class)
-                ->name('home'),
+            Route::get('/_live-reload')
+                ->action(Web\LiveReload\LiveReloadAction::class)
+                ->name('live-reload'),
+            Route::get('/{path:.*}')
+                ->action(Web\StaticFile\StaticFileAction::class)
+                ->name('static-file'),
         ),
 ];
