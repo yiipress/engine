@@ -9,7 +9,7 @@ YiiPress is a static blog engine built on Yii3.
 ## Installation
 
 ```bash
-composer create-project samdark/yiipress myblog
+composer create-project yiipress/engine myblog
 ```
 
 ## Documentation
