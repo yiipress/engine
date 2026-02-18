@@ -12,3 +12,4 @@
 !composer.lock
 !.env*
 !/docker/php.ini
+!/docker/php-prod.ini
