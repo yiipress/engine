@@ -34,17 +34,15 @@ make prod-push
 The repository includes a GitHub Actions workflow (`.github/workflows/docker-build.yml`) that automatically builds and publishes the production Docker image to GitHub Container Registry (ghcr.io).
 
 **Triggers:**
-- Push to `main` branch - builds and pushes with `latest` tag
-- Push tags matching `v*.*.*` (e.g., `v1.0.0`) - builds and pushes with semantic version tags
+- Push to `master` branch - builds and pushes with `latest` tag
+- Push tags matching `*.*.*` (e.g., `1.0.0`) - builds and pushes with semantic version tags
 - Pull requests - builds only (does not push)
 - Manual workflow dispatch
 
 **Image Tags:**
 The workflow automatically creates multiple tags for each build:
-- `latest` - for pushes to the main branch
-- `main` - for pushes to the main branch
-- `v1.2.3`, `v1.2`, `v1` - for semantic version tags
-- `main-<sha>` - branch name with commit SHA
+- `latest` - for pushes to the master branch
+- `1.2.3`, `1.2`, `1` - for semantic version tags
 
 **Registry:**
 Images are published to: `ghcr.io/yiipress/engine`
@@ -63,7 +61,7 @@ docker pull ghcr.io/yiipress/engine:latest
 Pull a specific version:
 
 ```bash
-docker pull ghcr.io/yiipress/engine:v1.0.0
+docker pull ghcr.io/yiipress/engine:1.0.0
 ```
 
 ## Production Deployment
