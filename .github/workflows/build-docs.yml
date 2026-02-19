@@ -26,15 +26,16 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build documentation
         run: ./yii build --content-dir=docs --output-dir=_site --no-cache
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
 
   deploy:
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
