@@ -21,12 +21,32 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/yiipress/engine:latest
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Build Rust highlighter library
+        working-directory: src/Highlighter
+        run: cargo build --release
+
+      - name: Install Rust library
+        run: |
+          sudo cp src/Highlighter/target/release/libyiipress_highlighter.so /usr/local/lib/
+          sudo ldconfig
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: ffi, filter, md4c, pcntl, mbstring, xmlwriter, yaml
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --no-dev --no-progress --no-interaction --prefer-dist --optimize-autoloader
 
       - name: Build documentation
         run: ./yii build --content-dir=docs --output-dir=_site --no-cache
