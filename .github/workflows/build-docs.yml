@@ -23,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/yiipress/engine:latest
+      options: --user root
     
     steps:
       - name: Checkout repository
