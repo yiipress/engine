@@ -205,3 +205,21 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
 .error-page { text-align: center; padding: 4rem 0; }
 .error-page h1 { font-size: 4rem; font-weight: 700; margin-bottom: .5rem; }
 .error-page p { color: var(--c-text-muted); font-size: 1.125rem; margin-bottom: 1.5rem; }
+
+/* Mermaid diagrams */
+.mermaid {
+    display: flex;
+    justify-content: center;
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: var(--c-bg);
+    border-radius: .5rem;
+    border: 1px solid var(--c-border);
+}
+.mermaid svg {
+    max-width: 100%;
+    height: auto;
+}
+[data-theme="dark"] .mermaid {
+    background: var(--c-header-bg);
+}

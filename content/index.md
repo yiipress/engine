@@ -24,3 +24,16 @@ echo 'Hello, world!';
 ```
 
 ````
+
+```mermaid
+flowchart LR
+    A[content/*.md] --> B[Parse]
+    B --> C[Index]
+    C --> D[Render]
+    D --> E[Write]
+    E --> F[output]
+    
+    subgraph Pipeline
+        B --> C --> D
+    end
+```
