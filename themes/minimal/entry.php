@@ -20,7 +20,9 @@ use App\Content\Model\Navigation;
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<?= $partial('head', ['title' => $entryTitle . ' — ' . $siteTitle, 'hasMermaid' => str_contains($content, '<div class="mermaid">', 'rootPath' => $rootPath]) ?>
+
+<?= $partial('head', ['title' => $entryTitle . ' — ' . $siteTitle, 'hasMermaid' => str_contains($content, '<div class="mermaid">')]) ?>
+
 </head>
 <body>
 <?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath]) ?>
