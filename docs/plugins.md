@@ -59,6 +59,53 @@ Supported languages include all syntect defaults (PHP, JavaScript, Python, Rust,
 Bash, SQL, HTML, CSS, and many more). Code blocks with an unrecognized language are
 highlighted as plain text.
 
+### MermaidProcessor
+
+Renders [Mermaid](https://mermaid.js.org/) diagrams on the client side.
+
+Use fenced code blocks with `mermaid` language identifier:
+
+**Flowchart:**
+````markdown
+```mermaid
+flowchart LR
+    A[Start] --> B{Condition}
+    B -->|Yes| C[Action 1]
+    B -->|No| D[Action 2]
+```
+````
+
+**Sequence diagram:**
+````markdown
+```mermaid
+sequenceDiagram
+    Alice->>John: Hello John, how are you?
+    John-->>Alice: Great!
+    Alice-)John: See you later!
+```
+````
+
+**Gantt chart:**
+````markdown
+```mermaid
+gantt
+    title Project Timeline
+    dateFormat  YYYY-MM-DD
+    section Phase 1
+    Task 1 :a1, 2024-01-01, 30d
+    Task 2 :after a1, 20d
+```
+````
+
+The processor converts the code block to a `<div class="mermaid">` element.
+Mermaid.js (loaded via CDN in the template) renders the diagram as SVG in the browser.
+
+Supported diagram types: flowcharts, sequence diagrams, Gantt charts, pie charts, class diagrams, state diagrams, user journey maps, and more.
+
+**Note:** Mermaid.js is only loaded on pages that contain diagrams to reduce bandwidth.
+
+For full syntax reference, see [Mermaid documentation](https://mermaid.js.org/intro/).
+
 ## Writing a custom processor
 
 Create a class implementing `ContentProcessorInterface`. For example, a shortcode processor:
