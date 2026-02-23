@@ -116,6 +116,16 @@ bench: ## Run benchmarks (xdebug off). Use BENCH_FILTER=ClassName to filter.
 	$(DOCKER_COMPOSE_DEV) run --rm -e XDEBUG_MODE=off app ./vendor/bin/phpbench run $(if $(BENCH_FILTER),--filter=$(BENCH_FILTER)) $(CLI_ARGS)
 endif
 
+ifeq ($(PRIMARY_GOAL),bench-baseline)
+bench-baseline: ## Run benchmarks (xdebug off) and write a baseline. Use BENCH_FILTER=ClassName to filter.
+	$(DOCKER_COMPOSE_DEV) run --rm -e XDEBUG_MODE=off app ./vendor/bin/phpbench run --tag=original --retry-threshold=2 $(if $(BENCH_FILTER),--filter=$(BENCH_FILTER)) $(CLI_ARGS)
+endif
+
+ifeq ($(PRIMARY_GOAL),bench-compare)
+bench-compare: ## Run benchmarks (xdebug off) and compare with baseline. Use BENCH_FILTER=ClassName to filter.
+	$(DOCKER_COMPOSE_DEV) run --rm -e XDEBUG_MODE=off app ./vendor/bin/phpbench run --report=aggregate --ref=original --retry-threshold=2 $(if $(BENCH_FILTER),--filter=$(BENCH_FILTER)) $(CLI_ARGS)
+endif
+
 ifeq ($(PRIMARY_GOAL),bench-profile)
 bench-profile: ## Run benchmarks with XDebug profiling. Use BENCH_FILTER=ClassName to filter.
 	@mkdir -p runtime/xdebug
