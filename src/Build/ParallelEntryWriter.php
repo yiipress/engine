@@ -46,8 +46,8 @@ final readonly class ParallelEntryWriter
             $dirs[dirname($task['filePath'])] = true;
         }
         foreach ($dirs as $dirPath => $_) {
-            if (!is_dir($dirPath)) {
-                mkdir($dirPath, 0o755, true);
+            if (!is_dir($dirPath) && !mkdir($dirPath, 0o755, true) && !is_dir($dirPath)) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $dirPath));
             }
         }
 
@@ -75,7 +75,7 @@ final readonly class ParallelEntryWriter
     /**
      * @param list<array{entry: Entry, filePath: string, permalink: string}> $tasks
      */
-    private function writeParallel(SiteConfig $siteConfig, array $tasks, string $contentDir, int $workerCount, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors): int
+    private function writeParallel(SiteConfig $siteConfig, array $tasks, string $contentDir, int $workerCount, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors): void
     {
         $totalEntries = count($tasks);
         $pids = [];
@@ -112,8 +112,6 @@ final readonly class ParallelEntryWriter
         if ($failed) {
             throw new RuntimeException('One or more worker processes failed');
         }
-
-        return $totalEntries;
     }
 
 }

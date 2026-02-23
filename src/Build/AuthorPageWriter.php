@@ -11,6 +11,7 @@ use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
 use App\Content\PermalinkResolver;
 use App\Render\MarkdownRenderer;
+use RuntimeException;
 
 final class AuthorPageWriter
 {
@@ -76,8 +77,8 @@ final class AuthorPageWriter
         $html = ob_get_clean();
 
         $dir = $outputDir . '/authors';
-        if (!is_dir($dir)) {
-            mkdir($dir, 0o755, true);
+        if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
+            throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
         }
 
         file_put_contents($dir . '/index.html', $html);
@@ -130,8 +131,8 @@ final class AuthorPageWriter
         $html = ob_get_clean();
 
         $dir = $outputDir . '/authors/' . $author->slug;
-        if (!is_dir($dir)) {
-            mkdir($dir, 0o755, true);
+        if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
+            throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
         }
 
         file_put_contents($dir . '/index.html', $html);

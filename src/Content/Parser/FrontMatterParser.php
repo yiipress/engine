@@ -16,7 +16,7 @@ use function yaml_parse;
 final class FrontMatterParser
 {
     /**
-     * Extracts YAML front matter from a file without reading the markdown body into memory.
+     * Extracts YAML front matter from a file without reading the Markdown body into memory.
      *
      * Returns the parsed front matter as an associative array, plus the byte offset
      * and length of the body for deferred reading.

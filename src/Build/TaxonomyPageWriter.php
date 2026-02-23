@@ -9,6 +9,7 @@ use App\Content\Model\Entry;
 use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
 use App\Content\PermalinkResolver;
+use RuntimeException;
 
 final readonly class TaxonomyPageWriter
 {
@@ -64,8 +65,8 @@ final readonly class TaxonomyPageWriter
         $html = ob_get_clean();
 
         $dir = $outputDir . '/' . $taxonomyName;
-        if (!is_dir($dir)) {
-            mkdir($dir, 0o755, true);
+        if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
+            throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
         }
 
         file_put_contents($dir . '/index.html', $html);
@@ -110,8 +111,8 @@ final readonly class TaxonomyPageWriter
         $html = ob_get_clean();
 
         $dir = $outputDir . '/' . $taxonomyName . '/' . $term;
-        if (!is_dir($dir)) {
-            mkdir($dir, 0o755, true);
+        if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
+            throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
         }
 
         file_put_contents($dir . '/index.html', $html);

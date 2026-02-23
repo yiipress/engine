@@ -7,6 +7,7 @@ namespace App\Build;
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use RuntimeException;
 use SplFileInfo;
 
 use function dirname;
@@ -48,8 +49,8 @@ final class ContentAssetCopier
             $targetPath = $outputDir . '/' . $relativePath;
             $targetDir = dirname($targetPath);
 
-            if (!is_dir($targetDir)) {
-                mkdir($targetDir, 0o755, true);
+            if (!is_dir($targetDir) && !mkdir($targetDir, 0o755, true) && !is_dir($targetDir)) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $targetDir));
             }
 
             copy($item->getPathname(), $targetPath);
