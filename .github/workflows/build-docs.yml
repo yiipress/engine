@@ -1,12 +1,12 @@
 name: Build and Deploy Documentation
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Build Production Docker Image"]
     branches:
       - master
-    paths:
-      - 'docs/**'
-      - '.github/workflows/build-docs.yml'
+    types:
+      - completed
   workflow_dispatch:
 
 permissions:
@@ -20,23 +20,26 @@ concurrency:
 
 jobs:
   build:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/yiipress/engine:latest
-      options: --user root
-    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
       - name: Build documentation
-        run: ./yii build --content-dir=docs --output-dir=_site --no-cache
+        run: |
+          docker run --rm \
+            --user=root \
+            -v ${{ github.workspace }}/docs:/app/docs \
+            -v ${{ github.workspace }}/_site:/app/_site \
+            ghcr.io/yiipress/engine:latest \
+            ./yii build --content-dir=docs --output-dir=_site --no-cache
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
 
   deploy:
-    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch' }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Web\LiveReload;
 
-final class SiteBuildRunner
+final readonly class SiteBuildRunner
 {
     public function __construct(
-        private readonly string $yiiBinary,
-        private readonly string $contentDir,
-        private readonly string $outputDir,
+        private string $yiiBinary,
+        private string $contentDir,
+        private string $outputDir,
     ) {}
 
     public function build(): bool

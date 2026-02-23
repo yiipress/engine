@@ -9,6 +9,7 @@ use App\Content\Model\SiteConfig;
 use RuntimeException;
 
 use function file_get_contents;
+use function is_array;
 use function yaml_parse;
 
 final class SiteConfigParser
@@ -35,10 +36,10 @@ final class SiteConfigParser
             dateFormat: (string) ($data['date_format'] ?? 'Y-m-d'),
             entriesPerPage: (int) ($data['entries_per_page'] ?? 10),
             permalink: (string) ($data['permalink'] ?? '/:collection/:slug/'),
-            taxonomies: isset($data['taxonomies']) && \is_array($data['taxonomies'])
+            taxonomies: isset($data['taxonomies']) && is_array($data['taxonomies'])
                 ? array_values(array_map(strval(...), $data['taxonomies']))
                 : [],
-            params: isset($data['params']) && \is_array($data['params'])
+            params: isset($data['params']) && is_array($data['params'])
                 ? $data['params']
                 : [],
             markdown: self::parseMarkdownConfig($data['markdown'] ?? []),
@@ -52,7 +53,7 @@ final class SiteConfigParser
      */
     private static function parseMarkdownConfig(mixed $data): MarkdownConfig
     {
-        if (!\is_array($data)) {
+        if (!is_array($data)) {
             return new MarkdownConfig();
         }
 

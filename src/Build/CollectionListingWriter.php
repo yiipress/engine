@@ -10,9 +10,11 @@ use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
 use App\Content\PermalinkResolver;
 
-final class CollectionListingWriter
+use function count;
+
+final readonly class CollectionListingWriter
 {
-    public function __construct(private readonly TemplateResolver $templateResolver) {}
+    public function __construct(private TemplateResolver $templateResolver) {}
 
     /**
      * @param list<Entry> $entries
@@ -26,22 +28,26 @@ final class CollectionListingWriter
     ): int {
         $perPage = $collection->entriesPerPage;
         if ($perPage <= 0) {
-            $perPage = \count($entries) ?: 1;
+            $perPage = count($entries) ?: 1;
         }
 
         $pages = $entries !== [] ? array_chunk($entries, $perPage) : [[]];
-        $totalPages = \count($pages);
-        $baseUrl = rtrim($siteConfig->baseUrl, '/');
+        $totalPages = count($pages);
         $pageCount = 0;
 
         foreach ($pages as $pageIndex => $pageEntries) {
             $pageNumber = $pageIndex + 1;
 
+            $currentPermalink = $pageNumber === 1
+                ? '/' . $collection->name . '/'
+                : '/' . $collection->name . '/page/' . $pageNumber . '/';
+            $rootPath = RelativePathHelper::rootPath($currentPermalink);
+
             $entryData = [];
             foreach ($pageEntries as $entry) {
                 $entryData[] = [
                     'title' => $entry->title,
-                    'url' => $baseUrl . PermalinkResolver::resolve($entry, $collection),
+                    'url' => RelativePathHelper::relativize(PermalinkResolver::resolve($entry, $collection), $rootPath),
                     'date' => $entry->date?->format($siteConfig->dateFormat) ?? '',
                     'summary' => $entry->summary(),
                 ];
@@ -50,11 +56,11 @@ final class CollectionListingWriter
             $pagination = [
                 'currentPage' => $pageNumber,
                 'totalPages' => $totalPages,
-                'previousUrl' => $this->resolvePageUrl($collection->name, $pageNumber - 1, $totalPages),
-                'nextUrl' => $this->resolvePageUrl($collection->name, $pageNumber + 1, $totalPages),
+                'previousUrl' => $this->resolvePageUrl($collection->name, $pageNumber - 1, $totalPages, $rootPath),
+                'nextUrl' => $this->resolvePageUrl($collection->name, $pageNumber + 1, $totalPages, $rootPath),
             ];
 
-            $html = $this->renderPage($siteConfig, $collection, $entryData, $pagination, $navigation);
+            $html = $this->renderPage($siteConfig, $collection, $entryData, $pagination, $navigation, $rootPath);
 
             $dir = $pageNumber === 1
                 ? $outputDir . '/' . $collection->name
@@ -81,27 +87,28 @@ final class CollectionListingWriter
         array $entries,
         array $pagination,
         ?Navigation $navigation,
+        string $rootPath,
     ): string {
         $siteTitle = $siteConfig->title;
         $collectionTitle = $collection->title;
         $nav = $navigation;
-        $partial = (new TemplateContext($this->templateResolver, $siteConfig->theme))->partial(...);
+        $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
 
         ob_start();
         require $this->templateResolver->resolve('collection_listing');
         return ob_get_clean();
     }
 
-    private function resolvePageUrl(string $collectionName, int $pageNumber, int $totalPages): string
+    private function resolvePageUrl(string $collectionName, int $pageNumber, int $totalPages, string $rootPath): string
     {
         if ($pageNumber < 1 || $pageNumber > $totalPages) {
             return '';
         }
 
         if ($pageNumber === 1) {
-            return '/' . $collectionName . '/';
+            return $rootPath . $collectionName . '/';
         }
 
-        return '/' . $collectionName . '/page/' . $pageNumber . '/';
+        return $rootPath . $collectionName . '/page/' . $pageNumber . '/';
     }
 }

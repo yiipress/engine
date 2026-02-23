@@ -20,15 +20,11 @@ final class ContentParser
     private NavigationParser $navigationParser;
     private EntryParser $entryParser;
     private AuthorParser $authorParser;
-    private ?FrontMatterParser $frontMatterParser;
-    private ?FilenameParser $filenameParser;
 
     public function __construct(
-        ?FrontMatterParser $frontMatterParser = null,
-        ?FilenameParser $filenameParser = null,
+        private readonly ?FrontMatterParser $frontMatterParser = new FrontMatterParser(),
+        private readonly ?FilenameParser $filenameParser = new FilenameParser(),
     ) {
-        $this->frontMatterParser = $frontMatterParser ?? new FrontMatterParser();
-        $this->filenameParser = $filenameParser ?? new FilenameParser();
         $this->siteConfigParser = new SiteConfigParser();
         $this->collectionConfigParser = new CollectionConfigParser();
         $this->navigationParser = new NavigationParser();

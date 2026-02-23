@@ -14,6 +14,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Yiisoft\Yii\Console\ExitCode;
 
+use function dirname;
 use function str_starts_with;
 
 #[AsCommand(
@@ -125,7 +126,7 @@ final class NewCommand extends Command
         }
         $frontMatter .= "---\n\n";
 
-        $dir = \dirname($filePath);
+        $dir = dirname($filePath);
         if (!is_dir($dir)) {
             mkdir($dir, 0o755, true);
         }
@@ -166,8 +167,8 @@ final class NewCommand extends Command
     {
         $slug = mb_strtolower($title);
         $slug = preg_replace('/[^\p{L}\p{N}\s-]/u', '', $slug);
-        $slug = preg_replace('/[\s-]+/', '-', $slug);
-        return trim($slug, '-');
+        $slug = preg_replace('/[\s-]+/', '-', (string) $slug);
+        return trim((string) $slug, '-');
     }
 
     private function yamlEscape(string $value): string

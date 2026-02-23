@@ -11,16 +11,16 @@ use function hash_file;
 
 final class BuildCache
 {
-    private string $cacheDir;
     private string $templateHash;
 
     /**
      * @param list<string> $templateDirs
      */
-    public function __construct(string $cacheDir, array $templateDirs)
+    public function __construct(
+        private readonly string $cacheDir,
+        array $templateDirs
+    )
     {
-        $this->cacheDir = $cacheDir;
-
         if (!is_dir($this->cacheDir)) {
             mkdir($this->cacheDir, 0o755, true);
         }

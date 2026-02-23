@@ -10,9 +10,9 @@ use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
 use App\Content\PermalinkResolver;
 
-final class DateArchiveWriter
+final readonly class DateArchiveWriter
 {
-    public function __construct(private readonly TemplateResolver $templateResolver) {}
+    public function __construct(private TemplateResolver $templateResolver) {}
 
     /**
      * @param list<Entry> $entries
@@ -45,7 +45,6 @@ final class DateArchiveWriter
 
         krsort($byYear);
 
-        $baseUrl = rtrim($siteConfig->baseUrl, '/');
         $pageCount = 0;
 
         foreach ($byYear as $year => $yearEntries) {
@@ -55,7 +54,6 @@ final class DateArchiveWriter
                 (string) $year,
                 $yearEntries,
                 array_keys($byMonth[$year]),
-                $baseUrl,
                 $outputDir,
                 $navigation,
             );
@@ -71,7 +69,6 @@ final class DateArchiveWriter
                     (string) $year,
                     (string) $month,
                     $monthEntries,
-                    $baseUrl,
                     $outputDir,
                     $navigation,
                 );
@@ -92,7 +89,6 @@ final class DateArchiveWriter
         string $year,
         array $entries,
         array $months,
-        string $baseUrl,
         string $outputDir,
         ?Navigation $navigation,
     ): void {
@@ -100,7 +96,8 @@ final class DateArchiveWriter
         $collectionName = $collection->name;
         $collectionTitle = $collection->title;
         $nav = $navigation;
-        $partial = (new TemplateContext($this->templateResolver, $siteConfig->theme))->partial(...);
+        $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
+        $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/' . $year . '/');
 
         rsort($months);
 
@@ -108,7 +105,7 @@ final class DateArchiveWriter
         foreach ($entries as $entry) {
             $entryData[] = [
                 'title' => $entry->title,
-                'url' => $baseUrl . PermalinkResolver::resolve($entry, $collection),
+                'url' => RelativePathHelper::relativize(PermalinkResolver::resolve($entry, $collection), $rootPath),
                 'date' => $entry->date?->format($siteConfig->dateFormat) ?? '',
             ];
         }
@@ -136,7 +133,6 @@ final class DateArchiveWriter
         string $year,
         string $month,
         array $entries,
-        string $baseUrl,
         string $outputDir,
         ?Navigation $navigation,
     ): void {
@@ -144,7 +140,8 @@ final class DateArchiveWriter
         $collectionName = $collection->name;
         $collectionTitle = $collection->title;
         $nav = $navigation;
-        $partial = (new TemplateContext($this->templateResolver, $siteConfig->theme))->partial(...);
+        $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
+        $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/' . $year . '/' . $month . '/');
 
         $monthName = date('F', mktime(0, 0, 0, (int) $month, 1));
 
@@ -152,7 +149,7 @@ final class DateArchiveWriter
         foreach ($entries as $entry) {
             $entryData[] = [
                 'title' => $entry->title,
-                'url' => $baseUrl . PermalinkResolver::resolve($entry, $collection),
+                'url' => RelativePathHelper::relativize(PermalinkResolver::resolve($entry, $collection), $rootPath),
                 'date' => $entry->date?->format($siteConfig->dateFormat) ?? '',
             ];
         }

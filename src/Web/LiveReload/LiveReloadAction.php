@@ -8,15 +8,15 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 
-final class LiveReloadAction
+final readonly class LiveReloadAction
 {
     private const int RETRY_MILLISECONDS = 500;
 
     public function __construct(
-        private readonly ResponseFactoryInterface $responseFactory,
-        private readonly StreamFactoryInterface $streamFactory,
-        private readonly FileWatcher $fileWatcher,
-        private readonly SiteBuildRunner $buildRunner,
+        private ResponseFactoryInterface $responseFactory,
+        private StreamFactoryInterface $streamFactory,
+        private FileWatcher $fileWatcher,
+        private SiteBuildRunner $buildRunner,
     ) {}
 
     public function __invoke(): ResponseInterface

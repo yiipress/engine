@@ -7,12 +7,14 @@ namespace App\Content\Parser;
 use App\Content\Model\Entry;
 use DateTimeImmutable;
 
-final class EntryParser
+use function is_array;
+
+final readonly class EntryParser
 {
     public function __construct(
-        private readonly FrontMatterParser $frontMatterParser,
-        private readonly FilenameParser $filenameParser,
-        private readonly array $authors = [],
+        private FrontMatterParser $frontMatterParser,
+        private FilenameParser $filenameParser,
+        private array $authors = [],
     ) {}
 
     public function parse(string $filePath, string $collectionName): Entry
@@ -34,13 +36,13 @@ final class EntryParser
             title: (string) ($fields['title'] ?? ''),
             date: $date,
             draft: (bool) ($fields['draft'] ?? false),
-            tags: isset($fields['tags']) && \is_array($fields['tags'])
+            tags: isset($fields['tags']) && is_array($fields['tags'])
                 ? array_values(array_map(strval(...), $fields['tags']))
                 : [],
-            categories: isset($fields['categories']) && \is_array($fields['categories'])
+            categories: isset($fields['categories']) && is_array($fields['categories'])
                 ? array_values(array_map(strval(...), $fields['categories']))
                 : [],
-            authors: isset($fields['authors']) && \is_array($fields['authors'])
+            authors: isset($fields['authors']) && is_array($fields['authors'])
                 ? array_values(array_map(strval(...), $fields['authors']))
                 : [],
             summary: (string) ($fields['summary'] ?? ''),
@@ -50,7 +52,7 @@ final class EntryParser
             weight: (int) ($fields['weight'] ?? 0),
             language: (string) ($fields['language'] ?? ''),
             redirectTo: (string) ($fields['redirect_to'] ?? ''),
-            extra: isset($fields['extra']) && \is_array($fields['extra'])
+            extra: isset($fields['extra']) && is_array($fields['extra'])
                 ? $fields['extra']
                 : [],
             bodyOffset: $result['bodyOffset'],

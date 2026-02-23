@@ -11,6 +11,7 @@ declare(strict_types=1);
  * @var string $collection
  * @var ?Navigation $nav
  * @var Closure(string, array): string $partial
+ * @var string $rootPath
  */
 
 use App\Content\Model\Navigation;
@@ -19,10 +20,10 @@ use App\Content\Model\Navigation;
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<?= $partial('head', ['title' => $entryTitle . ' — ' . $siteTitle, 'hasMermaid' => str_contains($content, '<div class="mermaid">')]) ?>
+<?= $partial('head', ['title' => $entryTitle . ' — ' . $siteTitle, 'hasMermaid' => str_contains($content, '<div class="mermaid">', 'rootPath' => $rootPath]) ?>
 </head>
 <body>
-<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav]) ?>
+<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath]) ?>
 <main>
     <div class="container">
         <article>
@@ -43,6 +44,6 @@ use App\Content\Model\Navigation;
         </article>
     </div>
 </main>
-<?= $partial('footer', ['nav' => $nav]) ?>
+<?= $partial('footer', ['nav' => $nav, 'rootPath' => $rootPath]) ?>
 </body>
 </html>

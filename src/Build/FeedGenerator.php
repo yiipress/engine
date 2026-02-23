@@ -75,7 +75,7 @@ final class FeedGenerator
         }
 
         foreach ($entries as $entry) {
-            $this->writeAtomEntry($this->xml, $siteConfig, $collection, $entry);
+            $this->writeAtomEntry($siteConfig, $collection, $entry);
         }
 
         $this->xml->endElement();
@@ -127,7 +127,7 @@ final class FeedGenerator
         }
 
         foreach ($entries as $entry) {
-            $this->writeRssItem($this->xml, $siteConfig, $collection, $entry);
+            $this->writeRssItem($siteConfig, $collection, $entry);
         }
 
         $this->xml->endElement();
@@ -138,7 +138,6 @@ final class FeedGenerator
     }
 
     private function writeAtomEntry(
-        XMLWriter $xml,
         SiteConfig $siteConfig,
         Collection $collection,
         Entry $entry,
@@ -183,7 +182,6 @@ final class FeedGenerator
     }
 
     private function writeRssItem(
-        XMLWriter $xml,
         SiteConfig $siteConfig,
         Collection $collection,
         Entry $entry,

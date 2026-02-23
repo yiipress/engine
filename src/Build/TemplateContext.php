@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Build;
 
+use Closure;
+
 final class TemplateContext
 {
-    /** @var array<string, \Closure> */
+    /** @var array<string, Closure> */
     private array $closureCache = [];
 
     public function __construct(

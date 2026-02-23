@@ -215,7 +215,7 @@ final class BuildCommand extends Command
         $configFiles = array_filter([
             $contentDir . '/config.yaml',
             $contentDir . '/navigation.yaml',
-        ], 'is_file');
+        ], is_file(...));
         foreach ($collections as $collectionName => $collection) {
             $collectionConfig = $contentDir . '/' . $collectionName . '/_collection.yaml';
             if (is_file($collectionConfig)) {
@@ -227,14 +227,7 @@ final class BuildCommand extends Command
             $manifestPath = $rootPath . '/runtime/cache/build-manifest-' . hash('xxh128', $outputDir) . '.json';
             $manifest = new BuildManifest($manifestPath);
             $manifest->load();
-
-            $configChanged = false;
-            foreach ($configFiles as $configFile) {
-                if ($manifest->isChanged($configFile)) {
-                    $configChanged = true;
-                    break;
-                }
-            }
+            $configChanged = array_any($configFiles, fn($configFile) => $manifest->isChanged($configFile));
 
             if ($configChanged) {
                 $changedSourceFiles = null;
@@ -299,9 +292,11 @@ final class BuildCommand extends Command
                 $filtered[] = $entry;
 
                 $relativePath = substr($entry->sourceFilePath(), strlen($contentDir) + 1);
+                $permalink = $fileToPermalink[$relativePath];
                 $allTasks[] = [
                     'entry' => $entry,
-                    'filePath' => $outputDir . $fileToPermalink[$relativePath] . 'index.html',
+                    'filePath' => $outputDir . $permalink . 'index.html',
+                    'permalink' => $permalink,
                 ];
             }
             $entriesByCollection[$collectionName] = EntrySorter::sort($filtered, $collection);
@@ -363,7 +358,7 @@ final class BuildCommand extends Command
             if (!is_dir($dirPath)) {
                 mkdir($dirPath, 0o755, true);
             }
-            file_put_contents($filePath, $renderer->render($siteConfig, $page, $navigation, $crossRefResolver));
+            file_put_contents($filePath, $renderer->render($siteConfig, $page, $permalink, $navigation, $crossRefResolver));
             $standalonePagesWritten++;
 
             $manifest?->record($page->sourceFilePath(), [$filePath]);
@@ -458,7 +453,7 @@ final class BuildCommand extends Command
         }
 
         if ($authors !== []) {
-            $allEntries = $allEntries ?? array_merge(...array_values($entriesByCollection));
+            $allEntries ??= array_merge(...array_values($entriesByCollection));
             $entriesByAuthor = [];
             foreach ($allEntries as $entry) {
                 foreach ($entry->authors as $authorSlug) {
@@ -496,7 +491,6 @@ final class BuildCommand extends Command
         string $outputDir,
         bool $includeDrafts,
         bool $includeFuture,
-        ?Navigation $navigation,
     ): int {
         $output->writeln('<info>Dry run — files that would be generated:</info>');
         $now = new DateTimeImmutable();

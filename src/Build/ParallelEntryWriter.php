@@ -11,6 +11,8 @@ use App\Content\Model\SiteConfig;
 use App\Processor\ContentProcessorPipeline;
 use RuntimeException;
 
+use function count;
+use function dirname;
 use function pcntl_fork;
 use function pcntl_waitpid;
 
@@ -23,7 +25,7 @@ final readonly class ParallelEntryWriter
     ) {}
 
     /**
-     * @param list<array{entry: Entry, filePath: string}> $tasks
+     * @param list<array{entry: Entry, filePath: string, permalink: string}> $tasks
      * @return int number of entries written
      */
     public function write(
@@ -41,7 +43,7 @@ final readonly class ParallelEntryWriter
 
         $dirs = [];
         foreach ($tasks as $task) {
-            $dirs[\dirname($task['filePath'])] = true;
+            $dirs[dirname($task['filePath'])] = true;
         }
         foreach ($dirs as $dirPath => $_) {
             if (!is_dir($dirPath)) {
@@ -55,27 +57,27 @@ final readonly class ParallelEntryWriter
             $this->writeParallel($siteConfig, $tasks, $contentDir, $workerCount, $navigation, $crossRefResolver, $authors);
         }
 
-        return \count($tasks);
+        return count($tasks);
     }
 
     /**
-     * @param list<array{entry: Entry, filePath: string}> $tasks
+     * @param list<array{entry: Entry, filePath: string, permalink: string}> $tasks
      */
     private function writeEntries(SiteConfig $siteConfig, array $tasks, string $contentDir, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors): void
     {
         $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors);
 
         foreach ($tasks as $task) {
-            file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $navigation, $crossRefResolver));
+            file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver));
         }
     }
 
     /**
-     * @param list<array{entry: Entry, filePath: string}> $tasks
+     * @param list<array{entry: Entry, filePath: string, permalink: string}> $tasks
      */
     private function writeParallel(SiteConfig $siteConfig, array $tasks, string $contentDir, int $workerCount, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors): int
     {
-        $totalEntries = \count($tasks);
+        $totalEntries = count($tasks);
         $pids = [];
 
         for ($workerIndex = 0; $workerIndex < $workerCount; $workerIndex++) {
@@ -90,7 +92,7 @@ final readonly class ParallelEntryWriter
 
                 for ($i = $workerIndex; $i < $totalEntries; $i += $workerCount) {
                     $task = $tasks[$i];
-                    file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $navigation, $crossRefResolver));
+                    file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver));
                 }
 
                 exit(0);

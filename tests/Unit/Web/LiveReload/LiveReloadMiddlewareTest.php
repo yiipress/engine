@@ -91,10 +91,10 @@ final class LiveReloadMiddlewareTest extends TestCase
 
     private function createHandler(string $body, string $contentType): RequestHandlerInterface
     {
-        return new class ($body, $contentType) implements RequestHandlerInterface {
+        return new readonly class ($body, $contentType) implements RequestHandlerInterface {
             public function __construct(
-                private readonly string $body,
-                private readonly string $contentType,
+                private string $body,
+                private string $contentType,
             ) {}
 
             public function handle(ServerRequestInterface $request): ResponseInterface

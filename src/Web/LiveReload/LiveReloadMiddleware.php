@@ -10,7 +10,7 @@ use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
-final class LiveReloadMiddleware implements MiddlewareInterface
+final readonly class LiveReloadMiddleware implements MiddlewareInterface
 {
     private const string SCRIPT = <<<'JS'
 <script>
@@ -27,8 +27,8 @@ final class LiveReloadMiddleware implements MiddlewareInterface
 JS;
 
     public function __construct(
-        private readonly StreamFactoryInterface $streamFactory,
-        private readonly bool $enabled = true,
+        private StreamFactoryInterface $streamFactory,
+        private bool $enabled = true,
     ) {}
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface

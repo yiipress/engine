@@ -418,11 +418,11 @@ final class TelegramContentImporter implements ContentImporterInterface
 
         $title = trim($firstLine);
         $title = preg_replace('/^#{1,6}\s+/', '', $title);
-        $title = preg_replace('/\*\*(.+?)\*\*/', '$1', $title);
-        $title = preg_replace('/\*(.+?)\*/', '$1', $title);
-        $title = preg_replace('/`(.+?)`/', '$1', $title);
-        $title = preg_replace('/\[([^\]]+)\]\([^)]+\)/', '$1', $title);
-        $title = trim($title);
+        $title = preg_replace('/\*\*(.+?)\*\*/', '$1', (string) $title);
+        $title = preg_replace('/\*(.+?)\*/', '$1', (string) $title);
+        $title = preg_replace('/`(.+?)`/', '$1', (string) $title);
+        $title = preg_replace('/\[([^\]]+)\]\([^)]+\)/', '$1', (string) $title);
+        $title = trim((string) $title);
 
         if (mb_strlen($title) > 100) {
             $title = mb_substr($title, 0, 100);
@@ -515,8 +515,8 @@ final class TelegramContentImporter implements ContentImporterInterface
     {
         $slug = mb_strtolower($title);
         $slug = preg_replace('/[^\p{L}\p{N}\s-]/u', '', $slug);
-        $slug = preg_replace('/[\s-]+/', '-', $slug);
-        $slug = trim($slug, '-');
+        $slug = preg_replace('/[\s-]+/', '-', (string) $slug);
+        $slug = trim((string) $slug, '-');
 
         if (mb_strlen($slug) > 80) {
             $slug = mb_substr($slug, 0, 80);

@@ -58,13 +58,15 @@ final class AuthorPageWriter
     ): void {
         $siteTitle = $siteConfig->title;
         $nav = $navigation;
-        $partial = (new TemplateContext($this->templateResolver, $siteConfig->theme))->partial(...);
+        $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
+
+        $rootPath = RelativePathHelper::rootPath('/authors/');
 
         $authorList = [];
         foreach ($authors as $slug => $author) {
             $authorList[] = [
                 'title' => $author->title,
-                'url' => '/authors/' . $slug . '/',
+                'url' => $rootPath . 'authors/' . $slug . '/',
                 'avatar' => $author->avatar,
             ];
         }
@@ -95,8 +97,8 @@ final class AuthorPageWriter
     ): void {
         $siteTitle = $siteConfig->title;
         $nav = $navigation;
-        $partial = (new TemplateContext($this->templateResolver, $siteConfig->theme))->partial(...);
-        $baseUrl = rtrim($siteConfig->baseUrl, '/');
+        $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
+        $rootPath = RelativePathHelper::rootPath('/authors/' . $author->slug . '/');
 
         $authorTitle = $author->title;
         $authorEmail = $author->email;
@@ -111,7 +113,7 @@ final class AuthorPageWriter
         foreach ($entries as $entry) {
             $collection = $collections[$entry->collection] ?? null;
             $url = $collection !== null
-                ? $baseUrl . PermalinkResolver::resolve($entry, $collection)
+                ? RelativePathHelper::relativize(PermalinkResolver::resolve($entry, $collection), $rootPath)
                 : '#';
 
             $entryData[] = [

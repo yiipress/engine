@@ -2,13 +2,13 @@
 /**
  * @var string $title
  * @var bool $hasMermaid
+ * @var string $rootPath
  */
 $hasMermaid ??= false;
 ?>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= htmlspecialchars($title) ?></title>
-    <link rel="stylesheet" href="/assets/theme/style.css">
 <?php if ($hasMermaid): ?>
     <script defer src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
     <script>
@@ -31,3 +31,4 @@ $hasMermaid ??= false;
         document.addEventListener('DOMContentLoaded', initializeMermaid);
     </script>
 <?php endif; ?>
+    <link rel="stylesheet" href="<?= $rootPath ?>assets/theme/style.css">

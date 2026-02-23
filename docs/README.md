@@ -4,6 +4,8 @@ permalink: "/"
 
 # YiiPress engine documentation
 
+[YiiPress](https://github.com/yiipress/engine) is a static website engine built with PHP and [Yii3](https://yii3.yiiframework.com/).
+
 - [Quickstart](quickstart.md)
 - [Architecture](architecture.md)
 - [Configuration](config.md)

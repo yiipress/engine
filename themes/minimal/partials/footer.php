@@ -14,4 +14,4 @@ use App\Render\NavigationRenderer;
     </div>
 </footer>
 <?php endif; ?>
-<script src="/assets/theme/dark-mode.js"></script>
+<script src="<?= $rootPath ?>assets/theme/dark-mode.js"></script>

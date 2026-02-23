@@ -7,10 +7,10 @@ namespace App\Processor;
 use App\Content\Model\Entry;
 use App\Highlighter\SyntaxHighlighter;
 
-final class SyntaxHighlightProcessor implements ContentProcessorInterface
+final readonly class SyntaxHighlightProcessor implements ContentProcessorInterface
 {
     public function __construct(
-        private readonly SyntaxHighlighter $highlighter,
+        private SyntaxHighlighter $highlighter,
     ) {}
 
     public function process(string $content, Entry $entry): string
