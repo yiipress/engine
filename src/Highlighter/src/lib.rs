@@ -84,6 +84,22 @@ fn decode_html_entities(s: &str) -> String {
         .replace("&#x27;", "'")
 }
 
+fn strip_leading_php_open_tag(html: &str) -> String {
+    if let Some(idx) = html.find("&lt;?php") {
+        // Remove the escaped opening tag and following plain-space/newline if present
+        let mut end = idx + "&lt;?php".len();
+        let bytes = html.as_bytes();
+        while end < bytes.len() && (bytes[end] == b' ' || bytes[end] == b'\n' || bytes[end] == b'\r' || bytes[end] == b'\t') {
+            end += 1;
+        }
+        let mut result = String::with_capacity(html.len() - (end - idx));
+        result.push_str(&html[..idx]);
+        result.push_str(&html[end..]);
+        return result;
+    }
+    html.to_string()
+}
+
 fn highlight_block(ss: &SyntaxSet, theme: &syntect::highlighting::Theme, block: &Block) -> String {
     if block.language.is_empty() {
         return String::new();
@@ -93,12 +109,24 @@ fn highlight_block(ss: &SyntaxSet, theme: &syntect::highlighting::Theme, block: 
         .find_syntax_by_token(&block.language)
         .unwrap_or_else(|| ss.find_syntax_plain_text());
 
-    let decoded = decode_html_entities(&block.code);
+    let mut decoded = decode_html_entities(&block.code);
 
-    match highlighted_html_for_string(&decoded, ss, syntax, theme) {
+    let is_php = block.language.eq_ignore_ascii_case("php");
+    let needs_php_tag = is_php && !decoded.trim_start().starts_with("<?");
+    if needs_php_tag {
+        decoded = format!("<?php\n{}", decoded);
+    }
+
+    let mut out = match highlighted_html_for_string(&decoded, ss, syntax, theme) {
         Ok(highlighted) => highlighted,
         Err(_) => String::new(),
+    };
+
+    if needs_php_tag {
+        out = strip_leading_php_open_tag(&out);
     }
+
+    out
 }
 
 /// Highlights all `<pre><code class="language-xxx">` blocks in the given HTML string.
