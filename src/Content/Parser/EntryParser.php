@@ -7,12 +7,12 @@ namespace App\Content\Parser;
 use App\Content\Model\Entry;
 use DateTimeImmutable;
 
-final class EntryParser
+final readonly class EntryParser
 {
     public function __construct(
-        private readonly FrontMatterParser $frontMatterParser,
-        private readonly FilenameParser $filenameParser,
-        private readonly array $authors = [],
+        private FrontMatterParser $frontMatterParser,
+        private FilenameParser $filenameParser,
+        private array $authors = [],
     ) {}
 
     public function parse(string $filePath, string $collectionName): Entry

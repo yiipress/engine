@@ -6,15 +6,15 @@ namespace App\Content;
 
 use App\Build\RelativePathHelper;
 
-final class CrossReferenceResolver
+final readonly class CrossReferenceResolver
 {
     /**
      * @param array<string, string> $fileToPermalink content-relative .md path => permalink URL
      */
     public function __construct(
-        private readonly array $fileToPermalink,
-        private readonly string $currentDir = '',
-        private readonly string $currentPermalink = '',
+        private array $fileToPermalink,
+        private string $currentDir = '',
+        private string $currentPermalink = '',
     ) {}
 
     public function withCurrentDir(string $dir): self

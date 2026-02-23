@@ -116,11 +116,11 @@ final class ImportCommand extends Command
         $options = [];
 
         foreach ($argv as $token) {
-            if (!str_starts_with($token, '--')) {
+            if (!str_starts_with((string) $token, '--')) {
                 continue;
             }
 
-            $token = substr($token, 2);
+            $token = substr((string) $token, 2);
             $equalsPos = strpos($token, '=');
             if ($equalsPos !== false) {
                 $options[substr($token, 0, $equalsPos)] = substr($token, $equalsPos + 1);

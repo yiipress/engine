@@ -10,9 +10,9 @@ use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
 use App\Content\PermalinkResolver;
 
-final class DateArchiveWriter
+final readonly class DateArchiveWriter
 {
-    public function __construct(private readonly TemplateResolver $templateResolver) {}
+    public function __construct(private TemplateResolver $templateResolver) {}
 
     /**
      * @param list<Entry> $entries
@@ -96,7 +96,7 @@ final class DateArchiveWriter
         $collectionName = $collection->name;
         $collectionTitle = $collection->title;
         $nav = $navigation;
-        $partial = (new TemplateContext($this->templateResolver, $siteConfig->theme))->partial(...);
+        $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
         $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/' . $year . '/');
 
         rsort($months);
@@ -140,7 +140,7 @@ final class DateArchiveWriter
         $collectionName = $collection->name;
         $collectionTitle = $collection->title;
         $nav = $navigation;
-        $partial = (new TemplateContext($this->templateResolver, $siteConfig->theme))->partial(...);
+        $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
         $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/' . $year . '/' . $month . '/');
 
         $monthName = date('F', mktime(0, 0, 0, (int) $month, 1));

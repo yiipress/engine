@@ -166,8 +166,8 @@ final class NewCommand extends Command
     {
         $slug = mb_strtolower($title);
         $slug = preg_replace('/[^\p{L}\p{N}\s-]/u', '', $slug);
-        $slug = preg_replace('/[\s-]+/', '-', $slug);
-        return trim($slug, '-');
+        $slug = preg_replace('/[\s-]+/', '-', (string) $slug);
+        return trim((string) $slug, '-');
     }
 
     private function yamlEscape(string $value): string

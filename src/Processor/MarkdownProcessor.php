@@ -8,10 +8,10 @@ use App\Content\Model\Entry;
 use App\Content\Model\MarkdownConfig;
 use App\Render\MarkdownRenderer;
 
-final class MarkdownProcessor implements ContentProcessorInterface
+final readonly class MarkdownProcessor implements ContentProcessorInterface
 {
     public function __construct(
-        private readonly MarkdownRenderer $renderer,
+        private MarkdownRenderer $renderer,
     ) {}
 
     public function process(string $content, Entry $entry): string

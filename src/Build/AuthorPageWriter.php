@@ -58,7 +58,7 @@ final class AuthorPageWriter
     ): void {
         $siteTitle = $siteConfig->title;
         $nav = $navigation;
-        $partial = (new TemplateContext($this->templateResolver, $siteConfig->theme))->partial(...);
+        $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
 
         $rootPath = RelativePathHelper::rootPath('/authors/');
 
@@ -97,7 +97,7 @@ final class AuthorPageWriter
     ): void {
         $siteTitle = $siteConfig->title;
         $nav = $navigation;
-        $partial = (new TemplateContext($this->templateResolver, $siteConfig->theme))->partial(...);
+        $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
         $rootPath = RelativePathHelper::rootPath('/authors/' . $author->slug . '/');
 
         $authorTitle = $author->title;

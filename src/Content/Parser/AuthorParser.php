@@ -6,10 +6,10 @@ namespace App\Content\Parser;
 
 use App\Content\Model\Author;
 
-final class AuthorParser
+final readonly class AuthorParser
 {
     public function __construct(
-        private readonly FrontMatterParser $frontMatterParser,
+        private FrontMatterParser $frontMatterParser,
     ) {}
 
     public function parse(string $filePath): Author

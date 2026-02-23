@@ -10,9 +10,9 @@ use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
 use App\Content\PermalinkResolver;
 
-final class TaxonomyPageWriter
+final readonly class TaxonomyPageWriter
 {
-    public function __construct(private readonly TemplateResolver $templateResolver) {}
+    public function __construct(private TemplateResolver $templateResolver) {}
 
     /**
      * @param array<string, array<string, list<Entry>>> $taxonomyData
@@ -56,7 +56,7 @@ final class TaxonomyPageWriter
     ): void {
         $siteTitle = $siteConfig->title;
         $nav = $navigation;
-        $partial = (new TemplateContext($this->templateResolver, $siteConfig->theme))->partial(...);
+        $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
         $rootPath = RelativePathHelper::rootPath('/' . $taxonomyName . '/');
 
         ob_start();
@@ -86,7 +86,7 @@ final class TaxonomyPageWriter
     ): void {
         $siteTitle = $siteConfig->title;
         $nav = $navigation;
-        $partial = (new TemplateContext($this->templateResolver, $siteConfig->theme))->partial(...);
+        $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
         $rootPath = RelativePathHelper::rootPath('/' . $taxonomyName . '/' . $term . '/');
 
         $entryData = [];

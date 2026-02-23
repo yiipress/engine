@@ -215,7 +215,7 @@ final class BuildCommand extends Command
         $configFiles = array_filter([
             $contentDir . '/config.yaml',
             $contentDir . '/navigation.yaml',
-        ], 'is_file');
+        ], is_file(...));
         foreach ($collections as $collectionName => $collection) {
             $collectionConfig = $contentDir . '/' . $collectionName . '/_collection.yaml';
             if (is_file($collectionConfig)) {
@@ -227,14 +227,7 @@ final class BuildCommand extends Command
             $manifestPath = $rootPath . '/runtime/cache/build-manifest-' . hash('xxh128', $outputDir) . '.json';
             $manifest = new BuildManifest($manifestPath);
             $manifest->load();
-
-            $configChanged = false;
-            foreach ($configFiles as $configFile) {
-                if ($manifest->isChanged($configFile)) {
-                    $configChanged = true;
-                    break;
-                }
-            }
+            $configChanged = array_any($configFiles, fn($configFile) => $manifest->isChanged($configFile));
 
             if ($configChanged) {
                 $changedSourceFiles = null;
@@ -460,7 +453,7 @@ final class BuildCommand extends Command
         }
 
         if ($authors !== []) {
-            $allEntries = $allEntries ?? array_merge(...array_values($entriesByCollection));
+            $allEntries ??= array_merge(...array_values($entriesByCollection));
             $entriesByAuthor = [];
             foreach ($allEntries as $entry) {
                 foreach ($entry->authors as $authorSlug) {

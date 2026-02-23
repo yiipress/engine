@@ -71,18 +71,18 @@ final readonly class Entry
     private static function stripMarkdown(string $markdown): string
     {
         $text = preg_replace('/```.*?```/s', '', $markdown);
-        $text = preg_replace('/^#{1,6}\s+/m', '', $text);
-        $text = preg_replace('/\*\*(.+?)\*\*/', '$1', $text);
-        $text = preg_replace('/\*(.+?)\*/', '$1', $text);
-        $text = preg_replace('/`(.+?)`/', '$1', $text);
-        $text = preg_replace('/!?\[([^\]]*)\]\([^)]+\)/', '$1', $text);
-        $text = preg_replace('/^\s*[-*+]\s+/m', '', $text);
-        $text = preg_replace('/^\s*\d+\.\s+/m', '', $text);
-        $text = preg_replace('/^>\s?/m', '', $text);
-        $text = preg_replace('/\n{2,}/', ' ', $text);
-        $text = preg_replace('/\n/', ' ', $text);
+        $text = preg_replace('/^#{1,6}\s+/m', '', (string) $text);
+        $text = preg_replace('/\*\*(.+?)\*\*/', '$1', (string) $text);
+        $text = preg_replace('/\*(.+?)\*/', '$1', (string) $text);
+        $text = preg_replace('/`(.+?)`/', '$1', (string) $text);
+        $text = preg_replace('/!?\[([^\]]*)\]\([^)]+\)/', '$1', (string) $text);
+        $text = preg_replace('/^\s*[-*+]\s+/m', '', (string) $text);
+        $text = preg_replace('/^\s*\d+\.\s+/m', '', (string) $text);
+        $text = preg_replace('/^>\s?/m', '', (string) $text);
+        $text = preg_replace('/\n{2,}/', ' ', (string) $text);
+        $text = preg_replace('/\n/', ' ', (string) $text);
 
-        return trim(preg_replace('/\s+/', ' ', $text));
+        return trim((string) preg_replace('/\s+/', ' ', (string) $text));
     }
 
     public function body(): string

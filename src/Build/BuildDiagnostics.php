@@ -121,8 +121,8 @@ final class BuildDiagnostics
     private function stripCodeBlocks(string $body): string
     {
         $body = preg_replace('/````.*?````/s', '', $body);
-        $body = preg_replace('/```.*?```/s', '', $body);
-        return preg_replace('/`[^`]+`/', '', $body);
+        $body = preg_replace('/```.*?```/s', '', (string) $body);
+        return preg_replace('/`[^`]+`/', '', (string) $body);
     }
 
     private function relativeSource(Entry $entry): string

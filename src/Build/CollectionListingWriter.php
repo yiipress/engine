@@ -10,9 +10,9 @@ use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
 use App\Content\PermalinkResolver;
 
-final class CollectionListingWriter
+final readonly class CollectionListingWriter
 {
-    public function __construct(private readonly TemplateResolver $templateResolver) {}
+    public function __construct(private TemplateResolver $templateResolver) {}
 
     /**
      * @param list<Entry> $entries
@@ -90,7 +90,7 @@ final class CollectionListingWriter
         $siteTitle = $siteConfig->title;
         $collectionTitle = $collection->title;
         $nav = $navigation;
-        $partial = (new TemplateContext($this->templateResolver, $siteConfig->theme))->partial(...);
+        $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
 
         ob_start();
         require $this->templateResolver->resolve('collection_listing');
