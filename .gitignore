@@ -28,6 +28,7 @@ docs-output
 
 # Benchmark generated data
 benchmarks/data
+.phpbench
 
 # Build cache
 runtime/cache
