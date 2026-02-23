@@ -16,7 +16,10 @@ final class BuildCache
     /**
      * @param list<string> $templateDirs
      */
-    public function __construct(private string $cacheDir, array $templateDirs)
+    public function __construct(
+        private readonly string $cacheDir,
+        array $templateDirs
+    )
     {
         if (!is_dir($this->cacheDir)) {
             mkdir($this->cacheDir, 0o755, true);

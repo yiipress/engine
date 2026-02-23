@@ -82,7 +82,7 @@ final readonly class Entry
         $text = preg_replace('/\n{2,}/', ' ', (string) $text);
         $text = preg_replace('/\n/', ' ', (string) $text);
 
-        return trim((string) preg_replace('/\s+/', ' ', (string) $text));
+        return trim(preg_replace('/\s+/', ' ', (string) $text));
     }
 
     public function body(): string

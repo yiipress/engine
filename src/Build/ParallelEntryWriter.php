@@ -11,6 +11,8 @@ use App\Content\Model\SiteConfig;
 use App\Processor\ContentProcessorPipeline;
 use RuntimeException;
 
+use function count;
+use function dirname;
 use function pcntl_fork;
 use function pcntl_waitpid;
 
@@ -41,7 +43,7 @@ final readonly class ParallelEntryWriter
 
         $dirs = [];
         foreach ($tasks as $task) {
-            $dirs[\dirname($task['filePath'])] = true;
+            $dirs[dirname($task['filePath'])] = true;
         }
         foreach ($dirs as $dirPath => $_) {
             if (!is_dir($dirPath)) {
@@ -55,7 +57,7 @@ final readonly class ParallelEntryWriter
             $this->writeParallel($siteConfig, $tasks, $contentDir, $workerCount, $navigation, $crossRefResolver, $authors);
         }
 
-        return \count($tasks);
+        return count($tasks);
     }
 
     /**
@@ -75,7 +77,7 @@ final readonly class ParallelEntryWriter
      */
     private function writeParallel(SiteConfig $siteConfig, array $tasks, string $contentDir, int $workerCount, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors): int
     {
-        $totalEntries = \count($tasks);
+        $totalEntries = count($tasks);
         $pids = [];
 
         for ($workerIndex = 0; $workerIndex < $workerCount; $workerIndex++) {

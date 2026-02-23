@@ -9,6 +9,7 @@ use App\Content\Model\NavigationItem;
 use RuntimeException;
 
 use function file_get_contents;
+use function is_array;
 use function yaml_parse;
 
 final class NavigationParser
@@ -27,7 +28,7 @@ final class NavigationParser
 
         $menus = [];
         foreach ($data as $menuName => $items) {
-            if (!\is_array($items)) {
+            if (!is_array($items)) {
                 continue;
             }
             $menus[(string) $menuName] = $this->parseItems($items);
@@ -44,10 +45,10 @@ final class NavigationParser
     {
         $result = [];
         foreach ($items as $item) {
-            if (!\is_array($item)) {
+            if (!is_array($item)) {
                 continue;
             }
-            $children = isset($item['children']) && \is_array($item['children'])
+            $children = isset($item['children']) && is_array($item['children'])
                 ? $this->parseItems($item['children'])
                 : [];
             $result[] = new NavigationItem(

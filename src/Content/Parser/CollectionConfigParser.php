@@ -8,6 +8,7 @@ use App\Content\Model\Collection;
 use RuntimeException;
 
 use function file_get_contents;
+use function is_array;
 use function yaml_parse;
 
 final class CollectionConfigParser
@@ -34,7 +35,7 @@ final class CollectionConfigParser
             entriesPerPage: (int) ($data['entries_per_page'] ?? 10),
             feed: (bool) ($data['feed'] ?? false),
             listing: (bool) ($data['listing'] ?? true),
-            order: isset($data['order']) && \is_array($data['order'])
+            order: isset($data['order']) && is_array($data['order'])
                 ? array_values(array_map(strval(...), $data['order']))
                 : [],
         );

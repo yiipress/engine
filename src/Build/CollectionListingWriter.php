@@ -10,6 +10,8 @@ use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
 use App\Content\PermalinkResolver;
 
+use function count;
+
 final readonly class CollectionListingWriter
 {
     public function __construct(private TemplateResolver $templateResolver) {}
@@ -26,11 +28,11 @@ final readonly class CollectionListingWriter
     ): int {
         $perPage = $collection->entriesPerPage;
         if ($perPage <= 0) {
-            $perPage = \count($entries) ?: 1;
+            $perPage = count($entries) ?: 1;
         }
 
         $pages = $entries !== [] ? array_chunk($entries, $perPage) : [[]];
-        $totalPages = \count($pages);
+        $totalPages = count($pages);
         $pageCount = 0;
 
         foreach ($pages as $pageIndex => $pageEntries) {

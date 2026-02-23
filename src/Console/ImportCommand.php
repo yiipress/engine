@@ -13,6 +13,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Yiisoft\Yii\Console\ExitCode;
 
+use function count;
 use function str_starts_with;
 
 #[AsCommand(
@@ -97,7 +98,7 @@ final class ImportCommand extends Command
         }
 
         if ($result->skippedFiles() !== []) {
-            $output->writeln('  Skipped: <comment>' . \count($result->skippedFiles()) . '</comment>');
+            $output->writeln('  Skipped: <comment>' . count($result->skippedFiles()) . '</comment>');
         }
 
         $output->writeln("  Total messages: <comment>{$result->totalMessages()}</comment>");

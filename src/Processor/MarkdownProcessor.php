@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Processor;
 
 use App\Content\Model\Entry;
-use App\Content\Model\MarkdownConfig;
 use App\Render\MarkdownRenderer;
 
 final readonly class MarkdownProcessor implements ContentProcessorInterface

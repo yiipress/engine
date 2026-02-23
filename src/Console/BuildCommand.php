@@ -491,7 +491,6 @@ final class BuildCommand extends Command
         string $outputDir,
         bool $includeDrafts,
         bool $includeFuture,
-        ?Navigation $navigation,
     ): int {
         $output->writeln('<info>Dry run — files that would be generated:</info>');
         $now = new DateTimeImmutable();

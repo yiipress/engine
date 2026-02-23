@@ -9,17 +9,21 @@ use App\Content\Model\Entry;
 use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
 use App\Processor\ContentProcessorPipeline;
+use Closure;
 use RuntimeException;
+
+use function dirname;
+use function strlen;
 
 final class EntryRenderer
 {
-    /** @var array<string, \Closure> */
+    /** @var array<string, Closure> */
     private array $templateClosures = [];
 
     /** @var array<string, TemplateContext> */
     private array $templateContexts = [];
 
-    /** @var array<string, \Closure> */
+    /** @var array<string, Closure> */
     private array $partialClosures = [];
 
     public function __construct(
@@ -62,8 +66,8 @@ final class EntryRenderer
 
     private function resolveContentDir(Entry $entry): string
     {
-        $relative = substr($entry->sourceFilePath(), \strlen($this->contentDir) + 1);
-        $dir = \dirname($relative);
+        $relative = substr($entry->sourceFilePath(), strlen($this->contentDir) + 1);
+        $dir = dirname($relative);
         return $dir === '.' ? '' : $dir;
     }
 

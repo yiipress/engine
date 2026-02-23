@@ -8,6 +8,9 @@ use App\Content\Model\Author;
 use App\Content\Model\Entry;
 use App\Content\Model\SiteConfig;
 
+use function dirname;
+use function strlen;
+
 final class BuildDiagnostics
 {
     /** @var list<string> */
@@ -95,7 +98,7 @@ final class BuildDiagnostics
         }
 
         $source = $this->relativeSource($entry);
-        $entryDir = \dirname($entry->sourceFilePath());
+        $entryDir = dirname($entry->sourceFilePath());
 
         preg_match_all('/!\[([^\]]*)\]\(([^)]+)\)/', $body, $matches, PREG_SET_ORDER);
         foreach ($matches as $match) {
@@ -127,13 +130,13 @@ final class BuildDiagnostics
 
     private function relativeSource(Entry $entry): string
     {
-        return substr($entry->sourceFilePath(), \strlen($this->contentDir) + 1);
+        return substr($entry->sourceFilePath(), strlen($this->contentDir) + 1);
     }
 
     private function entryContentDir(Entry $entry): string
     {
         $relative = $this->relativeSource($entry);
-        $dir = \dirname($relative);
+        $dir = dirname($relative);
         return $dir === '.' ? '' : $dir;
     }
 

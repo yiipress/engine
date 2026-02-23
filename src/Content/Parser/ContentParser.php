@@ -22,8 +22,8 @@ final class ContentParser
     private AuthorParser $authorParser;
 
     public function __construct(
-        private ?FrontMatterParser $frontMatterParser = new FrontMatterParser(),
-        private ?FilenameParser $filenameParser = new FilenameParser(),
+        private readonly ?FrontMatterParser $frontMatterParser = new FrontMatterParser(),
+        private readonly ?FilenameParser $filenameParser = new FilenameParser(),
     ) {
         $this->siteConfigParser = new SiteConfigParser();
         $this->collectionConfigParser = new CollectionConfigParser();
