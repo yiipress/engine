@@ -24,13 +24,15 @@ jobs:
     container:
       image: ghcr.io/yiipress/engine:latest
       options: --user root
-    
+      volumes:
+        - ./docs:/app/docs
+        - _site:/app/docs-output
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
       - name: Build documentation
-        run: ./yii build --content-dir=docs --output-dir=_site --no-cache
+        run: ./yii build --content-dir=docs --output-dir=docs-output --no-cache
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
