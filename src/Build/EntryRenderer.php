@@ -33,6 +33,7 @@ final class EntryRenderer
     public function render(
         SiteConfig $siteConfig,
         Entry $entry,
+        string $permalink = '',
         ?Navigation $navigation = null,
         ?CrossReferenceResolver $crossRefResolver = null,
     ): string {
@@ -45,10 +46,14 @@ final class EntryRenderer
 
         $body = $entry->body();
         if ($crossRefResolver !== null) {
-            $body = $crossRefResolver->withCurrentDir($this->resolveContentDir($entry))->resolve($body);
+            $resolver = $crossRefResolver->withCurrentDir($this->resolveContentDir($entry));
+            if ($permalink !== '') {
+                $resolver = $resolver->withCurrentPermalink($permalink);
+            }
+            $body = $resolver->resolve($body);
         }
         $content = $this->pipeline->process($body, $entry);
-        $html = $this->renderTemplate($siteConfig, $entry, $content, $navigation);
+        $html = $this->renderTemplate($siteConfig, $entry, $content, $permalink, $navigation);
 
         $this->cache?->set($entry->sourceFilePath(), $html);
 
@@ -62,7 +67,7 @@ final class EntryRenderer
         return $dir === '.' ? '' : $dir;
     }
 
-    private function renderTemplate(SiteConfig $siteConfig, Entry $entry, string $content, ?Navigation $navigation): string
+    private function renderTemplate(SiteConfig $siteConfig, Entry $entry, string $content, string $permalink, ?Navigation $navigation): string
     {
         $themeName = $entry->theme !== '' ? $entry->theme : $siteConfig->theme;
         $templateName = $entry->layout !== '' ? $entry->layout : 'entry';
@@ -86,6 +91,8 @@ final class EntryRenderer
             $this->partialClosures[$themeName] = $this->templateContexts[$themeName]->partial(...);
         }
 
+        $rootPath = RelativePathHelper::rootPath($permalink);
+
         return ($this->templateClosures[$templatePath])([
             'siteTitle' => $siteConfig->title,
             'entryTitle' => $entry->title,
@@ -98,6 +105,7 @@ final class EntryRenderer
             'collection' => $entry->collection,
             'nav' => $navigation,
             'partial' => $this->partialClosures[$themeName],
+            'rootPath' => $rootPath,
         ]);
     }
 }

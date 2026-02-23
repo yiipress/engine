@@ -12,6 +12,7 @@ declare(strict_types=1);
  * @var list<array{title: string, url: string, date: string}> $entries
  * @var ?Navigation $nav
  * @var Closure(string, array): string $partial
+ * @var string $rootPath
  */
 
 use App\Content\Model\Navigation;
@@ -20,14 +21,14 @@ use App\Content\Model\Navigation;
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<?= $partial('head', ['title' => $collectionTitle . ': ' . $monthName . ' ' . $year . ' — ' . $siteTitle]) ?>
+<?= $partial('head', ['title' => $collectionTitle . ': ' . $monthName . ' ' . $year . ' — ' . $siteTitle, 'rootPath' => $rootPath]) ?>
 </head>
 <body>
-<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav]) ?>
+<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath]) ?>
 <main>
     <div class="container">
         <h1><?= htmlspecialchars($collectionTitle) ?>: <?= htmlspecialchars($monthName) ?> <?= $year ?></h1>
-        <p class="back-link"><a href="/<?= htmlspecialchars($collectionName) ?>/<?= $year ?>/">&larr; All of <?= $year ?></a></p>
+        <p class="back-link"><a href="<?= $rootPath . htmlspecialchars($collectionName) ?>/<?= $year ?>/">&larr; All of <?= $year ?></a></p>
         <ul class="entry-list">
 <?php foreach ($entries as $entry): ?>
             <li>
@@ -40,6 +41,6 @@ use App\Content\Model\Navigation;
         </ul>
     </div>
 </main>
-<?= $partial('footer', ['nav' => $nav]) ?>
+<?= $partial('footer', ['nav' => $nav, 'rootPath' => $rootPath]) ?>
 </body>
 </html>

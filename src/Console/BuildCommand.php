@@ -299,9 +299,11 @@ final class BuildCommand extends Command
                 $filtered[] = $entry;
 
                 $relativePath = substr($entry->sourceFilePath(), strlen($contentDir) + 1);
+                $permalink = $fileToPermalink[$relativePath];
                 $allTasks[] = [
                     'entry' => $entry,
-                    'filePath' => $outputDir . $fileToPermalink[$relativePath] . 'index.html',
+                    'filePath' => $outputDir . $permalink . 'index.html',
+                    'permalink' => $permalink,
                 ];
             }
             $entriesByCollection[$collectionName] = EntrySorter::sort($filtered, $collection);
@@ -363,7 +365,7 @@ final class BuildCommand extends Command
             if (!is_dir($dirPath)) {
                 mkdir($dirPath, 0o755, true);
             }
-            file_put_contents($filePath, $renderer->render($siteConfig, $page, $navigation, $crossRefResolver));
+            file_put_contents($filePath, $renderer->render($siteConfig, $page, $permalink, $navigation, $crossRefResolver));
             $standalonePagesWritten++;
 
             $manifest?->record($page->sourceFilePath(), [$filePath]);

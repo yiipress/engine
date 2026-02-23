@@ -23,7 +23,7 @@ final readonly class ParallelEntryWriter
     ) {}
 
     /**
-     * @param list<array{entry: Entry, filePath: string}> $tasks
+     * @param list<array{entry: Entry, filePath: string, permalink: string}> $tasks
      * @return int number of entries written
      */
     public function write(
@@ -59,19 +59,19 @@ final readonly class ParallelEntryWriter
     }
 
     /**
-     * @param list<array{entry: Entry, filePath: string}> $tasks
+     * @param list<array{entry: Entry, filePath: string, permalink: string}> $tasks
      */
     private function writeEntries(SiteConfig $siteConfig, array $tasks, string $contentDir, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors): void
     {
         $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors);
 
         foreach ($tasks as $task) {
-            file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $navigation, $crossRefResolver));
+            file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver));
         }
     }
 
     /**
-     * @param list<array{entry: Entry, filePath: string}> $tasks
+     * @param list<array{entry: Entry, filePath: string, permalink: string}> $tasks
      */
     private function writeParallel(SiteConfig $siteConfig, array $tasks, string $contentDir, int $workerCount, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors): int
     {
@@ -90,7 +90,7 @@ final readonly class ParallelEntryWriter
 
                 for ($i = $workerIndex; $i < $totalEntries; $i += $workerCount) {
                     $task = $tasks[$i];
-                    file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $navigation, $crossRefResolver));
+                    file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver));
                 }
 
                 exit(0);

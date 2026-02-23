@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Content;
 
+use App\Build\RelativePathHelper;
+
 final class CrossReferenceResolver
 {
     /**
@@ -12,11 +14,17 @@ final class CrossReferenceResolver
     public function __construct(
         private readonly array $fileToPermalink,
         private readonly string $currentDir = '',
+        private readonly string $currentPermalink = '',
     ) {}
 
     public function withCurrentDir(string $dir): self
     {
-        return new self($this->fileToPermalink, $dir);
+        return new self($this->fileToPermalink, $dir, $this->currentPermalink);
+    }
+
+    public function withCurrentPermalink(string $permalink): self
+    {
+        return new self($this->fileToPermalink, $this->currentDir, $permalink);
     }
 
     public function resolve(string $markdown): string
@@ -33,6 +41,11 @@ final class CrossReferenceResolver
 
                 if ($permalink === null) {
                     return $matches[0];
+                }
+
+                if ($this->currentPermalink !== '') {
+                    $rootPath = RelativePathHelper::rootPath($this->currentPermalink);
+                    $permalink = RelativePathHelper::relativize($permalink, $rootPath);
                 }
 
                 return '[' . $text . '](' . $permalink . $fragment . ')';

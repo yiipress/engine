@@ -31,17 +31,21 @@ final class CollectionListingWriter
 
         $pages = $entries !== [] ? array_chunk($entries, $perPage) : [[]];
         $totalPages = \count($pages);
-        $baseUrl = rtrim($siteConfig->baseUrl, '/');
         $pageCount = 0;
 
         foreach ($pages as $pageIndex => $pageEntries) {
             $pageNumber = $pageIndex + 1;
 
+            $currentPermalink = $pageNumber === 1
+                ? '/' . $collection->name . '/'
+                : '/' . $collection->name . '/page/' . $pageNumber . '/';
+            $rootPath = RelativePathHelper::rootPath($currentPermalink);
+
             $entryData = [];
             foreach ($pageEntries as $entry) {
                 $entryData[] = [
                     'title' => $entry->title,
-                    'url' => $baseUrl . PermalinkResolver::resolve($entry, $collection),
+                    'url' => RelativePathHelper::relativize(PermalinkResolver::resolve($entry, $collection), $rootPath),
                     'date' => $entry->date?->format($siteConfig->dateFormat) ?? '',
                     'summary' => $entry->summary(),
                 ];
@@ -50,11 +54,11 @@ final class CollectionListingWriter
             $pagination = [
                 'currentPage' => $pageNumber,
                 'totalPages' => $totalPages,
-                'previousUrl' => $this->resolvePageUrl($collection->name, $pageNumber - 1, $totalPages),
-                'nextUrl' => $this->resolvePageUrl($collection->name, $pageNumber + 1, $totalPages),
+                'previousUrl' => $this->resolvePageUrl($collection->name, $pageNumber - 1, $totalPages, $rootPath),
+                'nextUrl' => $this->resolvePageUrl($collection->name, $pageNumber + 1, $totalPages, $rootPath),
             ];
 
-            $html = $this->renderPage($siteConfig, $collection, $entryData, $pagination, $navigation);
+            $html = $this->renderPage($siteConfig, $collection, $entryData, $pagination, $navigation, $rootPath);
 
             $dir = $pageNumber === 1
                 ? $outputDir . '/' . $collection->name
@@ -81,6 +85,7 @@ final class CollectionListingWriter
         array $entries,
         array $pagination,
         ?Navigation $navigation,
+        string $rootPath,
     ): string {
         $siteTitle = $siteConfig->title;
         $collectionTitle = $collection->title;
@@ -92,16 +97,16 @@ final class CollectionListingWriter
         return ob_get_clean();
     }
 
-    private function resolvePageUrl(string $collectionName, int $pageNumber, int $totalPages): string
+    private function resolvePageUrl(string $collectionName, int $pageNumber, int $totalPages, string $rootPath): string
     {
         if ($pageNumber < 1 || $pageNumber > $totalPages) {
             return '';
         }
 
         if ($pageNumber === 1) {
-            return '/' . $collectionName . '/';
+            return $rootPath . $collectionName . '/';
         }
 
-        return '/' . $collectionName . '/page/' . $pageNumber . '/';
+        return $rootPath . $collectionName . '/page/' . $pageNumber . '/';
     }
 }

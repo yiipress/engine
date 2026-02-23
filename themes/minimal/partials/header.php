@@ -10,9 +10,9 @@ use App\Render\NavigationRenderer;
 ?>
 <header class="site-header">
     <div class="container">
-        <a class="site-name" href="/"><?= htmlspecialchars($siteTitle) ?></a>
+        <a class="site-name" href="<?= $rootPath ?>"><?= htmlspecialchars($siteTitle) ?></a>
 <?php if ($nav !== null && $nav->menu('main') !== []): ?>
-        <?= NavigationRenderer::render($nav, 'main') ?>
+        <?= NavigationRenderer::render($nav, 'main', $rootPath) ?>
 <?php endif; ?>
         <button class="theme-toggle" type="button" aria-label="Toggle dark mode"></button>
     </div>

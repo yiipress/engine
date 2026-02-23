@@ -57,6 +57,7 @@ final class TaxonomyPageWriter
         $siteTitle = $siteConfig->title;
         $nav = $navigation;
         $partial = (new TemplateContext($this->templateResolver, $siteConfig->theme))->partial(...);
+        $rootPath = RelativePathHelper::rootPath('/' . $taxonomyName . '/');
 
         ob_start();
         require $this->templateResolver->resolve('taxonomy_index');
@@ -84,15 +85,15 @@ final class TaxonomyPageWriter
         ?Navigation $navigation,
     ): void {
         $siteTitle = $siteConfig->title;
-        $baseUrl = rtrim($siteConfig->baseUrl, '/');
         $nav = $navigation;
         $partial = (new TemplateContext($this->templateResolver, $siteConfig->theme))->partial(...);
+        $rootPath = RelativePathHelper::rootPath('/' . $taxonomyName . '/' . $term . '/');
 
         $entryData = [];
         foreach ($entries as $entry) {
             $collection = $collections[$entry->collection] ?? null;
             $url = $collection !== null
-                ? $baseUrl . PermalinkResolver::resolve($entry, $collection)
+                ? RelativePathHelper::relativize(PermalinkResolver::resolve($entry, $collection), $rootPath)
                 : '#';
 
             $entryData[] = [

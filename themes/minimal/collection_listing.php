@@ -9,6 +9,7 @@ declare(strict_types=1);
  * @var array{currentPage: int, totalPages: int, previousUrl: string, nextUrl: string} $pagination
  * @var ?Navigation $nav
  * @var Closure(string, array): string $partial
+ * @var string $rootPath
  */
 
 use App\Content\Model\Navigation;
@@ -18,10 +19,10 @@ $pageTitle = $collectionTitle . ($pagination['currentPage'] > 1 ? ' — Page ' .
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<?= $partial('head', ['title' => $pageTitle]) ?>
+<?= $partial('head', ['title' => $pageTitle, 'rootPath' => $rootPath]) ?>
 </head>
 <body>
-<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav]) ?>
+<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath]) ?>
 <main>
     <div class="container">
         <h1><?= htmlspecialchars($collectionTitle) ?></h1>
@@ -55,6 +56,6 @@ $pageTitle = $collectionTitle . ($pagination['currentPage'] > 1 ? ' — Page ' .
 <?php endif; ?>
     </div>
 </main>
-<?= $partial('footer', ['nav' => $nav]) ?>
+<?= $partial('footer', ['nav' => $nav, 'rootPath' => $rootPath]) ?>
 </body>
 </html>
