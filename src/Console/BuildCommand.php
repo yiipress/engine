@@ -25,7 +25,6 @@ use App\Content\EntrySorter;
 use App\Content\Model\Author;
 use App\Content\Model\Collection;
 use App\Content\Model\Entry;
-use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
 use App\Content\Parser\ContentParser;
 use App\Content\PermalinkResolver;
@@ -35,6 +34,7 @@ use DateTimeImmutable;
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use RuntimeException;
 use SplFileInfo;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -158,7 +158,7 @@ final class BuildCommand extends Command
         $output->writeln('  Menus: <comment>' . count($navigation->menuNames()) . '</comment>');
 
         if ($dryRun) {
-            return $this->dryRun($output, $parser, $siteConfig, $collections, $authors, $contentDir, $outputDir, $includeDrafts, $includeFuture, $navigation);
+            return $this->dryRun($output, $parser, $siteConfig, $collections, $authors, $contentDir, $outputDir, $includeDrafts, $includeFuture);
         }
 
         /** @var array<string, list<Entry>> $rawEntriesByCollection */
@@ -229,9 +229,7 @@ final class BuildCommand extends Command
             $manifest->load();
             $configChanged = array_any($configFiles, fn($configFile) => $manifest->isChanged($configFile));
 
-            if ($configChanged) {
-                $changedSourceFiles = null;
-            } else {
+            if (!$configChanged) {
                 $changedSourceFiles = $manifest->changedFiles($allSourceFiles);
             }
 
@@ -263,8 +261,8 @@ final class BuildCommand extends Command
                 );
             }
 
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0o755, true);
+            if (!is_dir($outputDir) && !mkdir($outputDir, 0o755, true) && !is_dir($outputDir)) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $outputDir));
             }
         } else {
             $output->writeln(
@@ -355,8 +353,8 @@ final class BuildCommand extends Command
             }
 
             $dirPath = dirname($filePath);
-            if (!is_dir($dirPath)) {
-                mkdir($dirPath, 0o755, true);
+            if (!is_dir($dirPath) && !mkdir($dirPath, 0o755, true) && !is_dir($dirPath)) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $dirPath));
             }
             file_put_contents($filePath, $renderer->render($siteConfig, $page, $permalink, $navigation, $crossRefResolver));
             $standalonePagesWritten++;
@@ -385,8 +383,8 @@ final class BuildCommand extends Command
             }
 
             $feedDir = $outputDir . '/' . $collectionName;
-            if (!is_dir($feedDir)) {
-                mkdir($feedDir, 0o755, true);
+            if (!is_dir($feedDir) && !mkdir($feedDir, 0o755, true) && !is_dir($feedDir)) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $feedDir));
             }
 
             file_put_contents(
@@ -625,8 +623,8 @@ final class BuildCommand extends Command
                     unlink($item->getPathname());
                 }
             }
-        } else {
-            mkdir($outputDir, 0o755, true);
+        } elseif (!mkdir($outputDir, 0o755, true) && !is_dir($outputDir)) {
+            throw new RuntimeException(sprintf('Directory "%s" was not created', $outputDir));
         }
     }
 

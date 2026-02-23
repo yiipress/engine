@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Import;
 
 /**
- * Converts content from an external source into YiiPress markdown files with front matter.
+ * Converts content from an external source into YiiPress Markdown files with front matter.
  *
  * Each importer handles a specific source format (e.g., Telegram export, WordPress XML, REST API).
  * Importers are registered in `config/common/di/importer.php` and invoked via the `yii import` command.
@@ -32,7 +32,7 @@ interface ContentImporterInterface
      *
      * The importer should:
      * - Read or fetch source data using values from `$options`.
-     * - Create markdown files with front matter in `$targetDirectory/$collection/`.
+     * - Create Markdown files with front matter in `$targetDirectory/$collection/`.
      * - Copy media assets to `$targetDirectory/$collection/assets/`.
      * - Create `_collection.yaml` if it does not exist.
      *

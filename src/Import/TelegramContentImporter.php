@@ -6,6 +6,8 @@ namespace App\Import;
 
 use DateTimeImmutable;
 
+use RuntimeException;
+
 use function array_key_exists;
 use function count;
 use function in_array;
@@ -74,8 +76,8 @@ final class TelegramContentImporter implements ContentImporterInterface
         $messages = $this->extractMessages($data);
         $collectionDir = $targetDirectory . '/' . $collection;
 
-        if (!is_dir($collectionDir)) {
-            mkdir($collectionDir, 0o755, true);
+        if (!is_dir($collectionDir) && !mkdir($collectionDir, 0o755, true) && !is_dir($collectionDir)) {
+            throw new RuntimeException(sprintf('Directory "%s" was not created', $collectionDir));
         }
 
         $assetsDir = $collectionDir . '/assets';
@@ -477,8 +479,8 @@ final class TelegramContentImporter implements ContentImporterInterface
             return '';
         }
 
-        if (!is_dir($assetsDir)) {
-            mkdir($assetsDir, 0o755, true);
+        if (!is_dir($assetsDir) && !mkdir($assetsDir, 0o755, true) && !is_dir($assetsDir)) {
+            throw new RuntimeException(sprintf('Directory "%s" was not created', $assetsDir));
         }
 
         $targetPath = $assetsDir . '/' . basename($relativePath);

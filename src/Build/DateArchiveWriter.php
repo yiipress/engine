@@ -9,6 +9,7 @@ use App\Content\Model\Entry;
 use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
 use App\Content\PermalinkResolver;
+use RuntimeException;
 
 final readonly class DateArchiveWriter
 {
@@ -117,8 +118,8 @@ final readonly class DateArchiveWriter
         $html = ob_get_clean();
 
         $dir = $outputDir . '/' . $collection->name . '/' . $year;
-        if (!is_dir($dir)) {
-            mkdir($dir, 0o755, true);
+        if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
+            throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
         }
 
         file_put_contents($dir . '/index.html', $html);
@@ -161,8 +162,8 @@ final readonly class DateArchiveWriter
         $html = ob_get_clean();
 
         $dir = $outputDir . '/' . $collection->name . '/' . $year . '/' . $month;
-        if (!is_dir($dir)) {
-            mkdir($dir, 0o755, true);
+        if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
+            throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
         }
 
         file_put_contents($dir . '/index.html', $html);

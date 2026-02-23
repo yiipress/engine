@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Build;
 
+use RuntimeException;
+
 use function dirname;
 use function hash_file;
 use function is_array;
@@ -42,8 +44,8 @@ final class BuildManifest
     public function save(): void
     {
         $dir = dirname($this->manifestPath);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0o755, true);
+        if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
+            throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
         }
 
         file_put_contents(

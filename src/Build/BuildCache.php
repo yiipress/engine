@@ -6,6 +6,8 @@ namespace App\Build;
 
 use DirectoryIterator;
 
+use RuntimeException;
+
 use function hash;
 use function hash_file;
 
@@ -21,8 +23,8 @@ final class BuildCache
         array $templateDirs
     )
     {
-        if (!is_dir($this->cacheDir)) {
-            mkdir($this->cacheDir, 0o755, true);
+        if (!is_dir($this->cacheDir) && !mkdir($this->cacheDir, 0o755, true) && !is_dir($this->cacheDir)) {
+            throw new RuntimeException(sprintf('Directory "%s" was not created', $this->cacheDir));
         }
 
         $this->templateHash = $this->hashTemplateDirs($templateDirs);

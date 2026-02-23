@@ -10,6 +10,8 @@ use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
 use App\Content\PermalinkResolver;
 
+use RuntimeException;
+
 use function count;
 
 final readonly class CollectionListingWriter
@@ -66,8 +68,8 @@ final readonly class CollectionListingWriter
                 ? $outputDir . '/' . $collection->name
                 : $outputDir . '/' . $collection->name . '/page/' . $pageNumber;
 
-            if (!is_dir($dir)) {
-                mkdir($dir, 0o755, true);
+            if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
             }
 
             file_put_contents($dir . '/index.html', $html);

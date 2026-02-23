@@ -6,6 +6,7 @@ namespace App\Console;
 
 use App\Content\Parser\CollectionConfigParser;
 use App\Content\Parser\SiteConfigParser;
+use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -127,8 +128,8 @@ final class NewCommand extends Command
         $frontMatter .= "---\n\n";
 
         $dir = dirname($filePath);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0o755, true);
+        if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
+            throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
         }
 
         file_put_contents($filePath, $frontMatter);
