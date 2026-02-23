@@ -3,6 +3,8 @@
 
 # except:
 
+!/vendor
+!/themes
 !/config
 !/public
 !/src

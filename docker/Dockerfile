@@ -30,6 +30,16 @@ RUN install-php-extensions \
     pcntl \
     ffi
 
+    LABEL org.opencontainers.image.licenses="BSD-3-Clause" \
+        org.opencontainers.image.title="YiiPress" \
+        org.opencontainers.image.description="Static website builder" \
+        org.opencontainers.image.source="https://github.com/yiipress/engine" \
+        org.opencontainers.image.url="https://github.com/yiipress/engine" \
+        org.opencontainers.image.vendor="Alexander Makarov" \
+        org.opencontainers.image.created="" \
+        org.opencontainers.image.revision="" \
+        org.opencontainers.image.version=""
+
 #
 # Development
 #
@@ -61,7 +71,11 @@ USER ${USER_NAME}
 
 FROM base AS prod-builder
 COPY --from=composer /composer /usr/bin/composer
-COPY .. /app
+COPY config /app/config
+COPY public /app/public
+COPY src /app/src
+COPY themes /app/themes
+COPY yii composer.json composer.lock /app/
 RUN --mount=type=cache,target=/tmp/cache \
     composer install --no-dev --no-progress --no-interaction --classmap-authoritative && \
     rm composer.lock composer.json

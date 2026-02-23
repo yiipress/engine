@@ -3,7 +3,7 @@
 ## 1. Create a new project
 
 ```bash
-composer create-project samdark/yiipress myblog
+composer create-project yiipress/engine myblog
 cd myblog
 ```
 
