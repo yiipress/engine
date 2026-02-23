@@ -1,0 +1,49 @@
+name: Run Tests
+
+on:
+  workflow_run:
+    workflows: ["Build Production Docker Image"]
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    if: >-
+      github.event_name == 'workflow_dispatch' || (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.repository.full_name == github.repository
+      )
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build test Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          target: dev
+          push: false
+          load: true
+          tags: engine:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run tests
+        run: |
+          docker run --rm \
+            --user $(id -u):$(id -g) \
+            -v ${{ github.workspace }}:/app \
+            --env-file docker/test/.env \
+            engine:test \
+            bash -c "composer install --no-progress --no-interaction && ./vendor/bin/phpunit"
