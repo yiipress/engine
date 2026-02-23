@@ -157,6 +157,7 @@ final class BuildBench
                 $tasks[] = [
                     'entry' => $entry,
                     'filePath' => $this->outputDir . $permalink . 'index.html',
+                    'permalink' => $permalink,
                 ];
             }
         }
