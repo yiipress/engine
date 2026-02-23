@@ -30,6 +30,16 @@ RUN install-php-extensions \
     pcntl \
     ffi
 
+    LABEL org.opencontainers.image.licenses="BSD-3-Clause" \
+        org.opencontainers.image.title="YiiPress" \
+        org.opencontainers.image.description="Static website builder" \
+        org.opencontainers.image.source="https://github.com/yiipress/engine" \
+        org.opencontainers.image.url="https://github.com/yiipress/engine" \
+        org.opencontainers.image.vendor="Alexander Makarov" \
+        org.opencontainers.image.created="" \
+        org.opencontainers.image.revision="" \
+        org.opencontainers.image.version=""
+
 #
 # Development
 #
