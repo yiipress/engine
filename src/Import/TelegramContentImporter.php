@@ -125,15 +125,9 @@ final class TelegramContentImporter implements ContentImporterInterface
 
             $slug = $this->slugify($title);
             $datePrefix = $date->format('Y-m-d');
+
             $filename = $datePrefix . '-' . $slug . '.md';
             $filePath = $collectionDir . '/' . $filename;
-
-            $counter = 1;
-            while (is_file($filePath)) {
-                $filename = $datePrefix . '-' . $slug . '-' . $counter . '.md';
-                $filePath = $collectionDir . '/' . $filename;
-                $counter++;
-            }
 
             $photo = $message['photo'] ?? '';
             $mediaPath = '';
@@ -423,7 +417,7 @@ final class TelegramContentImporter implements ContentImporterInterface
         $title = preg_replace('/\*\*(.+?)\*\*/', '$1', (string) $title);
         $title = preg_replace('/\*(.+?)\*/', '$1', (string) $title);
         $title = preg_replace('/`(.+?)`/', '$1', (string) $title);
-        $title = preg_replace('/\[([^\]]+)\]\([^)]+\)/', '$1', (string) $title);
+        $title = preg_replace('/\[([^]]+)]\([^)]+\)/', '$1', (string) $title);
         $title = trim((string) $title);
 
         if (mb_strlen($title) > 100) {
@@ -483,14 +477,9 @@ final class TelegramContentImporter implements ContentImporterInterface
             throw new RuntimeException(sprintf('Directory "%s" was not created', $assetsDir));
         }
 
-        $targetPath = $assetsDir . '/' . basename($relativePath);
 
-        $counter = 1;
-        while (is_file($targetPath)) {
-            $info = pathinfo($relativePath);
-            $targetPath = $assetsDir . '/' . ($info['filename'] ?? 'file') . '-' . $counter . '.' . ($info['extension'] ?? '');
-            $counter++;
-        }
+        $info = pathinfo($relativePath);
+        $targetPath = $assetsDir . '/' . ($info['filename'] ?? 'file') . '.' . ($info['extension'] ?? '');
 
         copy($sourcePath, $targetPath);
 
