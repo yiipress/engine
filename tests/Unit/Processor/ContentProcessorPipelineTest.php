@@ -77,8 +77,8 @@ final class ContentProcessorPipelineTest extends TestCase
 
     private function createProcessor(Closure $fn): ContentProcessorInterface
     {
-        return new class ($fn) implements ContentProcessorInterface {
-            public function __construct(private readonly Closure $fn) {}
+        return new readonly class ($fn) implements ContentProcessorInterface {
+            public function __construct(private Closure $fn) {}
 
             public function process(string $content, Entry $entry): string
             {

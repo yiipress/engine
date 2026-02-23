@@ -449,8 +449,8 @@ final class BuildCommandTest extends TestCase
         assertSame(0, $exitCode);
 
         $html = file_get_contents($this->outputDir . '/blog/second-post/index.html');
-        assertStringContainsString('href="/blog/test-post/"', $html);
-        assertStringContainsString('href="/contact/"', $html);
+        assertStringContainsString('href="../../blog/test-post/"', $html);
+        assertStringContainsString('href="../../contact/"', $html);
         assertStringNotContainsString('.md', $html);
     }
 
@@ -554,15 +554,15 @@ final class BuildCommandTest extends TestCase
         assertStringContainsString('<nav>', $entryHtml);
         assertStringContainsString('Test Site', $entryHtml);
         assertStringContainsString('Blog', $entryHtml);
-        assertStringContainsString('href="/"', $entryHtml);
-        assertStringContainsString('href="/blog/"', $entryHtml);
+        assertStringContainsString('href="../../"', $entryHtml);
+        assertStringContainsString('href="../../blog/"', $entryHtml);
 
         assertStringContainsString('<footer', $entryHtml);
         assertStringContainsString('Privacy', $entryHtml);
 
         $listingHtml = file_get_contents($this->outputDir . '/blog/index.html');
         assertStringContainsString('Test Site', $listingHtml);
-        assertStringContainsString('href="/blog/"', $listingHtml);
+        assertStringContainsString('href="../blog/"', $listingHtml);
 
         $tagsHtml = file_get_contents($this->outputDir . '/tags/index.html');
         assertStringContainsString('Test Site', $tagsHtml);

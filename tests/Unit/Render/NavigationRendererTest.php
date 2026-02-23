@@ -33,8 +33,8 @@ final class NavigationRendererTest extends TestCase
         $html = NavigationRenderer::render($navigation, 'main');
 
         assertStringContainsString('<nav>', $html);
-        assertStringContainsString('<a href="/">Home</a>', $html);
-        assertStringContainsString('<a href="/blog/">Blog</a>', $html);
+        assertStringContainsString('<a href="./">Home</a>', $html);
+        assertStringContainsString('<a href="./blog/">Blog</a>', $html);
     }
 
     public function testRenderNestedMenu(): void
@@ -53,9 +53,9 @@ final class NavigationRendererTest extends TestCase
 
         $html = NavigationRenderer::render($navigation, 'main');
 
-        assertStringContainsString('<a href="/docs/">Docs</a>', $html);
-        assertStringContainsString('<a href="/docs/getting-started/">Getting Started</a>', $html);
-        assertStringContainsString('<ul><li><a href="/docs/getting-started/">', $html);
+        assertStringContainsString('<a href="./docs/">Docs</a>', $html);
+        assertStringContainsString('<a href="./docs/getting-started/">Getting Started</a>', $html);
+        assertStringContainsString('<ul><li><a href="./docs/getting-started/">', $html);
     }
 
     public function testRenderNonExistentMenu(): void
