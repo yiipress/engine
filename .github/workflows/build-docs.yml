@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - master
-    paths:
-      - 'docs/**'
-      - '.github/workflows/build-docs.yml'
   workflow_dispatch:
 
 permissions:
