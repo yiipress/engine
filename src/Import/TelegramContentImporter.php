@@ -300,20 +300,74 @@ final class TelegramContentImporter implements ContentImporterInterface
     private function convertTextArrayToMarkdown(array $textArray): string
     {
         $result = '';
-        foreach ($textArray as $part) {
+        $i = 0;
+        $count = count($textArray);
+
+        while ($i < $count) {
+            $part = $textArray[$i];
+
             if (is_string($part)) {
-                $result .= $part;
-                continue;
-            }
-            if (!is_array($part)) {
-                continue;
-            }
-            $type = $part['type'] ?? 'plain';
-            $partText = $part['text'] ?? '';
-            if (!is_string($partText)) {
+                // Check if this string contains list items and convert them in place
+                $convertedText = $this->convertListItemsInText($part);
+                
+                // Check if this is a list item followed by a text_link
+                $nextPart = $textArray[$i + 1] ?? null;
+                if (is_array($nextPart) && ($nextPart['type'] ?? '') === 'text_link' && 
+                    preg_match('/^[^\w\s]/u', trim($convertedText))) {
+                    // This is a list item followed by a link, format it properly
+                    $result .= '- ' . trim($convertedText) . '[' . $nextPart['text'] . '](' . $nextPart['href'] . ')';
+                    $i += 2; // Skip both the text and the link
+                    continue;
+                }
+                
+                $result .= $convertedText;
+                $i++;
                 continue;
             }
 
+            if (!is_array($part)) {
+                $i++;
+                continue;
+            }
+
+            $type = $part['type'] ?? 'plain';
+            $partText = $part['text'] ?? '';
+            if (!is_string($partText)) {
+                $i++;
+                continue;
+            }
+
+            // Check if this could be the start of a list
+            if ($type === 'custom_emoji') {
+                $listItems = $this->detectConsecutiveListItems($textArray, $i);
+
+                if (count($listItems) >= 1) {
+                    // We have list items, format as a proper markdown list
+                    $listText = '';
+                    foreach ($listItems as $index => $item) {
+                        $listText .= '- ' . $item['emoji'] . $item['text'];
+                        if ($index < count($listItems) - 1) {
+                            $listText .= "\n";
+                        }
+                    }
+                    $result .= "\n" . $listText . "\n";
+                    $i += count($listItems) * 2; // Skip past all the list items
+                    continue;
+                }
+            }
+
+            // Handle text_link followed by plain text
+            if ($type === 'text_link') {
+                $nextPart = $textArray[$i + 1] ?? null;
+                if (is_string($nextPart)) {
+                    // Combine text_link with following plain text
+                    $result .= '[' . $partText . '](' . ($part['href'] ?? '') . ')' . $nextPart;
+                    $i += 2; // Skip both the link and the text
+                    continue;
+                }
+            }
+
+            // Handle single items or non-list patterns normally
             $result .= match ($type) {
                 'bold' => '**' . $partText . '**',
                 'italic' => '*' . $partText . '*',
@@ -331,9 +385,93 @@ final class TelegramContentImporter implements ContentImporterInterface
                 'custom_emoji' => $partText,
                 default => $partText,
             };
+            $i++;
         }
 
         return trim($result);
+    }
+
+    /**
+     * Detect consecutive emoji + text patterns that form a list
+     * @param list<mixed> $textArray
+     * @return list<array{emoji: string, text: string}>
+     */
+    private function detectConsecutiveListItems(array $textArray, int $startIndex): array
+    {
+        $listItems = [];
+        $i = $startIndex;
+        $count = count($textArray);
+
+        while ($i < $count) {
+            $emojiPart = $textArray[$i] ?? null;
+            $textPart = $textArray[$i + 1] ?? null;
+
+            // Check for simple pattern: emoji followed by text
+            if (
+                is_array($emojiPart) &&
+                ($emojiPart['type'] ?? '') === 'custom_emoji' &&
+                is_string($emojiPart['text'] ?? '') &&
+                is_string($textPart)
+            ) {
+                $listItems[] = [
+                    'emoji' => $emojiPart['text'],
+                    'text' => rtrim($textPart)
+                ];
+                $i += 2;
+                continue;
+            }
+
+            // Check for complex pattern: emoji + space + bold + text ending with bullet
+            $spacePart = $textPart;
+            $boldPart = $textArray[$i + 2] ?? null;
+            $descPart = $textArray[$i + 3] ?? null;
+
+            if (
+                is_array($emojiPart) &&
+                ($emojiPart['type'] ?? '') === 'custom_emoji' &&
+                is_string($emojiPart['text'] ?? '') &&
+                $spacePart === ' ' &&
+                is_array($boldPart) &&
+                ($boldPart['type'] ?? '') === 'bold' &&
+                is_string($boldPart['text'] ?? '') &&
+                is_string($descPart) &&
+                preg_match('/^ — .*\n•\s/u', $descPart) === 1
+            ) {
+                // Remove the bullet and trailing space from the description
+                $cleanDesc = preg_replace('/\n•\s$/u', '', $descPart);
+
+                $listItems[] = [
+                    'emoji' => $emojiPart['text'],
+                    'text' => ' **' . $boldPart['text'] . '**' . $cleanDesc
+                ];
+                $i += 4;
+                continue;
+            }
+
+            // Check for last item: emoji + space + bold + text ending with newline (no bullet)
+            if (
+                is_array($emojiPart) &&
+                ($emojiPart['type'] ?? '') === 'custom_emoji' &&
+                is_string($emojiPart['text'] ?? '') &&
+                $spacePart === ' ' &&
+                is_array($boldPart) &&
+                ($boldPart['type'] ?? '') === 'bold' &&
+                is_string($boldPart['text'] ?? '') &&
+                is_string($descPart) &&
+                preg_match('/^ — .*\n$/u', $descPart) === 1
+            ) {
+                $listItems[] = [
+                    'emoji' => $emojiPart['text'],
+                    'text' => ' **' . $boldPart['text'] . '**' . rtrim($descPart)
+                ];
+                $i += 4;
+                continue;
+            }
+
+            break; // Pattern broken, stop detecting
+        }
+
+        return $listItems;
     }
 
     /**
@@ -534,6 +672,74 @@ final class TelegramContentImporter implements ContentImporterInterface
         $config .= "feed: true\n";
 
         file_put_contents($configPath, $config);
+    }
+
+    /**
+     * Detect list items in plain text strings
+     * @return list<string>
+     */
+    private function detectListItemsInText(string $text): array
+    {
+        $listItems = [];
+        
+        // Split by newlines and check each line
+        $lines = explode("\n", $text);
+        
+        foreach ($lines as $line) {
+            $trimmedLine = trim($line);
+            
+            // Skip empty lines
+            if ($trimmedLine === '') {
+                continue;
+            }
+            
+            // Simple check: if line starts with non-alphanumeric character and has content after
+            $firstChar = mb_substr($trimmedLine, 0, 1);
+            
+            // Check if first character is not a letter or number (i.e., it's a symbol/emoji)
+            if (!preg_match('/^[A-Za-zА-Яа-я0-9]/u', $firstChar) && mb_strlen($trimmedLine) > 1) {
+                // Convert to markdown list format
+                $listItems[] = '- ' . $trimmedLine;
+            }
+        }
+        
+        return $listItems;
+    }
+
+    /**
+     * Convert list items in text while preserving original structure
+     */
+    private function convertListItemsInText(string $text): string
+    {
+        $lines = explode("\n", $text);
+        $convertedLines = [];
+        
+        foreach ($lines as $line) {
+            $trimmedLine = trim($line);
+            
+            // Skip empty lines
+            if ($trimmedLine === '') {
+                $convertedLines[] = $line;
+                continue;
+            }
+            
+            // Simple check: if line starts with non-alphanumeric character and has content after
+            $firstChar = mb_substr($trimmedLine, 0, 1);
+            
+            // Check if first character is not a letter or number (i.e., it's a symbol/emoji)
+            // But don't convert if the line ends with space (might be followed by other entities)
+            if (!preg_match('/^[A-Za-zА-Яа-я0-9]/u', $firstChar) && 
+                mb_strlen($trimmedLine) > 1 && 
+                !str_ends_with($line, ' ')) {
+                // Convert to markdown list format
+                $convertedLines[] = '- ' . $trimmedLine;
+            } else {
+                // Keep original line
+                $convertedLines[] = $line;
+            }
+        }
+        
+        return implode("\n", $convertedLines);
     }
 
     private function slugify(string $title): string
