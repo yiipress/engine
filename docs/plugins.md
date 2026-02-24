@@ -249,7 +249,7 @@ To register the importer, add it to the `importers` array in `config/common/di/i
 
 ```php
 use App\Console\ImportCommand;
-use App\Import\TelegramContentImporter;
+use App\Import\Telegram\TelegramContentImporter;
 use App\Import\RestApiContentImporter;
 
 return [

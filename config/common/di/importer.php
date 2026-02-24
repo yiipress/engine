@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Console\ImportCommand;
-use App\Import\TelegramContentImporter;
+use App\Import\Telegram\TelegramContentImporter;
 
 return [
     ImportCommand::class => [
