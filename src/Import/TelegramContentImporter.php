@@ -118,6 +118,7 @@ final class TelegramContentImporter implements ContentImporterInterface
             }
             $markdown = $this->convertToMarkdown($text, $textEntities);
             $title = $this->extractTitle($markdown);
+            $markdown = $this->removeTitleFromMarkdown($markdown, $title);
 
             if ($title === '') {
                 $title = 'Post ' . ($message['id'] ?? '?');
@@ -429,6 +430,37 @@ final class TelegramContentImporter implements ContentImporterInterface
         }
 
         return $title;
+    }
+
+    private function removeTitleFromMarkdown(string $markdown, string $title): string
+    {
+        if ($title === '') {
+            return $markdown;
+        }
+
+        $lines = explode("\n", $markdown);
+        if (empty($lines)) {
+            return $markdown;
+        }
+
+        $firstLine = $lines[0];
+        $firstLineTrimmed = trim($firstLine);
+
+        // Remove markdown formatting from first line to compare with title
+        $firstLineClean = preg_replace('/^#{1,6}\s+/', '', $firstLineTrimmed);
+        $firstLineClean = preg_replace('/\*\*(.+?)\*\*/', '$1', (string) $firstLineClean);
+        $firstLineClean = preg_replace('/\*(.+?)\*/', '$1', (string) $firstLineClean);
+        $firstLineClean = preg_replace('/`(.+?)`/', '$1', (string) $firstLineClean);
+        $firstLineClean = preg_replace('/\[([^]]+)]\([^)]+\)/', '$1', (string) $firstLineClean);
+        $firstLineClean = trim((string) $firstLineClean);
+
+        if ($firstLineClean === $title) {
+            // Remove the first line
+            array_shift($lines);
+            return implode("\n", $lines);
+        }
+
+        return $markdown;
     }
 
     /**
