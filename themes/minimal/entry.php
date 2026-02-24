@@ -9,6 +9,7 @@ declare(strict_types=1);
  * @var string $date
  * @var string $author
  * @var string $collection
+ * @var string $headAssets
  * @var ?Navigation $nav
  * @var Closure(string, array): string $partial
  * @var string $rootPath
@@ -21,7 +22,7 @@ use App\Content\Model\Navigation;
 <html lang="en">
 <head>
 
-<?= $partial('head', ['title' => $entryTitle . ' — ' . $siteTitle, 'hasMermaid' => str_contains($content, '<div class="mermaid">')]) ?>
+<?= $partial('head', ['title' => $entryTitle . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'headAssets' => $headAssets ?? '']) ?>
 
 </head>
 <body>

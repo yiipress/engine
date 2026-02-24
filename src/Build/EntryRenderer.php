@@ -57,7 +57,8 @@ final class EntryRenderer
             $body = $resolver->resolve($body);
         }
         $content = $this->pipeline->process($body, $entry);
-        $html = $this->renderTemplate($siteConfig, $entry, $content, $permalink, $navigation);
+        $headAssets = $this->pipeline->collectHeadAssets($content);
+        $html = $this->renderTemplate($siteConfig, $entry, $content, $permalink, $navigation, $headAssets);
 
         $this->cache?->set($entry->sourceFilePath(), $html);
 
@@ -71,7 +72,7 @@ final class EntryRenderer
         return $dir === '.' ? '' : $dir;
     }
 
-    private function renderTemplate(SiteConfig $siteConfig, Entry $entry, string $content, string $permalink, ?Navigation $navigation): string
+    private function renderTemplate(SiteConfig $siteConfig, Entry $entry, string $content, string $permalink, ?Navigation $navigation, string $headAssets = ''): string
     {
         $themeName = $entry->theme !== '' ? $entry->theme : $siteConfig->theme;
         $templateName = $entry->layout !== '' ? $entry->layout : 'entry';
@@ -108,6 +109,7 @@ final class EntryRenderer
             )),
             'collection' => $entry->collection,
             'nav' => $navigation,
+            'headAssets' => $headAssets,
             'partial' => $this->partialClosures[$themeName],
             'rootPath' => $rootPath,
         ]);

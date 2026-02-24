@@ -9,7 +9,7 @@ use App\Console\CleanCommand;
 use App\Console\NewCommand;
 use App\Highlighter\SyntaxHighlighter;
 use App\Processor\ContentProcessorPipeline;
-use App\Processor\MermaidProcessor;
+use App\Processor\Mermaid\MermaidProcessor;
 use App\Processor\MarkdownProcessor;
 use App\Processor\SyntaxHighlightProcessor;
 use Yiisoft\Definitions\Reference;

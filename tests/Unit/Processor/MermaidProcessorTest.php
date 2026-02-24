@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Processor;
 
 use App\Content\Model\Entry;
-use App\Processor\MermaidProcessor;
+use App\Processor\Mermaid\MermaidProcessor;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 
@@ -87,6 +87,36 @@ final class MermaidProcessorTest extends TestCase
         $result = $this->processor->process($input, $this->createEntry());
 
         $this->assertStringContainsString('A-->B;&C', $result);
+    }
+
+    public function testHeadAssetsReturnsHtmlWhenMermaidPresent(): void
+    {
+        $content = '<div class="mermaid">graph TD; A-->B;</div>';
+
+        $result = $this->processor->headAssets($content);
+
+        $this->assertStringContainsString('mermaid.min.js', $result);
+        $this->assertStringContainsString('mermaid.css', $result);
+        $this->assertStringContainsString('initializeMermaid', $result);
+    }
+
+    public function testHeadAssetsReturnsEmptyStringWhenNoMermaid(): void
+    {
+        $content = '<p>Just a regular paragraph</p>';
+
+        $result = $this->processor->headAssets($content);
+
+        assertSame('', $result);
+    }
+
+    public function testAssetFilesReturnsMermaidCss(): void
+    {
+        $files = $this->processor->assetFiles();
+
+        $this->assertCount(1, $files);
+        $sourceFile = array_key_first($files);
+        $this->assertStringEndsWith('/Processor/Mermaid/assets/mermaid.css', $sourceFile);
+        assertSame('assets/plugins/mermaid.css', $files[$sourceFile]);
     }
 
     private function createEntry(): Entry
