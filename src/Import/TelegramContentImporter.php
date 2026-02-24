@@ -369,10 +369,10 @@ final class TelegramContentImporter implements ContentImporterInterface
 
             // Handle single items or non-list patterns normally
             $result .= match ($type) {
-                'bold' => '**' . $partText . '**',
-                'italic' => '*' . $partText . '*',
-                'strikethrough' => '~~' . $partText . '~~',
-                'code' => '`' . $partText . '`',
+                'bold' => trim($partText) === '' ? $partText : '**' . $partText . '**',
+                'italic' => trim($partText) === '' ? $partText : '*' . $partText . '*',
+                'strikethrough' => trim($partText) === '' ? $partText : '~~' . $partText . '~~',
+                'code' => trim($partText) === '' ? $partText : '`' . $partText . '`',
                 'pre' => "\n```" . ($part['language'] ?? '') . "\n" . $partText . "\n```\n",
                 'text_link' => '[' . $partText . '](' . ($part['href'] ?? '') . ')',
                 'link' => '[' . $partText . '](' . $partText . ')',
