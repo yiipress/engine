@@ -31,7 +31,6 @@ final class BuildDiagnostics
     {
         $this->checkFrontMatter($entry);
         $this->checkLinks($entry);
-        $this->checkImages($entry);
     }
 
     /**
@@ -79,45 +78,34 @@ final class BuildDiagnostics
         $source = $this->relativeSource($entry);
         $entryDir = $this->entryContentDir($entry);
 
-        preg_match_all('/\[([^\]]*)\]\(([^)#]+\.md)(#[^)]*)?\)/', $body, $matches, PREG_SET_ORDER);
+        preg_match_all('/\[([^]]*)]\(([^)]+)\)/', $body, $matches, PREG_SET_ORDER);
         foreach ($matches as $match) {
             $path = $match[2];
-            $resolved = $this->resolveLinkPath($path, $entryDir);
 
-            if (!isset($this->fileToPermalink[$resolved])) {
-                $this->warnings[] = "$source: broken link to \"$path\"";
-            }
-        }
-    }
-
-    private function checkImages(Entry $entry): void
-    {
-        $body = $this->stripCodeBlocks($entry->body());
-        if ($body === '') {
-            return;
-        }
-
-        $source = $this->relativeSource($entry);
-        $entryDir = dirname($entry->sourceFilePath());
-
-        preg_match_all('/!\[([^\]]*)\]\(([^)]+)\)/', $body, $matches, PREG_SET_ORDER);
-        foreach ($matches as $match) {
-            $imagePath = $match[2];
-
-            if (str_starts_with($imagePath, 'http://') || str_starts_with($imagePath, 'https://')) {
+            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
                 continue;
             }
 
-            if (str_starts_with($imagePath, '/')) {
-                $absolute = $this->contentDir . $imagePath;
+            $resolved = $this->resolveLinkPath($path, $entryDir);
+
+            // check images
+            if (str_starts_with($path, '/')) {
+                $absolute = $this->contentDir . $path;
             } else {
-                $absolute = $entryDir . '/' . $imagePath;
+                $absolute = $entryDir . '/' . $path;
             }
 
             $real = realpath($absolute);
-            if ($real === false || !is_file($real)) {
-                $this->warnings[] = "$source: missing image \"$imagePath\"";
+            if ($real !== false && is_file($real)) {
+                continue;
             }
+
+            // check content
+            if (isset($this->fileToPermalink[$resolved])) {
+                continue;
+            }
+
+            $this->warnings[] = "$source: broken link to \"$path\"";
         }
     }
 
