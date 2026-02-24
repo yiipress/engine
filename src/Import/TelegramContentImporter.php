@@ -319,15 +319,16 @@ final class TelegramContentImporter implements ContentImporterInterface
                 'italic' => '*' . $partText . '*',
                 'strikethrough' => '~~' . $partText . '~~',
                 'code' => '`' . $partText . '`',
-                'pre' => "\n```\n" . $partText . "\n```\n",
+                'pre' => "\n```" . ($part['language'] ?? '') . "\n" . $partText . "\n```\n",
                 'text_link' => '[' . $partText . '](' . ($part['href'] ?? '') . ')',
                 'link' => '[' . $partText . '](' . $partText . ')',
-                'hashtag' => '',
+                'hashtag' => $partText,
                 'mention' => $partText,
                 'email' => '[' . $partText . '](mailto:' . $partText . ')',
                 'phone' => $partText,
                 'underline' => $partText,
                 'spoiler' => $partText,
+                'custom_emoji' => $partText,
                 default => $partText,
             };
         }
@@ -357,16 +358,17 @@ final class TelegramContentImporter implements ContentImporterInterface
             $offset = (int) ($entity['offset'] ?? 0);
             $entityLength = (int) ($entity['length'] ?? 0);
             $href = $entity['href'] ?? '';
+            $language = $entity['language'] ?? '';
 
             if ($type === 'hashtag') {
                 for ($i = $offset; $i < $offset + $entityLength && $i < $length; $i++) {
-                    $chars[$i] = '';
+                    // Keep hashtag text, don't remove it
                 }
                 continue;
             }
 
             for ($i = $offset; $i < $offset + $entityLength && $i < $length; $i++) {
-                $annotations[$i][] = ['type' => $type, 'href' => $href, 'start' => $i === $offset, 'end' => $i === $offset + $entityLength - 1];
+                $annotations[$i][] = ['type' => $type, 'href' => $href, 'language' => $language, 'start' => $i === $offset, 'end' => $i === $offset + $entityLength - 1];
             }
         }
 
@@ -379,7 +381,7 @@ final class TelegramContentImporter implements ContentImporterInterface
                         'italic' => '*',
                         'strikethrough' => '~~',
                         'code' => '`',
-                        'pre' => "\n```\n",
+                        'pre' => "\n```" . ($ann['language'] ?? '') . "\n",
                         'text_link' => '[',
                         default => '',
                     };
