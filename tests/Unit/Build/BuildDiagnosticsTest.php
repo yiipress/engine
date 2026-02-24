@@ -75,7 +75,7 @@ final class BuildDiagnosticsTest extends TestCase
 
         $warnings = $diagnostics->warnings();
         assertCount(1, $warnings);
-        assertContains('blog/post.md: missing image "/blog/assets/missing.png"', $warnings);
+        assertContains('blog/post.md: broken link to "/blog/assets/missing.png"', $warnings);
     }
 
     public function testNoWarningForExistingImage(): void

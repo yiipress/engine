@@ -54,6 +54,7 @@ final class ImportCommandTest extends TestCase
         file_put_contents(
             $this->sourceDir . '/result.json',
             json_encode([
+                'type' => 'public_channel',
                 'messages' => [
                     [
                         'id' => 1,
@@ -81,6 +82,7 @@ final class ImportCommandTest extends TestCase
         file_put_contents(
             $this->sourceDir . '/result.json',
             json_encode([
+                'type' => 'public_channel',
                 'messages' => [
                     [
                         'id' => 1,

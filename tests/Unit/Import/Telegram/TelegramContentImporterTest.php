@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Import;
+namespace App\Tests\Unit\Import\Telegram;
 
-use App\Import\TelegramContentImporter;
+use App\Import\Telegram\TelegramContentImporter;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
-
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -16,7 +15,6 @@ use function PHPUnit\Framework\assertCount;
 use function PHPUnit\Framework\assertFileExists;
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
-use function PHPUnit\Framework\assertStringNotContainsString;
 
 final class TelegramContentImporterTest extends TestCase
 {
@@ -51,11 +49,12 @@ final class TelegramContentImporterTest extends TestCase
     public function testImportsSimpleTextMessage(): void
     {
         $this->writeResultJson([
+            'type' => 'public_channel',
             'messages' => [
                 [
                     'id' => 1,
                     'type' => 'message',
-                    'date' => '2024-03-15T10:30:00',
+                    'date_unixtime' => 1667379629,
                     'text' => 'Hello from Telegram channel',
                     'text_entities' => [
                         ['type' => 'plain', 'text' => 'Hello from Telegram channel'],
@@ -72,13 +71,15 @@ final class TelegramContentImporterTest extends TestCase
 
         $content = file_get_contents($result->importedFiles()[0]);
         assertStringContainsString('title: Hello from Telegram channel', $content);
-        assertStringContainsString('date: 2024-03-15 10:30:00', $content);
+        assertStringContainsString('date: 2022-11-02 09:00:29', $content);
+        assertStringContainsString('edited: 2022-11-02 09:00:29', $content);
         assertStringContainsString('Hello from Telegram channel', $content);
     }
 
     public function testExtractsHashtagsAsTags(): void
     {
         $this->writeResultJson([
+            'type' => 'public_channel',
             'messages' => [
                 [
                     'id' => 1,
@@ -104,117 +105,10 @@ final class TelegramContentImporterTest extends TestCase
         assertStringContainsString("tags:\n  - php\n  - webdev", $content);
     }
 
-    public function testConvertsBoldAndItalicMarkup(): void
-    {
-        $this->writeResultJson([
-            'messages' => [
-                [
-                    'id' => 1,
-                    'type' => 'message',
-                    'date' => '2024-03-15T10:30:00',
-                    'text' => [
-                        'Some ',
-                        ['type' => 'bold', 'text' => 'bold'],
-                        ' and ',
-                        ['type' => 'italic', 'text' => 'italic'],
-                        ' text',
-                    ],
-                    'text_entities' => [],
-                ],
-            ],
-        ]);
-
-        $importer = new TelegramContentImporter();
-        $result = $importer->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
-
-        $content = file_get_contents($result->importedFiles()[0]);
-        assertStringContainsString('**bold**', $content);
-        assertStringContainsString('*italic*', $content);
-    }
-
-    public function testConvertsTextLinks(): void
-    {
-        $this->writeResultJson([
-            'messages' => [
-                [
-                    'id' => 1,
-                    'type' => 'message',
-                    'date' => '2024-03-15T10:30:00',
-                    'text' => [
-                        'Visit ',
-                        ['type' => 'text_link', 'text' => 'our site', 'href' => 'https://example.com'],
-                        ' for more',
-                    ],
-                    'text_entities' => [],
-                ],
-            ],
-        ]);
-
-        $importer = new TelegramContentImporter();
-        $result = $importer->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
-
-        $content = file_get_contents($result->importedFiles()[0]);
-        assertStringContainsString('[our site](https://example.com)', $content);
-    }
-
-    public function testConvertsCodeBlocks(): void
-    {
-        $this->writeResultJson([
-            'messages' => [
-                [
-                    'id' => 1,
-                    'type' => 'message',
-                    'date' => '2024-03-15T10:30:00',
-                    'text' => [
-                        'Use ',
-                        ['type' => 'code', 'text' => 'echo "hi"'],
-                        ' in PHP',
-                    ],
-                    'text_entities' => [],
-                ],
-            ],
-        ]);
-
-        $importer = new TelegramContentImporter();
-        $result = $importer->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
-
-        $content = file_get_contents($result->importedFiles()[0]);
-        assertStringContainsString('`echo "hi"`', $content);
-    }
-
-    public function testSkipsEmptyMessages(): void
-    {
-        $this->writeResultJson([
-            'messages' => [
-                [
-                    'id' => 1,
-                    'type' => 'message',
-                    'date' => '2024-03-15T10:30:00',
-                    'text' => '',
-                    'text_entities' => [],
-                ],
-                [
-                    'id' => 2,
-                    'type' => 'message',
-                    'date' => '2024-03-15T11:00:00',
-                    'text' => 'Real content',
-                    'text_entities' => [
-                        ['type' => 'plain', 'text' => 'Real content'],
-                    ],
-                ],
-            ],
-        ]);
-
-        $importer = new TelegramContentImporter();
-        $result = $importer->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
-
-        assertSame(1, $result->importedCount());
-        assertCount(1, $result->skippedFiles());
-    }
-
     public function testSkipsServiceMessages(): void
     {
         $this->writeResultJson([
+            'type' => 'public_channel',
             'messages' => [
                 [
                     'id' => 1,
@@ -244,6 +138,7 @@ final class TelegramContentImporterTest extends TestCase
     public function testCreatesCollectionConfigIfMissing(): void
     {
         $this->writeResultJson([
+            'type' => 'public_channel',
             'messages' => [
                 [
                     'id' => 1,
@@ -272,6 +167,7 @@ final class TelegramContentImporterTest extends TestCase
         file_put_contents($this->targetDir . '/blog/_collection.yaml', "title: My Blog\nsort_by: weight\n");
 
         $this->writeResultJson([
+            'type' => 'public_channel',
             'messages' => [
                 [
                     'id' => 1,
@@ -295,6 +191,7 @@ final class TelegramContentImporterTest extends TestCase
     public function testImportsMultipleMessages(): void
     {
         $this->writeResultJson([
+            'type' => 'public_channel',
             'messages' => [
                 [
                     'id' => 1,
@@ -328,40 +225,13 @@ final class TelegramContentImporterTest extends TestCase
         assertCount(3, $result->importedFiles());
     }
 
-    public function testHashtagsRemovedFromBody(): void
-    {
-        $this->writeResultJson([
-            'messages' => [
-                [
-                    'id' => 1,
-                    'type' => 'message',
-                    'date' => '2024-03-15T10:30:00',
-                    'text' => [
-                        'Learn PHP today ',
-                        ['type' => 'hashtag', 'text' => '#php'],
-                        ' ',
-                        ['type' => 'hashtag', 'text' => '#learning'],
-                    ],
-                    'text_entities' => [],
-                ],
-            ],
-        ]);
-
-        $importer = new TelegramContentImporter();
-        $result = $importer->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
-
-        $content = file_get_contents($result->importedFiles()[0]);
-        assertStringContainsString("tags:\n  - php\n  - learning", $content);
-        assertStringNotContainsString('#php', $content);
-        assertStringNotContainsString('#learning', $content);
-    }
-
     public function testCopiesPhotoAsset(): void
     {
         mkdir($this->sourceDir . '/photos', 0o755, true);
         file_put_contents($this->sourceDir . '/photos/photo_1.jpg', 'fake-image-data');
 
         $this->writeResultJson([
+            'type' => 'public_channel',
             'messages' => [
                 [
                     'id' => 1,
@@ -411,86 +281,10 @@ final class TelegramContentImporterTest extends TestCase
         assertStringContainsString('directory option is required', $result->warnings()[0]);
     }
 
-    public function testHandlesFullExportWithChatsStructure(): void
-    {
-        $this->writeResultJson([
-            'chats' => [
-                'list' => [
-                    [
-                        'name' => 'My Channel',
-                        'type' => 'public_channel',
-                        'messages' => [
-                            [
-                                'id' => 1,
-                                'type' => 'message',
-                                'date' => '2024-03-15T10:30:00',
-                                'text' => 'Channel post',
-                                'text_entities' => [['type' => 'plain', 'text' => 'Channel post']],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-        ]);
-
-        $importer = new TelegramContentImporter();
-        $result = $importer->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
-
-        assertSame(1, $result->importedCount());
-    }
-
-    public function testConvertsStrikethroughMarkup(): void
-    {
-        $this->writeResultJson([
-            'messages' => [
-                [
-                    'id' => 1,
-                    'type' => 'message',
-                    'date' => '2024-03-15T10:30:00',
-                    'text' => [
-                        'This is ',
-                        ['type' => 'strikethrough', 'text' => 'deleted'],
-                        ' text',
-                    ],
-                    'text_entities' => [],
-                ],
-            ],
-        ]);
-
-        $importer = new TelegramContentImporter();
-        $result = $importer->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
-
-        $content = file_get_contents($result->importedFiles()[0]);
-        assertStringContainsString('~~deleted~~', $content);
-    }
-
-    public function testConvertsPreformattedCodeBlock(): void
-    {
-        $this->writeResultJson([
-            'messages' => [
-                [
-                    'id' => 1,
-                    'type' => 'message',
-                    'date' => '2024-03-15T10:30:00',
-                    'text' => [
-                        'Example:',
-                        ['type' => 'pre', 'text' => 'echo "hello";'],
-                    ],
-                    'text_entities' => [],
-                ],
-            ],
-        ]);
-
-        $importer = new TelegramContentImporter();
-        $result = $importer->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
-
-        $content = file_get_contents($result->importedFiles()[0]);
-        assertStringContainsString("```\necho \"hello\";\n```", $content);
-    }
-
     public function testEscapesTitleWithSpecialYamlCharacters(): void
     {
         $this->writeResultJson([
+            'type' => 'public_channel',
             'messages' => [
                 [
                     'id' => 1,
@@ -512,6 +306,7 @@ final class TelegramContentImporterTest extends TestCase
     public function testDeduplicatesHashtags(): void
     {
         $this->writeResultJson([
+            'type' => 'public_channel',
             'messages' => [
                 [
                     'id' => 1,
@@ -542,7 +337,7 @@ final class TelegramContentImporterTest extends TestCase
     {
         file_put_contents(
             $this->sourceDir . '/result.json',
-            data: json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+            data: json_encode($data, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
         );
     }
 

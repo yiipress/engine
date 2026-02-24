@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Benchmarks;
 
-use App\Import\TelegramContentImporter;
+use App\Import\Telegram\TelegramContentImporter;
 use DateTimeImmutable;
 use FilesystemIterator;
-use PhpBench\Attributes\BeforeMethods;
 use PhpBench\Attributes\AfterMethods;
+use PhpBench\Attributes\BeforeMethods;
 use PhpBench\Attributes\Iterations;
 use PhpBench\Attributes\Revs;
 use PhpBench\Attributes\Warmup;
