@@ -548,28 +548,40 @@ final class TelegramContentImporter implements ContentImporterInterface
 
     private function extractTitle(string $markdown): string
     {
-        $firstLine = strtok($markdown, "\n");
-        if ($firstLine === false) {
-            return '';
-        }
-
-        $title = trim($firstLine);
-        $title = preg_replace('/^#{1,6}\s+/', '', $title);
-        $title = preg_replace('/\*\*(.+?)\*\*/', '$1', (string) $title);
-        $title = preg_replace('/\*(.+?)\*/', '$1', (string) $title);
-        $title = preg_replace('/`(.+?)`/', '$1', (string) $title);
-        $title = preg_replace('/\[([^]]+)]\([^)]+\)/', '$1', (string) $title);
-        $title = trim((string) $title);
-
-        if (mb_strlen($title) > 100) {
-            $title = mb_substr($title, 0, 100);
-            $lastSpace = mb_strrpos($title, ' ');
-            if ($lastSpace !== false && $lastSpace > 50) {
-                $title = mb_substr($title, 0, $lastSpace);
+        $lines = explode("\n", $markdown);
+        
+        foreach ($lines as $line) {
+            $title = trim($line);
+            
+            // Skip empty lines
+            if ($title === '') {
+                continue;
             }
+            
+            // Skip lines that contain only hashtags (tags)
+            if (preg_match('/^(?:#\w+\s*)+$/', $title)) {
+                continue;
+            }
+            
+            $title = preg_replace('/^#{1,6}\s+/', '', $title);
+            $title = preg_replace('/\*\*(.+?)\*\*/', '$1', (string) $title);
+            $title = preg_replace('/\*(.+?)\*/', '$1', (string) $title);
+            $title = preg_replace('/`(.+?)`/', '$1', (string) $title);
+            $title = preg_replace('/\[([^]]+)]\([^)]+\)/', '$1', (string) $title);
+            $title = trim((string) $title);
+
+            if (mb_strlen($title) > 100) {
+                $title = mb_substr($title, 0, 100);
+                $lastSpace = mb_strrpos($title, ' ');
+                if ($lastSpace !== false && $lastSpace > 50) {
+                    $title = mb_substr($title, 0, $lastSpace);
+                }
+            }
+
+            return $title;
         }
 
-        return $title;
+        return '';
     }
 
     private function removeTitleFromMarkdown(string $markdown, string $title): string
