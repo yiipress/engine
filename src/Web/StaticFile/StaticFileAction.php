@@ -46,6 +46,8 @@ final class StaticFileAction
         $this->ensureBuilt();
 
         $path = $request->getUri()->getPath();
+        $path = urldecode($path);
+
         $filePath = $this->resolveFilePath($path);
 
         if ($filePath === null || !is_file($filePath)) {
@@ -140,7 +142,7 @@ final class StaticFileAction
         return $this->responseFactory->createResponse(404)
             ->withHeader('Content-Type', 'text/html; charset=utf-8')
             ->withBody($this->streamFactory->createStream(
-                '<!DOCTYPE html><html><body><h1>404 Not Found</h1></body></html>'
+                '<!DOCTYPE html><html lang="en"><body><h1>404 Not Found</h1></body></html>'
             ));
     }
 }
