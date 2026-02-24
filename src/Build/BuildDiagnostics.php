@@ -78,10 +78,9 @@ final class BuildDiagnostics
         $source = $this->relativeSource($entry);
         $entryDir = $this->entryContentDir($entry);
 
-        preg_match_all('/(!?)\[([^]]*)]\(([^)]+)\)/', $body, $matches, PREG_SET_ORDER);
+        preg_match_all('/\[([^]]*)]\(([^)]+)\)/', $body, $matches, PREG_SET_ORDER);
         foreach ($matches as $match) {
-            $isImage = $match[1] === '!';
-            $path = $match[3];
+            $path = $match[2];
 
             if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
                 continue;
@@ -106,9 +105,7 @@ final class BuildDiagnostics
                 continue;
             }
 
-            $this->warnings[] = $isImage
-                ? "$source: missing image \"$path\""
-                : "$source: broken link to \"$path\"";
+            $this->warnings[] = "$source: broken link to \"$path\"";
         }
     }
 
