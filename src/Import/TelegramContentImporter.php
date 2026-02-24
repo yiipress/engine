@@ -376,7 +376,7 @@ final class TelegramContentImporter implements ContentImporterInterface
                 'pre' => "\n```" . ($part['language'] ?? '') . "\n" . $partText . "\n```\n",
                 'text_link' => '[' . $partText . '](' . ($part['href'] ?? '') . ')',
                 'link' => '[' . $partText . '](' . $partText . ')',
-                'hashtag' => $partText,
+                'hashtag' => '',
                 'mention' => $partText,
                 'email' => '[' . $partText . '](mailto:' . $partText . ')',
                 'phone' => $partText,
@@ -607,9 +607,11 @@ final class TelegramContentImporter implements ContentImporterInterface
         $firstLineClean = trim((string) $firstLineClean);
 
         if ($firstLineClean === $title) {
-            // Remove the first line
             array_shift($lines);
-            return implode("\n", $lines);
+            $remaining = implode("\n", $lines);
+            if (trim($remaining) !== '') {
+                return $remaining;
+            }
         }
 
         return $markdown;
