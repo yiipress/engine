@@ -109,6 +109,18 @@ final class TelegramContentImporter implements ContentImporterInterface
             }
 
             if ($dataMessage['type'] !== 'message') {
+                $skippedFiles[] = $dataMessage['id'];
+                continue;
+            }
+
+            if (!empty($dataMessage['poll'])) {
+                $skippedFiles[] = $dataMessage['id'];
+                // TODO: import polls
+                continue;
+            }
+
+            if ($dataMessage['text'] === '' && empty($dataMessage['photo']) && empty($dataMessage['file'])) {
+                $skippedFiles[] = $dataMessage['id'];
                 continue;
             }
 
