@@ -89,11 +89,11 @@ final class SiteConfigParser
         if (array_key_exists('underline', $data)) {
             $constructorArgs['underline'] = (bool) $data['underline'];
         }
-        if (array_key_exists('html_blocks', $data)) {
-            $constructorArgs['noHtmlBlocks'] = (bool) $data['html_blocks'];
+        if (array_key_exists('no_html_blocks', $data)) {
+            $constructorArgs['noHtmlBlocks'] = (bool) $data['no_html_blocks'];
         }
-        if (array_key_exists('html_spans', $data)) {
-            $constructorArgs['noHtmlSpans'] = (bool) $data['html_spans'];
+        if (array_key_exists('no_html_spans', $data)) {
+            $constructorArgs['noHtmlSpans'] = (bool) $data['no_html_spans'];
         }
         if (array_key_exists('permissive_atx_headers', $data)) {
             $constructorArgs['permissiveAtxHeaders'] = (bool) $data['permissive_atx_headers'];
