@@ -44,6 +44,7 @@ final class SitemapGenerator
                 $permalink = PermalinkResolver::resolve($entry, $collection);
                 $lastmod = $entry->date?->getTimestamp();
 
+                $permalink = implode('/', array_map('urlencode', explode('/', $permalink)));
                 $sitemap->addItem(
                     $baseUrl . $permalink,
                     $lastmod ?? null,

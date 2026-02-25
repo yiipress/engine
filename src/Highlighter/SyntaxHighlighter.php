@@ -10,7 +10,7 @@ use RuntimeException;
 final class SyntaxHighlighter
 {
     private const string HEADER = <<<'C'
-        char *yiipress_highlight(const char *html);
+        char *yiipress_highlight(const char *html, char **error);
         void yiipress_highlight_free(char *ptr);
         C;
 
@@ -25,17 +25,36 @@ final class SyntaxHighlighter
 
     public function highlight(string $html): string
     {
+        // Create FFI CData for error output parameter
+        $error = $this->ffi->new('char*');
+
         /** @var FFI\CData|null $resultPtr */
-        $resultPtr = $this->ffi->yiipress_highlight($html);
+        $resultPtr = $this->ffi->yiipress_highlight($html, FFI::addr($error));
 
         if ($resultPtr === null) {
-            throw new RuntimeException('Syntax highlighting failed');
+            $errorMessage = 'Syntax highlighting failed.';
+
+            // Get detailed error message if available
+            if ($error !== null) {
+                $errorStr = FFI::string($error);
+                if ($errorStr !== '') {
+                    $errorMessage = $errorStr;
+                }
+                $this->ffi->yiipress_highlight_free($error);
+            }
+
+            throw new RuntimeException($errorMessage);
         }
 
         try {
             return FFI::string($resultPtr);
         } finally {
             $this->ffi->yiipress_highlight_free($resultPtr);
+
+            // Clean up error if it was set
+            if ($error !== null) {
+                $this->ffi->yiipress_highlight_free($error);
+            }
         }
     }
 }

@@ -84,6 +84,16 @@ final class MessageTest extends TestCase
             'input' => ['type' => 'hashtag', 'text' => '#php'],
             'expected' => "#php",
         ];
+
+        yield 'No newlines after/before marked text' => [
+            'input' => ['type' => 'bold', 'text' => "\n1\n2\n"],
+            'expected' => "\n**1\n2**\n",
+        ];
+
+        yield 'No spaces after/before marked text' => [
+            'input' => ['type' => 'bold', 'text' => " 1 2 "],
+            'expected' => " **1 2** ",
+        ];
     }
 
     #[DataProvider('markupDataProvider')]
