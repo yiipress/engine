@@ -183,8 +183,22 @@ final class TelegramContentImporter implements ContentImporterInterface
 
     private function copyMedia(string $sourceDirectory, string $relativePath, string $assetsDir): string
     {
+        if (str_starts_with($relativePath, '/') || str_starts_with($relativePath, '\\')) {
+            return '';
+        }
+
         $sourcePath = $sourceDirectory . '/' . $relativePath;
         if (!is_file($sourcePath)) {
+            return '';
+        }
+
+        $realSourceDir = realpath($sourceDirectory);
+        $realSourcePath = realpath($sourcePath);
+        if (
+            $realSourceDir === false
+            || $realSourcePath === false
+            || !str_starts_with($realSourcePath, $realSourceDir . DIRECTORY_SEPARATOR)
+        ) {
             return '';
         }
 
@@ -192,11 +206,10 @@ final class TelegramContentImporter implements ContentImporterInterface
             throw new RuntimeException(sprintf('Directory "%s" was not created', $assetsDir));
         }
 
-
         $info = pathinfo($relativePath);
         $targetPath = $assetsDir . '/' . ($info['filename'] ?? 'file') . '.' . ($info['extension'] ?? '');
 
-        copy($sourcePath, $targetPath);
+        copy($realSourcePath, $targetPath);
 
         return $targetPath;
     }
