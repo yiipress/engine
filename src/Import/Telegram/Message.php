@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Import\Telegram;
 
 use DateTimeImmutable;
@@ -21,7 +23,7 @@ final class Message
     ) {
     }
 
-    public string $id {
+    public int $id {
         get {
             return $this->message['id'];
         }
@@ -231,8 +233,6 @@ final class Message
         foreach ($textArray as $part) {
             if (is_string($part)) {
                 $result .= $part;
-                // WTF?
-                // TODO: why \n\n?
                 continue;
             }
 
@@ -242,7 +242,22 @@ final class Message
                 continue;
             }
 
-            $result .= match ($part['type']) {
+            $isInlinePart = in_array($part['type'], ['bold', 'italic', 'strikethrough'], true);
+            $prefix = '';
+            $suffix = '';
+            if ($isInlinePart) {
+                // Extract leading whitespace
+                if (preg_match('~^(\s+|\R+)(.*)$~su', $text, $matches)) {
+                    [,$prefix,$text] = $matches;
+                }
+
+                // Extract trailing whitespace from the remaining inner text
+                if (preg_match('~^(.*?)(\s+|\R+)$~su', $text, $matches)) {
+                    [,$text,$suffix] = $matches;
+                }
+            }
+
+            $markdown = match ($part['type']) {
                 'bold' => "**$text**",
                 'italic' => "*$text*",
                 'strikethrough' => "~~$text~~",
@@ -255,9 +270,15 @@ final class Message
                 'mention' => "[$text]({$this->mentionToLink($text)})",
                 default => $text,
             };
+
+            if ($isInlinePart) {
+                $markdown = $prefix . $markdown . $suffix;
+            }
+
+            $result .= $markdown;
         }
 
-        return trim($result);
+        return $result;
     }
 
     private function blockQuoteToMarkdown(string $text): string

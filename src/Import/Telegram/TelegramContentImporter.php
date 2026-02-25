@@ -60,6 +60,8 @@ final class TelegramContentImporter implements ContentImporterInterface
             );
         }
 
+        $json = mb_convert_encoding($json, 'UTF-8', mb_detect_encoding($json, ['UTF-16LE', 'UTF-16BE', 'UTF-8', 'Windows-1251'], true));
+
         $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
         if (!is_array($data)) {
             return new ImportResult(
