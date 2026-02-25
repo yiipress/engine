@@ -253,6 +253,66 @@ final class TelegramContentImporterTest extends TestCase
         assertStringContainsString('![](/blog/assets/photo_1.jpg)', $content);
     }
 
+    public function testRejectsPathTraversalInPhoto(): void
+    {
+        $sensitiveDir = sys_get_temp_dir() . '/yiipress-sensitive-' . uniqid();
+        mkdir($sensitiveDir, 0o700, true);
+        file_put_contents($sensitiveDir . '/secret.txt', 'sensitive-data');
+
+        $this->writeResultJson([
+            'type' => 'public_channel',
+            'messages' => [
+                [
+                    'id' => 1,
+                    'type' => 'message',
+                    'date' => '2024-03-15T10:30:00',
+                    'text' => 'Check this photo',
+                    'text_entities' => [['type' => 'plain', 'text' => 'Check this photo']],
+                    'photo' => '../' . basename($sensitiveDir) . '/secret.txt',
+                ],
+            ],
+        ]);
+
+        $importer = new TelegramContentImporter();
+        $result = $importer->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
+
+        assertSame(1, $result->importedCount());
+        $content = file_get_contents($result->importedFiles()[0]);
+        assertStringContainsString('Check this photo', $content);
+        $this->assertFileDoesNotExist($this->targetDir . '/blog/assets/secret.txt');
+
+        $this->removeDir($sensitiveDir);
+    }
+
+    public function testRejectsAbsolutePathInPhoto(): void
+    {
+        $sensitiveDir = sys_get_temp_dir() . '/yiipress-sensitive-abs-' . uniqid();
+        mkdir($sensitiveDir, 0o700, true);
+        file_put_contents($sensitiveDir . '/secret.txt', 'sensitive-data');
+
+        $this->writeResultJson([
+            'type' => 'public_channel',
+            'messages' => [
+                [
+                    'id' => 1,
+                    'type' => 'message',
+                    'date' => '2024-03-15T10:30:00',
+                    'text' => 'Check this photo',
+                    'text_entities' => [['type' => 'plain', 'text' => 'Check this photo']],
+                    'photo' => $sensitiveDir . '/secret.txt',
+                ],
+            ],
+        ]);
+
+        $importer = new TelegramContentImporter();
+        $result = $importer->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
+
+        assertSame(1, $result->importedCount());
+        $this->assertFileDoesNotExist($this->targetDir . '/blog/assets/secret.txt');
+
+        $this->removeDir($sensitiveDir);
+    }
+
     public function testImporterNameIsTelegram(): void
     {
         $importer = new TelegramContentImporter();
