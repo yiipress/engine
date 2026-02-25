@@ -66,7 +66,7 @@ markdown:
   strikethrough: false
   latex_math: true
   underline: true
-  html_blocks: false
+  no_html_blocks: false
 YAML);
 
         try {
@@ -82,7 +82,7 @@ YAML);
             assertTrue($config->markdown->collapseWhitespace, 'collapseWhitespace should be true (default)');
             assertTrue($config->markdown->latexMath, 'latexMath should be true (set in config)');
             assertTrue($config->markdown->underline, 'underline should be true (set in config)');
-            assertFalse($config->markdown->noHtmlBlocks, 'noHtmlBlocks should be false (html_blocks: false)');
+            assertFalse($config->markdown->noHtmlBlocks, 'noHtmlBlocks should be false (no_html_blocks: false)');
             assertTrue($config->markdown->noHtmlSpans, 'noHtmlSpans should be true (default)');
             assertFalse($config->markdown->permissiveAtxHeaders, 'permissiveAtxHeaders should be false (default)');
             assertFalse($config->markdown->noIndentedCodeBlocks, 'noIndentedCodeBlocks should be false (default)');
