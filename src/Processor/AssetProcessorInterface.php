@@ -11,7 +11,7 @@ namespace App\Processor;
  * The pipeline collects assets from all aware processors
  * and passes them to the theme for rendering.
  */
-interface AssetAwareProcessorInterface
+interface AssetProcessorInterface
 {
     /**
      * HTML to inject into <head> when processed content needs it.

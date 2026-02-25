@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Import;
 
 use DateTimeImmutable;
-
 use RuntimeException;
 
 use function array_key_exists;
@@ -173,15 +172,15 @@ final class TelegramContentImporter implements ContentImporterInterface
         }
 
         if (array_key_exists('chats', $data) && is_array($data['chats']) && array_key_exists(
-                'list',
-                $data['chats']
-            ) && is_array($data['chats']['list'])) {
-                foreach ($data['chats']['list'] as $chat) {
-                    if (is_array($chat) && array_key_exists('messages', $chat) && is_array($chat['messages'])) {
-                        return $chat['messages'];
-                    }
+            'list',
+            $data['chats'],
+        ) && is_array($data['chats']['list'])) {
+            foreach ($data['chats']['list'] as $chat) {
+                if (is_array($chat) && array_key_exists('messages', $chat) && is_array($chat['messages'])) {
+                    return $chat['messages'];
                 }
             }
+        }
 
         return [];
     }
@@ -309,17 +308,17 @@ final class TelegramContentImporter implements ContentImporterInterface
             if (is_string($part)) {
                 // Check if this string contains list items and convert them in place
                 $convertedText = $this->convertListItemsInText($part);
-                
+
                 // Check if this is a list item followed by a text_link
                 $nextPart = $textArray[$i + 1] ?? null;
-                if (is_array($nextPart) && ($nextPart['type'] ?? '') === 'text_link' && 
+                if (is_array($nextPart) && ($nextPart['type'] ?? '') === 'text_link' &&
                     preg_match('/^[^\w\s]/u', trim($convertedText))) {
                     // This is a list item followed by a link, format it properly
                     $result .= '- ' . trim($convertedText) . '[' . $nextPart['text'] . '](' . $nextPart['href'] . ')';
                     $i += 2; // Skip both the text and the link
                     continue;
                 }
-                
+
                 $result .= $convertedText;
                 $i++;
                 continue;
@@ -376,7 +375,7 @@ final class TelegramContentImporter implements ContentImporterInterface
                 'pre' => "\n```" . ($part['language'] ?? '') . "\n" . $partText . "\n```\n",
                 'text_link' => '[' . $partText . '](' . ($part['href'] ?? '') . ')',
                 'link' => '[' . $partText . '](' . $partText . ')',
-                'hashtag' => '',
+                'hashtag' => $partText,
                 'mention' => $partText,
                 'email' => '[' . $partText . '](mailto:' . $partText . ')',
                 'phone' => $partText,
@@ -415,7 +414,7 @@ final class TelegramContentImporter implements ContentImporterInterface
             ) {
                 $listItems[] = [
                     'emoji' => $emojiPart['text'],
-                    'text' => rtrim($textPart)
+                    'text' => rtrim($textPart),
                 ];
                 $i += 2;
                 continue;
@@ -442,7 +441,7 @@ final class TelegramContentImporter implements ContentImporterInterface
 
                 $listItems[] = [
                     'emoji' => $emojiPart['text'],
-                    'text' => ' **' . $boldPart['text'] . '**' . $cleanDesc
+                    'text' => ' **' . $boldPart['text'] . '**' . $cleanDesc,
                 ];
                 $i += 4;
                 continue;
@@ -462,7 +461,7 @@ final class TelegramContentImporter implements ContentImporterInterface
             ) {
                 $listItems[] = [
                     'emoji' => $emojiPart['text'],
-                    'text' => ' **' . $boldPart['text'] . '**' . rtrim($descPart)
+                    'text' => ' **' . $boldPart['text'] . '**' . rtrim($descPart),
                 ];
                 $i += 4;
                 continue;
@@ -549,20 +548,20 @@ final class TelegramContentImporter implements ContentImporterInterface
     private function extractTitle(string $markdown): string
     {
         $lines = explode("\n", $markdown);
-        
+
         foreach ($lines as $line) {
             $title = trim($line);
-            
+
             // Skip empty lines
             if ($title === '') {
                 continue;
             }
-            
+
             // Skip lines that contain only hashtags (tags)
             if (preg_match('/^(?:#\w+\s*)+$/', $title)) {
                 continue;
             }
-            
+
             $title = preg_replace('/^#{1,6}\s+/', '', $title);
             $title = preg_replace('/\*\*(.+?)\*\*/', '$1', (string) $title);
             $title = preg_replace('/\*(.+?)\*/', '$1', (string) $title);
@@ -608,10 +607,7 @@ final class TelegramContentImporter implements ContentImporterInterface
 
         if ($firstLineClean === $title) {
             array_shift($lines);
-            $remaining = implode("\n", $lines);
-            if (trim($remaining) !== '') {
-                return $remaining;
-            }
+            return implode("\n", $lines);
         }
 
         return $markdown;
@@ -695,28 +691,28 @@ final class TelegramContentImporter implements ContentImporterInterface
     private function detectListItemsInText(string $text): array
     {
         $listItems = [];
-        
+
         // Split by newlines and check each line
         $lines = explode("\n", $text);
-        
+
         foreach ($lines as $line) {
             $trimmedLine = trim($line);
-            
+
             // Skip empty lines
             if ($trimmedLine === '') {
                 continue;
             }
-            
+
             // Simple check: if line starts with non-alphanumeric character and has content after
             $firstChar = mb_substr($trimmedLine, 0, 1);
-            
+
             // Check if first character is not a letter or number (i.e., it's a symbol/emoji)
             if (!preg_match('/^[A-Za-zА-Яа-я0-9]/u', $firstChar) && mb_strlen($trimmedLine) > 1) {
                 // Convert to markdown list format
                 $listItems[] = '- ' . $trimmedLine;
             }
         }
-        
+
         return $listItems;
     }
 
@@ -727,23 +723,23 @@ final class TelegramContentImporter implements ContentImporterInterface
     {
         $lines = explode("\n", $text);
         $convertedLines = [];
-        
+
         foreach ($lines as $line) {
             $trimmedLine = trim($line);
-            
+
             // Skip empty lines
             if ($trimmedLine === '') {
                 $convertedLines[] = $line;
                 continue;
             }
-            
+
             // Simple check: if line starts with non-alphanumeric character and has content after
             $firstChar = mb_substr($trimmedLine, 0, 1);
-            
+
             // Check if first character is not a letter or number (i.e., it's a symbol/emoji)
             // But don't convert if the line ends with space (might be followed by other entities)
-            if (!preg_match('/^[A-Za-zА-Яа-я0-9]/u', $firstChar) && 
-                mb_strlen($trimmedLine) > 1 && 
+            if (!preg_match('/^[A-Za-zА-Яа-я0-9]/u', $firstChar) &&
+                mb_strlen($trimmedLine) > 1 &&
                 !str_ends_with($line, ' ')) {
                 // Convert to markdown list format
                 $convertedLines[] = '- ' . $trimmedLine;
@@ -752,7 +748,7 @@ final class TelegramContentImporter implements ContentImporterInterface
                 $convertedLines[] = $line;
             }
         }
-        
+
         return implode("\n", $convertedLines);
     }
 

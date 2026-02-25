@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Processor;
 
 use App\Content\Model\Entry;
-use App\Processor\AssetAwareProcessorInterface;
+use App\Processor\AssetProcessorInterface;
 use App\Processor\ContentProcessorInterface;
 use App\Processor\ContentProcessorPipeline;
 use Closure;
@@ -26,8 +26,8 @@ final class ContentProcessorPipelineTest extends TestCase
     public function testProcessChainsProcessorsInOrder(): void
     {
         $pipeline = new ContentProcessorPipeline(
-            $this->createProcessor(fn (string $c) => $c . ' [A]'),
-            $this->createProcessor(fn (string $c) => $c . ' [B]'),
+            $this->createProcessor(fn(string $c) => $c . ' [A]'),
+            $this->createProcessor(fn(string $c) => $c . ' [B]'),
         );
 
         $result = $pipeline->process('start', $this->createEntry());
@@ -38,8 +38,8 @@ final class ContentProcessorPipelineTest extends TestCase
     public function testProcessorReceivesOutputOfPreviousProcessor(): void
     {
         $pipeline = new ContentProcessorPipeline(
-            $this->createProcessor(fn (string $c) => str_replace('foo', 'bar', $c)),
-            $this->createProcessor(fn (string $c) => str_replace('bar', 'baz', $c)),
+            $this->createProcessor(fn(string $c) => str_replace('foo', 'bar', $c)),
+            $this->createProcessor(fn(string $c) => str_replace('bar', 'baz', $c)),
         );
 
         $result = $pipeline->process('<p>foo</p>', $this->createEntry());
@@ -49,13 +49,22 @@ final class ContentProcessorPipelineTest extends TestCase
 
     public function testCollectHeadAssetsFromAssetAwareProcessors(): void
     {
-        $assetProcessor = new class implements ContentProcessorInterface, AssetAwareProcessorInterface {
-            public function process(string $content, Entry $entry): string { return $content; }
-            public function headAssets(string $processedContent): string { return '<script src="test.js"></script>'; }
-            public function assetFiles(): array { return []; }
+        $assetProcessor = new class implements ContentProcessorInterface, AssetProcessorInterface {
+            public function process(string $content, Entry $entry): string
+            {
+                return $content;
+            }
+            public function headAssets(string $processedContent): string
+            {
+                return '<script src="test.js"></script>';
+            }
+            public function assetFiles(): array
+            {
+                return [];
+            }
         };
 
-        $plainProcessor = $this->createProcessor(fn (string $c) => $c);
+        $plainProcessor = $this->createProcessor(fn(string $c) => $c);
 
         $pipeline = new ContentProcessorPipeline($plainProcessor, $assetProcessor);
 
@@ -65,7 +74,7 @@ final class ContentProcessorPipelineTest extends TestCase
     public function testCollectHeadAssetsReturnsEmptyForNoAssetProcessors(): void
     {
         $pipeline = new ContentProcessorPipeline(
-            $this->createProcessor(fn (string $c) => $c),
+            $this->createProcessor(fn(string $c) => $c),
         );
 
         assertSame('', $pipeline->collectHeadAssets('content'));
@@ -73,10 +82,19 @@ final class ContentProcessorPipelineTest extends TestCase
 
     public function testCollectAssetFilesFromAssetAwareProcessors(): void
     {
-        $assetProcessor = new class implements ContentProcessorInterface, AssetAwareProcessorInterface {
-            public function process(string $content, Entry $entry): string { return $content; }
-            public function headAssets(string $processedContent): string { return ''; }
-            public function assetFiles(): array { return ['/src/style.css' => 'assets/style.css']; }
+        $assetProcessor = new class implements ContentProcessorInterface, AssetProcessorInterface {
+            public function process(string $content, Entry $entry): string
+            {
+                return $content;
+            }
+            public function headAssets(string $processedContent): string
+            {
+                return '';
+            }
+            public function assetFiles(): array
+            {
+                return ['/src/style.css' => 'assets/style.css'];
+            }
         };
 
         $pipeline = new ContentProcessorPipeline($assetProcessor);

@@ -109,6 +109,19 @@ final class MermaidProcessorTest extends TestCase
         assertSame('', $result);
     }
 
+    public function testDoesNotExecuteScriptInjectedViaHtmlEntities(): void
+    {
+        // Markdown parsers encode < > as HTML entities inside code blocks.
+        // After htmlspecialchars_decode, &lt;script&gt; becomes <script> — XSS risk.
+        $input = '<pre><code class="language-mermaid">&lt;script&gt;alert(\'xss\')&lt;/script&gt;</code></pre>';
+
+        $result = $this->processor->process($input, $this->createEntry());
+
+        $this->assertStringNotContainsString('<script>', $result);
+        $this->assertStringNotContainsString('</script>', $result);
+        $this->assertStringContainsString('<div class="mermaid">', $result);
+    }
+
     public function testAssetFilesReturnsMermaidCss(): void
     {
         $files = $this->processor->assetFiles();
@@ -119,10 +132,12 @@ final class MermaidProcessorTest extends TestCase
         assertSame('assets/plugins/mermaid.css', $files[$sourceFile]);
     }
 
+
     private function createEntry(): Entry
     {
         $tmp = tempnam(sys_get_temp_dir(), 'yiipress_mermaid_test_');
         file_put_contents($tmp, "---\ntitle: Test\n---\nBody.");
+        $this->tempFiles[] = $tmp;
 
         return new Entry(
             filePath: $tmp,
@@ -145,5 +160,16 @@ final class MermaidProcessorTest extends TestCase
             bodyOffset: 0,
             bodyLength: 0,
         );
+    }
+
+    private array $tempFiles = [];
+
+    protected function tearDown(): void
+    {
+        foreach ($this->tempFiles as $file) {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
     }
 }

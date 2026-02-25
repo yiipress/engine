@@ -29,7 +29,7 @@ final class ContentProcessorPipeline
     {
         $assets = '';
         foreach ($this->processors as $processor) {
-            if ($processor instanceof AssetAwareProcessorInterface) {
+            if ($processor instanceof AssetProcessorInterface) {
                 $assets .= $processor->headAssets($processedContent);
             }
         }
@@ -43,7 +43,7 @@ final class ContentProcessorPipeline
     {
         $files = [];
         foreach ($this->processors as $processor) {
-            if ($processor instanceof AssetAwareProcessorInterface) {
+            if ($processor instanceof AssetProcessorInterface) {
                 $files += $processor->assetFiles();
             }
         }

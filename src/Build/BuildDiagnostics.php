@@ -106,9 +106,7 @@ final class BuildDiagnostics
                 continue;
             }
 
-            $this->warnings[] = $isImage
-                ? "$source: missing image \"$path\""
-                : "$source: broken link to \"$path\"";
+            $this->warnings[] = "$source: broken link to \"$path\"";
         }
     }
 

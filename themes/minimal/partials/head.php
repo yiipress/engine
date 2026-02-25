@@ -1,7 +1,6 @@
 <?php
 /**
  * @var string $title
- * @var bool $hasMermaid
  * @var string $rootPath
  * @var string $headAssets
  */

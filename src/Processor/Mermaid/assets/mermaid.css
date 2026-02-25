@@ -11,6 +11,38 @@
     max-width: 100%;
     height: auto;
 }
+
+/* Dark theme overrides */
 [data-theme="dark"] .mermaid {
-    background: var(--c-header-bg);
+    background: var(--c-code-bg);
+}
+[data-theme="dark"] .mermaid svg .node rect,
+[data-theme="dark"] .mermaid svg .node polygon,
+[data-theme="dark"] .mermaid svg .node circle {
+    fill: #374151 !important;
+    stroke: #6b7280 !important;
+}
+[data-theme="dark"] .mermaid svg .nodeLabel,
+[data-theme="dark"] .mermaid svg .label {
+    color: #f0f0f0 !important;
+    fill: #f0f0f0 !important;
+}
+[data-theme="dark"] .mermaid svg .edgePath path,
+[data-theme="dark"] .mermaid svg .flowchart-link {
+    stroke: #f0f0f0 !important;
+}
+[data-theme="dark"] .mermaid svg .arrowMarkerPath {
+    fill: #f0f0f0 !important;
+    stroke: #f0f0f0 !important;
+}
+[data-theme="dark"] .mermaid svg .cluster rect {
+    fill: #1f2937 !important;
+    stroke: #4b5563 !important;
+}
+[data-theme="dark"] .mermaid svg .edgeLabel {
+    background-color: #374151 !important;
+    color: #f0f0f0 !important;
+}
+[data-theme="dark"] .mermaid svg .edgeLabel rect {
+    fill: #374151 !important;
 }
