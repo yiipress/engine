@@ -48,7 +48,7 @@ final class SiteConfigParser
     }
 
     /**
-     * @param mixed $data
+     * @param mixed|array<string, bool> $data
      * @return MarkdownConfig
      */
     private static function parseMarkdownConfig(mixed $data): MarkdownConfig
@@ -57,17 +57,54 @@ final class SiteConfigParser
             return new MarkdownConfig();
         }
 
-        return new MarkdownConfig(
-            tables: (bool) ($data['tables'] ?? true),
-            strikethrough: (bool) ($data['strikethrough'] ?? true),
-            tasklists: (bool) ($data['tasklists'] ?? true),
-            autolinks: (bool) ($data['autolinks'] ?? true),
-            collapseWhitespace: (bool) ($data['collapse_whitespace'] ?? false),
-            latexMath: (bool) ($data['latex_math'] ?? false),
-            wikilinks: (bool) ($data['wikilinks'] ?? false),
-            underline: (bool) ($data['underline'] ?? false),
-            htmlBlocks: (bool) ($data['html_blocks'] ?? true),
-            htmlSpans: (bool) ($data['html_spans'] ?? true),
-        );
+        $constructorArgs = [];
+        
+        if (array_key_exists('tables', $data)) {
+            $constructorArgs['tables'] = (bool) $data['tables'];
+        }
+        if (array_key_exists('strikethrough', $data)) {
+            $constructorArgs['strikethrough'] = (bool) $data['strikethrough'];
+        }
+        if (array_key_exists('tasklists', $data)) {
+            $constructorArgs['tasklists'] = (bool) $data['tasklists'];
+        }
+        if (array_key_exists('url_autolinks', $data)) {
+            $constructorArgs['urlAutolinks'] = (bool) $data['url_autolinks'];
+        }
+        if (array_key_exists('email_autolinks', $data)) {
+            $constructorArgs['emailAutolinks'] = (bool) $data['email_autolinks'];
+        }
+        if (array_key_exists('www_autolinks', $data)) {
+            $constructorArgs['wwwAutolinks'] = (bool) $data['www_autolinks'];
+        }
+        if (array_key_exists('collapse_whitespace', $data)) {
+            $constructorArgs['collapseWhitespace'] = (bool) $data['collapse_whitespace'];
+        }
+        if (array_key_exists('latex_math', $data)) {
+            $constructorArgs['latexMath'] = (bool) $data['latex_math'];
+        }
+        if (array_key_exists('wikilinks', $data)) {
+            $constructorArgs['wikilinks'] = (bool) $data['wikilinks'];
+        }
+        if (array_key_exists('underline', $data)) {
+            $constructorArgs['underline'] = (bool) $data['underline'];
+        }
+        if (array_key_exists('no_html_blocks', $data)) {
+            $constructorArgs['noHtmlBlocks'] = (bool) $data['no_html_blocks'];
+        }
+        if (array_key_exists('no_html_spans', $data)) {
+            $constructorArgs['noHtmlSpans'] = (bool) $data['no_html_spans'];
+        }
+        if (array_key_exists('permissive_atx_headers', $data)) {
+            $constructorArgs['permissiveAtxHeaders'] = (bool) $data['permissive_atx_headers'];
+        }
+        if (array_key_exists('no_indented_code_blocks', $data)) {
+            $constructorArgs['noIndentedCodeBlocks'] = (bool) $data['no_indented_code_blocks'];
+        }
+        if (array_key_exists('hard_soft_breaks', $data)) {
+            $constructorArgs['hardSoftBreaks'] = (bool) $data['hard_soft_breaks'];
+        }
+
+        return new MarkdownConfig(...$constructorArgs);
     }
 }

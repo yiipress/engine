@@ -134,23 +134,50 @@ fn highlight_block(ss: &SyntaxSet, theme: &syntect::highlighting::Theme, block: 
 /// # Safety
 ///
 /// `html_ptr` must be a valid null-terminated UTF-8 C string.
+/// `error_ptr` must be a valid pointer to a `*const c_char` that will be set to an error message
+/// (or null if successful). The error message must be freed by calling `yiipress_highlight_free`.
 /// The returned pointer must be freed by calling `yiipress_highlight_free`.
 #[no_mangle]
-pub unsafe extern "C" fn yiipress_highlight(html_ptr: *const c_char) -> *mut c_char {
+pub unsafe extern "C" fn yiipress_highlight(
+    html_ptr: *const c_char,
+    error_ptr: *mut *const c_char,
+) -> *mut c_char {
+    // Initialize error to null
+    unsafe { *error_ptr = std::ptr::null_mut() };
+    
     if html_ptr.is_null() {
+        let error_msg = match CString::new("HTML input pointer is null") {
+            Ok(c) => c.into_raw(),
+            Err(_) => return std::ptr::null_mut(),
+        };
+        unsafe { *error_ptr = error_msg };
         return std::ptr::null_mut();
     }
 
     let html = match unsafe { CStr::from_ptr(html_ptr) }.to_str() {
         Ok(s) => s,
-        Err(_) => return std::ptr::null_mut(),
+        Err(e) => {
+            let error_msg = match CString::new(format!("Invalid UTF-8 in HTML input: {}", e)) {
+                Ok(c) => c.into_raw(),
+                Err(_) => return std::ptr::null_mut(),
+            };
+            unsafe { *error_ptr = error_msg };
+            return std::ptr::null_mut();
+        }
     };
 
     let blocks = find_code_blocks(html);
     if blocks.is_empty() {
         return match CString::new(html) {
             Ok(c) => c.into_raw(),
-            Err(_) => std::ptr::null_mut(),
+            Err(_) => {
+                let error_msg = match CString::new("Failed to allocate memory for result") {
+                    Ok(c) => c.into_raw(),
+                    Err(_) => return std::ptr::null_mut(),
+                };
+                unsafe { *error_ptr = error_msg };
+                std::ptr::null_mut()
+            }
         };
     }
 
@@ -179,7 +206,14 @@ pub unsafe extern "C" fn yiipress_highlight(html_ptr: *const c_char) -> *mut c_c
 
     match CString::new(result) {
         Ok(c) => c.into_raw(),
-        Err(_) => std::ptr::null_mut(),
+        Err(e) => {
+            let error_msg = match CString::new(format!("Failed to allocate memory for result: {}", e)) {
+                Ok(c) => c.into_raw(),
+                Err(_) => std::ptr::null_mut(),
+            };
+            unsafe { *error_ptr = error_msg };
+            std::ptr::null_mut()
+        }
     }
 }
 

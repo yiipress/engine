@@ -79,7 +79,12 @@ final class MarkdownRendererTest extends TestCase
         $markdown = "- [x] done\n- [ ] todo\n";
         $html = $this->renderer->render($markdown);
 
-        assertStringContainsString('[x]', $html);
-        assertStringContainsString('[ ]', $html);
+        assertStringContainsString(<<<EXPECTED
+<ul>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled checked>done</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled>todo</li>
+</ul>
+EXPECTED
+        , $html);
     }
 }

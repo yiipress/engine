@@ -54,34 +54,44 @@ params:
 
 Currently, the entry template receives individual variables (`$siteTitle`, `$entryTitle`, `$content`, `$date`, `$author`, `$collection`). Full `$config` access in templates is planned for the theming system.
 
-### Markdown extensions
+### Markdown settings
 
-The `markdown` section controls which markdown extensions are enabled. All options are boolean.
+The `markdown` section controls which Markdown extensions are enabled. All options are boolean.
 
 ```yaml
 markdown:
   tables: true
   strikethrough: true
   tasklists: true
-  autolinks: true
-  collapse_whitespace: false
+  url_autolinks: true
+  email_autolinks: true
+  www_autolinks: true
+  collapse_whitespace: true
   latex_math: false
   wikilinks: false
   underline: false
-  html_blocks: true
-  html_spans: true
+  no_html_blocks: true
+  no_html_spans: true
+  permissive_atx_headers: false
+  no_indented_code_blocks: false
+  hard_soft_breaks: true
 ```
 
 - **tables** — GitHub-style tables (default: `true`)
 - **strikethrough** — strikethrough with `~text~` (default: `true`)
 - **tasklists** — GitHub-style task lists (default: `true`)
-- **autolinks** — permissive URL autolinks without `<>` (default: `true`)
-- **collapse_whitespace** — collapse non-trivial whitespace into a single space (default: `false`)
-- **latex_math** — LaTeX math spans `$...$` and `$$...$$` (default: `false`)
-- **wikilinks** — wiki-style links `[[link]]` (default: `false`)
+- **url_autolinks** — recognize URLs as auto-links even without `<>` (default: `true`)
+- **email_autolinks** — recognize e-mails as auto-links even without `<>` and `mailto:` (default: `true`)
+- **www_autolinks** — enable WWW auto-links (even without any scheme prefix, if they begin with 'www.') (default: `true`)
+- **collapse_whitespace** — collapse non-trivial whitespace into single space (default: `true`)
+- **latex_math** — enable LaTeX math spans `$...$` and `$$...$$` (default: `false`)
+- **wikilinks** — enable wiki-style links `[[link]]` (default: `false`)
 - **underline** — underscore `_` denotes underline instead of emphasis (default: `false`)
-- **html_blocks** — allow raw HTML blocks (default: `true`)
-- **html_spans** — allow inline raw HTML (default: `true`)
+- **no_html_blocks** — disable raw HTML blocks (default: `true`)
+- **no_html_spans** — disable inline raw HTML (default: `true`)
+- **permissive_atx_headers** — do not require space in ATX headers ( `###header` ) (default: `false`)
+- **no_indented_code_blocks** — disable indented code blocks (only fenced code works) (default: `false`)
+- **hard_soft_breaks** — force all soft breaks to act as hard breaks (default: `true`)
 
 If the `markdown` section is omitted, all defaults apply.
 
