@@ -371,6 +371,16 @@ final class BuildCommand extends Command
         $themeAssetCopier = new ThemeAssetCopier();
         $assetsCopied += $themeAssetCopier->copy($this->themeRegistry, $outputDir);
 
+        foreach ($this->contentPipeline->collectAssetFiles() as $source => $target) {
+            $targetPath = $outputDir . '/' . $target;
+            $targetDir = dirname($targetPath);
+            if (!is_dir($targetDir) && !mkdir($targetDir, 0o755, true) && !is_dir($targetDir)) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $targetDir));
+            }
+            copy($source, $targetPath);
+            $assetsCopied++;
+        }
+
         if ($assetsCopied > 0) {
             $output->writeln("  Assets copied: <comment>$assetsCopied</comment>");
         }

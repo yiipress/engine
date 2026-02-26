@@ -24,4 +24,29 @@ final class ContentProcessorPipeline
 
         return $content;
     }
+
+    public function collectHeadAssets(string $processedContent): string
+    {
+        $assets = '';
+        foreach ($this->processors as $processor) {
+            if ($processor instanceof AssetProcessorInterface) {
+                $assets .= $processor->headAssets($processedContent);
+            }
+        }
+        return $assets;
+    }
+
+    /**
+     * @return array<string, string> source absolute path => target path relative to output dir
+     */
+    public function collectAssetFiles(): array
+    {
+        $files = [];
+        foreach ($this->processors as $processor) {
+            if ($processor instanceof AssetProcessorInterface) {
+                $files += $processor->assetFiles();
+            }
+        }
+        return $files;
+    }
 }

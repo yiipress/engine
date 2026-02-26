@@ -9,19 +9,23 @@ use App\Console\CleanCommand;
 use App\Console\NewCommand;
 use App\Highlighter\SyntaxHighlighter;
 use App\Processor\ContentProcessorPipeline;
+use App\Processor\Mermaid\MermaidProcessor;
 use App\Processor\MarkdownProcessor;
 use App\Processor\SyntaxHighlightProcessor;
-use App\Render\MarkdownRenderer;
 use Yiisoft\Definitions\Reference;
 
 return [
     SyntaxHighlighter::class => [
         'class' => SyntaxHighlighter::class,
     ],
+    MermaidProcessor::class => [
+        'class' => MermaidProcessor::class,
+    ],
     'contentPipeline' => [
         'class' => ContentProcessorPipeline::class,
         '__construct()' => [
             Reference::to(MarkdownProcessor::class),
+            Reference::to(MermaidProcessor::class),
             Reference::to(SyntaxHighlightProcessor::class),
         ],
     ],

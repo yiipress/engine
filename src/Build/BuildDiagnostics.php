@@ -78,9 +78,10 @@ final class BuildDiagnostics
         $source = $this->relativeSource($entry);
         $entryDir = $this->entryContentDir($entry);
 
-        preg_match_all('/\[([^]]*)]\(([^)]+)\)/', $body, $matches, PREG_SET_ORDER);
+        preg_match_all('/(!?)\[([^]]*)]\(([^)]+)\)/', $body, $matches, PREG_SET_ORDER);
         foreach ($matches as $match) {
-            $path = $match[2];
+            $isImage = $match[1] === '!';
+            $path = $match[3];
 
             if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
                 continue;
@@ -88,24 +89,28 @@ final class BuildDiagnostics
 
             $resolved = $this->resolveLinkPath($path, $entryDir);
 
-            // check images
-            if (str_starts_with($path, '/')) {
-                $absolute = $this->contentDir . $path;
+            // Check image.
+            if ($isImage) {
+                if (str_starts_with($path, '/')) {
+                    $absolute = $this->contentDir . $path;
+                } else {
+                    $absolute = $entryDir . '/' . $path;
+                }
+
+                $real = realpath($absolute);
+                if ($real !== false && is_file($real)) {
+                    continue;
+                }
+                $this->warnings[] = "$source: broken image \"$path\"";
             } else {
-                $absolute = $entryDir . '/' . $path;
+                // Check content.
+                if (isset($this->fileToPermalink[$resolved])) {
+                    continue;
+                }
+                $this->warnings[] = "$source: broken link to \"$path\"";
             }
 
-            $real = realpath($absolute);
-            if ($real !== false && is_file($real)) {
-                continue;
-            }
 
-            // check content
-            if (isset($this->fileToPermalink[$resolved])) {
-                continue;
-            }
-
-            $this->warnings[] = "$source: broken link to \"$path\"";
         }
     }
 

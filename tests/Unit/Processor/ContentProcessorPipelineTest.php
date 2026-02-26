@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Processor;
 
 use App\Content\Model\Entry;
+use App\Processor\AssetProcessorInterface;
 use App\Processor\ContentProcessorInterface;
 use App\Processor\ContentProcessorPipeline;
 use Closure;
@@ -25,8 +26,8 @@ final class ContentProcessorPipelineTest extends TestCase
     public function testProcessChainsProcessorsInOrder(): void
     {
         $pipeline = new ContentProcessorPipeline(
-            $this->createProcessor(fn (string $c) => $c . ' [A]'),
-            $this->createProcessor(fn (string $c) => $c . ' [B]'),
+            $this->createProcessor(fn(string $c) => $c . ' [A]'),
+            $this->createProcessor(fn(string $c) => $c . ' [B]'),
         );
 
         $result = $pipeline->process('start', $this->createEntry());
@@ -37,13 +38,75 @@ final class ContentProcessorPipelineTest extends TestCase
     public function testProcessorReceivesOutputOfPreviousProcessor(): void
     {
         $pipeline = new ContentProcessorPipeline(
-            $this->createProcessor(fn (string $c) => str_replace('foo', 'bar', $c)),
-            $this->createProcessor(fn (string $c) => str_replace('bar', 'baz', $c)),
+            $this->createProcessor(fn(string $c) => str_replace('foo', 'bar', $c)),
+            $this->createProcessor(fn(string $c) => str_replace('bar', 'baz', $c)),
         );
 
         $result = $pipeline->process('<p>foo</p>', $this->createEntry());
 
         assertSame('<p>baz</p>', $result);
+    }
+
+    public function testCollectHeadAssetsFromAssetAwareProcessors(): void
+    {
+        $assetProcessor = new class implements ContentProcessorInterface, AssetProcessorInterface {
+            public function process(string $content, Entry $entry): string
+            {
+                return $content;
+            }
+            public function headAssets(string $processedContent): string
+            {
+                return '<script src="test.js"></script>';
+            }
+            public function assetFiles(): array
+            {
+                return [];
+            }
+        };
+
+        $plainProcessor = $this->createProcessor(fn(string $c) => $c);
+
+        $pipeline = new ContentProcessorPipeline($plainProcessor, $assetProcessor);
+
+        assertSame('<script src="test.js"></script>', $pipeline->collectHeadAssets('content'));
+    }
+
+    public function testCollectHeadAssetsReturnsEmptyForNoAssetProcessors(): void
+    {
+        $pipeline = new ContentProcessorPipeline(
+            $this->createProcessor(fn(string $c) => $c),
+        );
+
+        assertSame('', $pipeline->collectHeadAssets('content'));
+    }
+
+    public function testCollectAssetFilesFromAssetAwareProcessors(): void
+    {
+        $assetProcessor = new class implements ContentProcessorInterface, AssetProcessorInterface {
+            public function process(string $content, Entry $entry): string
+            {
+                return $content;
+            }
+            public function headAssets(string $processedContent): string
+            {
+                return '';
+            }
+            public function assetFiles(): array
+            {
+                return ['/src/style.css' => 'assets/style.css'];
+            }
+        };
+
+        $pipeline = new ContentProcessorPipeline($assetProcessor);
+
+        assertSame(['/src/style.css' => 'assets/style.css'], $pipeline->collectAssetFiles());
+    }
+
+    public function testCollectAssetFilesReturnsEmptyForNoAssetProcessors(): void
+    {
+        $pipeline = new ContentProcessorPipeline();
+
+        assertSame([], $pipeline->collectAssetFiles());
     }
 
     private function createEntry(): Entry
