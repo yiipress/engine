@@ -30,7 +30,8 @@ Two separate pipelines are configured via Yii3 DI container in `config/common/di
 
 ### MarkdownProcessor
 
-Converts markdown to HTML using md4c. Accepts `MarkdownConfig` via constructor for feature toggles (tables, strikethrough, tasklists, etc.).
+Converts Markdown to HTML using md4c. Accepts `MarkdownConfig` via constructor for feature toggles 
+(tables, strikethrough, tasklists, etc.).
 
 ### SyntaxHighlightProcessor
 
@@ -100,7 +101,8 @@ gantt
 The processor converts the code block to a `<div class="mermaid">` element.
 Mermaid.js (loaded via CDN in the template) renders the diagram as SVG in the browser.
 
-Supported diagram types: flowcharts, sequence diagrams, Gantt charts, pie charts, class diagrams, state diagrams, user journey maps, and more.
+Supported diagram types: flowcharts, sequence diagrams, Gantt charts, pie charts, class diagrams, state diagrams, 
+user journey maps, and more.
 
 **Note:** Mermaid.js is only loaded on pages that contain diagrams to reduce bandwidth.
 
