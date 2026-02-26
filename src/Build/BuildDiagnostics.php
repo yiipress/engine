@@ -89,24 +89,28 @@ final class BuildDiagnostics
 
             $resolved = $this->resolveLinkPath($path, $entryDir);
 
-            // check images
-            if (str_starts_with($path, '/')) {
-                $absolute = $this->contentDir . $path;
+            // Check image.
+            if ($isImage) {
+                if (str_starts_with($path, '/')) {
+                    $absolute = $this->contentDir . $path;
+                } else {
+                    $absolute = $entryDir . '/' . $path;
+                }
+
+                $real = realpath($absolute);
+                if ($real !== false && is_file($real)) {
+                    continue;
+                }
+                $this->warnings[] = "$source: broken image \"$path\"";
             } else {
-                $absolute = $entryDir . '/' . $path;
+                // Check content.
+                if (isset($this->fileToPermalink[$resolved])) {
+                    continue;
+                }
+                $this->warnings[] = "$source: broken link to \"$path\"";
             }
 
-            $real = realpath($absolute);
-            if ($real !== false && is_file($real)) {
-                continue;
-            }
 
-            // check content
-            if (isset($this->fileToPermalink[$resolved])) {
-                continue;
-            }
-
-            $this->warnings[] = "$source: broken link to \"$path\"";
         }
     }
 
