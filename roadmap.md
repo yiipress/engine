@@ -15,7 +15,7 @@
 
 - [x] RSS/Atom feed generation. Content should be generated using same plugins as for HTML content
 - [x] Sitemap generation
-- [x] Tags and categories (taxonomies)
+- [ ] Tags and categories (taxonomies)
 - [x] Draft support (front matter `draft: true` flag, exclude from build by default)
 - [x] Entry date handling and chronological sorting
 - [x] Entry summary/excerpt (auto-generated or manual via front matter)
@@ -64,7 +64,7 @@
 - [ ] Image optimization (resize, compress, modern formats)
 - [ ] CSS/JS processing (minification)
 - [ ] Asset fingerprinting / cache busting
-- [ ] Static file copying (fonts, downloads, PDFs from source to output)
+- [x] Static file copying (fonts, downloads, PDFs from source to output)
 
 ## Priority 6: SEO and web standards
 
@@ -79,7 +79,7 @@
 
 - [ ] Built-in shortcodes (YouTube, Vimeo, figure, etc.) as a plugin
 - [ ] Table of contents generation from headings as a plugin
-- [ ] Diagram support (Mermaid) as a plugin
+- [x] Diagram support (Mermaid) as a plugin
 - [ ] oEmbed support (auto-expanding URLs to embeds) as a plugin
 
 ## Priority 8: Advanced features
