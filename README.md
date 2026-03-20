@@ -14,4 +14,4 @@ composer create-project yiipress/engine myblog
 
 ## Documentation
 
-Read [docs](docs) directory for documentation.
+Read [docs](docs) directory or [its rendered version](https://yiipress.github.io/engine/) for documentation.
