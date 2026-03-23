@@ -7,6 +7,7 @@ declare(strict_types=1);
  * @var string $entryTitle
  * @var string $content
  * @var string $date
+ * @var string $dateISO
  * @var string $author
  * @var string $collection
  * @var string $headAssets
@@ -34,7 +35,7 @@ use App\Content\Model\Navigation;
 <?php if ($date !== '' || $author !== ''): ?>
             <div class="entry-meta">
 <?php if ($date !== ''): ?>
-                <time datetime="<?= htmlspecialchars($date) ?>"><?= htmlspecialchars($date) ?></time>
+                <time datetime="<?= htmlspecialchars($dateISO) ?>"><?= htmlspecialchars($date) ?></time>
 <?php endif; ?>
 <?php if ($author !== ''): ?>
                 <span class="author"><?= htmlspecialchars($author) ?></span>

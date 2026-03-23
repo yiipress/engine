@@ -72,15 +72,16 @@ themes/minimal/
 
 ### Entry template (`entry.php`)
 
-| Variable      | Type          | Description                              |
-|---------------|---------------|------------------------------------------|
-| `$siteTitle`  | `string`      | Site title from `config.yaml`            |
-| `$entryTitle` | `string`      | Entry title                              |
-| `$content`    | `string`      | Rendered HTML content                    |
-| `$date`       | `string`      | Formatted date (`Y-m-d`) or empty string |
-| `$author`     | `string`      | Comma-separated author names             |
-| `$collection` | `string`      | Collection name the entry belongs to     |
-| `$nav`        | `?Navigation` | Navigation object or `null`              |
+| Variable      | Type          | Description                                                      |
+|---------------|---------------|------------------------------------------------------------------|
+| `$siteTitle`  | `string`      | Site title from `config.yaml`                                    |
+| `$entryTitle` | `string`      | Entry title                                                      |
+| `$content`    | `string`      | Rendered HTML content                                            |
+| `$date`       | `string`      | Formatted date using `date_format` from `config.yaml` or empty   |
+| `$dateISO`    | `string`      | ISO 8601 date (`Y-m-d`) for HTML5 `datetime` attribute or empty |
+| `$author`     | `string`      | Comma-separated author names                                     |
+| `$collection` | `string`      | Collection name the entry belongs to                             |
+| `$nav`        | `?Navigation` | Navigation object or `null`                                      |
 
 Example:
 
@@ -88,7 +89,7 @@ Example:
 <article>
     <h1><?= htmlspecialchars($entryTitle) ?></h1>
 <?php if ($date !== ''): ?>
-    <time datetime="<?= htmlspecialchars($date) ?>"><?= htmlspecialchars($date) ?></time>
+    <time datetime="<?= htmlspecialchars($dateISO) ?>"><?= htmlspecialchars($date) ?></time>
 <?php endif; ?>
 <?php if ($author !== ''): ?>
     <span class="author"><?= htmlspecialchars($author) ?></span>
@@ -96,6 +97,8 @@ Example:
     <div class="content"><?= $content ?></div>
 </article>
 ```
+
+**Note:** Use `$dateISO` for the `datetime` attribute (HTML5 compliance) and `$date` for display text (uses configured format).
 
 ### Collection listing template (`collection_listing.php`)
 

@@ -20,7 +20,7 @@ charset: UTF-8
 
 default_author: john-doe
 
-date_format: F j, Y
+date_format: Y.m.d
 entries_per_page: 10
 
 permalink: /:collection/:slug/
@@ -42,7 +42,7 @@ params:
 - **language** — default language code (e.g., `en`, `ru`)
 - **charset** — character encoding (default: `UTF-8`)
 - **default_author** — author slug (referencing a file in `content/authors/`), used when entries have no explicit `authors` field
-- **date_format** — PHP date format string for displaying dates in templates
+- **date_format** — PHP date format string for displaying dates in templates (e.g., `Y.m.d` for "2026.03.23", `F j, Y` for "March 23, 2026"). See [PHP date format](https://www.php.net/manual/en/datetime.format.php) for all available format characters
 - **entries_per_page** — default pagination size (overridden by collection `_collection.yaml`)
 - **permalink** — default permalink pattern (overridden by collection or entry)
 - **taxonomies** — list of enabled taxonomy types

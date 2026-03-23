@@ -102,7 +102,8 @@ final class EntryRenderer
             'siteTitle' => $siteConfig->title,
             'entryTitle' => $entry->title,
             'content' => $content,
-            'date' => $entry->date?->format('Y-m-d') ?? '',
+            'date' => $entry->date?->format($siteConfig->dateFormat) ?? '',
+            'dateISO' => $entry->date?->format('Y-m-d') ?? '',
             'author' => implode(', ', array_map(
                 fn (string $authorSlug) => $this->authors[$authorSlug]->title ?? $authorSlug,
                 $entry->authors

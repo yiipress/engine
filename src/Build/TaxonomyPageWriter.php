@@ -100,7 +100,7 @@ final readonly class TaxonomyPageWriter
             $entryData[] = [
                 'title' => $entry->title,
                 'url' => $url,
-                'date' => $entry->date?->format('Y-m-d') ?? '',
+                'date' => $entry->date?->format($siteConfig->dateFormat) ?? '',
             ];
         }
 
