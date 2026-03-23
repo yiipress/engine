@@ -70,6 +70,7 @@ a:hover { color: var(--c-link-hover); text-decoration: underline; }
     align-items: center;
     gap: .75rem;
 }
+.archive-link,
 .feed-link {
     display: flex;
     align-items: center;
@@ -81,12 +82,19 @@ a:hover { color: var(--c-link-hover); text-decoration: underline; }
     transition: border-color .2s, color .2s, background .2s;
     text-decoration: none;
 }
+.archive-link:hover {
+    border-color: var(--c-link);
+    color: var(--c-link);
+    background: rgba(59, 130, 246, 0.1);
+    text-decoration: none;
+}
 .feed-link:hover {
     border-color: #f26522;
     color: #f26522;
     background: rgba(242, 101, 34, 0.1);
     text-decoration: none;
 }
+.archive-link svg,
 .feed-link svg {
     display: block;
 }
@@ -184,6 +192,18 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
 .content th, .content td { padding: .5rem .75rem; border: 1px solid var(--c-border); text-align: left; }
 .content th { background: var(--c-code-bg); font-weight: 600; }
 .content hr { border: none; border-top: 1px solid var(--c-border); margin: 2rem 0; }
+
+/* Archive */
+.archive-years {
+    list-style: none;
+    margin: 2rem 0;
+}
+.archive-years li {
+    padding: .5rem 0;
+}
+.archive-years a {
+    font-size: 1.125rem;
+}
 
 /* Entry list */
 .entry-list { list-style: none; }

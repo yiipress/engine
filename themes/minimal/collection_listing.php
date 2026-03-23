@@ -29,6 +29,9 @@ $pageTitle = $collectionTitle . ($pagination['currentPage'] > 1 ? ' — Page ' .
         <div class="collection-header">
             <h1><?= htmlspecialchars($collectionTitle) ?></h1>
             <div class="collection-actions">
+                <a href="<?= $rootPath . htmlspecialchars($collectionName) ?>/archive/" class="archive-link" title="Browse by Date" aria-label="Archive">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                </a>
                 <a href="<?= $rootPath . htmlspecialchars($collectionName) ?>/rss.xml" class="feed-link" title="RSS Feed" aria-label="RSS Feed">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg>
                 </a>

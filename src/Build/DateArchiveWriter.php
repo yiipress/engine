@@ -48,6 +48,16 @@ final readonly class DateArchiveWriter
 
         $pageCount = 0;
 
+        // Write archive index page
+        $this->writeArchiveIndexPage(
+            $siteConfig,
+            $collection,
+            array_keys($byYear),
+            $outputDir,
+            $navigation,
+        );
+        $pageCount++;
+
         foreach ($byYear as $year => $yearEntries) {
             $this->writeYearlyPage(
                 $siteConfig,
@@ -78,6 +88,35 @@ final readonly class DateArchiveWriter
         }
 
         return $pageCount;
+    }
+
+    /**
+     * @param list<string> $years
+     */
+    private function writeArchiveIndexPage(
+        SiteConfig $siteConfig,
+        Collection $collection,
+        array $years,
+        string $outputDir,
+        ?Navigation $navigation,
+    ): void {
+        $siteTitle = $siteConfig->title;
+        $collectionName = $collection->name;
+        $collectionTitle = $collection->title;
+        $nav = $navigation;
+        $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
+        $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/archive/');
+
+        ob_start();
+        require $this->templateResolver->resolve('archive_index');
+        $html = ob_get_clean();
+
+        $dir = $outputDir . '/' . $collection->name . '/archive';
+        if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
+            throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
+        }
+
+        file_put_contents($dir . '/index.html', $html);
     }
 
     /**
