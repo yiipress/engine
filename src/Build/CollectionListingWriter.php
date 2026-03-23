@@ -93,6 +93,7 @@ final readonly class CollectionListingWriter
     ): string {
         $siteTitle = $siteConfig->title;
         $collectionTitle = $collection->title;
+        $collectionName = $collection->name;
         $nav = $navigation;
         $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
 
