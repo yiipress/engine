@@ -10,4 +10,5 @@ $headAssets ??= '';
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= htmlspecialchars($title) ?></title>
     <link rel="stylesheet" href="<?= $rootPath ?>assets/theme/style.css">
+    <script src="<?= $rootPath ?>assets/theme/image-zoom.js" defer></script>
 <?= $headAssets ?>
