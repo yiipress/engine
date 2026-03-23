@@ -12,6 +12,7 @@ use App\Processor\ContentProcessorPipeline;
 use App\Processor\Mermaid\MermaidProcessor;
 use App\Processor\MarkdownProcessor;
 use App\Processor\SyntaxHighlightProcessor;
+use App\Processor\TagLinkProcessor;
 use Yiisoft\Definitions\Reference;
 
 return [
@@ -25,6 +26,7 @@ return [
         'class' => ContentProcessorPipeline::class,
         '__construct()' => [
             Reference::to(MarkdownProcessor::class),
+            Reference::to(TagLinkProcessor::class),
             Reference::to(MermaidProcessor::class),
             Reference::to(SyntaxHighlightProcessor::class),
         ],

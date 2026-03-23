@@ -121,6 +121,21 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
     transition: background .2s;
 }
 .content img { max-width: 100%; height: auto; border-radius: .5rem; margin: 1.25rem 0; }
+.content a.tag-link {
+    display: inline-block;
+    background: var(--c-tag-bg);
+    color: var(--c-tag-text);
+    padding: .125rem .5rem;
+    border-radius: .25rem;
+    font-size: .9em;
+    text-decoration: none;
+    transition: background .2s, color .2s;
+}
+.content a.tag-link:hover {
+    background: var(--c-link);
+    color: #fff;
+    text-decoration: none;
+}
 .content table { width: 100%; border-collapse: collapse; margin: 1.25rem 0; font-size: .9375rem; }
 .content th, .content td { padding: .5rem .75rem; border: 1px solid var(--c-border); text-align: left; }
 .content th { background: var(--c-code-bg); font-weight: 600; }
