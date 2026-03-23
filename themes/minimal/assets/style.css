@@ -205,6 +205,30 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
     font-size: 1.125rem;
 }
 
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: .125rem .5rem;
+    font-size: .75rem;
+    font-weight: 600;
+    border-radius: .25rem;
+    margin-left: .5rem;
+    text-transform: uppercase;
+    letter-spacing: .025em;
+}
+.badge-draft {
+    background: #fbbf24;
+    color: #78350f;
+}
+.badge-future {
+    background: #60a5fa;
+    color: #1e3a8a;
+}
+.entry-meta .badge {
+    margin-left: 0;
+    margin-right: .5rem;
+}
+
 /* Entry list */
 .entry-list { list-style: none; }
 .entry-list li { padding: 1rem 0; border-bottom: 1px solid var(--c-border); }

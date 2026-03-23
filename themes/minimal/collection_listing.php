@@ -44,7 +44,13 @@ $pageTitle = $collectionTitle . ($pagination['currentPage'] > 1 ? ' — Page ' .
 <?php foreach ($entries as $entry): ?>
             <li>
                 <a href="<?= htmlspecialchars($entry['url']) ?>"><?= htmlspecialchars($entry['title']) ?></a>
-<?php if ($entry['date'] !== ''): ?>
+<?php if ($entry['draft']): ?>
+                <span class="badge badge-draft">Draft</span>
+<?php endif; ?>
+<?php if ($entry['dateISO'] !== '' && $entry['dateISO'] > date('Y-m-d')): ?>
+                <span class="badge badge-future">Scheduled: <?= htmlspecialchars($entry['date']) ?></span>
+<?php endif; ?>
+<?php if ($entry['date'] !== '' && $entry['dateISO'] <= date('Y-m-d')): ?>
                 <time><?= htmlspecialchars($entry['date']) ?></time>
 <?php endif; ?>
 <?php if ($entry['summary'] !== ''): ?>

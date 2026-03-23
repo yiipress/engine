@@ -29,6 +29,7 @@ use App\Content\Model\SiteConfig;
 use App\Content\Parser\ContentParser;
 use App\Content\PermalinkResolver;
 use App\Content\TaxonomyCollector;
+use App\Environment;
 use App\Processor\ContentProcessorPipeline;
 use DateTimeImmutable;
 use FilesystemIterator;
@@ -129,8 +130,8 @@ final class BuildCommand extends Command
         $workersOption = $input->getOption('workers');
         $workerCount = max(1, (int) $workersOption);
         $noCache = (bool) $input->getOption('no-cache');
-        $includeDrafts = (bool) $input->getOption('drafts');
-        $includeFuture = (bool) $input->getOption('future');
+        $includeDrafts = $input->getOption('drafts') !== false ? (bool) $input->getOption('drafts') : Environment::isDev();
+        $includeFuture = $input->getOption('future') !== false ? (bool) $input->getOption('future') : Environment::isDev();
         $dryRun = (bool) $input->getOption('dry-run');
 
         if (!is_dir($contentDir)) {

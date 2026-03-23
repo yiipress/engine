@@ -51,6 +51,8 @@ final readonly class CollectionListingWriter
                     'title' => $entry->title,
                     'url' => RelativePathHelper::relativize(PermalinkResolver::resolve($entry, $collection), $rootPath),
                     'date' => $entry->date?->format($siteConfig->dateFormat) ?? '',
+                    'dateISO' => $entry->date?->format('Y-m-d') ?? '',
+                    'draft' => $entry->draft,
                     'summary' => $entry->summary(),
                 ];
             }
@@ -80,7 +82,7 @@ final readonly class CollectionListingWriter
     }
 
     /**
-     * @param list<array{title: string, url: string, date: string, summary: string}> $entries
+     * @param list<array{title: string, url: string, date: string, dateISO: string, draft: bool, summary: string}> $entries
      * @param array{currentPage: int, totalPages: int, previousUrl: string, nextUrl: string} $pagination
      */
     private function renderPage(

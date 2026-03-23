@@ -8,6 +8,7 @@ declare(strict_types=1);
  * @var string $content
  * @var string $date
  * @var string $dateISO
+ * @var bool $draft
  * @var string $author
  * @var string $collection
  * @var string $headAssets
@@ -32,9 +33,14 @@ use App\Content\Model\Navigation;
     <div class="container">
         <article>
             <h1><?= htmlspecialchars($entryTitle) ?></h1>
-<?php if ($date !== '' || $author !== ''): ?>
+<?php if ($draft || ($dateISO !== '' && $dateISO > date('Y-m-d')) || $date !== '' || $author !== ''): ?>
             <div class="entry-meta">
-<?php if ($date !== ''): ?>
+<?php if ($draft): ?>
+                <span class="badge badge-draft">Draft</span>
+<?php endif; ?>
+<?php if ($dateISO !== '' && $dateISO > date('Y-m-d')): ?>
+                <span class="badge badge-future">Scheduled: <?= htmlspecialchars($date) ?></span>
+<?php elseif ($date !== ''): ?>
                 <time datetime="<?= htmlspecialchars($dateISO) ?>"><?= htmlspecialchars($date) ?></time>
 <?php endif; ?>
 <?php if ($author !== ''): ?>

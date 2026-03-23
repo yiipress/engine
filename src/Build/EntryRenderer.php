@@ -104,6 +104,7 @@ final class EntryRenderer
             'content' => $content,
             'date' => $entry->date?->format($siteConfig->dateFormat) ?? '',
             'dateISO' => $entry->date?->format('Y-m-d') ?? '',
+            'draft' => $entry->draft,
             'author' => implode(', ', array_map(
                 fn (string $authorSlug) => $this->authors[$authorSlug]->title ?? $authorSlug,
                 $entry->authors
