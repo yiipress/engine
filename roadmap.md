@@ -73,7 +73,7 @@
 - [ ] Configurable `robots.txt` generation
 - [ ] Redirect support (e.g., when changing permalinks, output redirect HTML or config)
 - [ ] 404 page in static build output for static hosting providers (Netlify, GitHub Pages, etc.)
-- [ ] Deployment helpers/docs for common static hosts (GitHub Pages, Netlify, Vercel, Cloudflare Pages)
+- [x] Deployment helpers/docs for common static hosts (GitHub Pages, Netlify, Vercel, Cloudflare Pages)
 
 ## Priority 7: Content extensions
 
