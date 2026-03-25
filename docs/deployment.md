@@ -14,10 +14,11 @@ The generated files will be placed in the output directory (default: `_site`). Y
 
 The simplest deployment option is to upload the build output directly to your hosting provider's webroot. First, generate the static files in your local development environment (where YiiPress is installed via Docker):
 
-1. Build your site: `./yii build`
-2. Open your hosting control panel or FTP client.
-3. Upload the entire contents of the `_site/` directory to your server's webroot folder. This folder is commonly named `www`, `public_html`, `htdocs`, or `html` depending on your provider.
-4. Your site is live — no PHP runtime or database is required on the server.
+1. Enter the development shell: `make shell`
+2. Build your site: `./yii build`
+3. Open your hosting control panel or FTP client.
+4. Upload the entire contents of the `_site/` directory to your server's webroot folder. This folder is commonly named `www`, `public_html`, `htdocs`, or `html` depending on your provider.
+5. Your site is live — no PHP runtime or database is required on the server.
 
 ## GitHub Pages
 
