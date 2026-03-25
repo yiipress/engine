@@ -22,6 +22,12 @@ final class TelegramContentImporter implements ContentImporterInterface
                 description: 'Path to the Telegram export directory containing result.json',
                 required: true,
             ),
+            new ImporterOption(
+                name: 'ignore_message_ids',
+                description: 'Comma-separated list of message IDs to skip during import',
+                required: false,
+                default: '',
+            ),
         ];
     }
 
@@ -97,6 +103,8 @@ final class TelegramContentImporter implements ContentImporterInterface
 
         $totalMessages = count($data['messages']);
 
+        $ignoredIds = $this->parseIgnoredIds($options['ignore_message_ids'] ?? '');
+
         $channel = null;
         foreach ($data['messages'] as $dataMessage) {
             if (
@@ -109,6 +117,11 @@ final class TelegramContentImporter implements ContentImporterInterface
             }
 
             if ($dataMessage['type'] !== 'message') {
+                $skippedFiles[] = $dataMessage['id'];
+                continue;
+            }
+
+            if (isset($dataMessage['id']) && in_array($dataMessage['id'], $ignoredIds, true)) {
                 $skippedFiles[] = $dataMessage['id'];
                 continue;
             }
@@ -240,6 +253,23 @@ final class TelegramContentImporter implements ContentImporterInterface
         $config .= "feed: true\n";
 
         file_put_contents($configPath, $config);
+    }
+
+    private function parseIgnoredIds(string $ignoreMessageIds): array
+    {
+        if ($ignoreMessageIds === '') {
+            return [];
+        }
+
+        $ids = [];
+        foreach (explode(',', $ignoreMessageIds) as $id) {
+            $trimmed = trim($id);
+            if ($trimmed !== '' && is_numeric($trimmed)) {
+                $ids[] = (int) $trimmed;
+            }
+        }
+
+        return $ids;
     }
 
     private function yamlEscape(string $value): string

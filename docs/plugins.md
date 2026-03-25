@@ -249,7 +249,14 @@ new ImporterOption(
 
 ### TelegramContentImporter
 
-Imports messages from a Telegram Desktop channel export (JSON format). Declares a single required `--directory` option. See [commands.md](commands.md#yii-import) for usage details.
+Imports messages from a Telegram Desktop channel export (JSON format).
+
+**Options:**
+
+- `--directory` — Path to the Telegram export directory containing `result.json` (required)
+- `--ignore_message_ids` — Comma-separated list of message IDs to skip during import (optional)
+
+See [commands.md](commands.md#yii-import) for usage details.
 
 ## Writing a custom importer
 

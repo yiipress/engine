@@ -320,14 +320,17 @@ final class TelegramContentImporterTest extends TestCase
         assertSame('telegram', $importer->name());
     }
 
-    public function testDeclaresDirectoryOption(): void
+    public function testDeclaresOptions(): void
     {
         $importer = new TelegramContentImporter();
         $options = $importer->options();
 
-        assertCount(1, $options);
+        assertCount(2, $options);
         assertSame('directory', $options[0]->name);
         assertSame(true, $options[0]->required);
+        assertSame('ignore_message_ids', $options[1]->name);
+        assertSame(false, $options[1]->required);
+        assertSame('', $options[1]->default);
     }
 
     public function testReturnsWarningWhenDirectoryOptionMissing(): void
@@ -388,6 +391,113 @@ final class TelegramContentImporterTest extends TestCase
 
         $content = file_get_contents($result->importedFiles()[0]);
         assertSame(1, substr_count($content, '  - php'));
+    }
+
+    public function testSkipsIgnoredMessageIds(): void
+    {
+        $this->writeResultJson([
+            'type' => 'public_channel',
+            'messages' => [
+                [
+                    'id' => 1,
+                    'type' => 'message',
+                    'date' => '2024-03-15T10:00:00',
+                    'text' => 'First post',
+                    'text_entities' => [['type' => 'plain', 'text' => 'First post']],
+                ],
+                [
+                    'id' => 2,
+                    'type' => 'message',
+                    'date' => '2024-03-15T11:00:00',
+                    'text' => 'Second post',
+                    'text_entities' => [['type' => 'plain', 'text' => 'Second post']],
+                ],
+                [
+                    'id' => 3,
+                    'type' => 'message',
+                    'date' => '2024-03-15T12:00:00',
+                    'text' => 'Third post',
+                    'text_entities' => [['type' => 'plain', 'text' => 'Third post']],
+                ],
+            ],
+        ]);
+
+        $importer = new TelegramContentImporter();
+        $result = $importer->import(
+            ['directory' => $this->sourceDir, 'ignore_message_ids' => '1,3'],
+            $this->targetDir,
+            'blog',
+        );
+
+        assertSame(3, $result->totalMessages());
+        assertSame(1, $result->importedCount());
+        assertCount(2, $result->skippedFiles());
+        assertSame([1, 3], $result->skippedFiles());
+        assertCount(1, $result->importedFiles());
+
+        $content = file_get_contents($result->importedFiles()[0]);
+        assertStringContainsString('title: Second post', $content);
+    }
+
+    public function testIgnoresEmptySpacesInIgnoredMessageIds(): void
+    {
+        $this->writeResultJson([
+            'type' => 'public_channel',
+            'messages' => [
+                [
+                    'id' => 1,
+                    'type' => 'message',
+                    'date' => '2024-03-15T10:00:00',
+                    'text' => 'First post',
+                    'text_entities' => [['type' => 'plain', 'text' => 'First post']],
+                ],
+                [
+                    'id' => 2,
+                    'type' => 'message',
+                    'date' => '2024-03-15T11:00:00',
+                    'text' => 'Second post',
+                    'text_entities' => [['type' => 'plain', 'text' => 'Second post']],
+                ],
+            ],
+        ]);
+
+        $importer = new TelegramContentImporter();
+        $result = $importer->import(
+            ['directory' => $this->sourceDir, 'ignore_message_ids' => ' 1 , 2 '],
+            $this->targetDir,
+            'blog',
+        );
+
+        assertSame(2, $result->totalMessages());
+        assertSame(0, $result->importedCount());
+        assertSame([1, 2], $result->skippedFiles());
+    }
+
+    public function testIgnoresNonNumericIdsInIgnoredMessageIds(): void
+    {
+        $this->writeResultJson([
+            'type' => 'public_channel',
+            'messages' => [
+                [
+                    'id' => 1,
+                    'type' => 'message',
+                    'date' => '2024-03-15T10:00:00',
+                    'text' => 'First post',
+                    'text_entities' => [['type' => 'plain', 'text' => 'First post']],
+                ],
+            ],
+        ]);
+
+        $importer = new TelegramContentImporter();
+        $result = $importer->import(
+            ['directory' => $this->sourceDir, 'ignore_message_ids' => 'abc, ,1,def'],
+            $this->targetDir,
+            'blog',
+        );
+
+        assertSame(1, $result->totalMessages());
+        assertSame(0, $result->importedCount());
+        assertSame([1], $result->skippedFiles());
     }
 
     /**
