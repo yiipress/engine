@@ -108,6 +108,60 @@ user journey maps, and more.
 
 For full syntax reference, see [Mermaid documentation](https://mermaid.js.org/intro/).
 
+### YouTubeProcessor
+
+Expands YouTube shortcodes into responsive embed HTML before markdown processing.
+
+```markdown
+[youtube id="dQw4w9WgXcQ" /]
+```
+
+Optional start time (in seconds):
+
+```markdown
+[youtube id="dQw4w9WgXcQ" start="30" /]
+```
+
+With custom dimensions:
+
+```markdown
+[youtube id="dQw4w9WgXcQ" width="640" height="360" /]
+```
+
+Generated HTML includes:
+- Responsive iframe container with `.video-container` wrapper
+- Lazy loading (`loading="lazy"`)
+- Fullscreen support (`allowfullscreen`)
+- Accessible title attribute
+- CSS classes: `.shortcode`, `.shortcode-youtube`
+
+### VimeoProcessor
+
+Expands Vimeo shortcodes into responsive embed HTML before markdown processing.
+
+```markdown
+[vimeo id="123456789" /]
+```
+
+With custom dimensions:
+
+```markdown
+[vimeo id="123456789" width="640" height="360" /]
+```
+
+Generated HTML includes:
+- Responsive iframe container with `.video-container` wrapper
+- Privacy-friendly embed (`dnt=1` - do not track)
+- Lazy loading (`loading="lazy"`)
+- Fullscreen support (`allowfullscreen`)
+- Accessible title attribute
+- CSS classes: `.shortcode`, `.shortcode-vimeo`
+
+Both shortcode processors support:
+- Self-closing (`/]`) and regular syntax
+- Double quotes, single quotes, or no quotes for attribute values (no spaces)
+- Case-insensitive shortcode names
+
 ## Writing a custom processor
 
 Create a class implementing `ContentProcessorInterface`. For example, a shortcode processor:

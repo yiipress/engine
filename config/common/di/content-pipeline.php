@@ -10,6 +10,8 @@ use App\Console\NewCommand;
 use App\Highlighter\SyntaxHighlighter;
 use App\Processor\ContentProcessorPipeline;
 use App\Processor\Mermaid\MermaidProcessor;
+use App\Processor\Shortcode\VimeoProcessor;
+use App\Processor\Shortcode\YouTubeProcessor;
 use App\Processor\MarkdownProcessor;
 use App\Processor\SyntaxHighlightProcessor;
 use App\Processor\TagLinkProcessor;
@@ -22,9 +24,17 @@ return [
     MermaidProcessor::class => [
         'class' => MermaidProcessor::class,
     ],
+    YouTubeProcessor::class => [
+        'class' => YouTubeProcessor::class,
+    ],
+    VimeoProcessor::class => [
+        'class' => VimeoProcessor::class,
+    ],
     'contentPipeline' => [
         'class' => ContentProcessorPipeline::class,
         '__construct()' => [
+            Reference::to(YouTubeProcessor::class),
+            Reference::to(VimeoProcessor::class),
             Reference::to(MarkdownProcessor::class),
             Reference::to(TagLinkProcessor::class),
             Reference::to(MermaidProcessor::class),
