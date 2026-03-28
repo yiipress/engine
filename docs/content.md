@@ -116,7 +116,7 @@ extra:
 - **theme** — theme name for this entry; overrides the site-level default (see [Templates](template.md))
 - **weight** — integer for custom sorting in non-blog collections (lower = first)
 - **language** — language code for multilingual content (e.g., `en`, `ru`)
-- **redirect_to** — URL to redirect to (generates redirect HTML instead of content)
+- **redirect_to** — URL to redirect to; generates a redirect HTML page (with `<meta http-equiv="refresh">`, JS `window.location.replace()`, and `<link rel="canonical">`) instead of rendering content. Redirect entries are excluded from feeds, sitemaps, listings, archives, and taxonomy pages
 - **extra** — arbitrary key-value pairs accessible in templates
 
 ### Internal links

@@ -71,7 +71,7 @@
 - [x] Open Graph / meta tag helpers
 - [x] Canonical URL support
 - [x] Configurable `robots.txt` generation
-- [ ] Redirect support (e.g., when changing permalinks, output redirect HTML or config)
+- [x] Redirect support (e.g., when changing permalinks, output redirect HTML or config)
 - [x] 404 page in static build output for static hosting providers (Netlify, GitHub Pages, etc.)
 - [x] Deployment helpers/docs for common static hosts (GitHub Pages, Netlify, Vercel, Cloudflare Pages)
 

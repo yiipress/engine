@@ -282,14 +282,18 @@ final class BuildCommandTest extends TestCase
 
         assertSame(0, $exitCode);
 
+        // Draft entry with redirect_to generates a redirect page, not a normal entry
         $draftFile = $this->outputDir . '/blog/custom-slug/index.html';
         assertFileExists($draftFile);
+        $html = file_get_contents($draftFile);
+        assertStringContainsString('http-equiv="refresh"', $html);
 
+        // Redirect entries are excluded from sitemap and feeds
         $sitemap = file_get_contents($this->outputDir . '/sitemap.xml');
-        assertStringContainsString('custom-slug', $sitemap);
+        assertStringNotContainsString('custom-slug', $sitemap);
 
         $atom = file_get_contents($this->outputDir . '/blog/feed.xml');
-        assertStringContainsString('No Date Post', $atom);
+        assertStringNotContainsString('No Date Post', $atom);
     }
 
     public function testBuildExcludesFutureDatedEntriesByDefault(): void
@@ -759,6 +763,39 @@ final class BuildCommandTest extends TestCase
         assertStringContainsString('minimal-layout', $html);
         assertStringContainsString('<h1>Layout Test</h1>', $html);
         assertStringContainsString('This entry uses a custom layout.', $html);
+    }
+
+    public function testBuildWritesRedirectHtmlForRedirectEntries(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' --no-cache'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        assertSame(0, $exitCode, implode("\n", $output));
+
+        $redirectFile = $this->outputDir . '/blog/old-url-post/index.html';
+        assertFileExists($redirectFile);
+
+        $html = file_get_contents($redirectFile);
+        assertNotFalse($html);
+        assertStringContainsString('http-equiv="refresh"', $html);
+        assertStringContainsString('https://example.com/new-location/', $html);
+        assertStringContainsString('window.location.replace', $html);
+
+        $sitemap = file_get_contents($this->outputDir . '/sitemap.xml');
+        assertStringNotContainsString('old-url-post', $sitemap);
+
+        $atom = file_get_contents($this->outputDir . '/blog/feed.xml');
+        assertStringNotContainsString('Old URL Post', $atom);
     }
 
     private function manifestPath(): string

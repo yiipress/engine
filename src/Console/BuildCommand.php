@@ -12,6 +12,7 @@ use App\Build\CollectionListingWriter;
 use App\Build\ContentAssetCopier;
 use App\Build\DateArchiveWriter;
 use App\Build\NotFoundPageWriter;
+use App\Build\RedirectPageWriter;
 use App\Build\RobotsTxtGenerator;
 use App\Build\ThemeAssetCopier;
 use App\Build\EntryRenderer;
@@ -280,6 +281,7 @@ final class BuildCommand extends Command
         $now = new DateTimeImmutable();
 
         $allTasks = [];
+        $redirectTasks = [];
         $entriesByCollection = [];
         foreach ($collections as $collectionName => $collection) {
             $filtered = [];
@@ -290,13 +292,20 @@ final class BuildCommand extends Command
                 if (!$includeFuture && $entry->date !== null && $entry->date > $now) {
                     continue;
                 }
-                $filtered[] = $entry;
 
                 $relativePath = substr($entry->sourceFilePath(), strlen($contentDir) + 1);
                 $permalink = $fileToPermalink[$relativePath];
+                $filePath = $outputDir . $permalink . 'index.html';
+
+                if ($entry->redirectTo !== '') {
+                    $redirectTasks[] = ['entry' => $entry, 'filePath' => $filePath];
+                    continue;
+                }
+
+                $filtered[] = $entry;
                 $allTasks[] = [
                     'entry' => $entry,
-                    'filePath' => $outputDir . $permalink . 'index.html',
+                    'filePath' => $filePath,
                     'permalink' => $permalink,
                 ];
             }
@@ -325,8 +334,19 @@ final class BuildCommand extends Command
 
         $output->writeln("  Entries written: <comment>$entriesWritten</comment>" . ($incremental ? ' (of ' . count($allTasks) . ' total)' : ''));
 
+        if ($redirectTasks !== []) {
+            $redirectWriter = new RedirectPageWriter();
+            foreach ($redirectTasks as $task) {
+                $redirectWriter->write($task['entry'], $task['filePath']);
+            }
+            $output->writeln('  Redirects written: <comment>' . count($redirectTasks) . '</comment>');
+        }
+
         if ($manifest !== null) {
             foreach ($allTasks as $task) {
+                $manifest->record($task['entry']->sourceFilePath(), [$task['filePath']]);
+            }
+            foreach ($redirectTasks as $task) {
                 $manifest->record($task['entry']->sourceFilePath(), [$task['filePath']]);
             }
             foreach ($rawEntriesByCollection as $entries) {
@@ -345,6 +365,7 @@ final class BuildCommand extends Command
             $standalonePages = array_values(array_filter($standalonePages, static fn ($e) => $e->date === null || $e->date <= $now));
         }
         $renderer = new EntryRenderer($this->contentPipeline, $this->templateResolver, $cache, $contentDir, $authors);
+        $redirectWriter ??= new RedirectPageWriter();
         $standalonePagesWritten = 0;
         foreach ($standalonePages as $page) {
             $permalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
@@ -355,11 +376,15 @@ final class BuildCommand extends Command
                 continue;
             }
 
-            $dirPath = dirname($filePath);
-            if (!is_dir($dirPath) && !mkdir($dirPath, 0o755, true) && !is_dir($dirPath)) {
-                throw new RuntimeException(sprintf('Directory "%s" was not created', $dirPath));
+            if ($page->redirectTo !== '') {
+                $redirectWriter->write($page, $filePath);
+            } else {
+                $dirPath = dirname($filePath);
+                if (!is_dir($dirPath) && !mkdir($dirPath, 0o755, true) && !is_dir($dirPath)) {
+                    throw new RuntimeException(sprintf('Directory "%s" was not created', $dirPath));
+                }
+                file_put_contents($filePath, $renderer->render($siteConfig, $page, $permalink, $navigation, $crossRefResolver));
             }
-            file_put_contents($filePath, $renderer->render($siteConfig, $page, $permalink, $navigation, $crossRefResolver));
             $standalonePagesWritten++;
 
             $manifest?->record($page->sourceFilePath(), [$filePath]);
@@ -532,7 +557,9 @@ final class BuildCommand extends Command
                 }
                 $permalink = PermalinkResolver::resolve($entry, $collection);
                 $files[] = $outputDir . $permalink . 'index.html';
-                $entries[] = $entry;
+                if ($entry->redirectTo === '') {
+                    $entries[] = $entry;
+                }
             }
 
             if ($collection->feed) {
