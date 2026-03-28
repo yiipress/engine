@@ -23,8 +23,9 @@ Thumbs.db
 /vendor
 
 # Output directory
-output
-docs-output
+/output/
+/docs-output/
+/content/
 
 # Benchmark generated data
 benchmarks/data
