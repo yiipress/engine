@@ -48,7 +48,7 @@ final class EntryRenderer
             }
         }
 
-        $body = $entry->body();
+        $body = str_replace('[cut]', '', $entry->body());
         if ($crossRefResolver !== null) {
             $resolver = $crossRefResolver->withCurrentDir($this->resolveContentDir($entry));
             if ($permalink !== '') {

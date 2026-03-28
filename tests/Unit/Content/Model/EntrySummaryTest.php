@@ -8,7 +8,9 @@ use App\Content\Model\Entry;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;
+use function PHPUnit\Framework\assertStringContainsString;
 use function PHPUnit\Framework\assertStringEndsWith;
+use function PHPUnit\Framework\assertStringNotContainsString;
 use function PHPUnit\Framework\assertLessThanOrEqual;
 
 final class EntrySummaryTest extends TestCase
@@ -100,6 +102,96 @@ final class EntrySummaryTest extends TestCase
         $entry = $this->createEntry(summary: '', bodyLength: 0);
 
         assertSame('', $entry->summary());
+    }
+
+    public function testCutMarkerDefinesSummaryBoundary(): void
+    {
+        $body = "This is the summary part.\n\n[cut]\n\nThis should not appear in summary.";
+        file_put_contents($this->tempFile, $body);
+        $entry = $this->createEntry(summary: '', bodyLength: strlen($body));
+
+        assertSame('This is the summary part.', $entry->summary());
+    }
+
+    public function testCutMarkerSummaryHasNoEllipsis(): void
+    {
+        $body = "Short intro.\n\n[cut]\n\n" . str_repeat('More content. ', 100);
+        file_put_contents($this->tempFile, $body);
+        $entry = $this->createEntry(summary: '', bodyLength: strlen($body));
+
+        $summary = $entry->summary();
+        assertSame('Short intro.', $summary);
+        assertStringNotContainsString('…', $summary);
+    }
+
+    public function testManualSummaryTakesPriorityOverCutMarker(): void
+    {
+        $body = "Intro.\n\n[cut]\n\nRest.";
+        file_put_contents($this->tempFile, $body);
+        $entry = $this->createEntry(summary: 'Manual summary.', bodyLength: strlen($body));
+
+        assertSame('Manual summary.', $entry->summary());
+    }
+
+    public function testTruncationPrefersSentenceBoundary(): void
+    {
+        // Sentence boundary must fall at or after 75% of limit (225 of 300)
+        $intro = str_repeat('Word ', 45); // 225 chars, no period
+        $sentence = 'Ends here. '; // `. ` lands at position 235, within the last 25%
+        $tail = str_repeat('more ', 20); // pushes total past 300
+        $body = $intro . $sentence . $tail;
+        file_put_contents($this->tempFile, $body);
+        $entry = $this->createEntry(summary: '', bodyLength: strlen($body));
+
+        $summary = $entry->summary();
+        // Should cut at the sentence end, not mid-word with ellipsis
+        assertStringEndsWith('.', $summary);
+        assertStringNotContainsString('…', $summary);
+    }
+
+    public function testStripMarkdownStripsHtmlTags(): void
+    {
+        $body = "<p>Hello <strong>world</strong>.</p>\n";
+        file_put_contents($this->tempFile, $body);
+        $entry = $this->createEntry(summary: '', bodyLength: strlen($body));
+
+        assertSame('Hello world.', $entry->summary());
+    }
+
+    public function testStripMarkdownStripsStrikethrough(): void
+    {
+        $body = "Normal ~~removed~~ text.\n";
+        file_put_contents($this->tempFile, $body);
+        $entry = $this->createEntry(summary: '', bodyLength: strlen($body));
+
+        assertSame('Normal removed text.', $entry->summary());
+    }
+
+    public function testStripMarkdownStripsImages(): void
+    {
+        $body = "Before ![alt text](image.jpg) after.\n";
+        file_put_contents($this->tempFile, $body);
+        $entry = $this->createEntry(summary: '', bodyLength: strlen($body));
+
+        assertSame('Before after.', $entry->summary());
+    }
+
+    public function testStripMarkdownStripsHorizontalRules(): void
+    {
+        $body = "Before.\n\n---\n\nAfter.\n";
+        file_put_contents($this->tempFile, $body);
+        $entry = $this->createEntry(summary: '', bodyLength: strlen($body));
+
+        assertSame('Before. After.', $entry->summary());
+    }
+
+    public function testStripMarkdownStripsTableRows(): void
+    {
+        $body = "Before.\n\n| Col1 | Col2 |\n|------|------|\n| A | B |\n\nAfter.\n";
+        file_put_contents($this->tempFile, $body);
+        $entry = $this->createEntry(summary: '', bodyLength: strlen($body));
+
+        assertSame('Before. After.', $entry->summary());
     }
 
     private function createEntry(string $summary, int $bodyLength): Entry
