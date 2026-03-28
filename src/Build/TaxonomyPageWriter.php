@@ -59,6 +59,7 @@ final readonly class TaxonomyPageWriter
         $nav = $navigation;
         $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
         $rootPath = RelativePathHelper::rootPath('/' . $taxonomyName . '/');
+        $metaTags = MetaTagsBuilder::forPage($siteConfig, ucfirst($taxonomyName), $siteConfig->description, '/' . $taxonomyName . '/');
 
         ob_start();
         require $this->templateResolver->resolve('taxonomy_index');
@@ -89,6 +90,7 @@ final readonly class TaxonomyPageWriter
         $nav = $navigation;
         $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
         $rootPath = RelativePathHelper::rootPath('/' . $taxonomyName . '/' . $term . '/');
+        $metaTags = MetaTagsBuilder::forPage($siteConfig, $term . ' — ' . ucfirst($taxonomyName), $siteConfig->description, '/' . $taxonomyName . '/' . $term . '/');
 
         $entryData = [];
         foreach ($entries as $entry) {

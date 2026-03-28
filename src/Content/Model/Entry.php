@@ -34,6 +34,7 @@ final readonly class Entry
         public array $extra,
         private int $bodyOffset,
         private int $bodyLength,
+        public string $image = '',
     ) {}
 
     public function sourceFilePath(): string

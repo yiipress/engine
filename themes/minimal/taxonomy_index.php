@@ -17,7 +17,7 @@ use App\Content\Model\Navigation;
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<?= $partial('head', ['title' => ucfirst($taxonomyName) . ' — ' . $siteTitle, 'rootPath' => $rootPath]) ?>
+<?= $partial('head', ['title' => ucfirst($taxonomyName) . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'metaTags' => $metaTags]) ?>
 </head>
 <body>
 <?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath]) ?>

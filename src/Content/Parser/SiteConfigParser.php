@@ -44,6 +44,8 @@ final class SiteConfigParser
                 : [],
             markdown: self::parseMarkdownConfig($data['markdown'] ?? []),
             theme: (string) ($data['theme'] ?? ''),
+            image: (string) ($data['image'] ?? ''),
+            twitterSite: (string) ($data['twitter'] ?? ''),
         );
     }
 

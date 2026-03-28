@@ -24,7 +24,7 @@ use App\Content\Model\Navigation;
 <html lang="en">
 <head>
 
-<?= $partial('head', ['title' => $entryTitle . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'headAssets' => $headAssets ?? '']) ?>
+<?= $partial('head', ['title' => $entryTitle . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'headAssets' => $headAssets ?? '', 'metaTags' => $metaTags]) ?>
 
 </head>
 <body>

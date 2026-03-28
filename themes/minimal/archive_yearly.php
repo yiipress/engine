@@ -20,7 +20,7 @@ use App\Content\Model\Navigation;
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<?= $partial('head', ['title' => $collectionTitle . ': ' . $year . ' — ' . $siteTitle, 'rootPath' => $rootPath]) ?>
+<?= $partial('head', ['title' => $collectionTitle . ': ' . $year . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'metaTags' => $metaTags]) ?>
 </head>
 <body>
 <?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath]) ?>

@@ -97,6 +97,7 @@ final class EntryRenderer
         }
 
         $rootPath = RelativePathHelper::rootPath($permalink);
+        $metaTags = MetaTagsBuilder::forEntry($siteConfig, $entry, $permalink);
 
         return ($this->templateClosures[$templatePath])([
             'siteTitle' => $siteConfig->title,
@@ -112,6 +113,7 @@ final class EntryRenderer
             'collection' => $entry->collection,
             'nav' => $navigation,
             'headAssets' => $headAssets,
+            'metaTags' => $metaTags,
             'partial' => $this->partialClosures[$themeName],
             'rootPath' => $rootPath,
         ]);

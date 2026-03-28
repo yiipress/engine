@@ -46,6 +46,7 @@ final readonly class EntryParser
                 ? array_values(array_map(strval(...), $fields['authors']))
                 : [],
             summary: (string) ($fields['summary'] ?? ''),
+            image: (string) ($fields['image'] ?? ''),
             permalink: (string) ($fields['permalink'] ?? ''),
             layout: (string) ($fields['layout'] ?? ''),
             theme: (string) ($fields['theme'] ?? ''),

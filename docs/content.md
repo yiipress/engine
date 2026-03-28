@@ -89,6 +89,7 @@ categories:
   - tutorials
 authors:
   - john-doe
+image: /blog/assets/hero.jpg
 summary: A brief introduction to YiiPress.
 permalink: /custom/path/
 layout: post
@@ -108,6 +109,7 @@ extra:
 - **tags** — list of tag slugs
 - **categories** — list of category slugs
 - **authors** — list of author slugs (referencing files in `content/authors/`)
+- **image** — featured image URL (absolute, or root-relative path resolved against `base_url`); used as `og:image` for social sharing. Falls back to the site-level `image` in `config.yaml`
 - **summary** — manual excerpt; if omitted, auto-generated from content
 - **permalink** — per-entry URL override; takes precedence over collection pattern
 - **layout** — template layout name (default: collection-specific or `entry`)

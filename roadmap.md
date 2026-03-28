@@ -68,8 +68,8 @@
 
 ## Priority 6: SEO and web standards
 
-- [ ] Open Graph / meta tag helpers
-- [ ] Canonical URL support
+- [x] Open Graph / meta tag helpers
+- [x] Canonical URL support
 - [ ] Configurable `robots.txt` generation
 - [ ] Redirect support (e.g., when changing permalinks, output redirect HTML or config)
 - [ ] 404 page in static build output for static hosting providers (Netlify, GitHub Pages, etc.)

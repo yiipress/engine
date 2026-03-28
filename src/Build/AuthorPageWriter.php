@@ -60,8 +60,8 @@ final class AuthorPageWriter
         $siteTitle = $siteConfig->title;
         $nav = $navigation;
         $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
-
         $rootPath = RelativePathHelper::rootPath('/authors/');
+        $metaTags = MetaTagsBuilder::forPage($siteConfig, 'Authors', $siteConfig->description, '/authors/');
 
         $authorList = [];
         foreach ($authors as $slug => $author) {
@@ -100,6 +100,7 @@ final class AuthorPageWriter
         $nav = $navigation;
         $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
         $rootPath = RelativePathHelper::rootPath('/authors/' . $author->slug . '/');
+        $metaTags = MetaTagsBuilder::forPage($siteConfig, $author->title, $siteConfig->description, '/authors/' . $author->slug . '/');
 
         $authorTitle = $author->title;
         $authorEmail = $author->email;

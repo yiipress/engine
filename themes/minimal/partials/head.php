@@ -4,13 +4,34 @@
  * @var string $rootPath
  * @var string $headAssets
  * @var string|null $collectionName
+ * @var \App\Build\MetaTags|null $metaTags
  */
 $headAssets ??= '';
 $collectionName ??= null;
+$metaTags ??= null;
 ?>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= htmlspecialchars($title) ?></title>
+<?php if ($metaTags !== null): ?>
+<?php if ($metaTags->canonicalUrl !== ''): ?>
+    <link rel="canonical" href="<?= htmlspecialchars($metaTags->canonicalUrl) ?>">
+<?php endif; ?>
+    <meta name="description" content="<?= htmlspecialchars($metaTags->description) ?>">
+    <meta property="og:title" content="<?= htmlspecialchars($metaTags->title) ?>">
+    <meta property="og:description" content="<?= htmlspecialchars($metaTags->description) ?>">
+    <meta property="og:type" content="<?= htmlspecialchars($metaTags->type) ?>">
+<?php if ($metaTags->canonicalUrl !== ''): ?>
+    <meta property="og:url" content="<?= htmlspecialchars($metaTags->canonicalUrl) ?>">
+<?php endif; ?>
+<?php if ($metaTags->image !== ''): ?>
+    <meta property="og:image" content="<?= htmlspecialchars($metaTags->image) ?>">
+<?php endif; ?>
+    <meta name="twitter:card" content="<?= htmlspecialchars($metaTags->twitterCard) ?>">
+<?php if ($metaTags->twitterSite !== ''): ?>
+    <meta name="twitter:site" content="<?= htmlspecialchars($metaTags->twitterSite) ?>">
+<?php endif; ?>
+<?php endif; ?>
     <link rel="stylesheet" href="<?= $rootPath ?>assets/theme/style.css">
 <?php if ($collectionName !== null): ?>
     <link rel="alternate" type="application/rss+xml" title="RSS Feed" href="<?= $rootPath . htmlspecialchars($collectionName) ?>/rss.xml">

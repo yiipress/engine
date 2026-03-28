@@ -20,7 +20,7 @@ $pageTitle = $collectionTitle . ($pagination['currentPage'] > 1 ? ' — Page ' .
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<?= $partial('head', ['title' => $pageTitle, 'rootPath' => $rootPath, 'collectionName' => $collectionName]) ?>
+<?= $partial('head', ['title' => $pageTitle, 'rootPath' => $rootPath, 'collectionName' => $collectionName, 'metaTags' => $metaTags]) ?>
 </head>
 <body>
 <?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath]) ?>

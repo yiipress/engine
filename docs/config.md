@@ -29,9 +29,11 @@ taxonomies:
   - tags
   - categories
 
+image: /assets/og-default.png
+twitter: "@example"
+
 params:
   github_url: https://github.com/example/mysite
-  twitter: "@example"
 ```
 
 ### Fields
@@ -47,6 +49,8 @@ params:
 - **permalink** — default permalink pattern (overridden by collection or entry)
 - **taxonomies** — list of enabled taxonomy types
 - **theme** — default theme name for the site (see [Templates](template.md))
+- **image** — default Open Graph image URL (absolute, or root-relative path resolved against `base_url`); used as fallback when an entry has no `image` front matter field
+- **twitter** — Twitter/X account handle (e.g., `@example`) added to `twitter:site` meta tag on all pages
 - **params** — arbitrary key-value pairs for use in templates
 - **markdown** — markdown extensions configuration (see below)
 

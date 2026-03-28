@@ -64,7 +64,7 @@ final readonly class CollectionListingWriter
                 'nextUrl' => $this->resolvePageUrl($collection->name, $pageNumber + 1, $totalPages, $rootPath),
             ];
 
-            $html = $this->renderPage($siteConfig, $collection, $entryData, $pagination, $navigation, $rootPath);
+            $html = $this->renderPage($siteConfig, $collection, $entryData, $pagination, $navigation, $rootPath, $currentPermalink);
 
             $dir = $pageNumber === 1
                 ? $outputDir . '/' . $collection->name
@@ -92,12 +92,14 @@ final readonly class CollectionListingWriter
         array $pagination,
         ?Navigation $navigation,
         string $rootPath,
+        string $permalink,
     ): string {
         $siteTitle = $siteConfig->title;
         $collectionTitle = $collection->title;
         $collectionName = $collection->name;
         $nav = $navigation;
         $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
+        $metaTags = MetaTagsBuilder::forPage($siteConfig, $collectionTitle, $collection->description, $permalink);
 
         ob_start();
         require $this->templateResolver->resolve('collection_listing');
