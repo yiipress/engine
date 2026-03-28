@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     closeBtn.addEventListener('click', closeZoom);
+    zoomImg.addEventListener('click', closeZoom);
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) closeZoom();
     });
