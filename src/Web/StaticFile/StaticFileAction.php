@@ -139,10 +139,21 @@ final class StaticFileAction
 
     private function notFound(): ResponseInterface
     {
+        $html = $this->loadBuilt404() ?? '<!DOCTYPE html><html lang="en"><body><h1>404 Not Found</h1></body></html>';
+
         return $this->responseFactory->createResponse(404)
             ->withHeader('Content-Type', 'text/html; charset=utf-8')
-            ->withBody($this->streamFactory->createStream(
-                '<!DOCTYPE html><html lang="en"><body><h1>404 Not Found</h1></body></html>'
-            ));
+            ->withBody($this->streamFactory->createStream($html));
+    }
+
+    private function loadBuilt404(): ?string
+    {
+        $file = $this->documentRoot . '/404.html';
+        if (!is_file($file)) {
+            return null;
+        }
+
+        $content = file_get_contents($file);
+        return $content !== false ? $content : null;
     }
 }

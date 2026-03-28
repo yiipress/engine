@@ -15,7 +15,7 @@
 
 - [x] RSS/Atom feed generation. Content should be generated using same plugins as for HTML content
 - [x] Sitemap generation
-- [ ] Tags and categories (taxonomies)
+- [x] Tags and categories (taxonomies)
 - [x] Draft support (front matter `draft: true` flag, exclude from build by default)
 - [x] Entry date handling and chronological sorting
 - [x] Entry summary/excerpt (auto-generated or manual via front matter)
@@ -70,9 +70,9 @@
 
 - [x] Open Graph / meta tag helpers
 - [x] Canonical URL support
-- [ ] Configurable `robots.txt` generation
+- [x] Configurable `robots.txt` generation
 - [ ] Redirect support (e.g., when changing permalinks, output redirect HTML or config)
-- [ ] 404 page in static build output for static hosting providers (Netlify, GitHub Pages, etc.)
+- [x] 404 page in static build output for static hosting providers (Netlify, GitHub Pages, etc.)
 - [x] Deployment helpers/docs for common static hosts (GitHub Pages, Netlify, Vercel, Cloudflare Pages)
 
 ## Priority 7: Content extensions

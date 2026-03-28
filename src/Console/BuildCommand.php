@@ -11,6 +11,8 @@ use App\Build\BuildDiagnostics;
 use App\Build\CollectionListingWriter;
 use App\Build\ContentAssetCopier;
 use App\Build\DateArchiveWriter;
+use App\Build\NotFoundPageWriter;
+use App\Build\RobotsTxtGenerator;
 use App\Build\ThemeAssetCopier;
 use App\Build\EntryRenderer;
 use App\Build\FeedGenerator;
@@ -453,6 +455,17 @@ final class BuildCommand extends Command
         $sitemapGenerator->generate($siteConfig, $collections, $entriesByCollection, $outputDir, $standalonePages, $authors);
         $output->writeln('  Sitemap generated.');
 
+        $robotsGenerator = new RobotsTxtGenerator();
+        $robots = $robotsGenerator->generate($siteConfig);
+        if ($robots !== '') {
+            file_put_contents($outputDir . '/robots.txt', $robots);
+            $output->writeln('  robots.txt generated.');
+        }
+
+        $notFoundWriter = new NotFoundPageWriter($this->templateResolver);
+        $notFoundWriter->write($siteConfig, $outputDir, $navigation);
+        $output->writeln('  404 page generated.');
+
         if ($siteConfig->taxonomies !== []) {
             $allEntries = array_merge(...array_values($entriesByCollection));
             $taxonomyData = TaxonomyCollector::collect($siteConfig->taxonomies, $allEntries);
@@ -575,6 +588,12 @@ final class BuildCommand extends Command
         }
 
         $files[] = $outputDir . '/sitemap.xml';
+
+        if ($siteConfig->robotsTxt->generate) {
+            $files[] = $outputDir . '/robots.txt';
+        }
+
+        $files[] = $outputDir . '/404.html';
 
         if ($siteConfig->taxonomies !== []) {
             $allEntries = [];

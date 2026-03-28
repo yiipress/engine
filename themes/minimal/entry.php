@@ -10,6 +10,8 @@ declare(strict_types=1);
  * @var string $dateISO
  * @var bool $draft
  * @var string $author
+ * @var list<string> $tags
+ * @var list<string> $categories
  * @var string $collection
  * @var string $headAssets
  * @var ?Navigation $nav
@@ -51,6 +53,24 @@ use App\Content\Model\Navigation;
             <div class="content">
                 <?= $content ?>
             </div>
+<?php if ($tags !== [] || $categories !== []): ?>
+            <footer class="entry-footer">
+<?php if ($tags !== []): ?>
+                <div class="entry-tags">
+<?php foreach ($tags as $tag): ?>
+                    <a href="<?= $rootPath ?>tags/<?= htmlspecialchars($tag) ?>/" class="tag"><?= htmlspecialchars($tag) ?></a>
+<?php endforeach; ?>
+                </div>
+<?php endif; ?>
+<?php if ($categories !== []): ?>
+                <div class="entry-categories">
+<?php foreach ($categories as $category): ?>
+                    <a href="<?= $rootPath ?>categories/<?= htmlspecialchars($category) ?>/" class="category"><?= htmlspecialchars($category) ?></a>
+<?php endforeach; ?>
+                </div>
+<?php endif; ?>
+            </footer>
+<?php endif; ?>
         </article>
     </div>
 </main>

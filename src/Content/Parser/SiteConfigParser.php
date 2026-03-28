@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Content\Parser;
 
 use App\Content\Model\MarkdownConfig;
+use App\Content\Model\RobotsTxtConfig;
+use App\Content\Model\RobotsTxtRule;
 use App\Content\Model\SiteConfig;
 use RuntimeException;
 
@@ -46,6 +48,7 @@ final class SiteConfigParser
             theme: (string) ($data['theme'] ?? ''),
             image: (string) ($data['image'] ?? ''),
             twitterSite: (string) ($data['twitter'] ?? ''),
+            robotsTxt: self::parseRobotsTxtConfig($data['robots_txt'] ?? null),
         );
     }
 
@@ -108,5 +111,42 @@ final class SiteConfigParser
         }
 
         return new MarkdownConfig(...$constructorArgs);
+    }
+
+    private static function parseRobotsTxtConfig(mixed $data): RobotsTxtConfig
+    {
+        if ($data === null) {
+            return new RobotsTxtConfig();
+        }
+
+        if (!is_array($data)) {
+            return new RobotsTxtConfig(generate: (bool) $data);
+        }
+
+        $generate = (bool) ($data['generate'] ?? true);
+        if (!$generate) {
+            return new RobotsTxtConfig(generate: false);
+        }
+
+        $rules = [];
+        foreach ($data['rules'] ?? [] as $ruleData) {
+            if (!is_array($ruleData)) {
+                continue;
+            }
+            $allow = isset($ruleData['allow']) && is_array($ruleData['allow'])
+                ? array_values(array_map(strval(...), $ruleData['allow']))
+                : [];
+            $disallow = isset($ruleData['disallow']) && is_array($ruleData['disallow'])
+                ? array_values(array_map(strval(...), $ruleData['disallow']))
+                : [];
+            $rules[] = new RobotsTxtRule(
+                userAgent: (string) ($ruleData['user_agent'] ?? '*'),
+                allow: $allow,
+                disallow: $disallow,
+                crawlDelay: isset($ruleData['crawl_delay']) ? (int) $ruleData['crawl_delay'] : null,
+            );
+        }
+
+        return new RobotsTxtConfig(generate: true, rules: $rules);
     }
 }

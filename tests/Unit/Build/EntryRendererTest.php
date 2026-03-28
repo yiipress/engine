@@ -20,6 +20,7 @@ use RecursiveIteratorIterator;
 use SplFileInfo;
 
 use function PHPUnit\Framework\assertStringContainsString;
+use function PHPUnit\Framework\assertStringNotContainsString;
 
 final class EntryRendererTest extends TestCase
 {
@@ -83,6 +84,44 @@ PHP);
 
         assertStringContainsString('<h1>Missing Layout</h1>', $html);
         assertStringContainsString('Content.', $html);
+    }
+
+    public function testTagsNotInContentArePassedToTemplate(): void
+    {
+        mkdir($this->contentDir . '/templates', 0o755, true);
+        file_put_contents($this->contentDir . '/templates/tags.php', <<<'PHP'
+<?php /** @var list<string> $tags */ ?>
+<?php foreach ($tags as $tag): ?><span class="tag"><?= htmlspecialchars($tag) ?></span><?php endforeach; ?>
+PHP);
+
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Post\nlayout: tags\n---\n\nContent without inline tags.\n");
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Post', layout: 'tags', tags: ['php', 'yii']);
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver($this->contentDir . '/templates'), contentDir: $this->contentDir);
+        $html = $renderer->render($this->createSiteConfig(theme: 'custom'), $entry);
+
+        assertStringContainsString('php', $html);
+        assertStringContainsString('yii', $html);
+    }
+
+    public function testInlineTagsAreFilteredFromTagsList(): void
+    {
+        mkdir($this->contentDir . '/templates', 0o755, true);
+        file_put_contents($this->contentDir . '/templates/tags2.php', <<<'PHP'
+<?php /** @var list<string> $tags */ ?>
+<?php foreach ($tags as $tag): ?><span class="tag"><?= htmlspecialchars($tag) ?></span><?php endforeach; ?>
+PHP);
+
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Post\nlayout: tags2\n---\n\nContent with #php inline.\n");
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Post', layout: 'tags2', tags: ['php', 'yii']);
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver($this->contentDir . '/templates'), contentDir: $this->contentDir);
+        $html = $renderer->render($this->createSiteConfig(theme: 'custom'), $entry);
+
+        assertStringNotContainsString('"tag">php', $html);
+        assertStringContainsString('"tag">yii', $html);
     }
 
     public function testCustomLayoutReceivesAllVariables(): void
@@ -154,6 +193,7 @@ PHP);
 
     /**
      * @param list<string> $authors
+     * @param list<string> $tags
      */
     private function createEntry(
         string $filePath,
@@ -161,6 +201,7 @@ PHP);
         string $layout = '',
         string $collection = 'blog',
         array $authors = [],
+        array $tags = [],
     ): Entry {
         $content = file_get_contents($filePath);
         $bodyMarker = "---\n\n";
@@ -175,7 +216,7 @@ PHP);
             title: $title,
             date: new DateTimeImmutable('2024-01-01'),
             draft: false,
-            tags: [],
+            tags: $tags,
             categories: [],
             authors: $authors,
             summary: '',

@@ -26,5 +26,6 @@ final readonly class SiteConfig
         public string $theme = '',
         public string $image = '',
         public string $twitterSite = '',
+        public RobotsTxtConfig $robotsTxt = new RobotsTxtConfig(),
     ) {}
 }

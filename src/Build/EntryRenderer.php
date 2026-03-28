@@ -65,6 +65,25 @@ final class EntryRenderer
         return $html;
     }
 
+    /**
+     * @param list<string> $tags
+     * @return list<string>
+     */
+    private function filterInlineTags(array $tags, string $body): array
+    {
+        if ($tags === [] || $body === '') {
+            return $tags;
+        }
+
+        preg_match_all('/#([\w]+)/u', $body, $matches);
+        $inlineTags = array_map(mb_strtolower(...), $matches[1]);
+
+        return array_values(array_filter(
+            $tags,
+            fn (string $tag) => !in_array(mb_strtolower($tag), $inlineTags, true),
+        ));
+    }
+
     private function resolveContentDir(Entry $entry): string
     {
         $relative = substr($entry->sourceFilePath(), strlen($this->contentDir) + 1);
@@ -110,6 +129,8 @@ final class EntryRenderer
                 fn (string $authorSlug) => $this->authors[$authorSlug]->title ?? $authorSlug,
                 $entry->authors
             )),
+            'tags' => $this->filterInlineTags($entry->tags, $entry->body()),
+            'categories' => $entry->categories,
             'collection' => $entry->collection,
             'nav' => $navigation,
             'headAssets' => $headAssets,
