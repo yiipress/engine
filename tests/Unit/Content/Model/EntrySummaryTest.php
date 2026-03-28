@@ -8,7 +8,6 @@ use App\Content\Model\Entry;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;
-use function PHPUnit\Framework\assertStringContainsString;
 use function PHPUnit\Framework\assertStringEndsWith;
 use function PHPUnit\Framework\assertStringNotContainsString;
 use function PHPUnit\Framework\assertLessThanOrEqual;

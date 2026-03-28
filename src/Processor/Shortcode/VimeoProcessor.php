@@ -20,7 +20,7 @@ final readonly class VimeoProcessor implements ContentProcessorInterface
 {
     use ParsesShortcodeAttributesTrait;
 
-    private const SHORTCODE_PATTERN = '/\[vimeo\s+([^\]]+)\s*\/?\]/i';
+    private const string SHORTCODE_PATTERN = '/\[vimeo\s+([^]]+)\s*\/?]/i';
 
     public function process(string $content, Entry $entry): string
     {

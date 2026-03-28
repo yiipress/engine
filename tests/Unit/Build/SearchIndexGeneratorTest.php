@@ -83,7 +83,12 @@ final class SearchIndexGeneratorTest extends TestCase
         $generator = new SearchIndexGenerator();
         $generator->generate($siteConfig, ['blog' => $collection], ['blog' => [$entry]], $this->outputDir);
 
-        $items = json_decode(file_get_contents($this->outputDir . '/search-index.json'), true);
+        $items = json_decode(
+            file_get_contents($this->outputDir . '/search-index.json'),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
 
         assertSame(1, count($items));
         assertSame('Hello World', $items[0]['title']);
@@ -100,7 +105,12 @@ final class SearchIndexGeneratorTest extends TestCase
         $generator = new SearchIndexGenerator();
         $generator->generate($siteConfig, ['blog' => $collection], ['blog' => [$entry]], $this->outputDir);
 
-        $items = json_decode(file_get_contents($this->outputDir . '/search-index.json'), true);
+        $items = json_decode(
+            file_get_contents($this->outputDir . '/search-index.json'),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
 
         assertSame(false, array_key_exists('body', $items[0]));
     }
@@ -114,7 +124,12 @@ final class SearchIndexGeneratorTest extends TestCase
         $generator = new SearchIndexGenerator();
         $generator->generate($siteConfig, ['blog' => $collection], ['blog' => [$entry]], $this->outputDir);
 
-        $items = json_decode(file_get_contents($this->outputDir . '/search-index.json'), true);
+        $items = json_decode(
+            file_get_contents($this->outputDir . '/search-index.json'),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
 
         assertSame(true, array_key_exists('body', $items[0]));
         assertSame('Some body content.', $items[0]['body']);
@@ -128,7 +143,12 @@ final class SearchIndexGeneratorTest extends TestCase
         $generator = new SearchIndexGenerator();
         $generator->generate($siteConfig, [], [], $this->outputDir, [$page]);
 
-        $items = json_decode(file_get_contents($this->outputDir . '/search-index.json'), true);
+        $items = json_decode(
+            file_get_contents($this->outputDir . '/search-index.json'),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
 
         assertSame(1, count($items));
         assertSame('About Us', $items[0]['title']);
@@ -141,7 +161,12 @@ final class SearchIndexGeneratorTest extends TestCase
         $generator = new SearchIndexGenerator();
         $generator->generate($siteConfig, [], [], $this->outputDir);
 
-        $items = json_decode(file_get_contents($this->outputDir . '/search-index.json'), true);
+        $items = json_decode(
+            file_get_contents($this->outputDir . '/search-index.json'),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
 
         assertSame([], $items);
     }

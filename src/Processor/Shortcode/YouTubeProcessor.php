@@ -21,7 +21,7 @@ final readonly class YouTubeProcessor implements ContentProcessorInterface
 {
     use ParsesShortcodeAttributesTrait;
 
-    private const SHORTCODE_PATTERN = '/\[youtube\s+([^\]]+)\s*\/?\]/i';
+    private const string SHORTCODE_PATTERN = '/\[youtube\s+([^]]+)\s*\/?]/i';
 
     public function process(string $content, Entry $entry): string
     {

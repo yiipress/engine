@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /**
  * @var string $siteTitle
- * @var \App\Content\Model\Navigation|null $nav
+ * @var Navigation|null $nav
  * @var Closure(string, array): string $partial
  * @var string $rootPath
  */

@@ -62,7 +62,7 @@ final class SearchIndexGenerator
 
         file_put_contents(
             $outputDir . '/search-index.json',
-            json_encode($items, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            json_encode($items, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         );
     }
 }

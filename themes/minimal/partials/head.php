@@ -4,10 +4,13 @@
  * @var string $rootPath
  * @var string $headAssets
  * @var string|null $collectionName
- * @var \App\Build\MetaTags|null $metaTags
+ * @var MetaTags|null $metaTags
  * @var bool $search
  * @var int $searchResults
  */
+
+use App\Build\MetaTags;
+
 $headAssets ??= '';
 $collectionName ??= null;
 $metaTags ??= null;

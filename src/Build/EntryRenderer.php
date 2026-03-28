@@ -81,7 +81,7 @@ final class EntryRenderer
 
         return array_values(array_filter(
             $tags,
-            fn (string $tag) => !in_array(mb_strtolower($tag), $inlineTags, true),
+            static fn (string $tag) => !in_array(mb_strtolower($tag), $inlineTags, true),
         ));
     }
 

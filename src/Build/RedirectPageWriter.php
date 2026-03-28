@@ -17,7 +17,7 @@ final class RedirectPageWriter
     {
         $target = $entry->redirectTo;
         $targetEscaped = htmlspecialchars($target, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        $targetJson = json_encode($target);
+        $targetJson = json_encode($target, JSON_THROW_ON_ERROR);
 
         $html = <<<HTML
             <!DOCTYPE html>
