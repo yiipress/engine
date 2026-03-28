@@ -1,7 +1,7 @@
 (function(){
     const k = 'yiipress-theme';
     const b = document.documentElement;
-    const t = document.querySelector('.theme-toggle');
+    const t = document.querySelector('#theme-toggle');
 
     function set(v) {
         b.setAttribute('data-theme', v);

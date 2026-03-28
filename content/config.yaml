@@ -18,3 +18,7 @@ taxonomies:
 params:
   github_url: https://github.com/example/mysite
   twitter: "@example"
+
+search:
+  full_text: false   # index full body text (default: false, summary+tags only)
+  results: 10        # max results shown (default: 10)

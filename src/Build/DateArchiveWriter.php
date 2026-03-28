@@ -107,6 +107,8 @@ final readonly class DateArchiveWriter
         $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
         $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/archive/');
         $metaTags = MetaTagsBuilder::forPage($siteConfig, $collection->title . ' Archive', $siteConfig->description, '/' . $collection->name . '/archive/');
+        $search = $siteConfig->search !== null;
+        $searchResults = $siteConfig->search?->results ?? 10;
 
         ob_start();
         require $this->templateResolver->resolve('archive_index');
@@ -140,6 +142,8 @@ final readonly class DateArchiveWriter
         $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
         $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/' . $year . '/');
         $metaTags = MetaTagsBuilder::forPage($siteConfig, $collection->title . ': ' . $year, $siteConfig->description, '/' . $collection->name . '/' . $year . '/');
+        $search = $siteConfig->search !== null;
+        $searchResults = $siteConfig->search?->results ?? 10;
 
         rsort($months);
 
@@ -186,6 +190,8 @@ final readonly class DateArchiveWriter
         $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/' . $year . '/' . $month . '/');
         $monthName = date('F', mktime(0, 0, 0, (int) $month, 1));
         $metaTags = MetaTagsBuilder::forPage($siteConfig, $collection->title . ': ' . $monthName . ' ' . $year, $siteConfig->description, '/' . $collection->name . '/' . $year . '/' . $month . '/');
+        $search = $siteConfig->search !== null;
+        $searchResults = $siteConfig->search?->results ?? 10;
 
         $entryData = [];
         foreach ($entries as $entry) {

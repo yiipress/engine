@@ -5,10 +5,14 @@
  * @var string $headAssets
  * @var string|null $collectionName
  * @var \App\Build\MetaTags|null $metaTags
+ * @var bool $search
+ * @var int $searchResults
  */
 $headAssets ??= '';
 $collectionName ??= null;
 $metaTags ??= null;
+$search ??= false;
+$searchResults ??= 10;
 ?>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -38,4 +42,8 @@ $metaTags ??= null;
     <link rel="alternate" type="application/atom+xml" title="Atom Feed" href="<?= $rootPath . htmlspecialchars($collectionName) ?>/feed.xml">
 <?php endif; ?>
     <script src="<?= $rootPath ?>assets/theme/image-zoom.js" defer></script>
+<?php if ($search): ?>
+    <link rel="stylesheet" href="<?= $rootPath ?>assets/theme/search.css">
+    <script src="<?= $rootPath ?>assets/theme/search.js" defer></script>
+<?php endif; ?>
 <?= $headAssets ?>

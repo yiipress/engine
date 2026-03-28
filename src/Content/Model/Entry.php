@@ -95,7 +95,7 @@ final readonly class Entry
         return $truncated . '…';
     }
 
-    private static function stripMarkdown(string $markdown): string
+    public static function stripMarkdown(string $markdown): string
     {
         // Fenced code blocks (with optional language identifier)
         $text = preg_replace('/```[^\n]*\n?.*?```/s', '', $markdown);

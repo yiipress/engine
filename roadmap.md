@@ -86,7 +86,7 @@
 
 - [ ] Related content suggestions as a plugin
 - [ ] Multilingual / i18n support
-- [ ] Search as a plugin
+- [x] Search as a plugin
 - [ ] Hooks / events system (before build, after build, before render, after render) for plugin architecture
 
 

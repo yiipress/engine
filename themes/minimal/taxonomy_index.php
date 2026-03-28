@@ -17,10 +17,10 @@ use App\Content\Model\Navigation;
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<?= $partial('head', ['title' => ucfirst($taxonomyName) . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'metaTags' => $metaTags]) ?>
+<?= $partial('head', ['title' => ucfirst($taxonomyName) . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'metaTags' => $metaTags, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10]) ?>
 </head>
 <body>
-<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath]) ?>
+<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10]) ?>
 <main>
     <div class="container">
         <h1><?= htmlspecialchars(ucfirst($taxonomyName)) ?></h1>

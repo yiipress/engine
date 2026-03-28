@@ -18,6 +18,8 @@ final readonly class NotFoundPageWriter
         $nav = $navigation;
         $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
         $rootPath = '/';
+        $search = $siteConfig->search !== null;
+        $searchResults = $siteConfig->search?->results ?? 10;
 
         ob_start();
         require $this->templateResolver->resolve('errors/404', $siteConfig->theme);

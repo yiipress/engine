@@ -7,6 +7,7 @@ namespace App\Content\Parser;
 use App\Content\Model\MarkdownConfig;
 use App\Content\Model\RobotsTxtConfig;
 use App\Content\Model\RobotsTxtRule;
+use App\Content\Model\SearchConfig;
 use App\Content\Model\SiteConfig;
 use RuntimeException;
 
@@ -50,6 +51,7 @@ final class SiteConfigParser
             twitterSite: (string) ($data['twitter'] ?? ''),
             robotsTxt: self::parseRobotsTxtConfig($data['robots_txt'] ?? null),
             toc: (bool) ($data['toc'] ?? true),
+            search: self::parseSearchConfig($data['search'] ?? null),
         );
     }
 
@@ -112,6 +114,26 @@ final class SiteConfigParser
         }
 
         return new MarkdownConfig(...$constructorArgs);
+    }
+
+    private static function parseSearchConfig(mixed $data): ?SearchConfig
+    {
+        if ($data === null || $data === false) {
+            return null;
+        }
+
+        if ($data === true) {
+            return new SearchConfig();
+        }
+
+        if (!is_array($data)) {
+            return new SearchConfig();
+        }
+
+        return new SearchConfig(
+            fullText: (bool) ($data['full_text'] ?? false),
+            results: (int) ($data['results'] ?? 10),
+        );
     }
 
     private static function parseRobotsTxtConfig(mixed $data): RobotsTxtConfig

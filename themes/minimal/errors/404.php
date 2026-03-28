@@ -15,10 +15,10 @@ use App\Content\Model\Navigation;
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<?= $partial('head', ['title' => 'Page Not Found — ' . $siteTitle, 'rootPath' => $rootPath]) ?>
+<?= $partial('head', ['title' => 'Page Not Found — ' . $siteTitle, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10]) ?>
 </head>
 <body>
-<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath]) ?>
+<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10]) ?>
 <main>
     <div class="container">
         <div class="error-page">

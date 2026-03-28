@@ -14,6 +14,7 @@ use App\Build\DateArchiveWriter;
 use App\Build\NotFoundPageWriter;
 use App\Build\RedirectPageWriter;
 use App\Build\RobotsTxtGenerator;
+use App\Build\SearchIndexGenerator;
 use App\Build\ThemeAssetCopier;
 use App\Build\EntryRenderer;
 use App\Build\FeedGenerator;
@@ -491,6 +492,12 @@ final class BuildCommand extends Command
         $notFoundWriter->write($siteConfig, $outputDir, $navigation);
         $output->writeln('  404 page generated.');
 
+        if ($siteConfig->search !== null) {
+            $searchGenerator = new SearchIndexGenerator();
+            $searchGenerator->generate($siteConfig, $collections, $entriesByCollection, $outputDir, $standalonePages);
+            $output->writeln('  Search index generated.');
+        }
+
         if ($siteConfig->taxonomies !== []) {
             $allEntries = array_merge(...array_values($entriesByCollection));
             $taxonomyData = TaxonomyCollector::collect($siteConfig->taxonomies, $allEntries);
@@ -621,6 +628,10 @@ final class BuildCommand extends Command
         }
 
         $files[] = $outputDir . '/404.html';
+
+        if ($siteConfig->search !== null) {
+            $files[] = $outputDir . '/search-index.json';
+        }
 
         if ($siteConfig->taxonomies !== []) {
             $allEntries = [];

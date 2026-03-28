@@ -59,8 +59,25 @@ params:
 - **twitter** — Twitter/X account handle (e.g., `@example`) added to `twitter:site` meta tag on all pages
 - **robots_txt** — `robots.txt` generation settings (see below)
 - **toc** — generate a table of contents from headings (default: `true`); set to `false` to disable globally. When enabled, heading tags receive `id` attributes and a `$toc` variable is passed to templates
+- **search** — opt-in client-side search (see below)
 - **params** — arbitrary key-value pairs for use in templates
 - **markdown** — markdown extensions configuration (see below)
+
+### Search
+
+Client-side search is opt-in. Enable it in `content/config.yaml`:
+
+```yaml
+search:
+  full_text: false   # index full body text (default: false, summary+tags only)
+  results: 10        # max results shown (default: 10)
+```
+
+When enabled, the build generates a `search-index.json` file in the output directory and injects a search button into the site header. Clicking the button (or pressing Ctrl+K / ⌘K) opens a search modal with fuzzy matching. No external dependencies — everything is hand-rolled JavaScript.
+
+The `full_text` option controls how much content is indexed:
+- `false` — indexes title, summary, and tags (smaller index, faster)
+- `true` — additionally indexes the full body text (larger index, more thorough results)
 
 ### robots.txt
 

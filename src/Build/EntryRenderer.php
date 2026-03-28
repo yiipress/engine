@@ -139,6 +139,8 @@ final class EntryRenderer
             'metaTags' => $metaTags,
             'partial' => $this->partialClosures[$themeName],
             'rootPath' => $rootPath,
+            'search' => $siteConfig->search !== null,
+            'searchResults' => $siteConfig->search?->results ?? 10,
         ]);
     }
 }

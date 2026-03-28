@@ -100,6 +100,8 @@ final readonly class CollectionListingWriter
         $nav = $navigation;
         $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
         $metaTags = MetaTagsBuilder::forPage($siteConfig, $collectionTitle, $collection->description, $permalink);
+        $search = $siteConfig->search !== null;
+        $searchResults = $siteConfig->search?->results ?? 10;
 
         ob_start();
         require $this->templateResolver->resolve('collection_listing');
