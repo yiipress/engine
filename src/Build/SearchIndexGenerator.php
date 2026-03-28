@@ -35,7 +35,7 @@ final class SearchIndexGenerator
                 $permalink = PermalinkResolver::resolve($entry, $collection);
                 $item = [
                     'title' => $entry->title,
-                    'url' => $permalink,
+                    'url' => ltrim($permalink, '/'),
                     'summary' => $entry->summary(),
                     'tags' => $entry->tags,
                 ];
@@ -50,7 +50,7 @@ final class SearchIndexGenerator
             $permalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
             $item = [
                 'title' => $page->title,
-                'url' => $permalink,
+                'url' => ltrim($permalink, '/'),
                 'summary' => $page->summary(),
                 'tags' => $page->tags,
             ];

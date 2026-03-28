@@ -87,7 +87,7 @@ final class SearchIndexGeneratorTest extends TestCase
 
         assertSame(1, count($items));
         assertSame('Hello World', $items[0]['title']);
-        assertSame('/blog/hello-world/', $items[0]['url']);
+        assertSame('blog/hello-world/', $items[0]['url']);
         assertSame(['php', 'tutorial'], $items[0]['tags']);
     }
 
@@ -132,7 +132,7 @@ final class SearchIndexGeneratorTest extends TestCase
 
         assertSame(1, count($items));
         assertSame('About Us', $items[0]['title']);
-        assertSame('/about/', $items[0]['url']);
+        assertSame('about/', $items[0]['url']);
     }
 
     public function testEmptyIndexWhenNoEntries(): void

@@ -133,9 +133,10 @@
 
         resultsList.innerHTML = top.map(function (r) {
             const item = r.item;
+            const url = escHtml(root + item.url);
             const summary = item.summary ? escHtml(item.summary.substring(0, 120)) : '';
             return '<li role="option" tabindex="-1">' +
-                '<a href="' + escHtml(item.url) + '">' +
+                '<a href="' + url + '">' +
                 '<span class="search-result-title">' + escHtml(item.title) + '</span>' +
                 (summary ? '<span class="search-result-summary">' + summary + '</span>' : '') +
                 '</a></li>';
