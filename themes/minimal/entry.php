@@ -14,6 +14,7 @@ declare(strict_types=1);
  * @var list<string> $categories
  * @var string $collection
  * @var string $headAssets
+ * @var list<array{id: string, text: string, level: int}> $toc
  * @var ?Navigation $nav
  * @var Closure(string, array): string $partial
  * @var string $rootPath
@@ -49,6 +50,15 @@ use App\Content\Model\Navigation;
                 <span class="author"><?= htmlspecialchars($author) ?></span>
 <?php endif; ?>
             </div>
+<?php endif; ?>
+<?php if ($toc !== []): ?>
+            <nav class="toc" aria-label="Table of contents">
+                <ol>
+<?php foreach ($toc as $item): ?>
+                    <li class="toc-level-<?= $item['level'] ?>"><a href="#<?= htmlspecialchars($item['id']) ?>"><?= htmlspecialchars($item['text']) ?></a></li>
+<?php endforeach; ?>
+                </ol>
+            </nav>
 <?php endif; ?>
             <div class="content">
                 <?= $content ?>

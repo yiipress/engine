@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Processor;
 
 use App\Content\Model\Entry;
+use App\Processor\Toc\TocAwareInterface;
 
 final class ContentProcessorPipeline
 {
@@ -34,6 +35,21 @@ final class ContentProcessorPipeline
             }
         }
         return $assets;
+    }
+
+    /**
+     * Returns the table of contents collected by the first TocAwareInterface processor.
+     *
+     * @return list<array{id: string, text: string, level: int}>
+     */
+    public function collectToc(): array
+    {
+        foreach ($this->processors as $processor) {
+            if ($processor instanceof TocAwareInterface) {
+                return $processor->getToc();
+            }
+        }
+        return [];
     }
 
     /**

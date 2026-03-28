@@ -49,6 +49,7 @@ final class SiteConfigParser
             image: (string) ($data['image'] ?? ''),
             twitterSite: (string) ($data['twitter'] ?? ''),
             robotsTxt: self::parseRobotsTxtConfig($data['robots_txt'] ?? null),
+            toc: (bool) ($data['toc'] ?? true),
         );
     }
 

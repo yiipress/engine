@@ -58,7 +58,8 @@ final class EntryRenderer
         }
         $content = $this->pipeline->process($body, $entry);
         $headAssets = $this->pipeline->collectHeadAssets($content);
-        $html = $this->renderTemplate($siteConfig, $entry, $content, $permalink, $navigation, $headAssets);
+        $toc = $siteConfig->toc ? $this->pipeline->collectToc() : [];
+        $html = $this->renderTemplate($siteConfig, $entry, $content, $permalink, $navigation, $headAssets, $toc);
 
         $this->cache?->set($entry->sourceFilePath(), $html);
 
@@ -91,7 +92,7 @@ final class EntryRenderer
         return $dir === '.' ? '' : $dir;
     }
 
-    private function renderTemplate(SiteConfig $siteConfig, Entry $entry, string $content, string $permalink, ?Navigation $navigation, string $headAssets = ''): string
+    private function renderTemplate(SiteConfig $siteConfig, Entry $entry, string $content, string $permalink, ?Navigation $navigation, string $headAssets = '', array $toc = []): string
     {
         $themeName = $entry->theme !== '' ? $entry->theme : $siteConfig->theme;
         $templateName = $entry->layout !== '' ? $entry->layout : 'entry';
@@ -134,6 +135,7 @@ final class EntryRenderer
             'collection' => $entry->collection,
             'nav' => $navigation,
             'headAssets' => $headAssets,
+            'toc' => $toc,
             'metaTags' => $metaTags,
             'partial' => $this->partialClosures[$themeName],
             'rootPath' => $rootPath,

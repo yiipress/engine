@@ -58,6 +58,7 @@ params:
 - **image** — default Open Graph image URL (absolute, or root-relative path resolved against `base_url`); used as fallback when an entry has no `image` front matter field
 - **twitter** — Twitter/X account handle (e.g., `@example`) added to `twitter:site` meta tag on all pages
 - **robots_txt** — `robots.txt` generation settings (see below)
+- **toc** — generate a table of contents from headings (default: `true`); set to `false` to disable globally. When enabled, heading tags receive `id` attributes and a `$toc` variable is passed to templates
 - **params** — arbitrary key-value pairs for use in templates
 - **markdown** — markdown extensions configuration (see below)
 

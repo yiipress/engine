@@ -162,6 +162,38 @@ Both shortcode processors support:
 - Double quotes, single quotes, or no quotes for attribute values (no spaces)
 - Case-insensitive shortcode names
 
+### TocProcessor
+
+Generates a table of contents from headings in the rendered HTML.
+
+Enabled by default. Disable globally in `content/config.yaml`:
+
+```yaml
+toc: false
+```
+
+When enabled, the processor:
+- Injects `id` attributes into all heading tags (`<h1>`–`<h6>`), slugified from the heading text
+- Deduplicates IDs by appending a numeric suffix (`intro`, `intro-2`, `intro-3`)
+- Leaves headings that already have an `id` attribute unchanged
+- Passes a `$toc` variable to entry templates — a list of `{id, text, level}` entries
+
+Templates can render the TOC as a navigation list:
+
+```php
+<?php if ($toc !== []): ?>
+<nav class="toc">
+    <ol>
+        <?php foreach ($toc as $item): ?>
+        <li class="toc-level-<?= $item['level'] ?>">
+            <a href="#<?= htmlspecialchars($item['id']) ?>"><?= htmlspecialchars($item['text']) ?></a>
+        </li>
+        <?php endforeach; ?>
+    </ol>
+</nav>
+<?php endif; ?>
+```
+
 ## Writing a custom processor
 
 Create a class implementing `ContentProcessorInterface`. For example, a shortcode processor:

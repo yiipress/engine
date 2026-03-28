@@ -15,6 +15,7 @@ use App\Processor\Shortcode\YouTubeProcessor;
 use App\Processor\MarkdownProcessor;
 use App\Processor\SyntaxHighlightProcessor;
 use App\Processor\TagLinkProcessor;
+use App\Processor\Toc\TocProcessor;
 use Yiisoft\Definitions\Reference;
 
 return [
@@ -30,6 +31,9 @@ return [
     VimeoProcessor::class => [
         'class' => VimeoProcessor::class,
     ],
+    TocProcessor::class => [
+        'class' => TocProcessor::class,
+    ],
     'contentPipeline' => [
         'class' => ContentProcessorPipeline::class,
         '__construct()' => [
@@ -39,6 +43,7 @@ return [
             Reference::to(TagLinkProcessor::class),
             Reference::to(MermaidProcessor::class),
             Reference::to(SyntaxHighlightProcessor::class),
+            Reference::to(TocProcessor::class),
         ],
     ],
     'feedPipeline' => [

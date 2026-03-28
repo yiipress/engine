@@ -27,5 +27,6 @@ final readonly class SiteConfig
         public string $image = '',
         public string $twitterSite = '',
         public RobotsTxtConfig $robotsTxt = new RobotsTxtConfig(),
+        public bool $toc = true,
     ) {}
 }
