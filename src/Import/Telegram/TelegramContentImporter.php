@@ -193,6 +193,10 @@ final class TelegramContentImporter implements ContentImporterInterface
             }
         }
 
+        if ($message->photo !== null && $mediaPath !== '') {
+            $frontMatter .= 'image: /' . $collection . '/assets/' . basename($mediaPath) . "\n";
+        }
+
         $frontMatter .= "---\n\n";
 
         $content = $frontMatter;

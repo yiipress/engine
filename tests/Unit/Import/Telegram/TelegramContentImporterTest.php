@@ -251,6 +251,7 @@ final class TelegramContentImporterTest extends TestCase
 
         $content = file_get_contents($result->importedFiles()[0]);
         assertStringContainsString('![](/blog/assets/photo_1.jpg)', $content);
+        assertStringContainsString('image: /blog/assets/photo_1.jpg', $content);
     }
 
     public function testRejectsPathTraversalInPhoto(): void
