@@ -17,7 +17,7 @@ final readonly class NotFoundPageWriter
         $siteTitle = $siteConfig->title;
         $nav = $navigation;
         $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
-        $rootPath = $this->resolveRootPath($siteConfig->baseUrl);
+        $rootPath = self::resolveRootPath($siteConfig->baseUrl);
         $search = $siteConfig->search !== null;
         $searchResults = $siteConfig->search?->results ?? 10;
 
@@ -32,7 +32,7 @@ final readonly class NotFoundPageWriter
         file_put_contents($outputDir . '/404.html', $html);
     }
 
-    private function resolveRootPath(string $baseUrl): string
+    private static function resolveRootPath(string $baseUrl): string
     {
         if ($baseUrl === '') {
             return '/';
@@ -41,6 +41,6 @@ final readonly class NotFoundPageWriter
         $path = parse_url($baseUrl, PHP_URL_PATH) ?? '/';
         $path = rtrim((string) $path, '/') . '/';
 
-        return $path === '' ? '/' : $path;
+        return $path !== '/' && $path !== '' ? $path : '/';
     }
 }
