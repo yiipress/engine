@@ -132,7 +132,7 @@ make up          # dev server at http://localhost:8087
 
 ## Documentation
 
-Full documentation is available in the [`docs/`](docs/) directory and rendered at **[yiipress.github.io/engine](https://yiipress.github.io/engine/)**.
+Full documentation is available in the [`docs/`](docs/) directory and rendered at **[yiipress.yiiframework.com](https://yiipress.yiiframework.com/)**.
 
 | Guide | Description |
 |---|---|
