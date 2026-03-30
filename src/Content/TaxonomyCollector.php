@@ -42,9 +42,39 @@ final class TaxonomyCollector
     private static function getTerms(Entry $entry, string $taxonomy): array
     {
         return match ($taxonomy) {
-            'tags' => $entry->tags,
+            'tags' => self::allTags($entry),
             'categories' => $entry->categories,
             default => [],
         };
+    }
+
+    /**
+     * Merges frontmatter tags with inline #tags found in the entry body.
+     *
+     * @return list<string>
+     */
+    private static function allTags(Entry $entry): array
+    {
+        $body = $entry->body();
+        if ($body === '') {
+            return $entry->tags;
+        }
+
+        preg_match_all('/#(\w+)/u', $body, $matches);
+        if ($matches[1] === []) {
+            return $entry->tags;
+        }
+
+        $inlineTags = array_map(mb_strtolower(...), $matches[1]);
+        $frontmatterLower = array_map(mb_strtolower(...), $entry->tags);
+
+        $merged = $entry->tags;
+        foreach ($inlineTags as $tag) {
+            if (!in_array($tag, $frontmatterLower, true)) {
+                $merged[] = $tag;
+            }
+        }
+
+        return array_values($merged);
     }
 }
