@@ -69,10 +69,19 @@ final class EntryParserTest extends TestCase
     {
         $entry = $this->parser->parse($this->dataDir . '/blog/2026-03-30-inline-tags.md', 'blog');
 
-        // Should have front matter tag 'php' plus inline tags 'inline', 'shit', 'yii'
+        // Should have front matter tag 'php' plus inline tags 'inline', 'shit', 'yii', 'multi-part-tag', 'two-words'
         // 'php' should not be duplicated (it's in both front matter and body)
         // Inline tags are normalized to lowercase
-        assertSame(['php', 'inline', 'shit', 'yii'], $entry->tags);
+        assertSame(['php', 'inline', 'shit', 'yii', 'multi-part-tag', 'two-words'], $entry->tags);
+    }
+
+    public function testHyphenatedInlineTagsAreExtracted(): void
+    {
+        $entry = $this->parser->parse($this->dataDir . '/blog/2026-03-30-inline-tags.md', 'blog');
+
+        $tagLowercases = array_map(strtolower(...), $entry->tags);
+        assertSame(true, in_array('multi-part-tag', $tagLowercases, true));
+        assertSame(true, in_array('two-words', $tagLowercases, true));
     }
 
     public function testHtmlColorCodesAreNotExtractedAsTags(): void
@@ -92,7 +101,7 @@ final class EntryParserTest extends TestCase
         // #php in body should be recognized as duplicate of 'php' in front matter (case-insensitive)
         // so it doesn't appear twice in the tags list
         $tagLowercases = array_map(strtolower(...), $entry->tags);
-        assertSame(['php', 'inline', 'shit', 'yii'], $tagLowercases);
+        assertSame(['php', 'inline', 'shit', 'yii', 'multi-part-tag', 'two-words'], $tagLowercases);
 
         // Verify 'php' appears only once (not duplicated as 'php' and 'PHP')
         $phpCount = count(array_filter($entry->tags, static fn ($tag) => strtolower($tag) === 'php'));

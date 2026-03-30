@@ -98,7 +98,7 @@ final readonly class EntryParser
             return [];
         }
 
-        preg_match_all('/#([\w]+)/u', strip_tags($body), $matches);
+        preg_match_all('/#([\w-]+)/u', strip_tags($body), $matches);
         return array_map(strtolower(...), $matches[1]);
     }
 
