@@ -75,6 +75,16 @@ final class EntryParserTest extends TestCase
         assertSame(['php', 'inline', 'shit', 'yii'], $entry->tags);
     }
 
+    public function testHtmlColorCodesAreNotExtractedAsTags(): void
+    {
+        $entry = $this->parser->parse($this->dataDir . '/blog/2026-03-30-inline-tags.md', 'blog');
+
+        // #f00 and #aabbcc are CSS color codes inside HTML attributes and must not appear as tags
+        $tagLowercases = array_map(strtolower(...), $entry->tags);
+        assertFalse(in_array('f00', $tagLowercases, true));
+        assertFalse(in_array('aabbcc', $tagLowercases, true));
+    }
+
     public function testInlineTagsAreCaseInsensitiveMerged(): void
     {
         $entry = $this->parser->parse($this->dataDir . '/blog/2026-03-30-inline-tags.md', 'blog');
