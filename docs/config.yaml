@@ -1,6 +1,6 @@
 title: "YiiPress Documentation"
 description: "Documentation for YiiPress static blog engine"
-base_url: "https://yiipress.github.io/engine/"
+base_url: "https://yiipress.yiiframework.com/"
 language: "en"
 search:
   full_text: false   # index full body text (default: false, summary+tags only)
