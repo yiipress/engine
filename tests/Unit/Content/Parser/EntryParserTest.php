@@ -64,4 +64,28 @@ final class EntryParserTest extends TestCase
         assertStringContainsString('This is the body of the test post.', $body);
         assertStringContainsString('It has multiple paragraphs.', $body);
     }
+
+    public function testInlineTagsAreExtractedFromBody(): void
+    {
+        $entry = $this->parser->parse($this->dataDir . '/blog/2026-03-30-inline-tags.md', 'blog');
+
+        // Should have front matter tag 'php' plus inline tags 'inline', 'shit', 'yii'
+        // 'php' should not be duplicated (it's in both front matter and body)
+        // Inline tags are normalized to lowercase
+        assertSame(['php', 'inline', 'shit', 'yii'], $entry->tags);
+    }
+
+    public function testInlineTagsAreCaseInsensitiveMerged(): void
+    {
+        $entry = $this->parser->parse($this->dataDir . '/blog/2026-03-30-inline-tags.md', 'blog');
+
+        // #php in body should be recognized as duplicate of 'php' in front matter (case-insensitive)
+        // so it doesn't appear twice in the tags list
+        $tagLowercases = array_map(strtolower(...), $entry->tags);
+        assertSame(['php', 'inline', 'shit', 'yii'], $tagLowercases);
+
+        // Verify 'php' appears only once (not duplicated as 'php' and 'PHP')
+        $phpCount = count(array_filter($entry->tags, static fn ($tag) => strtolower($tag) === 'php'));
+        assertSame(1, $phpCount);
+    }
 }

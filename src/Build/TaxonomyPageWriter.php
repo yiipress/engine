@@ -33,11 +33,13 @@ final readonly class TaxonomyPageWriter
                 continue;
             }
 
-            $this->writeIndexPage($siteConfig, $taxonomyName, array_keys($terms), $outputDir, $navigation);
+            // PHP converts numeric string keys to integers - cast back to strings
+            $termNames = array_map(strval(...), array_keys($terms));
+            $this->writeIndexPage($siteConfig, $taxonomyName, $termNames, $outputDir, $navigation);
             $pageCount++;
 
             foreach ($terms as $term => $entries) {
-                $this->writeTermPage($siteConfig, $taxonomyName, $term, $entries, $collections, $outputDir, $navigation);
+                $this->writeTermPage($siteConfig, $taxonomyName, (string) $term, $entries, $collections, $outputDir, $navigation);
                 $pageCount++;
             }
         }

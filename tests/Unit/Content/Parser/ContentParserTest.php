@@ -51,7 +51,7 @@ final class ContentParserTest extends TestCase
     {
         $entries = iterator_to_array($this->parser->parseEntries($this->dataDir, 'blog'));
 
-        assertCount(6, $entries);
+        assertCount(7, $entries);
     }
 
     public function testParseAuthors(): void
@@ -67,6 +67,6 @@ final class ContentParserTest extends TestCase
     {
         $entries = iterator_to_array($this->parser->parseAllEntries($this->dataDir), false);
 
-        assertCount(8, $entries);
+        assertCount(9, $entries);
     }
 }

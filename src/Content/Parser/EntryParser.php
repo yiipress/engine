@@ -29,6 +29,13 @@ final readonly class EntryParser
 
         $slug = (string) ($fields['slug'] ?? $filenameParsed['slug']);
 
+        $frontMatterTags = isset($fields['tags']) && is_array($fields['tags'])
+            ? array_values(array_map(strval(...), $fields['tags']))
+            : [];
+
+        $inlineTags = $this->extractInlineTags($filePath, $result['bodyOffset'], $result['bodyLength']);
+        $tags = $this->mergeTags($frontMatterTags, $inlineTags);
+
         return new Entry(
             filePath: $filePath,
             collection: $collectionName,
@@ -36,9 +43,7 @@ final readonly class EntryParser
             title: (string) ($fields['title'] ?? ''),
             date: $date,
             draft: (bool) ($fields['draft'] ?? false),
-            tags: isset($fields['tags']) && is_array($fields['tags'])
-                ? array_values(array_map(strval(...), $fields['tags']))
-                : [],
+            tags: $tags,
             categories: isset($fields['categories']) && is_array($fields['categories'])
                 ? array_values(array_map(strval(...), $fields['categories']))
                 : [],
@@ -59,5 +64,72 @@ final readonly class EntryParser
             bodyLength: $result['bodyLength'],
             image: (string) ($fields['image'] ?? ''),
         );
+    }
+
+    /**
+     * Extract inline tags from body content (e.g., #tag in markdown).
+     *
+     * @return list<string>
+     */
+    private function extractInlineTags(string $filePath, int $bodyOffset, int $bodyLength): array
+    {
+        if ($bodyLength <= 0) {
+            return [];
+        }
+
+        $handle = fopen($filePath, 'rb');
+        if ($handle === false) {
+            return [];
+        }
+
+        $body = '';
+        try {
+            if (fseek($handle, $bodyOffset) === 0) {
+                $read = fread($handle, $bodyLength);
+                if ($read !== false) {
+                    $body = $read;
+                }
+            }
+        } finally {
+            fclose($handle);
+        }
+
+        if ($body === '') {
+            return [];
+        }
+
+        preg_match_all('/#([\w]+)/u', $body, $matches);
+        return array_map(strtolower(...), $matches[1]);
+    }
+
+    /**
+     * Merge front matter and inline tags, removing duplicates (case-insensitive).
+     *
+     * @param list<string> $frontMatterTags
+     * @param list<string> $inlineTags
+     * @return list<string>
+     */
+    private function mergeTags(array $frontMatterTags, array $inlineTags): array
+    {
+        $seen = [];
+        $result = [];
+
+        foreach ($frontMatterTags as $tag) {
+            $lower = strtolower($tag);
+            if (!isset($seen[$lower])) {
+                $seen[$lower] = true;
+                $result[] = $tag;
+            }
+        }
+
+        foreach ($inlineTags as $tag) {
+            $lower = strtolower($tag);
+            if (!isset($seen[$lower])) {
+                $seen[$lower] = true;
+                $result[] = $tag;
+            }
+        }
+
+        return $result;
     }
 }
