@@ -34,6 +34,6 @@ return [
         return new StaticFileAction($responseFactory, $streamFactory, $root . '/output', $buildRunner);
     },
     LiveReloadMiddleware::class => static function (StreamFactoryInterface $streamFactory): LiveReloadMiddleware {
-        return new LiveReloadMiddleware($streamFactory, Environment::isDev());
+        return new LiveReloadMiddleware($streamFactory);
     },
 ];
