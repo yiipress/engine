@@ -153,6 +153,31 @@ final class TagLinkProcessorTest extends TestCase
         );
     }
 
+    public function testDoesNotConvertColorCodesInHtmlAttributes(): void
+    {
+        $processor = new TagLinkProcessor('/');
+        $content = '$<strong style="color: #f00">2y</strong>$<strong style="color: #0a0">13</strong>$<strong style="color: #00f">YUUgrko03UmNU/fe6gNcO.</strong><strong style="color: #00a">Hka4lrdRlkq0iJ5d4bv4fK.sKS.6jXu</strong>';
+
+        $result = $processor->process($content, $this->createEntry());
+
+        // Color codes in HTML attributes should NOT be converted to tag links
+        assertSame($content, $result);
+    }
+
+    public function testConvertsHashtagsOutsideHtmlAttributes(): void
+    {
+        $processor = new TagLinkProcessor('/');
+        $content = '<p style="color: #fff">This is white text with #realhashtag</p>';
+
+        $result = $processor->process($content, $this->createEntry());
+
+        // Color code in attribute preserved, real hashtag converted
+        assertSame(
+            '<p style="color: #fff">This is white text with <a href="/tags/realhashtag/" class="tag-link">#realhashtag</a></p>',
+            $result
+        );
+    }
+
     private function createEntry(): Entry
     {
         $tmp = tempnam(sys_get_temp_dir(), 'yiipress_taglink_test_');

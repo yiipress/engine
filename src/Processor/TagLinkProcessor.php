@@ -14,7 +14,9 @@ final readonly class TagLinkProcessor implements ContentProcessorInterface
 
     public function process(string $content, Entry $entry): string
     {
-        $parts = preg_split('/(<pre[^>]*>.*?<\/pre>|<code[^>]*>.*?<\/code>|<a[^>]*>.*?<\/a>)/s', $content, -1, PREG_SPLIT_DELIM_CAPTURE);
+        // Protect pre/code/a blocks (their content shouldn't have hashtags converted)
+        // Then split by remaining HTML tags to exclude hashtags in attributes
+        $parts = preg_split('/(<pre[^>]*>.*?<\/pre>|<code[^>]*>.*?<\/code>|<a[^>]*>.*?<\/a>|<[^>]+>)/s', $content, -1, PREG_SPLIT_DELIM_CAPTURE);
 
         if ($parts === false) {
             return $content;
@@ -23,8 +25,16 @@ final readonly class TagLinkProcessor implements ContentProcessorInterface
         $result = '';
         foreach ($parts as $i => $part) {
             if ($i % 2 === 0) {
+                // Outside any HTML tag - convert hashtags
                 $result .= $this->convertHashtags($part);
+            } elseif (preg_match('/^<(pre|code|a)[^>]*>/i', $part)) {
+                // Protected block (pre/code/a with content) - preserve unchanged
+                $result .= $part;
+            } elseif (preg_match('/^<\/(pre|code|a)>/i', $part)) {
+                // Closing tags of protected blocks - already captured in the block
+                $result .= $part;
             } else {
+                // Other HTML tags (including attributes) - preserve unchanged
                 $result .= $part;
             }
         }
