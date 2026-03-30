@@ -1,17 +1,145 @@
-# YiiPress
+<img src="logo.svg" alt="YiiPress" width="280">
 
-YiiPress is a static blog engine built on Yii3.
+**YiiPress** is a fast, file-based static blog engine built on [Yii3](https://www.yiiframework.com/) and PHP 8.5. 
+Write Markdown, run one command, get a fully static site — feeds, sitemaps, taxonomy pages, authors, search, and all.
 
-- Exceptionally fast.
-- Flat files storage.
-- Allows extending with plugins.
+[![PHP 8.5](https://img.shields.io/badge/PHP-8.5-777bb4?logo=php&logoColor=white)](https://www.php.net/)
+[![Yii3](https://img.shields.io/badge/Yii-3-007bff)](https://www.yiiframework.com/)
+[![Docs](https://img.shields.io/badge/docs-yiipress.github.io-blueviolet)](https://yiipress.github.io/engine/)
 
-## Installation
+---
+
+## Features
+
+### Content
+
+- **Markdown** with 15+ configurable extensions (tables, footnotes, strikethrough, task lists, Mermaid diagrams, LaTeX math, wiki-links…)
+- **Collections** — group entries into blogs, docs sections, portfolios, or any other set
+- **Standalone pages** — about, contact, and other one-off pages outside collections
+- **Taxonomies** — tags and categories with index and term pages
+- **Authors** — per-author profile pages with bio and entry archives
+- **Date archives** — yearly and monthly archive pages
+- **Drafts & scheduling** — `draft: true` and future-dated entries excluded from production builds
+- **Entry summaries** — auto-generated or manual via `[cut]` marker in body
+- **Cross-references** — link between entries by file path; permalinks can change without breaking links
+
+### Build
+
+- **Parallel builds** — configurable worker count; 10 000 entries built in ~1.2 s
+- **Incremental builds** — only re-renders files that changed since last build
+- **Build cache** — parsed Markdown and front matter cached between runs
+- **Dry-run mode** — preview what would be generated without writing anything
+- **Build diagnostics** — warns about broken internal links, missing images, invalid front matter
+
+### SEO & Standards
+
+- RSS and Atom feeds per collection
+- XML sitemap
+- Open Graph and Twitter Card meta tags
+- Canonical URLs
+- Configurable `robots.txt`
+- Redirect pages (for permalink migrations)
+- Static `404.html` for Netlify, GitHub Pages, Vercel, Cloudflare Pages
+
+### Extensions
+
+- **Syntax highlighting** — server-side, via a Rust/[syntect](https://github.com/trishume/syntect) FFI library; zero client-side JavaScript
+- **Table of contents** — auto-generated from headings, with `id` injection
+- **Mermaid diagrams** — flowcharts, sequence, Gantt, pie, and more
+- **YouTube & Vimeo shortcodes** — responsive embeds with a single tag
+- **Client-side search** — fuzzy search with modal UI; no external dependencies; opt-in
+- **Telegram import** — import channel exports as Markdown entries
+
+### Developer Experience
+
+- Live-reload dev server (`make up`)
+- `yiipress new` — scaffold entries from archetypes
+- `yiipress clean` — wipe output and caches
+- PHP template engine with partials — no new templating language to learn
+- Theme system — installable and distributable themes
+- Docker-based setup — one command to start
+
+---
+
+## Performance
+
+10 000 entries across 3 collections, OPcache on:
+
+| Mode                | Time    |
+|---------------------|---------|
+| Sequential          | ~1.49 s |
+| 4 workers           | ~1.18 s |
+| Incremental (cached)| ~0.05 s |
+
+1 000 realistic entries (large posts, images, tables, code blocks):
+
+| Mode       | Time    |
+|------------|---------|
+| Sequential | ~252 ms |
+| 4 workers  | ~152 ms |
+| 8 workers  | ~135 ms |
+
+---
+
+## Quick Start
 
 ```bash
 composer create-project yiipress/engine myblog
+cd myblog
 ```
+
+Configure `content/config.yaml`:
+
+```yaml
+title: My Blog
+base_url: https://example.com
+permalink: /:collection/:slug/
+taxonomies:
+  - tags
+  - categories
+```
+
+Create a collection in `content/blog/_collection.yaml`:
+
+```yaml
+title: Blog
+sort_by: date
+sort_direction: desc
+feed: true
+listing: true
+```
+
+Write a post in `content/blog/2024-01-15-hello-world.md`:
+
+```markdown
+---
+title: Hello World
+tags:
+  - general
+---
+
+Welcome to my blog!
+```
+
+Build and preview:
+
+```bash
+make yii build
+make up          # dev server at http://localhost:8087
+```
+
+---
 
 ## Documentation
 
-Read [docs](docs) directory or [its rendered version](https://yiipress.github.io/engine/) for documentation.
+Full documentation is available in the [`docs/`](docs/) directory and rendered at **[yiipress.github.io/engine](https://yiipress.github.io/engine/)**.
+
+| Guide | Description |
+|---|---|
+| [Quickstart](docs/quickstart.md) | Create your first site in minutes |
+| [Content](docs/content.md) | Collections, front matter, taxonomies, authors |
+| [Configuration](docs/config.md) | All `config.yaml` options |
+| [Commands](docs/commands.md) | CLI reference |
+| [Templates](docs/template.md) | Template variables, partials, themes |
+| [Plugins](docs/plugins.md) | Content processors and importers |
+| [Deployment](docs/deployment.md) | GitHub Pages, Netlify, Vercel, Cloudflare Pages |
