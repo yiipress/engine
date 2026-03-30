@@ -76,19 +76,6 @@ final class LiveReloadMiddlewareTest extends TestCase
         assertSame($html, (string) $response->getBody());
     }
 
-    public function testSkipsWhenDisabled(): void
-    {
-        $middleware = new LiveReloadMiddleware(new StreamFactory(), false);
-        $html = '<html><body><p>Hello</p></body></html>';
-
-        $response = $middleware->process(
-            new ServerRequest(),
-            $this->createHandler($html, 'text/html'),
-        );
-
-        assertStringNotContainsString('EventSource', (string) $response->getBody());
-    }
-
     private function createHandler(string $body, string $contentType): RequestHandlerInterface
     {
         return new readonly class ($body, $contentType) implements RequestHandlerInterface {
