@@ -162,6 +162,21 @@ Both shortcode processors support:
 - Double quotes, single quotes, or no quotes for attribute values (no spaces)
 - Case-insensitive shortcode names
 
+### TweetProcessor
+
+Expands tweet shortcodes into Twitter embed HTML before markdown processing.
+The Twitter widget JS is injected into `<head>` only on pages that contain tweet embeds.
+
+```markdown
+[tweet id="1234567890" /]
+```
+
+Generated HTML includes:
+- A `<blockquote class="twitter-tweet">` element with a link to the tweet
+- Privacy-friendly embed (`data-dnt="true"` — do not track)
+- CSS classes: `.shortcode`, `.shortcode-tweet`
+- The Twitter widget script (`platform.twitter.com/widgets.js`) injected once per page
+
 ### TocProcessor
 
 Generates a table of contents from headings in the rendered HTML.

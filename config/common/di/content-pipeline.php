@@ -10,6 +10,7 @@ use App\Console\NewCommand;
 use App\Highlighter\SyntaxHighlighter;
 use App\Processor\ContentProcessorPipeline;
 use App\Processor\Mermaid\MermaidProcessor;
+use App\Processor\Shortcode\TweetProcessor;
 use App\Processor\Shortcode\VimeoProcessor;
 use App\Processor\Shortcode\YouTubeProcessor;
 use App\Processor\MarkdownProcessor;
@@ -31,6 +32,9 @@ return [
     VimeoProcessor::class => [
         'class' => VimeoProcessor::class,
     ],
+    TweetProcessor::class => [
+        'class' => TweetProcessor::class,
+    ],
     TocProcessor::class => [
         'class' => TocProcessor::class,
     ],
@@ -39,6 +43,7 @@ return [
         '__construct()' => [
             Reference::to(YouTubeProcessor::class),
             Reference::to(VimeoProcessor::class),
+            Reference::to(TweetProcessor::class),
             Reference::to(MarkdownProcessor::class),
             Reference::to(TagLinkProcessor::class),
             Reference::to(MermaidProcessor::class),
