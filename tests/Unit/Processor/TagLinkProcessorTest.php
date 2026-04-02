@@ -78,6 +78,19 @@ final class TagLinkProcessorTest extends TestCase
         );
     }
 
+    public function testHandlesHashtagsWithHyphens(): void
+    {
+        $processor = new TagLinkProcessor('/');
+        $content = '<p>#multi-word-tag and #another-tag here</p>';
+
+        $result = $processor->process($content, $this->createEntry());
+
+        assertSame(
+            '<p><a href="/tags/multi-word-tag/" class="tag-link">#multi-word-tag</a> and <a href="/tags/another-tag/" class="tag-link">#another-tag</a> here</p>',
+            $result
+        );
+    }
+
     public function testHandlesHashtagsWithUnderscores(): void
     {
         $processor = new TagLinkProcessor('/');

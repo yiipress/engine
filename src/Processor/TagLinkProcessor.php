@@ -45,7 +45,7 @@ final readonly class TagLinkProcessor implements ContentProcessorInterface
     private function convertHashtags(string $text): string
     {
         return preg_replace_callback(
-            '/(?<!\w)#(\w+)(?!\w)/',
+            '/(?<!\w)#(\w+(?:-\w+)*)(?![\w-])/',
             function (array $matches): string {
                 $tagDisplay = $matches[1];
                 $tagUrl = mb_strtolower($tagDisplay);

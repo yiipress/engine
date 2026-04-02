@@ -209,6 +209,10 @@ PHP);
         $bodyOffset = $bodyPos !== false ? $bodyPos + strlen($bodyMarker) : 0;
         $bodyLength = strlen($content) - $bodyOffset;
 
+        $body = $bodyLength > 0 ? substr($content, $bodyOffset, $bodyLength) : '';
+        preg_match_all('/#([\w-]+)/u', strip_tags($body), $inlineMatches);
+        $inlineTags = array_map(strtolower(...), $inlineMatches[1]);
+
         return new Entry(
             filePath: $filePath,
             collection: $collection,
@@ -229,6 +233,7 @@ PHP);
             extra: [],
             bodyOffset: $bodyOffset,
             bodyLength: $bodyLength,
+            inlineTags: $inlineTags,
         );
     }
 

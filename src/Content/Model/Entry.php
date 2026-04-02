@@ -10,6 +10,7 @@ final readonly class Entry
 {
     /**
      * @param list<string> $tags
+     * @param list<string> $inlineTags Tags that appear inline in the body (already rendered as links in content)
      * @param list<string> $categories
      * @param list<string> $authors
      * @param array<string, mixed> $extra
@@ -35,6 +36,7 @@ final readonly class Entry
         private int $bodyOffset,
         private int $bodyLength,
         public string $image = '',
+        public array $inlineTags = [],
     ) {}
 
     public function sourceFilePath(): string

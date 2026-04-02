@@ -44,6 +44,7 @@ final readonly class EntryParser
             date: $date,
             draft: (bool) ($fields['draft'] ?? false),
             tags: $tags,
+            inlineTags: $inlineTags,
             categories: isset($fields['categories']) && is_array($fields['categories'])
                 ? array_values(array_map(strval(...), $fields['categories']))
                 : [],

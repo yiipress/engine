@@ -189,7 +189,7 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
     transition: background .2s;
 }
 .content img { max-width: 100%; height: auto; border-radius: .5rem; margin: 1.25rem 0; }
-.content a.tag-link {
+a.tag-link {
     display: inline-block;
     background: var(--c-tag-bg);
     color: var(--c-tag-text);
@@ -199,7 +199,7 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
     text-decoration: none;
     transition: background .2s, color .2s;
 }
-.content a.tag-link:hover {
+a.tag-link:hover {
     background: var(--c-link);
     color: #fff;
     text-decoration: none;

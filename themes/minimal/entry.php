@@ -74,7 +74,7 @@ use App\Content\Model\Navigation;
 <?php if ($tags !== []): ?>
                     <div class="entry-tags">
 <?php foreach ($tags as $tag): ?>
-                        <a href="<?= $rootPath ?>tags/<?= htmlspecialchars($tag) ?>/" class="tag"><?= htmlspecialchars($tag) ?></a>
+                        <a href="<?= $rootPath ?>tags/<?= htmlspecialchars($tag) ?>/" class="tag-link">#<?= htmlspecialchars($tag) ?></a>
 <?php endforeach; ?>
                     </div>
 <?php endif; ?>
