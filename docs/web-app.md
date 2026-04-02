@@ -10,7 +10,7 @@ If the output directory is missing or empty, a build runs automatically on the f
 
 ## Live reload
 
-In dev mode (`APP_ENV=dev`), live reload is enabled automatically. When content files or templates change, the browser refreshes with the updated build.
+When content files or templates change, the browser refreshes with the updated build.
 
 How it works:
 
@@ -19,5 +19,3 @@ How it works:
 3. `LiveReloadAction` polls `content/` and `src/Render/Template/` for file changes every 500ms.
 4. When a change is detected, `SiteBuildRunner` triggers a full `yii build` to regenerate the output directory.
 5. After the build completes, the server sends a `reload` event and the browser refreshes.
-
-Live reload is disabled in `test` and `prod` environments — the middleware passes responses through unchanged.
