@@ -47,6 +47,7 @@ Write Markdown, run one command, get a fully static site — feeds, sitemaps, ta
 - **Table of contents** — auto-generated from headings, with `id` injection
 - **Mermaid diagrams** — flowcharts, sequence, Gantt, pie, and more
 - **YouTube & Vimeo shortcodes** — responsive embeds with a single tag
+- **Auto-embeds for provider URLs** — standalone YouTube, Vimeo, and Twitter/X links expand automatically
 - **Client-side search** — fuzzy search with modal UI; no external dependencies; opt-in
 - **Asset fingerprinting** — enabled by default; content-hash filenames for CSS, JS, images, and other copied assets
 - **Telegram import** — import channel exports as Markdown entries

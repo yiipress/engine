@@ -6,6 +6,14 @@ namespace App\Processor\Shortcode;
 
 use App\Content\Model\Entry;
 use App\Processor\ContentProcessorInterface;
+use App\Processor\OEmbed\OEmbedInterface;
+
+use function htmlspecialchars;
+use function parse_url;
+use function preg_match;
+use function preg_replace_callback;
+use function sprintf;
+use function strtolower;
 
 /**
  * Expands Vimeo shortcodes into embed HTML before markdown processing.
@@ -16,7 +24,7 @@ use App\Processor\ContentProcessorInterface;
  *
  * Into responsive embed HTML with lazy-loaded iframe.
  */
-final readonly class VimeoProcessor implements ContentProcessorInterface
+final readonly class VimeoProcessor implements ContentProcessorInterface, OEmbedInterface
 {
     use ParsesShortcodeAttributesTrait;
 
@@ -41,6 +49,23 @@ final readonly class VimeoProcessor implements ContentProcessorInterface
             },
             $content,
         );
+    }
+
+    public function supportsOEmbed(string $url): bool
+    {
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+
+        return $host === 'vimeo.com' || $host === 'www.vimeo.com';
+    }
+
+    public function replaceOEmbed(string $url): ?string
+    {
+        $path = (string) parse_url($url, PHP_URL_PATH);
+        if (preg_match('~^/(\d+)/?$~', $path, $matches) !== 1) {
+            return null;
+        }
+
+        return $this->generateEmbedCode($matches[1], 560, 315);
     }
 
     private function generateEmbedCode(string $videoId, int $width, int $height): string

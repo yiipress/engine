@@ -177,6 +177,65 @@ Generated HTML includes:
 - CSS classes: `.shortcode`, `.shortcode-tweet`
 - The Twitter widget script (`platform.twitter.com/widgets.js`) injected once per page
 
+### OEmbedProcessor
+
+Expands standalone provider URLs into embed HTML before markdown processing.
+
+Providers are pluggable. Each provider implements `App\Processor\OEmbed\OEmbedInterface` and owns both:
+- URL matching logic
+- the generated embed HTML
+
+```php
+interface OEmbedInterface
+{
+    public function supportsOEmbed(string $url): bool;
+
+    public function replaceOEmbed(string $url): ?string;
+}
+```
+
+The built-in shortcode processors implement `OEmbedInterface` directly, so each provider owns its shortcode parsing,
+standalone URL matching, and generated HTML in one class.
+
+Register providers through `OEmbedProcessor` in `config/common/di/content-pipeline.php`:
+
+```php
+OEmbedProcessor::class => [
+    'class' => OEmbedProcessor::class,
+    '__construct()' => [
+        Reference::to(YouTubeProcessor::class),
+        Reference::to(VimeoProcessor::class),
+        Reference::to(TweetProcessor::class),
+    ],
+],
+```
+
+Supported providers:
+- YouTube watch URLs (`https://www.youtube.com/watch?v=...`)
+- YouTube short URLs (`https://youtu.be/...`)
+- Vimeo video URLs (`https://vimeo.com/123456789`)
+- Twitter/X status URLs (`https://twitter.com/.../status/...`, `https://x.com/.../status/...`)
+
+Example:
+
+```markdown
+https://www.youtube.com/watch?v=dQw4w9WgXcQ
+
+https://vimeo.com/123456789
+
+https://x.com/OpenAI/status/1234567890
+```
+
+Each URL must appear on its own line. Inline links remain unchanged.
+
+Generated HTML uses the same wrappers and classes as the built-in shortcode processors:
+- `.shortcode-youtube`
+- `.shortcode-vimeo`
+- `.shortcode-tweet`
+
+For tweet/status embeds, the existing Twitter widget script is injected automatically because the generated
+HTML matches the same marker format as `TweetProcessor`.
+
 ### TocProcessor
 
 Generates a table of contents from headings in the rendered HTML.

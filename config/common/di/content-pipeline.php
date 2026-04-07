@@ -7,9 +7,9 @@ use App\Build\ThemeRegistry;
 use App\Console\BuildCommand;
 use App\Console\CleanCommand;
 use App\Console\NewCommand;
-use App\Highlighter\SyntaxHighlighter;
 use App\Processor\ContentProcessorPipeline;
 use App\Processor\Mermaid\MermaidProcessor;
+use App\Processor\OEmbed\OEmbedProcessor;
 use App\Processor\Shortcode\TweetProcessor;
 use App\Processor\Shortcode\VimeoProcessor;
 use App\Processor\Shortcode\YouTubeProcessor;
@@ -20,23 +20,13 @@ use App\Processor\Toc\TocProcessor;
 use Yiisoft\Definitions\Reference;
 
 return [
-    SyntaxHighlighter::class => [
-        'class' => SyntaxHighlighter::class,
-    ],
-    MermaidProcessor::class => [
-        'class' => MermaidProcessor::class,
-    ],
-    YouTubeProcessor::class => [
-        'class' => YouTubeProcessor::class,
-    ],
-    VimeoProcessor::class => [
-        'class' => VimeoProcessor::class,
-    ],
-    TweetProcessor::class => [
-        'class' => TweetProcessor::class,
-    ],
-    TocProcessor::class => [
-        'class' => TocProcessor::class,
+    OEmbedProcessor::class => [
+        'class' => OEmbedProcessor::class,
+        '__construct()' => [
+            Reference::to(YouTubeProcessor::class),
+            Reference::to(VimeoProcessor::class),
+            Reference::to(TweetProcessor::class),
+        ],
     ],
     'contentPipeline' => [
         'class' => ContentProcessorPipeline::class,
@@ -44,6 +34,7 @@ return [
             Reference::to(YouTubeProcessor::class),
             Reference::to(VimeoProcessor::class),
             Reference::to(TweetProcessor::class),
+            Reference::to(OEmbedProcessor::class),
             Reference::to(MarkdownProcessor::class),
             Reference::to(TagLinkProcessor::class),
             Reference::to(MermaidProcessor::class),

@@ -235,14 +235,9 @@ Two separate pipelines are configured via Yii3 DI container in `config/common/di
 ### Built-in processors
 
 - **MarkdownProcessor** — converts markdown to HTML using md4c. Accepts `MarkdownConfig` for feature toggles
+- **OEmbedProcessor** — expands standalone provider URLs into embed HTML before markdown via pluggable `OEmbedInterface` implementations
 - **SyntaxHighlightProcessor** — server-rendered code block highlighting via Rust FFI. Uses syntect + rayon compiled to a shared library (`src/Highlighter/`)
 
-### Planned processors
-
-- **ShortcodeProcessor** — `[youtube id="..."  /]`, `[figure ... /]` expansion (before markdown)
-- **TableOfContentsProcessor** — heading extraction and ToC generation (after markdown)
-- **MermaidProcessor** — diagram rendering (after markdown)
-- **OEmbedProcessor** — URL-to-embed expansion (before markdown)
 
 ## Serve mode
 

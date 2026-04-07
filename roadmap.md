@@ -80,7 +80,7 @@
 - [x] Built-in shortcodes (YouTube, Vimeo, figure, etc.) as a plugin
 - [x] Table of contents generation from headings as a plugin
 - [x] Diagram support (Mermaid) as a plugin
-- [ ] oEmbed support (auto-expanding URLs to embeds) as a plugin
+- [x] oEmbed support (auto-expanding URLs to embeds) as a plugin
 
 ## Priority 8: Advanced features
 

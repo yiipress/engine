@@ -7,6 +7,15 @@ namespace App\Processor\Shortcode;
 use App\Content\Model\Entry;
 use App\Processor\AssetProcessorInterface;
 use App\Processor\ContentProcessorInterface;
+use App\Processor\OEmbed\OEmbedInterface;
+
+use function htmlspecialchars;
+use function parse_url;
+use function preg_match;
+use function preg_replace_callback;
+use function sprintf;
+use function str_contains;
+use function strtolower;
 
 /**
  * Expands tweet shortcodes into Twitter embed HTML before markdown processing.
@@ -16,7 +25,7 @@ use App\Processor\ContentProcessorInterface;
  *
  * Into a Twitter blockquote embed that the Twitter widget JS renders client-side.
  */
-final readonly class TweetProcessor implements ContentProcessorInterface, AssetProcessorInterface
+final readonly class TweetProcessor implements ContentProcessorInterface, AssetProcessorInterface, OEmbedInterface
 {
     use ParsesShortcodeAttributesTrait;
 
@@ -48,6 +57,26 @@ final readonly class TweetProcessor implements ContentProcessorInterface, AssetP
         }
 
         return '<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>';
+    }
+
+    public function supportsOEmbed(string $url): bool
+    {
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+
+        return match ($host) {
+            'twitter.com', 'www.twitter.com', 'x.com', 'www.x.com' => true,
+            default => false,
+        };
+    }
+
+    public function replaceOEmbed(string $url): ?string
+    {
+        $path = (string) parse_url($url, PHP_URL_PATH);
+        if (preg_match('~^/[^/]+/status/(\d+)/?$~', $path, $matches) !== 1) {
+            return null;
+        }
+
+        return $this->generateEmbedCode($matches[1]);
     }
 
     public function assetFiles(): array
