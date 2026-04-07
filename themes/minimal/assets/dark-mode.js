@@ -5,11 +5,14 @@
 
     function set(v) {
         b.setAttribute('data-theme', v);
+        b.style.colorScheme = v;
         localStorage.setItem(k, v);
         if (t) t.textContent = v === 'dark' ? '\u2600' : '\u263E';
     }
 
-    const s = localStorage.getItem(k) || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
+    const s = b.getAttribute('data-theme')
+        || localStorage.getItem(k)
+        || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
     set(s);
 
     if (t) {

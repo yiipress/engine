@@ -49,6 +49,8 @@ final class EntryRendererTest extends TestCase
 
         assertStringContainsString('<h1>Test Post</h1>', $html);
         assertStringContainsString('Hello world.', $html);
+        assertStringContainsString("root.setAttribute('data-theme', theme);", $html);
+        assertStringContainsString("root.style.colorScheme = theme;", $html);
     }
 
     public function testRendersWithCustomLayout(): void
