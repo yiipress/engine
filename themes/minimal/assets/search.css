@@ -1,7 +1,8 @@
 #search-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: color-mix(in srgb, var(--c-bg) 32%, transparent);
+    backdrop-filter: blur(4px);
     z-index: 1000;
 }
 
@@ -11,9 +12,11 @@
     left: 50%;
     transform: translateX(-50%);
     width: min(600px, 90vw);
-    background: var(--bg-color, #fff);
+    background: var(--c-bg);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
     border-radius: 8px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
     z-index: 1001;
     padding: 1rem;
 }
@@ -22,9 +25,10 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    border: 1px solid var(--border-color, #ccc);
+    border: 1px solid var(--c-border);
     border-radius: 4px;
     padding: 0.5rem 0.75rem;
+    background: var(--c-code-bg);
 }
 
 #search-input {
@@ -39,7 +43,7 @@
 
 .search-hint {
     font-size: 0.75em;
-    color: var(--muted-color, #888);
+    color: var(--c-text-muted);
     white-space: nowrap;
     flex-shrink: 0;
 }
@@ -63,7 +67,7 @@
 
 #search-results li:hover,
 #search-results li[aria-selected="true"] {
-    background: var(--hover-bg, rgba(0, 0, 0, 0.06));
+    background: var(--c-code-bg);
 }
 
 #search-results a {
@@ -81,7 +85,7 @@
 .search-result-summary {
     display: block;
     font-size: 0.85em;
-    color: var(--muted-color, #888);
+    color: var(--c-text-muted);
     margin-top: 0.15em;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -90,6 +94,5 @@
 
 .search-no-results {
     padding: 0.5rem 0.75rem;
-    color: var(--muted-color, #888);
+    color: var(--c-text-muted);
 }
-

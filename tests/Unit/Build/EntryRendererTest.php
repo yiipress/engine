@@ -10,6 +10,7 @@ use App\Build\Theme;
 use App\Build\ThemeRegistry;
 use App\Build\TemplateResolver;
 use App\Content\Model\Entry;
+use App\Content\Model\SearchConfig;
 use App\Content\Model\SiteConfig;
 use App\Processor\ContentProcessorPipeline;
 use DateTimeImmutable;
@@ -193,6 +194,20 @@ PHP);
         assertStringNotContainsString('../../assets/theme/image-zoom.js', $html);
     }
 
+    public function testRendersSearchUiWhenSearchEnabled(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Search Post\n---\n\nSearch body.\n");
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Search Post');
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver(), contentDir: $this->contentDir);
+        $html = $renderer->render($this->createSiteConfig(search: new SearchConfig()), $entry, '/blog/search-post/');
+
+        assertStringContainsString('id="search-modal"', $html);
+        assertStringContainsString('assets/theme/search.css', $html);
+        assertStringContainsString('assets/theme/search.js', $html);
+    }
+
     private function createPipeline(): ContentProcessorPipeline
     {
         return new ContentProcessorPipeline();
@@ -208,7 +223,7 @@ PHP);
         return new TemplateResolver($registry);
     }
 
-    private function createSiteConfig(string $theme = ''): SiteConfig
+    private function createSiteConfig(string $theme = '', ?SearchConfig $search = null): SiteConfig
     {
         return new SiteConfig(
             title: 'Test Site',
@@ -223,6 +238,7 @@ PHP);
             taxonomies: [],
             params: [],
             theme: $theme,
+            search: $search,
         );
     }
 
