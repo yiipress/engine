@@ -22,6 +22,7 @@ final readonly class ParallelEntryWriter
         private ContentProcessorPipeline $pipeline,
         private TemplateResolver $templateResolver,
         private ?BuildCache $cache = null,
+        private ?AssetFingerprintManifest $assetManifest = null,
     ) {}
 
     /**
@@ -65,7 +66,7 @@ final readonly class ParallelEntryWriter
      */
     private function writeEntries(SiteConfig $siteConfig, array $tasks, string $contentDir, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors): void
     {
-        $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors);
+        $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors, $this->assetManifest);
 
         foreach ($tasks as $task) {
             file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver));
@@ -88,7 +89,7 @@ final readonly class ParallelEntryWriter
             }
 
             if ($pid === 0) {
-                $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors);
+                $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors, $this->assetManifest);
 
                 for ($i = $workerIndex; $i < $totalEntries; $i += $workerCount) {
                     $task = $tasks[$i];

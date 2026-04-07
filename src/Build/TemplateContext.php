@@ -14,6 +14,7 @@ final class TemplateContext
     public function __construct(
         private readonly TemplateResolver $templateResolver,
         private readonly string $themeName = '',
+        private readonly ?AssetFingerprintManifest $assetManifest = null,
     ) {}
 
     /**
@@ -22,6 +23,9 @@ final class TemplateContext
     public function partial(string $name, array $variables = []): string
     {
         $variables['partial'] = $this->partial(...);
+        if (!isset($variables['assetManifest'])) {
+            $variables['assetManifest'] = $this->assetManifest;
+        }
 
         if (!isset($this->closureCache[$name])) {
             $path = $this->templateResolver->resolvePartial($name, $this->themeName);
@@ -34,5 +38,14 @@ final class TemplateContext
         }
 
         return ($this->closureCache[$name])($variables);
+    }
+
+    public function rewriteHtml(string $html, string $rootPath = ''): string
+    {
+        if ($this->assetManifest === null) {
+            return $html;
+        }
+
+        return new AssetUrlRewriter($this->assetManifest)->rewrite($html, $rootPath);
     }
 }

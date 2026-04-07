@@ -18,10 +18,32 @@ final class ThemeAssetCopier
     /**
      * @return int number of assets copied
      */
-    public function copy(ThemeRegistry $themeRegistry, string $outputDir): int
+    public function copy(ThemeRegistry $themeRegistry, string $outputDir, ?AssetFingerprintManifest $assetManifest = null): int
     {
         $copied = 0;
-        $targetBase = $outputDir . '/assets/theme';
+
+        foreach ($this->mappings($themeRegistry) as $sourcePath => $targetRelativePath) {
+            $resolvedTarget = $assetManifest?->resolve($targetRelativePath) ?? $targetRelativePath;
+            $targetPath = $outputDir . '/' . $resolvedTarget;
+            $targetDir = dirname($targetPath);
+
+            if (!is_dir($targetDir) && !mkdir($targetDir, 0o755, true) && !is_dir($targetDir)) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $targetDir));
+            }
+
+            copy($sourcePath, $targetPath);
+            $copied++;
+        }
+
+        return $copied;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function mappings(ThemeRegistry $themeRegistry): array
+    {
+        $assets = [];
 
         foreach ($themeRegistry->all() as $theme) {
             $assetsDir = $theme->path . '/assets';
@@ -40,18 +62,10 @@ final class ThemeAssetCopier
                 }
 
                 $relativePath = substr($item->getPathname(), strlen($assetsDir) + 1);
-                $targetPath = $targetBase . '/' . $relativePath;
-                $targetDir = dirname($targetPath);
-
-                if (!is_dir($targetDir) && !mkdir($targetDir, 0o755, true) && !is_dir($targetDir)) {
-                    throw new RuntimeException(sprintf('Directory "%s" was not created', $targetDir));
-                }
-
-                copy($item->getPathname(), $targetPath);
-                $copied++;
+                $assets[$item->getPathname()] = 'assets/theme/' . $relativePath;
             }
         }
 
-        return $copied;
+        return $assets;
     }
 }

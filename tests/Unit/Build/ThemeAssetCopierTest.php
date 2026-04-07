@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Build;
 
+use App\Build\AssetFingerprintManifest;
 use App\Build\Theme;
 use App\Build\ThemeAssetCopier;
 use App\Build\ThemeRegistry;
@@ -74,6 +75,24 @@ final class ThemeAssetCopierTest extends TestCase
         assertSame(2, $copied);
         assertFileExists($this->tempDir . '/output/assets/theme/style.css');
         assertFileExists($this->tempDir . '/output/assets/theme/fonts/mono.woff2');
+    }
+
+    public function testCopiesFingerprintedThemeAssetsWhenManifestProvided(): void
+    {
+        $source = $this->tempDir . '/theme/assets/style.css';
+        file_put_contents($source, 'body { color: red; }');
+
+        $registry = new ThemeRegistry();
+        $registry->register(new Theme('test', $this->tempDir . '/theme'));
+
+        $manifest = new AssetFingerprintManifest();
+        $resolved = $manifest->register('assets/theme/style.css', $source);
+
+        $copier = new ThemeAssetCopier();
+        $copied = $copier->copy($registry, $this->tempDir . '/output', $manifest);
+
+        assertSame(1, $copied);
+        assertFileExists($this->tempDir . '/output/' . $resolved);
     }
 
     private function removeDir(string $dir): void

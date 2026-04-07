@@ -16,7 +16,10 @@ use function count;
 
 final readonly class CollectionListingWriter
 {
-    public function __construct(private TemplateResolver $templateResolver) {}
+    public function __construct(
+        private TemplateResolver $templateResolver,
+        private ?AssetFingerprintManifest $assetManifest = null,
+    ) {}
 
     /**
      * @param list<Entry> $entries
@@ -98,14 +101,16 @@ final readonly class CollectionListingWriter
         $collectionTitle = $collection->title;
         $collectionName = $collection->name;
         $nav = $navigation;
-        $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
+        $templateContext = new TemplateContext($this->templateResolver, $siteConfig->theme, $this->assetManifest);
+        $partial = $templateContext->partial(...);
         $metaTags = MetaTagsBuilder::forPage($siteConfig, $collectionTitle, $collection->description, $permalink);
+        $assetManifest = $this->assetManifest;
         $search = $siteConfig->search !== null;
         $searchResults = $siteConfig->search?->results ?? 10;
 
         ob_start();
         require $this->templateResolver->resolve('collection_listing');
-        return ob_get_clean();
+        return $templateContext->rewriteHtml((string) ob_get_clean(), $rootPath);
     }
 
     private function resolvePageUrl(string $collectionName, int $pageNumber, int $totalPages, string $rootPath): string

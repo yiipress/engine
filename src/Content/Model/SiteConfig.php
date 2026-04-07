@@ -29,5 +29,6 @@ final readonly class SiteConfig
         public RobotsTxtConfig $robotsTxt = new RobotsTxtConfig(),
         public bool $toc = true,
         public ?SearchConfig $search = null,
+        public AssetConfig $assets = new AssetConfig(),
     ) {}
 }

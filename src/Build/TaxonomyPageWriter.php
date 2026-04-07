@@ -13,7 +13,10 @@ use RuntimeException;
 
 final readonly class TaxonomyPageWriter
 {
-    public function __construct(private TemplateResolver $templateResolver) {}
+    public function __construct(
+        private TemplateResolver $templateResolver,
+        private ?AssetFingerprintManifest $assetManifest = null,
+    ) {}
 
     /**
      * @param array<string, array<string, list<Entry>>> $taxonomyData
@@ -59,15 +62,17 @@ final readonly class TaxonomyPageWriter
     ): void {
         $siteTitle = $siteConfig->title;
         $nav = $navigation;
-        $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
+        $templateContext = new TemplateContext($this->templateResolver, $siteConfig->theme, $this->assetManifest);
+        $partial = $templateContext->partial(...);
         $rootPath = RelativePathHelper::rootPath('/' . $taxonomyName . '/');
         $metaTags = MetaTagsBuilder::forPage($siteConfig, ucfirst($taxonomyName), $siteConfig->description, '/' . $taxonomyName . '/');
+        $assetManifest = $this->assetManifest;
         $search = $siteConfig->search !== null;
         $searchResults = $siteConfig->search?->results ?? 10;
 
         ob_start();
         require $this->templateResolver->resolve('taxonomy_index');
-        $html = ob_get_clean();
+        $html = $templateContext->rewriteHtml((string) ob_get_clean(), $rootPath);
 
         $dir = $outputDir . '/' . $taxonomyName;
         if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
@@ -92,9 +97,11 @@ final readonly class TaxonomyPageWriter
     ): void {
         $siteTitle = $siteConfig->title;
         $nav = $navigation;
-        $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
+        $templateContext = new TemplateContext($this->templateResolver, $siteConfig->theme, $this->assetManifest);
+        $partial = $templateContext->partial(...);
         $rootPath = RelativePathHelper::rootPath('/' . $taxonomyName . '/' . $term . '/');
         $metaTags = MetaTagsBuilder::forPage($siteConfig, $term . ' — ' . ucfirst($taxonomyName), $siteConfig->description, '/' . $taxonomyName . '/' . $term . '/');
+        $assetManifest = $this->assetManifest;
         $search = $siteConfig->search !== null;
         $searchResults = $siteConfig->search?->results ?? 10;
 
@@ -116,7 +123,7 @@ final readonly class TaxonomyPageWriter
 
         ob_start();
         require $this->templateResolver->resolve('taxonomy_term');
-        $html = ob_get_clean();
+        $html = $templateContext->rewriteHtml((string) ob_get_clean(), $rootPath);
 
         $dir = $outputDir . '/' . $taxonomyName . '/' . $term;
         if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {

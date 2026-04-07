@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Build;
 
+use App\Build\AssetFingerprintManifest;
+use App\Build\Asset;
 use App\Build\TemplateContext;
 use App\Build\TemplateResolver;
 use App\Build\Theme;
@@ -94,12 +96,38 @@ final class TemplateContextTest extends TestCase
         assertStringContainsString('&lt;script&gt;', $result);
     }
 
-    private function createContext(): TemplateContext
+    public function testStaticAssetHelperReturnsFingerprintedPath(): void
+    {
+        $source = $this->tempDir . '/style.css';
+        file_put_contents($source, 'body{}');
+
+        $manifest = new AssetFingerprintManifest();
+        $fingerprinted = $manifest->register('assets/theme/style.css', $source);
+
+        assertSame('../../' . $fingerprinted, Asset::url('assets/theme/style.css', '../../', $manifest));
+    }
+
+    public function testRewriteHtmlUpdatesReferencedAssets(): void
+    {
+        $source = $this->tempDir . '/style.css';
+        file_put_contents($source, 'body{}');
+
+        $manifest = new AssetFingerprintManifest();
+        $fingerprinted = $manifest->register('assets/theme/style.css', $source);
+
+        $context = $this->createContext($manifest);
+
+        $html = $context->rewriteHtml('<link href="../../assets/theme/style.css">', '../../');
+
+        assertSame('<link href="../../' . $fingerprinted . '">', $html);
+    }
+
+    private function createContext(?AssetFingerprintManifest $assetManifest = null): TemplateContext
     {
         $registry = new ThemeRegistry();
         $registry->register(new Theme('test', $this->tempDir));
         $resolver = new TemplateResolver($registry);
-        return new TemplateContext($resolver, 'test');
+        return new TemplateContext($resolver, 'test', $assetManifest);
     }
 
     private function removeDir(string $dir): void

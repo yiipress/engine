@@ -13,7 +13,10 @@ use RuntimeException;
 
 final readonly class DateArchiveWriter
 {
-    public function __construct(private TemplateResolver $templateResolver) {}
+    public function __construct(
+        private TemplateResolver $templateResolver,
+        private ?AssetFingerprintManifest $assetManifest = null,
+    ) {}
 
     /**
      * @param list<Entry> $entries
@@ -104,15 +107,17 @@ final readonly class DateArchiveWriter
         $collectionName = $collection->name;
         $collectionTitle = $collection->title;
         $nav = $navigation;
-        $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
+        $templateContext = new TemplateContext($this->templateResolver, $siteConfig->theme, $this->assetManifest);
+        $partial = $templateContext->partial(...);
         $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/archive/');
         $metaTags = MetaTagsBuilder::forPage($siteConfig, $collection->title . ' Archive', $siteConfig->description, '/' . $collection->name . '/archive/');
+        $assetManifest = $this->assetManifest;
         $search = $siteConfig->search !== null;
         $searchResults = $siteConfig->search?->results ?? 10;
 
         ob_start();
         require $this->templateResolver->resolve('archive_index');
-        $html = ob_get_clean();
+        $html = $templateContext->rewriteHtml((string) ob_get_clean(), $rootPath);
 
         $dir = $outputDir . '/' . $collection->name . '/archive';
         if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
@@ -139,9 +144,11 @@ final readonly class DateArchiveWriter
         $collectionName = $collection->name;
         $collectionTitle = $collection->title;
         $nav = $navigation;
-        $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
+        $templateContext = new TemplateContext($this->templateResolver, $siteConfig->theme, $this->assetManifest);
+        $partial = $templateContext->partial(...);
         $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/' . $year . '/');
         $metaTags = MetaTagsBuilder::forPage($siteConfig, $collection->title . ': ' . $year, $siteConfig->description, '/' . $collection->name . '/' . $year . '/');
+        $assetManifest = $this->assetManifest;
         $search = $siteConfig->search !== null;
         $searchResults = $siteConfig->search?->results ?? 10;
 
@@ -160,7 +167,7 @@ final readonly class DateArchiveWriter
 
         ob_start();
         require $this->templateResolver->resolve('archive_yearly');
-        $html = ob_get_clean();
+        $html = $templateContext->rewriteHtml((string) ob_get_clean(), $rootPath);
 
         $dir = $outputDir . '/' . $collection->name . '/' . $year;
         if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
@@ -186,10 +193,12 @@ final readonly class DateArchiveWriter
         $collectionName = $collection->name;
         $collectionTitle = $collection->title;
         $nav = $navigation;
-        $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
+        $templateContext = new TemplateContext($this->templateResolver, $siteConfig->theme, $this->assetManifest);
+        $partial = $templateContext->partial(...);
         $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/' . $year . '/' . $month . '/');
         $monthName = date('F', mktime(0, 0, 0, (int) $month, 1));
         $metaTags = MetaTagsBuilder::forPage($siteConfig, $collection->title . ': ' . $monthName . ' ' . $year, $siteConfig->description, '/' . $collection->name . '/' . $year . '/' . $month . '/');
+        $assetManifest = $this->assetManifest;
         $search = $siteConfig->search !== null;
         $searchResults = $siteConfig->search?->results ?? 10;
 
@@ -206,7 +215,7 @@ final readonly class DateArchiveWriter
 
         ob_start();
         require $this->templateResolver->resolve('archive_monthly');
-        $html = ob_get_clean();
+        $html = $templateContext->rewriteHtml((string) ob_get_clean(), $rootPath);
 
         $dir = $outputDir . '/' . $collection->name . '/' . $year . '/' . $month;
         if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {

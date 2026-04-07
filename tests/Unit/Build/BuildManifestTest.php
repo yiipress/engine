@@ -132,6 +132,38 @@ final class BuildManifestTest extends TestCase
         assertSame([], $manifest->removedOutputs([$sourceFile]));
     }
 
+    public function testReplaceReturnsOutputsThatAreNoLongerReferenced(): void
+    {
+        $sourceFile = $this->tempDir . '/asset.css';
+        file_put_contents($sourceFile, 'body{}');
+
+        $manifest = new BuildManifest($this->tempDir . '/manifest.json');
+        $manifest->load();
+        $manifest->record($sourceFile, ['/out/style.old.css']);
+
+        $staleOutputs = $manifest->replace($sourceFile, ['/out/style.new.css']);
+
+        assertSame(['/out/style.old.css'], $staleOutputs);
+    }
+
+    public function testMissingOutputFilesReturnsSourceWithMissingOutputs(): void
+    {
+        $sourceFile = $this->tempDir . '/entry.md';
+        file_put_contents($sourceFile, '# Hello');
+
+        $existingOutput = $this->tempDir . '/output/entry/index.html';
+        mkdir(dirname($existingOutput), 0o755, true);
+        file_put_contents($existingOutput, '<html></html>');
+
+        $missingOutput = $this->tempDir . '/output/entry/feed.xml';
+
+        $manifest = new BuildManifest($this->tempDir . '/manifest.json');
+        $manifest->load();
+        $manifest->record($sourceFile, [$existingOutput, $missingOutput]);
+
+        assertSame([$sourceFile], $manifest->missingOutputFiles([$sourceFile]));
+    }
+
     private function removeDir(string $path): void
     {
         if (!is_dir($path)) {

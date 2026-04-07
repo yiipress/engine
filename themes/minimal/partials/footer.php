@@ -2,9 +2,13 @@
 
 use App\Content\Model\Navigation;
 use App\Render\NavigationRenderer;
+use App\Build\AssetFingerprintManifest;
+use App\Build\Asset;
 
 /**
  * @var ?Navigation $nav
+ * @var string $rootPath
+ * @var AssetFingerprintManifest|null $assetManifest
  */
 ?>
 <?php if ($nav !== null && $nav->menu('footer') !== []): ?>
@@ -14,4 +18,4 @@ use App\Render\NavigationRenderer;
     </div>
 </footer>
 <?php endif; ?>
-<script src="<?= $rootPath ?>assets/theme/dark-mode.js"></script>
+<script src="<?= htmlspecialchars(Asset::url('assets/theme/dark-mode.js', $rootPath, $assetManifest)) ?>"></script>

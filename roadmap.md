@@ -63,7 +63,7 @@
 
 - [ ] Image optimization (resize, compress, modern formats)
 - [ ] CSS/JS processing (minification)
-- [ ] Asset fingerprinting / cache busting
+- [x] Asset fingerprinting / cache busting
 - [x] Static file copying (fonts, downloads, PDFs from source to output)
 
 ## Priority 6: SEO and web standards
@@ -98,4 +98,3 @@
 - [ ] Medium exported Markdown
 - [ ] Ghost
 - [x] Telegram export
-

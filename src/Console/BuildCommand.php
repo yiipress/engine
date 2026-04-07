@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console;
 
 use App\Build\AuthorPageWriter;
+use App\Build\AssetFingerprintManifest;
 use App\Build\BuildCache;
 use App\Build\BuildManifest;
 use App\Build\BuildDiagnostics;
@@ -50,6 +51,7 @@ use Yiisoft\Yii\Console\ExitCode;
 
 use function count;
 use function dirname;
+use function array_keys;
 use function str_starts_with;
 use function strlen;
 
@@ -157,6 +159,21 @@ final class BuildCommand extends Command
         $authors = iterator_to_array($parser->parseAuthors($contentDir));
         $parser->setAuthors($authors);
 
+        $contentAssetCopier = new ContentAssetCopier();
+        $themeAssetCopier = new ThemeAssetCopier();
+        $contentAssetMappings = $contentAssetCopier->mappings($contentDir);
+        $themeAssetMappings = $themeAssetCopier->mappings($this->themeRegistry);
+        $pipelineAssetMappings = $this->contentPipeline->collectAssetFiles();
+        $allAssetMappings = $contentAssetMappings + $themeAssetMappings + $pipelineAssetMappings;
+        $assetManifest = null;
+
+        if ($siteConfig->assets->fingerprint) {
+            $assetManifest = new AssetFingerprintManifest();
+            foreach ($allAssetMappings as $sourcePath => $logicalPath) {
+                $assetManifest->register($logicalPath, $sourcePath);
+            }
+        }
+
         $output->writeln("  Site: <comment>$siteConfig->title</comment>");
         $output->writeln('  Collections: <comment>' . count($collections) . '</comment>');
         $output->writeln('  Authors: <comment>' . count($authors) . '</comment>');
@@ -198,6 +215,10 @@ final class BuildCommand extends Command
             $allSourceFiles[] = $page->sourceFilePath();
         }
 
+        foreach (array_keys($allAssetMappings) as $assetSourceFile) {
+            $allSourceFiles[] = $assetSourceFile;
+        }
+
         $crossRefResolver = new CrossReferenceResolver($fileToPermalink);
 
         $diagnostics = new BuildDiagnostics($contentDir, $fileToPermalink, $siteConfig, $authors);
@@ -235,7 +256,10 @@ final class BuildCommand extends Command
             $configChanged = array_any($configFiles, fn($configFile) => $manifest->isChanged($configFile));
 
             if (!$configChanged) {
-                $changedSourceFiles = $manifest->changedFiles($allSourceFiles);
+                $changedSourceFiles = array_values(array_unique([
+                    ...$manifest->changedFiles($allSourceFiles),
+                    ...$manifest->missingOutputFiles($allSourceFiles),
+                ]));
             }
 
             $staleOutputs = $manifest->removedOutputs($allSourceFiles);
@@ -330,7 +354,7 @@ final class BuildCommand extends Command
             $tasksToWrite = $allTasks;
         }
 
-        $writer = new ParallelEntryWriter($this->contentPipeline, $this->templateResolver, $cache);
+        $writer = new ParallelEntryWriter($this->contentPipeline, $this->templateResolver, $cache, $assetManifest);
         $entriesWritten = $writer->write($siteConfig, $tasksToWrite, $contentDir, $workerCount, $navigation, $crossRefResolver, $authors);
 
         $output->writeln("  Entries written: <comment>$entriesWritten</comment>" . ($incremental ? ' (of ' . count($allTasks) . ' total)' : ''));
@@ -345,15 +369,15 @@ final class BuildCommand extends Command
 
         if ($manifest !== null) {
             foreach ($allTasks as $task) {
-                $manifest->record($task['entry']->sourceFilePath(), [$task['filePath']]);
+                $this->removeStaleOutputs($manifest->replace($task['entry']->sourceFilePath(), [$task['filePath']]));
             }
             foreach ($redirectTasks as $task) {
-                $manifest->record($task['entry']->sourceFilePath(), [$task['filePath']]);
+                $this->removeStaleOutputs($manifest->replace($task['entry']->sourceFilePath(), [$task['filePath']]));
             }
             foreach ($rawEntriesByCollection as $entries) {
                 foreach ($entries as $entry) {
                     if (!isset($manifest->entries()[$entry->sourceFilePath()])) {
-                        $manifest->record($entry->sourceFilePath(), []);
+                        $this->removeStaleOutputs($manifest->replace($entry->sourceFilePath(), []));
                     }
                 }
             }
@@ -365,7 +389,7 @@ final class BuildCommand extends Command
         if (!$includeFuture) {
             $standalonePages = array_values(array_filter($standalonePages, static fn ($e) => $e->date === null || $e->date <= $now));
         }
-        $renderer = new EntryRenderer($this->contentPipeline, $this->templateResolver, $cache, $contentDir, $authors);
+        $renderer = new EntryRenderer($this->contentPipeline, $this->templateResolver, $cache, $contentDir, $authors, $assetManifest);
         $redirectWriter ??= new RedirectPageWriter();
         $standalonePagesWritten = 0;
         foreach ($standalonePages as $page) {
@@ -388,20 +412,20 @@ final class BuildCommand extends Command
             }
             $standalonePagesWritten++;
 
-            $manifest?->record($page->sourceFilePath(), [$filePath]);
+            if ($manifest !== null) {
+                $this->removeStaleOutputs($manifest->replace($page->sourceFilePath(), [$filePath]));
+            }
         }
         if ($standalonePages !== []) {
             $output->writeln("  Standalone pages: <comment>$standalonePagesWritten</comment>" . ($incremental ? ' (of ' . count($standalonePages) . ' total)' : ''));
         }
 
-        $assetCopier = new ContentAssetCopier();
-        $assetsCopied = $assetCopier->copy($contentDir, $outputDir);
+        $assetsCopied = $contentAssetCopier->copy($contentDir, $outputDir, $assetManifest);
+        $assetsCopied += $themeAssetCopier->copy($this->themeRegistry, $outputDir, $assetManifest);
 
-        $themeAssetCopier = new ThemeAssetCopier();
-        $assetsCopied += $themeAssetCopier->copy($this->themeRegistry, $outputDir);
-
-        foreach ($this->contentPipeline->collectAssetFiles() as $source => $target) {
-            $targetPath = $outputDir . '/' . $target;
+        foreach ($pipelineAssetMappings as $source => $target) {
+            $resolvedTarget = $assetManifest?->resolve($target) ?? $target;
+            $targetPath = $outputDir . '/' . $resolvedTarget;
             $targetDir = dirname($targetPath);
             if (!is_dir($targetDir) && !mkdir($targetDir, 0o755, true) && !is_dir($targetDir)) {
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $targetDir));
@@ -410,8 +434,19 @@ final class BuildCommand extends Command
             $assetsCopied++;
         }
 
+        if ($manifest !== null) {
+            foreach ($allAssetMappings as $sourcePath => $logicalPath) {
+                $resolvedTarget = $assetManifest?->resolve($logicalPath) ?? $logicalPath;
+                $this->removeStaleOutputs($manifest->replace($sourcePath, [$outputDir . '/' . $resolvedTarget]));
+            }
+        }
+
         if ($assetsCopied > 0) {
             $output->writeln("  Assets copied: <comment>$assetsCopied</comment>");
+        }
+
+        if ($assetManifest !== null && !$assetManifest->isEmpty()) {
+            $output->writeln('  Asset fingerprints generated: <comment>' . count($assetManifest->all()) . '</comment>');
         }
 
         $feedGenerator = new FeedGenerator($this->feedPipeline, $authors);
@@ -441,7 +476,7 @@ final class BuildCommand extends Command
             $output->writeln("  Feeds generated: <comment>$feedCount</comment> (Atom + RSS)");
         }
 
-        $listingWriter = new CollectionListingWriter($this->templateResolver);
+        $listingWriter = new CollectionListingWriter($this->templateResolver, $assetManifest);
         $listingPageCount = 0;
         foreach ($collections as $collectionName => $collection) {
             if (!$collection->listing) {
@@ -459,7 +494,7 @@ final class BuildCommand extends Command
             $output->writeln("  Listing pages: <comment>$listingPageCount</comment>");
         }
 
-        $archiveWriter = new DateArchiveWriter($this->templateResolver);
+        $archiveWriter = new DateArchiveWriter($this->templateResolver, $assetManifest);
         $archivePageCount = 0;
         foreach ($collections as $collectionName => $collection) {
             if ($collection->sortBy !== 'date') {
@@ -488,7 +523,7 @@ final class BuildCommand extends Command
             $output->writeln('  robots.txt generated.');
         }
 
-        $notFoundWriter = new NotFoundPageWriter($this->templateResolver);
+        $notFoundWriter = new NotFoundPageWriter($this->templateResolver, $assetManifest);
         $notFoundWriter->write($siteConfig, $outputDir, $navigation);
         $output->writeln('  404 page generated.');
 
@@ -501,7 +536,7 @@ final class BuildCommand extends Command
         if ($siteConfig->taxonomies !== []) {
             $allEntries = array_merge(...array_values($entriesByCollection));
             $taxonomyData = TaxonomyCollector::collect($siteConfig->taxonomies, $allEntries);
-            $taxonomyWriter = new TaxonomyPageWriter($this->templateResolver);
+            $taxonomyWriter = new TaxonomyPageWriter($this->templateResolver, $assetManifest);
             $taxonomyPageCount = $taxonomyWriter->write($siteConfig, $taxonomyData, $collections, $outputDir, $navigation);
             $output->writeln("  Taxonomy pages: <comment>$taxonomyPageCount</comment>");
         }
@@ -514,14 +549,14 @@ final class BuildCommand extends Command
                     $entriesByAuthor[$authorSlug][] = $entry;
                 }
             }
-            $authorWriter = new AuthorPageWriter($this->templateResolver);
+            $authorWriter = new AuthorPageWriter($this->templateResolver, $assetManifest);
             $authorPageCount = $authorWriter->write($siteConfig, $authors, $entriesByAuthor, $collections, $outputDir, $navigation);
             $output->writeln("  Author pages: <comment>$authorPageCount</comment>");
         }
 
         if ($manifest !== null) {
             foreach ($configFiles as $configFile) {
-                $manifest->record($configFile, []);
+                $this->removeStaleOutputs($manifest->replace($configFile, []));
             }
             $manifest->save();
         }
@@ -621,6 +656,24 @@ final class BuildCommand extends Command
             $files[] = $outputDir . $permalink . 'index.html';
         }
 
+        $contentAssetCopier = new ContentAssetCopier();
+        $themeAssetCopier = new ThemeAssetCopier();
+        $assetMappings = $contentAssetCopier->mappings($contentDir)
+            + $themeAssetCopier->mappings($this->themeRegistry)
+            + $this->contentPipeline->collectAssetFiles();
+
+        $assetManifest = null;
+        if ($siteConfig->assets->fingerprint) {
+            $assetManifest = new AssetFingerprintManifest();
+            foreach ($assetMappings as $sourcePath => $logicalPath) {
+                $assetManifest->register($logicalPath, $sourcePath);
+            }
+        }
+
+        foreach ($assetMappings as $logicalPath) {
+            $files[] = $outputDir . '/' . ($assetManifest?->resolve($logicalPath) ?? $logicalPath);
+        }
+
         $files[] = $outputDir . '/sitemap.xml';
 
         if ($siteConfig->robotsTxt->generate) {
@@ -703,5 +756,17 @@ final class BuildCommand extends Command
         }
 
         return $rootPath . '/' . $path;
+    }
+
+    /**
+     * @param list<string> $outputFiles
+     */
+    private function removeStaleOutputs(array $outputFiles): void
+    {
+        foreach ($outputFiles as $outputFile) {
+            if (is_file($outputFile)) {
+                unlink($outputFile);
+            }
+        }
     }
 }

@@ -17,7 +17,10 @@ final class AuthorPageWriter
 {
     private ?MarkdownRenderer $markdownRenderer = null;
 
-    public function __construct(private readonly TemplateResolver $templateResolver) {}
+    public function __construct(
+        private readonly TemplateResolver $templateResolver,
+        private readonly ?AssetFingerprintManifest $assetManifest = null,
+    ) {}
 
     /**
      * @param array<string, Author> $authors
@@ -59,9 +62,11 @@ final class AuthorPageWriter
     ): void {
         $siteTitle = $siteConfig->title;
         $nav = $navigation;
-        $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
+        $templateContext = new TemplateContext($this->templateResolver, $siteConfig->theme, $this->assetManifest);
+        $partial = $templateContext->partial(...);
         $rootPath = RelativePathHelper::rootPath('/authors/');
         $metaTags = MetaTagsBuilder::forPage($siteConfig, 'Authors', $siteConfig->description, '/authors/');
+        $assetManifest = $this->assetManifest;
         $search = $siteConfig->search !== null;
         $searchResults = $siteConfig->search?->results ?? 10;
 
@@ -76,7 +81,7 @@ final class AuthorPageWriter
 
         ob_start();
         require $this->templateResolver->resolve('author_index');
-        $html = ob_get_clean();
+        $html = $templateContext->rewriteHtml((string) ob_get_clean(), $rootPath);
 
         $dir = $outputDir . '/authors';
         if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
@@ -100,9 +105,11 @@ final class AuthorPageWriter
     ): void {
         $siteTitle = $siteConfig->title;
         $nav = $navigation;
-        $partial = new TemplateContext($this->templateResolver, $siteConfig->theme)->partial(...);
+        $templateContext = new TemplateContext($this->templateResolver, $siteConfig->theme, $this->assetManifest);
+        $partial = $templateContext->partial(...);
         $rootPath = RelativePathHelper::rootPath('/authors/' . $author->slug . '/');
         $metaTags = MetaTagsBuilder::forPage($siteConfig, $author->title, $siteConfig->description, '/authors/' . $author->slug . '/');
+        $assetManifest = $this->assetManifest;
         $search = $siteConfig->search !== null;
         $searchResults = $siteConfig->search?->results ?? 10;
 
@@ -133,7 +140,7 @@ final class AuthorPageWriter
 
         ob_start();
         require $this->templateResolver->resolve('author');
-        $html = ob_get_clean();
+        $html = $templateContext->rewriteHtml((string) ob_get_clean(), $rootPath);
 
         $dir = $outputDir . '/authors/' . $author->slug;
         if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {

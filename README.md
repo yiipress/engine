@@ -48,6 +48,7 @@ Write Markdown, run one command, get a fully static site — feeds, sitemaps, ta
 - **Mermaid diagrams** — flowcharts, sequence, Gantt, pie, and more
 - **YouTube & Vimeo shortcodes** — responsive embeds with a single tag
 - **Client-side search** — fuzzy search with modal UI; no external dependencies; opt-in
+- **Asset fingerprinting** — enabled by default; content-hash filenames for CSS, JS, images, and other copied assets
 - **Telegram import** — import channel exports as Markdown entries
 
 ### Developer Experience

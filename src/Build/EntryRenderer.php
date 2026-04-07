@@ -32,6 +32,7 @@ final class EntryRenderer
         private readonly ?BuildCache $cache = null,
         private readonly string $contentDir = '',
         private readonly array $authors = [],
+        private readonly ?AssetFingerprintManifest $assetManifest = null,
     ) {}
 
     public function render(
@@ -94,14 +95,14 @@ final class EntryRenderer
         }
 
         if (!isset($this->templateContexts[$themeName])) {
-            $this->templateContexts[$themeName] = new TemplateContext($this->templateResolver, $themeName);
+            $this->templateContexts[$themeName] = new TemplateContext($this->templateResolver, $themeName, $this->assetManifest);
             $this->partialClosures[$themeName] = $this->templateContexts[$themeName]->partial(...);
         }
 
+        $templateContext = $this->templateContexts[$themeName];
         $rootPath = RelativePathHelper::rootPath($permalink);
         $metaTags = MetaTagsBuilder::forEntry($siteConfig, $entry, $permalink);
-
-        return ($this->templateClosures[$templatePath])([
+        $html = ($this->templateClosures[$templatePath])([
             'siteTitle' => $siteConfig->title,
             'entryTitle' => $entry->title,
             'content' => $content,
@@ -124,8 +125,11 @@ final class EntryRenderer
             'metaTags' => $metaTags,
             'partial' => $this->partialClosures[$themeName],
             'rootPath' => $rootPath,
+            'assetManifest' => $this->assetManifest,
             'search' => $siteConfig->search !== null,
             'searchResults' => $siteConfig->search?->results ?? 10,
         ]);
+
+        return $templateContext->rewriteHtml($html, $rootPath);
     }
 }

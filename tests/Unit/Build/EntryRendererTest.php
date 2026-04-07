@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Build;
 
+use App\Build\AssetFingerprintManifest;
 use App\Build\EntryRenderer;
 use App\Build\Theme;
 use App\Build\ThemeRegistry;
@@ -156,6 +157,38 @@ PHP);
         assertStringContainsString('data-date="2024-01-01"', $html);
         assertStringContainsString('data-author="alice"', $html);
         assertStringContainsString('data-collection="blog"', $html);
+    }
+
+    public function testRewritesFingerprintedAssetUrlsInRenderedHtml(): void
+    {
+        mkdir($this->contentDir . '/templates', 0o755, true);
+        file_put_contents($this->contentDir . '/templates/assets.php', <<<'PHP'
+<?php
+use App\Build\Asset;
+use App\Build\AssetFingerprintManifest;
+?>
+<link rel="stylesheet" href="<?= Asset::url('assets/theme/style.css', $rootPath, $assetManifest) ?>">
+<script src="../../assets/theme/image-zoom.js"></script>
+PHP);
+
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Asset Post\nlayout: assets\n---\n\nBody.\n");
+
+        $manifest = new AssetFingerprintManifest();
+        $manifest->register('assets/theme/style.css', dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');
+        $imageZoomTarget = $manifest->register('assets/theme/image-zoom.js', dirname(__DIR__, 3) . '/themes/minimal/assets/image-zoom.js');
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Asset Post', layout: 'assets');
+        $renderer = new EntryRenderer(
+            $this->createPipeline(),
+            $this->createTemplateResolver($this->contentDir . '/templates'),
+            contentDir: $this->contentDir,
+            assetManifest: $manifest,
+        );
+        $html = $renderer->render($this->createSiteConfig(theme: 'custom'), $entry, '/blog/post/');
+
+        assertStringContainsString($imageZoomTarget, $html);
+        assertStringNotContainsString('../../assets/theme/image-zoom.js', $html);
     }
 
     private function createPipeline(): ContentProcessorPipeline

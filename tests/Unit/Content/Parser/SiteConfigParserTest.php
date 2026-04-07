@@ -8,6 +8,8 @@ use App\Content\Parser\SiteConfigParser;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;
+use function PHPUnit\Framework\assertFalse;
+use function PHPUnit\Framework\assertTrue;
 
 final class SiteConfigParserTest extends TestCase
 {
@@ -30,5 +32,19 @@ final class SiteConfigParserTest extends TestCase
         assertSame(['tags', 'categories'], $config->taxonomies);
         assertSame(['github_url' => 'https://github.com/test'], $config->params);
         assertSame('local', $config->theme);
+        assertTrue($config->assets->fingerprint);
+    }
+
+    public function testParseAssetConfigCanDisableFingerprinting(): void
+    {
+        $filePath = sys_get_temp_dir() . '/yiipress-site-config-' . uniqid() . '.yaml';
+        file_put_contents($filePath, "title: Test\nassets:\n  fingerprint: false\n");
+
+        $parser = new SiteConfigParser();
+        $config = $parser->parse($filePath);
+
+        assertFalse($config->assets->fingerprint);
+
+        unlink($filePath);
     }
 }

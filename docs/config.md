@@ -40,6 +40,9 @@ robots_txt:
 
 params:
   github_url: https://github.com/example/mysite
+
+assets:
+  fingerprint: true
 ```
 
 ### Fields
@@ -60,6 +63,7 @@ params:
 - **robots_txt** — `robots.txt` generation settings (see below)
 - **toc** — generate a table of contents from headings (default: `true`); set to `false` to disable globally. When enabled, heading tags receive `id` attributes and a `$toc` variable is passed to templates
 - **search** — opt-in client-side search (see below)
+- **assets** — asset pipeline settings (see below)
 - **params** — arbitrary key-value pairs for use in templates
 - **markdown** — markdown extensions configuration (see below)
 
@@ -78,6 +82,23 @@ When enabled, the build generates a `search-index.json` file in the output direc
 The `full_text` option controls how much content is indexed:
 - `false` — indexes title, summary, and tags (smaller index, faster)
 - `true` — additionally indexes the full body text (larger index, more thorough results)
+
+### Assets
+
+Asset fingerprinting is enabled by default. Disable it in `content/config.yaml` if needed:
+
+```yaml
+assets:
+  fingerprint: false
+```
+
+When enabled, YiiPress renames copied assets to include a content hash, for example:
+
+- `assets/theme/style.css` → `assets/theme/style.4f8d2d5b1c3a.css`
+- `blog/assets/hero.png` → `blog/assets/hero.a12b34c56d78.png`
+
+Built-in templates use the fingerprinted URLs automatically, and existing hardcoded `src` / `href`
+asset references in rendered HTML are rewritten during build so custom themes continue to work.
 
 ### robots.txt
 

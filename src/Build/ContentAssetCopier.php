@@ -21,39 +21,20 @@ final class ContentAssetCopier
     /**
      * @return int number of assets copied
      */
-    public function copy(string $contentDir, string $outputDir): int
+    public function copy(string $contentDir, string $outputDir, ?AssetFingerprintManifest $assetManifest = null): int
     {
         $copied = 0;
 
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($contentDir, FilesystemIterator::SKIP_DOTS),
-        );
-
-        foreach ($iterator as $item) {
-            /** @var SplFileInfo $item */
-            if (!$item->isFile()) {
-                continue;
-            }
-
-            $extension = strtolower($item->getExtension());
-            if (in_array($extension, self::EXCLUDED_EXTENSIONS, true)) {
-                continue;
-            }
-
-            $relativePath = substr($item->getPathname(), strlen($contentDir) + 1);
-
-            if (str_starts_with($relativePath, 'authors/')) {
-                continue;
-            }
-
-            $targetPath = $outputDir . '/' . $relativePath;
+        foreach ($this->mappings($contentDir) as $sourcePath => $targetRelativePath) {
+            $resolvedTarget = $assetManifest?->resolve($targetRelativePath) ?? $targetRelativePath;
+            $targetPath = $outputDir . '/' . $resolvedTarget;
             $targetDir = dirname($targetPath);
 
             if (!is_dir($targetDir) && !mkdir($targetDir, 0o755, true) && !is_dir($targetDir)) {
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $targetDir));
             }
 
-            copy($item->getPathname(), $targetPath);
+            copy($sourcePath, $targetPath);
             $copied++;
         }
 
@@ -64,6 +45,17 @@ final class ContentAssetCopier
      * @return list<string> relative paths of assets that would be copied
      */
     public function collect(string $contentDir): array
+    {
+        $assets = array_values($this->mappings($contentDir));
+        sort($assets);
+
+        return $assets;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function mappings(string $contentDir): array
     {
         $assets = [];
 
@@ -88,10 +80,9 @@ final class ContentAssetCopier
                 continue;
             }
 
-            $assets[] = $relativePath;
+            $assets[$item->getPathname()] = $relativePath;
         }
 
-        sort($assets);
         return $assets;
     }
 }

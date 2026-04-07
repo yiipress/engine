@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Content\Parser;
 
+use App\Content\Model\AssetConfig;
 use App\Content\Model\MarkdownConfig;
 use App\Content\Model\RobotsTxtConfig;
 use App\Content\Model\RobotsTxtRule;
@@ -52,6 +53,7 @@ final class SiteConfigParser
             robotsTxt: self::parseRobotsTxtConfig($data['robots_txt'] ?? null),
             toc: (bool) ($data['toc'] ?? true),
             search: self::parseSearchConfig($data['search'] ?? null),
+            assets: self::parseAssetConfig($data['assets'] ?? null),
         );
     }
 
@@ -171,5 +173,20 @@ final class SiteConfigParser
         }
 
         return new RobotsTxtConfig(generate: true, rules: $rules);
+    }
+
+    private static function parseAssetConfig(mixed $data): AssetConfig
+    {
+        if ($data === null) {
+            return new AssetConfig();
+        }
+
+        if (!is_array($data)) {
+            return new AssetConfig(fingerprint: (bool) $data);
+        }
+
+        return new AssetConfig(
+            fingerprint: (bool) ($data['fingerprint'] ?? true),
+        );
     }
 }

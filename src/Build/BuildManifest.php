@@ -7,6 +7,7 @@ namespace App\Build;
 use RuntimeException;
 
 use function dirname;
+use function in_array;
 use function hash_file;
 use function is_array;
 
@@ -79,6 +80,27 @@ final class BuildManifest
     }
 
     /**
+     * @param list<string> $outputs
+     * @return list<string>
+     */
+    public function replace(string $sourceFile, array $outputs): array
+    {
+        $staleOutputs = [];
+
+        if (isset($this->entries[$sourceFile])) {
+            foreach ($this->entries[$sourceFile]['outputs'] as $outputFile) {
+                if (!in_array($outputFile, $outputs, true)) {
+                    $staleOutputs[] = $outputFile;
+                }
+            }
+        }
+
+        $this->record($sourceFile, $outputs);
+
+        return $staleOutputs;
+    }
+
+    /**
      * @return array<string, array{hash: string, outputs: list<string>}>
      */
     public function entries(): array
@@ -120,5 +142,29 @@ final class BuildManifest
             }
         }
         return $changed;
+    }
+
+    /**
+     * @param list<string> $currentSourceFiles
+     * @return list<string> source files whose recorded outputs are missing
+     */
+    public function missingOutputFiles(array $currentSourceFiles): array
+    {
+        $missing = [];
+
+        foreach ($currentSourceFiles as $sourceFile) {
+            if (!isset($this->entries[$sourceFile])) {
+                continue;
+            }
+
+            foreach ($this->entries[$sourceFile]['outputs'] as $outputFile) {
+                if (!is_file($outputFile)) {
+                    $missing[] = $sourceFile;
+                    break;
+                }
+            }
+        }
+
+        return $missing;
     }
 }

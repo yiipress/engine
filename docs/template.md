@@ -240,6 +240,27 @@ Partials are reusable template fragments stored in a `partials/` subdirectory of
 <?= $partial('head', ['title' => $entryTitle . ' — ' . $siteTitle]) ?>
 ```
 
+## Asset helper
+
+Templates and partials should use `Asset::url()` to resolve the final public URL of a copied asset:
+
+```php
+<?php
+
+use App\Build\Asset;
+?>
+<link rel="stylesheet" href="<?= htmlspecialchars(Asset::url('assets/theme/style.css', $rootPath, $assetManifest)) ?>">
+<script src="<?= htmlspecialchars(Asset::url('assets/theme/search.js', $rootPath, $assetManifest)) ?>" defer></script>
+```
+
+This is especially useful when `assets.fingerprint: true` is enabled in `content/config.yaml`.
+In that mode, `Asset::url('assets/theme/style.css', $rootPath, $assetManifest)` returns the hashed output path rather than the logical one.
+
+The helper accepts logical build-relative paths such as:
+
+- `assets/theme/style.css`
+- `assets/plugins/mermaid.css`
+
 This resolves `partials/head.php` from the active theme (with fallback to other registered themes), renders it with the given variables, and returns the HTML string.
 
 ### Creating a partial

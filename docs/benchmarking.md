@@ -42,6 +42,7 @@ BENCH_FILTER=RealisticBuildBench make bench
 
 - **`ContentParserBench`** — measures parsing speed for site config, navigation, collections, authors, and entries (with and without body loading)
 - **`MarkdownRendererBench`** — measures MD4C markdown-to-HTML rendering for short and long documents
+- **`AssetFingerprintingBench`** — measures fingerprint lookup and HTML asset URL rewriting
 - **`BuildBench`** — measures full build pipeline with 10k small entries, sequential and parallel, cached and uncached
 - **`RealisticBuildBench`** — measures full build pipeline with 1k realistic entries (~27KB each, cross-links, images, tables, styled text)
 

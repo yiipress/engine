@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Build;
 
+use App\Build\AssetFingerprintManifest;
 use App\Build\ContentAssetCopier;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
@@ -92,6 +93,21 @@ final class ContentAssetCopierTest extends TestCase
         assertCount(2, $assets);
         assertSame('blog/assets/banner.svg', $assets[0]);
         assertSame('blog/assets/photo.png', $assets[1]);
+    }
+
+    public function testCopiesFingerprintedAssetsWhenManifestProvided(): void
+    {
+        $source = $this->contentDir . '/blog/assets/banner.svg';
+        file_put_contents($source, '<svg/>');
+
+        $manifest = new AssetFingerprintManifest();
+        $resolved = $manifest->register('blog/assets/banner.svg', $source);
+
+        $copier = new ContentAssetCopier();
+        $copied = $copier->copy($this->contentDir, $this->outputDir, $manifest);
+
+        assertSame(1, $copied);
+        assertFileExists($this->outputDir . '/' . $resolved);
     }
 
     private function removeDir(string $path): void
