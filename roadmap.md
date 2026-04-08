@@ -61,8 +61,6 @@
 
 ## Priority 5: Asset pipeline
 
-- [ ] Image optimization (resize, compress, modern formats)
-- [ ] CSS/JS processing (minification)
 - [x] Asset fingerprinting / cache busting
 - [x] Static file copying (fonts, downloads, PDFs from source to output)
 
