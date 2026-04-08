@@ -13,8 +13,12 @@ use function is_array;
 
 final class BuildManifest
 {
-    /** @var array<string, array{hash: string, outputs: list<string>}> */
+    /** @var array<string, array{hash: string, outputs: list<string>, mtime?: int, size?: int}> */
     private array $entries = [];
+    /** @var list<string> */
+    private array $configFiles = [];
+    /** @var array<string, int> */
+    private array $trackedDirectories = [];
 
     public function __construct(
         private readonly string $manifestPath,
@@ -39,7 +43,16 @@ final class BuildManifest
             return;
         }
 
+        if (isset($data['entries']) && is_array($data['entries'])) {
+            $this->entries = $data['entries'];
+            $this->configFiles = isset($data['configFiles']) && is_array($data['configFiles']) ? array_values($data['configFiles']) : [];
+            $this->trackedDirectories = isset($data['trackedDirectories']) && is_array($data['trackedDirectories']) ? $data['trackedDirectories'] : [];
+            return;
+        }
+
         $this->entries = $data;
+        $this->configFiles = [];
+        $this->trackedDirectories = [];
     }
 
     public function save(): void
@@ -51,7 +64,11 @@ final class BuildManifest
 
         file_put_contents(
             $this->manifestPath,
-            json_encode($this->entries, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+            json_encode([
+                'entries' => $this->entries,
+                'configFiles' => $this->configFiles,
+                'trackedDirectories' => $this->trackedDirectories,
+            ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
         );
     }
 
@@ -65,6 +82,16 @@ final class BuildManifest
             return true;
         }
 
+        clearstatcache(true, $sourceFile);
+        $mtime = filemtime($sourceFile);
+        $size = filesize($sourceFile);
+        $storedMtime = $this->entries[$sourceFile]['mtime'] ?? null;
+        $storedSize = $this->entries[$sourceFile]['size'] ?? null;
+
+        if ($storedMtime !== null && $storedSize !== null && $storedMtime === $mtime && $storedSize === $size) {
+            return false;
+        }
+
         return $this->entries[$sourceFile]['hash'] !== hash_file('xxh128', $sourceFile);
     }
 
@@ -73,8 +100,11 @@ final class BuildManifest
      */
     public function record(string $sourceFile, array $outputs): void
     {
+        clearstatcache(true, $sourceFile);
         $this->entries[$sourceFile] = [
             'hash' => hash_file('xxh128', $sourceFile),
+            'mtime' => (int) filemtime($sourceFile),
+            'size' => (int) filesize($sourceFile),
             'outputs' => $outputs,
         ];
     }
@@ -101,11 +131,65 @@ final class BuildManifest
     }
 
     /**
-     * @return array<string, array{hash: string, outputs: list<string>}>
+     * @return array<string, array{hash: string, outputs: list<string>, mtime?: int, size?: int}>
      */
     public function entries(): array
     {
         return $this->entries;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function sourceFiles(): array
+    {
+        return array_keys($this->entries);
+    }
+
+    /**
+     * @param list<string> $configFiles
+     */
+    public function setConfigFiles(array $configFiles): void
+    {
+        $this->configFiles = array_values($configFiles);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function configFiles(): array
+    {
+        return $this->configFiles;
+    }
+
+    /**
+     * @param array<string, int> $trackedDirectories
+     */
+    public function setTrackedDirectories(array $trackedDirectories): void
+    {
+        $this->trackedDirectories = $trackedDirectories;
+    }
+
+    public function hasTrackedDirectories(): bool
+    {
+        return $this->trackedDirectories !== [];
+    }
+
+    public function trackedDirectoriesChanged(): bool
+    {
+        foreach ($this->trackedDirectories as $directory => $storedMtime) {
+            clearstatcache(true, $directory);
+            if (!is_dir($directory)) {
+                return true;
+            }
+
+            $mtime = filemtime($directory);
+            if ($mtime === false || (int) $mtime !== $storedMtime) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -38,6 +38,7 @@ use App\Environment;
 use App\Processor\ContentProcessorPipeline;
 use DateTimeImmutable;
 use FilesystemIterator;
+use FilesystemIterator as BaseFilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
@@ -52,7 +53,16 @@ use Yiisoft\Yii\Console\ExitCode;
 use function count;
 use function dirname;
 use function array_keys;
+use function array_filter;
+use function array_unique;
+use function array_values;
+use function hash;
+use function is_file;
+use function pathinfo;
+use function sort;
 use function str_starts_with;
+use function strtolower;
+use function substr;
 use function strlen;
 
 #[AsCommand(
@@ -150,109 +160,39 @@ final class BuildCommand extends Command
             $this->themeRegistry->register(new Theme('local', $localTemplatesDir));
         }
 
-        $output->writeln('<info>Parsing content...</info>');
-
-        $parser = new ContentParser();
-        $siteConfig = $parser->parseSiteConfig($contentDir);
-        $navigation = $parser->parseNavigation($contentDir);
-        $collections = $parser->parseCollections($contentDir);
-        $authors = iterator_to_array($parser->parseAuthors($contentDir));
-        $parser->setAuthors($authors);
-
         $contentAssetCopier = new ContentAssetCopier();
         $themeAssetCopier = new ThemeAssetCopier();
         $contentAssetMappings = $contentAssetCopier->mappings($contentDir);
         $themeAssetMappings = $themeAssetCopier->mappings($this->themeRegistry);
         $pipelineAssetMappings = $this->contentPipeline->collectAssetFiles();
         $allAssetMappings = $contentAssetMappings + $themeAssetMappings + $pipelineAssetMappings;
-        $assetManifest = null;
-
-        if ($siteConfig->assets->fingerprint) {
-            $assetManifest = new AssetFingerprintManifest();
-            foreach ($allAssetMappings as $sourcePath => $logicalPath) {
-                $assetManifest->register($logicalPath, $sourcePath);
-            }
-        }
-
-        $output->writeln("  Site: <comment>$siteConfig->title</comment>");
-        $output->writeln('  Collections: <comment>' . count($collections) . '</comment>');
-        $output->writeln('  Authors: <comment>' . count($authors) . '</comment>');
-        $output->writeln('  Menus: <comment>' . count($navigation->menuNames()) . '</comment>');
-
-        if ($dryRun) {
-            return $this->dryRun($output, $parser, $siteConfig, $collections, $authors, $contentDir, $outputDir, $includeDrafts, $includeFuture);
-        }
-
-        /** @var array<string, list<Entry>> $rawEntriesByCollection */
-        $rawEntriesByCollection = [];
-        $fileToPermalink = [];
-        $allSourceFiles = [];
-
-        foreach ($collections as $collectionName => $collection) {
-            $collectionEntries = [];
-            foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
-                if ($entry->title === '') {
-                    $output->writeln('<error>  Skipping ' . $entry->sourceFilePath() . ': no title found</error>');
-                    continue;
-                }
-                $collectionEntries[] = $entry;
-                $relativePath = substr($entry->sourceFilePath(), strlen($contentDir) + 1);
-                $fileToPermalink[$relativePath] = PermalinkResolver::resolve($entry, $collection);
-                $allSourceFiles[] = $entry->sourceFilePath();
-            }
-            $rawEntriesByCollection[$collectionName] = $collectionEntries;
-        }
-
-        $standalonePages = [];
-        foreach ($parser->parseStandalonePages($contentDir) as $page) {
-            if ($page->title === '') {
-                $output->writeln('<error>  Skipping ' . $page->sourceFilePath() . ': no title found</error>');
-                continue;
-            }
-            $standalonePages[] = $page;
-            $relativePath = substr($page->sourceFilePath(), strlen($contentDir) + 1);
-            $fileToPermalink[$relativePath] = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
-            $allSourceFiles[] = $page->sourceFilePath();
-        }
-
-        foreach (array_keys($allAssetMappings) as $assetSourceFile) {
-            $allSourceFiles[] = $assetSourceFile;
-        }
-
-        $crossRefResolver = new CrossReferenceResolver($fileToPermalink);
-
-        $diagnostics = new BuildDiagnostics($contentDir, $fileToPermalink, $siteConfig, $authors);
-        foreach ($rawEntriesByCollection as $entries) {
-            foreach ($entries as $entry) {
-                $diagnostics->check($entry);
-            }
-        }
-        foreach ($standalonePages as $page) {
-            $diagnostics->check($page);
-        }
-        foreach ($diagnostics->warnings() as $warning) {
-            $output->writeln("<comment>  ⚠ $warning</comment>");
-        }
-
+        $trackedDirectories = [];
         $manifest = null;
         $changedSourceFiles = null;
         $incremental = false;
+        $configFiles = [];
+        $allSourceFiles = [];
 
-        $configFiles = array_filter([
-            $contentDir . '/config.yaml',
-            $contentDir . '/navigation.yaml',
-        ], is_file(...));
-        foreach ($collections as $collectionName => $collection) {
-            $collectionConfig = $contentDir . '/' . $collectionName . '/_collection.yaml';
-            if (is_file($collectionConfig)) {
-                $configFiles[] = $collectionConfig;
+        if (!$dryRun && !$noCache) {
+            $trackedDirectories = $this->collectTrackedDirectories($contentDir);
+            foreach ($this->themeRegistry->all() as $theme) {
+                $trackedDirectories += $this->collectTrackedDirectories($theme->path);
             }
-        }
 
-        if (!$noCache) {
             $manifestPath = $rootPath . '/runtime/cache/build-manifest-' . hash('xxh128', $outputDir) . '.json';
             $manifest = new BuildManifest($manifestPath);
             $manifest->load();
+            $canUseManifestInventory = $manifest->sourceFiles() !== [] && $manifest->hasTrackedDirectories() && !$manifest->trackedDirectoriesChanged();
+
+            if ($canUseManifestInventory) {
+                $configFiles = $manifest->configFiles();
+                $allSourceFiles = $manifest->sourceFiles();
+            } else {
+                $sourceInventory = $this->collectSourceInventory($contentDir, array_keys($allAssetMappings));
+                $configFiles = $sourceInventory['configFiles'];
+                $allSourceFiles = $sourceInventory['allSourceFiles'];
+            }
+
             $configChanged = array_any($configFiles, fn($configFile) => $manifest->isChanged($configFile));
 
             if (!$configChanged) {
@@ -293,7 +233,7 @@ final class BuildCommand extends Command
             if (!is_dir($outputDir) && !mkdir($outputDir, 0o755, true) && !is_dir($outputDir)) {
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $outputDir));
             }
-        } else {
+        } elseif (!$dryRun) {
             $output->writeln(
                 $workerCount > 1
                     ? "<info>Rendering and writing output with $workerCount workers...</info>"
@@ -301,6 +241,90 @@ final class BuildCommand extends Command
             );
 
             $this->prepareOutputDir($outputDir);
+        }
+
+        if ($manifest !== null && $allSourceFiles === []) {
+            $sourceInventory = $this->collectSourceInventory($contentDir, array_keys($allAssetMappings));
+            $configFiles = $sourceInventory['configFiles'];
+            $allSourceFiles = $sourceInventory['allSourceFiles'];
+        }
+
+        $output->writeln('<info>Parsing content...</info>');
+
+        $parser = new ContentParser();
+        $siteConfig = $parser->parseSiteConfig($contentDir);
+        $navigation = $parser->parseNavigation($contentDir);
+        $collections = $parser->parseCollections($contentDir);
+        $authors = iterator_to_array($parser->parseAuthors($contentDir));
+        $parser->setAuthors($authors);
+
+        $assetManifest = null;
+
+        if ($siteConfig->assets->fingerprint) {
+            $assetManifest = new AssetFingerprintManifest();
+            foreach ($allAssetMappings as $sourcePath => $logicalPath) {
+                $assetManifest->register($logicalPath, $sourcePath);
+            }
+        }
+
+        $output->writeln("  Site: <comment>$siteConfig->title</comment>");
+        $output->writeln('  Collections: <comment>' . count($collections) . '</comment>');
+        $output->writeln('  Authors: <comment>' . count($authors) . '</comment>');
+        $output->writeln('  Menus: <comment>' . count($navigation->menuNames()) . '</comment>');
+
+        if ($dryRun) {
+            return $this->dryRun($output, $parser, $siteConfig, $collections, $authors, $contentDir, $outputDir, $includeDrafts, $includeFuture);
+        }
+
+        /** @var array<string, list<Entry>> $rawEntriesByCollection */
+        $rawEntriesByCollection = [];
+        $fileToPermalink = [];
+
+        foreach ($collections as $collectionName => $collection) {
+            $collectionEntries = [];
+            foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
+                if ($entry->title === '') {
+                    $output->writeln('<error>  Skipping ' . $entry->sourceFilePath() . ': no title found</error>');
+                    continue;
+                }
+                $collectionEntries[] = $entry;
+                $relativePath = substr($entry->sourceFilePath(), strlen($contentDir) + 1);
+                $fileToPermalink[$relativePath] = PermalinkResolver::resolve($entry, $collection);
+            }
+            $rawEntriesByCollection[$collectionName] = $collectionEntries;
+        }
+
+        $standalonePages = [];
+        foreach ($parser->parseStandalonePages($contentDir) as $page) {
+            if ($page->title === '') {
+                $output->writeln('<error>  Skipping ' . $page->sourceFilePath() . ': no title found</error>');
+                continue;
+            }
+            $standalonePages[] = $page;
+            $relativePath = substr($page->sourceFilePath(), strlen($contentDir) + 1);
+            $fileToPermalink[$relativePath] = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
+        }
+
+        $crossRefResolver = new CrossReferenceResolver($fileToPermalink);
+
+        $changedSet = $changedSourceFiles !== null ? array_flip($changedSourceFiles) : null;
+        $diagnostics = new BuildDiagnostics($contentDir, $fileToPermalink, $siteConfig, $authors);
+        foreach ($rawEntriesByCollection as $entries) {
+            foreach ($entries as $entry) {
+                if ($changedSet !== null && !isset($changedSet[$entry->sourceFilePath()])) {
+                    continue;
+                }
+                $diagnostics->check($entry);
+            }
+        }
+        foreach ($standalonePages as $page) {
+            if ($changedSet !== null && !isset($changedSet[$page->sourceFilePath()])) {
+                continue;
+            }
+            $diagnostics->check($page);
+        }
+        foreach ($diagnostics->warnings() as $warning) {
+            $output->writeln("<comment>  ⚠ $warning</comment>");
         }
 
         $now = new DateTimeImmutable();
@@ -342,8 +366,6 @@ final class BuildCommand extends Command
             $cacheDir = $rootPath . '/runtime/cache/build';
             $cache = new BuildCache($cacheDir, $this->templateResolver->templateDirs());
         }
-
-        $changedSet = $changedSourceFiles !== null ? array_flip($changedSourceFiles) : null;
 
         if ($changedSet !== null) {
             $tasksToWrite = array_values(array_filter(
@@ -555,6 +577,8 @@ final class BuildCommand extends Command
         }
 
         if ($manifest !== null) {
+            $manifest->setConfigFiles($configFiles);
+            $manifest->setTrackedDirectories($trackedDirectories);
             foreach ($configFiles as $configFile) {
                 $this->removeStaleOutputs($manifest->replace($configFile, []));
             }
@@ -768,5 +792,116 @@ final class BuildCommand extends Command
                 unlink($outputFile);
             }
         }
+    }
+
+    /**
+     * @param list<string> $assetSourceFiles
+     * @return array{allSourceFiles: list<string>, configFiles: list<string>}
+     */
+    private function collectSourceInventory(string $contentDir, array $assetSourceFiles): array
+    {
+        $configFiles = array_filter([
+            $contentDir . '/config.yaml',
+            $contentDir . '/navigation.yaml',
+        ], is_file(...));
+
+        $contentFiles = [];
+        $iterator = new FilesystemIterator($contentDir, BaseFilesystemIterator::SKIP_DOTS);
+        foreach ($iterator as $item) {
+            /** @var SplFileInfo $item */
+            if ($item->isDir()) {
+                $name = $item->getFilename();
+                if ($name === 'assets' || $name === 'authors' || $name === 'templates') {
+                    continue;
+                }
+
+                $collectionConfig = $item->getPathname() . '/_collection.yaml';
+                if (is_file($collectionConfig)) {
+                    $configFiles[] = $collectionConfig;
+
+                    $collectionIterator = new FilesystemIterator($item->getPathname(), BaseFilesystemIterator::SKIP_DOTS);
+                    foreach ($collectionIterator as $collectionItem) {
+                        /** @var SplFileInfo $collectionItem */
+                        if ($collectionItem->isDir() || strtolower($collectionItem->getExtension()) !== 'md') {
+                            continue;
+                        }
+                        $contentFiles[] = $collectionItem->getPathname();
+                    }
+                }
+
+                continue;
+            }
+
+            if (strtolower($item->getExtension()) === 'md') {
+                $contentFiles[] = $item->getPathname();
+            }
+        }
+
+        $templateFiles = $this->collectTemplateFiles();
+        $configFiles = array_values(array_unique([...$configFiles, ...$templateFiles]));
+        sort($configFiles);
+        sort($contentFiles);
+        sort($assetSourceFiles);
+
+        return [
+            'allSourceFiles' => [...$contentFiles, ...$assetSourceFiles, ...$configFiles],
+            'configFiles' => $configFiles,
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function collectTemplateFiles(): array
+    {
+        $files = [];
+
+        foreach ($this->templateResolver->templateDirs() as $templateDir) {
+            if (!is_dir($templateDir)) {
+                continue;
+            }
+
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($templateDir, RecursiveDirectoryIterator::SKIP_DOTS),
+            );
+
+            foreach ($iterator as $item) {
+                /** @var SplFileInfo $item */
+                if (!$item->isFile() || strtolower((string) pathinfo($item->getFilename(), PATHINFO_EXTENSION)) !== 'php') {
+                    continue;
+                }
+                $files[] = $item->getPathname();
+            }
+        }
+
+        sort($files);
+
+        return $files;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function collectTrackedDirectories(string $rootDir): array
+    {
+        if (!is_dir($rootDir)) {
+            return [];
+        }
+
+        $directories = [$rootDir => (int) filemtime($rootDir)];
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($rootDir, RecursiveDirectoryIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST,
+        );
+
+        foreach ($iterator as $item) {
+            /** @var SplFileInfo $item */
+            if (!$item->isDir()) {
+                continue;
+            }
+            $directories[$item->getPathname()] = (int) $item->getMTime();
+        }
+
+        return $directories;
     }
 }

@@ -53,23 +53,22 @@ BENCH_FILTER=LargeContentBuildBench make bench
 
 | Benchmark                               | Time   |
 |-----------------------------------------|--------|
-| Full rebuild, sequential                | ~533ms |
-| Full rebuild, 4 workers                 | ~531ms |
-| Incremental rebuild, no changes         | ~453ms |
-| Incremental rebuild, 1 changed entry    | ~448ms |
+| Full rebuild, sequential                | ~531ms |
+| Full rebuild, 4 workers                 | ~540ms |
+| Incremental rebuild, no changes         | ~169ms |
+| Incremental rebuild, 1 changed entry    | ~167ms |
 
 ### 1k realistic entries (~27KB each)
 
 | Benchmark                               | Time    |
 |-----------------------------------------|---------|
-| Full rebuild, sequential                | ~169ms  |
-| Full rebuild, 4 workers                 | ~171ms  |
-| Incremental rebuild, no changes         | ~155ms  |
-| Incremental rebuild, 1 changed entry    | ~151ms  |
+| Full rebuild, sequential                | ~168ms  |
+| Full rebuild, 4 workers                 | ~168ms  |
+| Incremental rebuild, no changes         | ~84ms   |
+| Incremental rebuild, 1 changed entry    | ~87ms   |
 
-These end-to-end benchmarks intentionally go through the public CLI entry point instead of internal renderer/parser classes, so they track real rebuild timing rather than component-only throughput.
-
-The current numbers also show that incremental builds are not yet winning at the command level. That aligns with the current architecture: the build still performs substantial parse/index/setup work before it can conclude that little or nothing changed.
+These end-to-end benchmarks intentionally go through the public CLI entry point instead of internal renderer/parser classes,
+so they track real rebuild timing rather than component-only throughput.
 
 Measured on PHP 8.5 with `ext-md4c`, `ext-yaml`, and `ext-pcntl`, xdebug off, OPCache disabled.
 

@@ -71,17 +71,17 @@ Write Markdown, run one command, get a fully static site — feeds, sitemaps, ta
 
 | Mode                | Time    |
 |---------------------|---------|
-| Sequential          | ~533 ms |
-| 4 workers           | ~531 ms |
-| Incremental         | ~453 ms |
+| Sequential          | ~531 ms |
+| 4 workers           | ~540 ms |
+| Incremental         | ~169 ms |
 
 1 000 realistic entries (large posts, images, tables, code blocks):
 
 | Mode       | Time    |
 |------------|---------|
-| Sequential | ~169 ms |
-| 4 workers  | ~171 ms |
-| Incremental| ~155 ms |
+| Sequential | ~168 ms |
+| 4 workers  | ~168 ms |
+| Incremental| ~84 ms |
 
 ---
 

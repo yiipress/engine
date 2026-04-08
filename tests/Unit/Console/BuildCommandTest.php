@@ -811,6 +811,26 @@ final class BuildCommandTest extends TestCase
         assertStringContainsString('This entry uses a custom layout.', $html);
     }
 
+    public function testBuildWithNoCacheDoesNotCreateManifest(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+        $manifestPath = $this->manifestPath();
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' --no-cache'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        assertSame(0, $exitCode, implode("\n", $output));
+        assertFalse(is_file($manifestPath));
+    }
+
     public function testBuildWritesRedirectHtmlForRedirectEntries(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';

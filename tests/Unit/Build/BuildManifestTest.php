@@ -164,6 +164,40 @@ final class BuildManifestTest extends TestCase
         assertSame([$sourceFile], $manifest->missingOutputFiles([$sourceFile]));
     }
 
+    public function testSaveAndLoadPersistsConfigFilesAndTrackedDirectories(): void
+    {
+        $sourceFile = $this->tempDir . '/entry.md';
+        file_put_contents($sourceFile, '# Hello');
+        mkdir($this->tempDir . '/content', 0o755, true);
+
+        $manifest = new BuildManifest($this->tempDir . '/manifest.json');
+        $manifest->record($sourceFile, ['/out/entry/index.html']);
+        $manifest->setConfigFiles([$this->tempDir . '/content/config.yaml']);
+        $manifest->setTrackedDirectories([$this->tempDir . '/content' => (int) filemtime($this->tempDir . '/content')]);
+        $manifest->save();
+
+        $loaded = new BuildManifest($this->tempDir . '/manifest.json');
+        $loaded->load();
+
+        assertSame([$this->tempDir . '/content/config.yaml'], $loaded->configFiles());
+        assertSame([$sourceFile], $loaded->sourceFiles());
+        assertFalse($loaded->trackedDirectoriesChanged());
+    }
+
+    public function testTrackedDirectoriesChangedReturnsTrueWhenDirectoryMtimeChanges(): void
+    {
+        $directory = $this->tempDir . '/content';
+        mkdir($directory, 0o755, true);
+
+        $manifest = new BuildManifest($this->tempDir . '/manifest.json');
+        $manifest->setTrackedDirectories([$directory => (int) filemtime($directory)]);
+
+        sleep(1);
+        mkdir($directory . '/blog', 0o755, true);
+
+        assertTrue($manifest->trackedDirectoriesChanged());
+    }
+
     private function removeDir(string $path): void
     {
         if (!is_dir($path)) {
