@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Benchmarks;
 
+use App\Benchmark\BenchmarkDataGenerator;
 use App\Content\Parser\EntryParser;
 use App\Content\Parser\FilenameParser;
 use App\Content\Parser\FrontMatterParser;
@@ -11,16 +12,33 @@ use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
+use function dirname;
+use function is_dir;
+use function sys_get_temp_dir;
 
 final class BenchmarkFixtureTest extends TestCase
 {
     private EntryParser $parser;
     private string $benchmarksDir;
+    private static bool $fixturesGenerated = false;
 
     protected function setUp(): void
     {
         $this->parser = new EntryParser(new FrontMatterParser(), new FilenameParser());
-        $this->benchmarksDir = dirname(__DIR__, 3) . '/benchmarks/data';
+
+        $repositoryBenchmarksDir = dirname(__DIR__, 3) . '/benchmarks/data';
+        if (is_dir($repositoryBenchmarksDir . '/content') && is_dir($repositoryBenchmarksDir . '/realistic-content')) {
+            $this->benchmarksDir = $repositoryBenchmarksDir;
+            return;
+        }
+
+        $this->benchmarksDir = sys_get_temp_dir() . '/yiipress-test-benchmark-data';
+
+        if (!self::$fixturesGenerated) {
+            BenchmarkDataGenerator::generateSmallDataset($this->benchmarksDir . '/content', 10);
+            BenchmarkDataGenerator::generateRealisticDataset($this->benchmarksDir . '/realistic-content', 88);
+            self::$fixturesGenerated = true;
+        }
     }
 
     public function testSmallBenchmarkFixtureEntryHasTitle(): void
