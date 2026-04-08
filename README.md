@@ -1,4 +1,6 @@
-<img src="logo.svg" alt="YiiPress" width="280">
+<p align="center">
+    <img src="logo.svg" alt="YiiPress" width="280">
+</p>
 
 **YiiPress** is a fast, file-based static blog engine built on [Yii3](https://www.yiiframework.com/) and PHP 8.5. 
 Write Markdown, run one command, get a fully static site — feeds, sitemaps, taxonomy pages, authors, search, and all.
