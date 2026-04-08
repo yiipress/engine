@@ -63,6 +63,9 @@ Supported languages include all syntect defaults (PHP, JavaScript, Python, Rust,
 Bash, SQL, HTML, CSS, and many more). Code blocks with an unrecognized language are
 highlighted as plain text.
 
+The highlighting color scheme is configured site-wide in `content/config.yaml` via
+`highlight_theme`. If omitted, YiiPress uses syntect's `InspiredGitHub` theme.
+
 ### MermaidProcessor
 
 Renders [Mermaid](https://mermaid.js.org/) diagrams on the client side.

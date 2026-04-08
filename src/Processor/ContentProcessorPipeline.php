@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Processor;
 
 use App\Content\Model\Entry;
+use App\Content\Model\SiteConfig;
 use App\Processor\Toc\TocAwareInterface;
 
 final class ContentProcessorPipeline
@@ -24,6 +25,15 @@ final class ContentProcessorPipeline
         }
 
         return $content;
+    }
+
+    public function applySiteConfig(SiteConfig $siteConfig): void
+    {
+        foreach ($this->processors as $processor) {
+            if ($processor instanceof SiteConfigAwareProcessorInterface) {
+                $processor->applySiteConfig($siteConfig);
+            }
+        }
     }
 
     public function collectHeadAssets(string $processedContent): string

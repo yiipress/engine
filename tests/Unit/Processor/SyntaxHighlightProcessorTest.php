@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Processor;
 
 use App\Content\Model\Entry;
+use App\Content\Model\SiteConfig;
 use App\Highlighter\SyntaxHighlighter;
 use App\Processor\SyntaxHighlightProcessor;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;
+use function PHPUnit\Framework\assertNotSame;
 
 final class SyntaxHighlightProcessorTest extends TestCase
 {
@@ -20,6 +22,20 @@ final class SyntaxHighlightProcessorTest extends TestCase
         $content = '<p>Regular rendered HTML without code blocks.</p>';
 
         assertSame($content, $processor->process($content, $this->createEntry()));
+    }
+
+    public function testUsesConfiguredHighlightTheme(): void
+    {
+        $html = '<pre><code class="language-php">&lt;?php echo 1;</code></pre>';
+
+        $defaultProcessor = new SyntaxHighlightProcessor(new SyntaxHighlighter());
+        $defaultResult = $defaultProcessor->process($html, $this->createEntry());
+
+        $configuredProcessor = new SyntaxHighlightProcessor(new SyntaxHighlighter());
+        $configuredProcessor->applySiteConfig($this->createSiteConfig('Solarized (dark)'));
+        $configuredResult = $configuredProcessor->process($html, $this->createEntry());
+
+        assertNotSame($defaultResult, $configuredResult);
     }
 
     private function createEntry(): Entry
@@ -72,5 +88,23 @@ final class SyntaxHighlightProcessorTest extends TestCase
                 unlink($file);
             }
         }
+    }
+
+    private function createSiteConfig(string $highlightTheme): SiteConfig
+    {
+        return new SiteConfig(
+            title: 'Test',
+            description: '',
+            baseUrl: '',
+            language: 'en',
+            charset: 'UTF-8',
+            defaultAuthor: '',
+            dateFormat: 'Y-m-d',
+            entriesPerPage: 10,
+            permalink: '/:collection/:slug/',
+            taxonomies: [],
+            params: [],
+            highlightTheme: $highlightTheme,
+        );
     }
 }

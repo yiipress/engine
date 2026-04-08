@@ -29,6 +29,8 @@ taxonomies:
   - tags
   - categories
 
+highlight_theme: "Solarized (dark)"
+
 image: /assets/og-default.png
 twitter: "@example"
 
@@ -58,6 +60,7 @@ assets:
 - **permalink** — default permalink pattern (overridden by collection or entry)
 - **taxonomies** — list of enabled taxonomy types
 - **theme** — default theme name for the site (see [Templates](template.md))
+- **highlight_theme** — built-in syntect theme used for fenced code block highlighting. Defaults to `InspiredGitHub`. Available built-in themes include `InspiredGitHub`, `Solarized (dark)`, `Solarized (light)`, `base16-ocean.dark`, `base16-ocean.light`, `base16-eighties.dark`, and `base16-mocha.dark`
 - **image** — default Open Graph image URL (absolute, or root-relative path resolved against `base_url`); used as fallback when an entry has no `image` front matter field
 - **twitter** — Twitter/X account handle (e.g., `@example`) added to `twitter:site` meta tag on all pages
 - **robots_txt** — `robots.txt` generation settings (see below)
@@ -82,6 +85,17 @@ When enabled, the build generates a `search-index.json` file in the output direc
 The `full_text` option controls how much content is indexed:
 - `false` — indexes title, summary, and tags (smaller index, faster)
 - `true` — additionally indexes the full body text (larger index, more thorough results)
+
+### Syntax highlighting
+
+Syntax highlighting uses built-in [syntect](https://github.com/trishume/syntect) themes and renders
+inline styles during build. To switch the theme globally:
+
+```yaml
+highlight_theme: "Solarized (dark)"
+```
+
+If `highlight_theme` is omitted, YiiPress uses `InspiredGitHub`.
 
 ### Assets
 

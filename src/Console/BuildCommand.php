@@ -268,6 +268,8 @@ final class BuildCommand extends Command
 
         $parser = new ContentParser();
         $siteConfig = $parser->parseSiteConfig($contentDir);
+        $this->contentPipeline->applySiteConfig($siteConfig);
+        $this->feedPipeline->applySiteConfig($siteConfig);
         $navigation = $parser->parseNavigation($contentDir);
         $collections = $parser->parseCollections($contentDir);
         $authors = iterator_to_array($parser->parseAuthors($contentDir));

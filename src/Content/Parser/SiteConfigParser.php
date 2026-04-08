@@ -48,6 +48,7 @@ final class SiteConfigParser
                 : [],
             markdown: self::parseMarkdownConfig($data['markdown'] ?? []),
             theme: (string) ($data['theme'] ?? ''),
+            highlightTheme: (string) ($data['highlight_theme'] ?? ''),
             image: (string) ($data['image'] ?? ''),
             twitterSite: (string) ($data['twitter'] ?? ''),
             robotsTxt: self::parseRobotsTxtConfig($data['robots_txt'] ?? null),

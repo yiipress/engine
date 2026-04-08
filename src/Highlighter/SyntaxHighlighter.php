@@ -13,7 +13,7 @@ use function strlen;
 final class SyntaxHighlighter
 {
     private const string HEADER = <<<'C'
-        char *yiipress_highlight(const char *html, size_t html_len, size_t *result_len, char **error);
+        char *yiipress_highlight(const char *html, size_t html_len, const char *theme_name, size_t theme_name_len, size_t *result_len, char **error);
         void yiipress_highlight_free(char *ptr);
         C;
 
@@ -26,7 +26,7 @@ final class SyntaxHighlighter
         $this->ffi = FFI::cdef(self::HEADER, self::LIBRARY_NAME);
     }
 
-    public function highlight(string $html): string
+    public function highlight(string $html, string $themeName = ''): string
     {
         if (!str_contains($html, '<pre><code class="language-')) {
             return $html;
@@ -37,7 +37,14 @@ final class SyntaxHighlighter
         $resultLength = $this->ffi->new('size_t');
 
         /** @var FFI\CData|null $resultPtr */
-        $resultPtr = $this->ffi->yiipress_highlight($html, strlen($html), FFI::addr($resultLength), FFI::addr($error));
+        $resultPtr = $this->ffi->yiipress_highlight(
+            $html,
+            strlen($html),
+            $themeName,
+            strlen($themeName),
+            FFI::addr($resultLength),
+            FFI::addr($error),
+        );
 
         if ($resultPtr === null) {
             // null result + null error = no code blocks, input unchanged

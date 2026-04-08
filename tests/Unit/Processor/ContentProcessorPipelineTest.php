@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Processor;
 
 use App\Content\Model\Entry;
+use App\Content\Model\SiteConfig;
 use App\Processor\AssetProcessorInterface;
 use App\Processor\ContentProcessorInterface;
 use App\Processor\ContentProcessorPipeline;
+use App\Processor\SiteConfigAwareProcessorInterface;
 use Closure;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
@@ -107,6 +109,47 @@ final class ContentProcessorPipelineTest extends TestCase
         $pipeline = new ContentProcessorPipeline();
 
         assertSame([], $pipeline->collectAssetFiles());
+    }
+
+    public function testApplySiteConfigPassesConfigurationToAwareProcessors(): void
+    {
+        $state = new class () {
+            public ?string $receivedTheme = null;
+        };
+
+        $awareProcessor = new class ($state) implements ContentProcessorInterface, SiteConfigAwareProcessorInterface {
+            public function __construct(private object $state)
+            {
+            }
+
+            public function applySiteConfig(SiteConfig $siteConfig): void
+            {
+                $this->state->receivedTheme = $siteConfig->highlightTheme;
+            }
+
+            public function process(string $content, Entry $entry): string
+            {
+                return $content;
+            }
+        };
+
+        $pipeline = new ContentProcessorPipeline($awareProcessor);
+        $pipeline->applySiteConfig(new SiteConfig(
+            title: 'Test',
+            description: '',
+            baseUrl: '',
+            language: 'en',
+            charset: 'UTF-8',
+            defaultAuthor: '',
+            dateFormat: 'Y-m-d',
+            entriesPerPage: 10,
+            permalink: '/:collection/:slug/',
+            taxonomies: [],
+            params: [],
+            highlightTheme: 'Solarized (dark)',
+        ));
+
+        assertSame('Solarized (dark)', $state->receivedTheme);
     }
 
     private function createEntry(): Entry

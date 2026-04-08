@@ -24,7 +24,7 @@ struct Block<'a> {
 
 static SYNTAX_SET: LazyLock<SyntaxSet> = LazyLock::new(SyntaxSet::load_defaults_newlines);
 static THEME_SET: LazyLock<ThemeSet> = LazyLock::new(ThemeSet::load_defaults);
-static THEME: LazyLock<&'static Theme> = LazyLock::new(|| &THEME_SET.themes["InspiredGitHub"]);
+const DEFAULT_THEME_NAME: &str = "InspiredGitHub";
 
 fn find_code_blocks(html: &str) -> Vec<Block<'_>> {
     if !html.contains(HIGHLIGHTABLE_BLOCK_MARKER) {
@@ -247,6 +247,8 @@ fn set_error(error_ptr: *mut *const c_char, message: &str) {
 pub unsafe extern "C" fn yiipress_highlight(
     html_ptr: *const c_char,
     html_len: usize,
+    theme_name_ptr: *const c_char,
+    theme_name_len: usize,
     result_len_ptr: *mut usize,
     error_ptr: *mut *const c_char,
 ) -> *mut c_char {
@@ -281,6 +283,20 @@ pub unsafe extern "C" fn yiipress_highlight(
         }
     };
 
+    let requested_theme_name = if theme_name_ptr.is_null() || theme_name_len == 0 {
+        DEFAULT_THEME_NAME
+    } else {
+        let theme_name_bytes = unsafe { slice::from_raw_parts(theme_name_ptr.cast::<u8>(), theme_name_len) };
+        match str::from_utf8(theme_name_bytes) {
+            Ok(s) if !s.is_empty() => s,
+            Ok(_) => DEFAULT_THEME_NAME,
+            Err(e) => {
+                set_error(error_ptr, &format!("Invalid UTF-8 in highlight theme name: {}", e));
+                return ptr::null_mut();
+            }
+        }
+    };
+
     let blocks = find_code_blocks(html);
     if blocks.is_empty() {
         // Return null to signal "no changes needed" — PHP should use the original string.
@@ -288,7 +304,22 @@ pub unsafe extern "C" fn yiipress_highlight(
     }
 
     let ss = &*SYNTAX_SET;
-    let theme = &**THEME;
+    let theme = match THEME_SET.themes.get(requested_theme_name) {
+        Some(theme) => theme,
+        None => {
+            let mut available_themes: Vec<&str> = THEME_SET.themes.keys().map(String::as_str).collect();
+            available_themes.sort_unstable();
+            set_error(
+                error_ptr,
+                &format!(
+                    "Unknown highlight theme \"{}\". Available themes: {}",
+                    requested_theme_name,
+                    available_themes.join(", ")
+                ),
+            );
+            return ptr::null_mut();
+        }
+    };
 
     let result = if blocks.len() < PARALLEL_BLOCK_THRESHOLD {
         match highlight_blocks_sequential(html, &blocks, ss, theme) {

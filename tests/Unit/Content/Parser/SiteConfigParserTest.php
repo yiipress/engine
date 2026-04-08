@@ -32,6 +32,7 @@ final class SiteConfigParserTest extends TestCase
         assertSame(['tags', 'categories'], $config->taxonomies);
         assertSame(['github_url' => 'https://github.com/test'], $config->params);
         assertSame('local', $config->theme);
+        assertSame('Solarized (dark)', $config->highlightTheme);
         assertTrue($config->assets->fingerprint);
     }
 

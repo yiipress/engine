@@ -24,6 +24,7 @@ final readonly class SiteConfig
         public array $params,
         public MarkdownConfig $markdown = new MarkdownConfig(),
         public string $theme = '',
+        public string $highlightTheme = '',
         public string $image = '',
         public string $twitterSite = '',
         public RobotsTxtConfig $robotsTxt = new RobotsTxtConfig(),

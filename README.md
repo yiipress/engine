@@ -46,6 +46,7 @@ Write Markdown, run one command, get a fully static site — feeds, sitemaps, ta
 ### Extensions
 
 - **Syntax highlighting** — server-side, via a Rust/[syntect](https://github.com/trishume/syntect) FFI library; zero client-side JavaScript
+- **Configurable highlight themes** — choose a built-in syntect theme in `content/config.yaml` via `highlight_theme`
 - **Table of contents** — auto-generated from headings, with `id` injection
 - **Mermaid diagrams** — flowcharts, sequence, Gantt, pie, and more
 - **YouTube & Vimeo shortcodes** — responsive embeds with a single tag
@@ -101,6 +102,7 @@ permalink: /:collection/:slug/
 taxonomies:
   - tags
   - categories
+highlight_theme: "Solarized (dark)"
 ```
 
 Create a collection in `content/blog/_collection.yaml`:

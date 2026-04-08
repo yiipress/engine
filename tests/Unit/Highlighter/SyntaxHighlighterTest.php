@@ -109,4 +109,25 @@ final class SyntaxHighlighterTest extends TestCase
         assertStringContainsString('style=', $result);
         assertStringNotContainsString('data-line="1"', $result);
     }
+
+    public function testCanUseConfiguredHighlightTheme(): void
+    {
+        $html = '<pre><code class="language-php">&lt;?php echo 1;</code></pre>';
+
+        $defaultResult = $this->highlighter->highlight($html);
+        $solarizedResult = $this->highlighter->highlight($html, 'Solarized (dark)');
+
+        self::assertNotSame($defaultResult, $solarizedResult);
+    }
+
+    public function testThrowsForUnknownHighlightTheme(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unknown highlight theme');
+
+        $this->highlighter->highlight(
+            '<pre><code class="language-php">&lt;?php echo 1;</code></pre>',
+            'unknown-theme',
+        );
+    }
 }
