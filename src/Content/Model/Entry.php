@@ -16,7 +16,7 @@ final readonly class Entry
      * @param array<string, mixed> $extra
      */
     public function __construct(
-        private string $filePath,
+        public string $filePath,
         public string $collection,
         public string $slug,
         public string $title,

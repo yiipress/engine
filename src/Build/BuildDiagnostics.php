@@ -123,7 +123,7 @@ final class BuildDiagnostics
 
     private function relativeSource(Entry $entry): string
     {
-        return substr($entry->sourceFilePath(), strlen($this->contentDir) + 1);
+        return substr($entry->filePath, strlen($this->contentDir) + 1);
     }
 
     private function entryContentDir(Entry $entry): string

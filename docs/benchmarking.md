@@ -59,10 +59,10 @@ make profile-build CLI_ARGS='build --content-dir=benchmarks/data/content --outpu
 
 | Benchmark                               | Time   |
 |-----------------------------------------|--------|
-| Full rebuild, sequential                | ~547ms |
-| Full rebuild, 4 workers                 | ~526ms |
+| Full rebuild, sequential                | ~423ms |
+| Full rebuild, 4 workers                 | ~418ms |
 | Incremental rebuild, no changes         | ~167ms |
-| Incremental rebuild, 1 changed entry    | ~167ms |
+| Incremental rebuild, 1 changed entry    | ~171ms |
 
 ### 1k realistic entries (~27KB each)
 

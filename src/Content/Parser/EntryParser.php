@@ -21,6 +21,34 @@ final readonly class EntryParser
     {
         $result = $this->frontMatterParser->parse($filePath);
         $fields = $result['frontMatter'];
+        $title = (string) ($fields['title'] ?? '');
+
+        if ($title === '') {
+            return new Entry(
+                filePath: $filePath,
+                collection: $collectionName,
+                slug: '',
+                title: '',
+                date: null,
+                draft: false,
+                tags: [],
+                inlineTags: [],
+                categories: [],
+                authors: [],
+                summary: '',
+                permalink: '',
+                layout: '',
+                theme: '',
+                weight: 0,
+                language: '',
+                redirectTo: '',
+                extra: [],
+                bodyOffset: $result['bodyOffset'],
+                bodyLength: $result['bodyLength'],
+                image: '',
+            );
+        }
+
         $filenameParsed = $this->filenameParser->parse($filePath);
 
         $date = isset($fields['date'])
@@ -40,7 +68,7 @@ final readonly class EntryParser
             filePath: $filePath,
             collection: $collectionName,
             slug: $slug,
-            title: (string) ($fields['title'] ?? ''),
+            title: $title,
             date: $date,
             draft: (bool) ($fields['draft'] ?? false),
             tags: $tags,

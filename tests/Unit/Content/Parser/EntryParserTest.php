@@ -9,10 +9,15 @@ use App\Content\Parser\FilenameParser;
 use App\Content\Parser\FrontMatterParser;
 use PHPUnit\Framework\TestCase;
 
+use function file_put_contents;
 use function PHPUnit\Framework\assertFalse;
+use function PHPUnit\Framework\assertNull;
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
 use function PHPUnit\Framework\assertTrue;
+use function sys_get_temp_dir;
+use function tempnam;
+use function unlink;
 
 final class EntryParserTest extends TestCase
 {
@@ -106,5 +111,26 @@ final class EntryParserTest extends TestCase
         // Verify 'php' appears only once (not duplicated as 'php' and 'PHP')
         $phpCount = count(array_filter($entry->tags, static fn ($tag) => strtolower($tag) === 'php'));
         assertSame(1, $phpCount);
+    }
+
+    public function testParseEntryWithoutTitleReturnsMinimalEntry(): void
+    {
+        $filePath = tempnam(sys_get_temp_dir(), 'yiipress-entry-');
+        self::assertNotFalse($filePath);
+
+        file_put_contents($filePath, "---\n---\ntags:\n  - php\n\n#not-a-heading\n");
+
+        try {
+            $entry = $this->parser->parse($filePath, 'blog');
+
+            assertSame('', $entry->title);
+            assertSame('', $entry->slug);
+            assertNull($entry->date);
+            assertSame([], $entry->tags);
+            assertSame([], $entry->categories);
+            assertSame([], $entry->authors);
+        } finally {
+            unlink($filePath);
+        }
     }
 }

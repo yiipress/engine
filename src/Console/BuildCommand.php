@@ -297,7 +297,7 @@ final class BuildCommand extends Command
         foreach ($collections as $collectionName => $collection) {
             $collectionEntries = [];
             foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
-                $sourcePath = $entry->sourceFilePath();
+                $sourcePath = $entry->filePath;
                 if ($entry->title === '') {
                     $output->writeln('<error>  Skipping ' . $sourcePath . ': no title found</error>');
                     continue;
@@ -311,7 +311,7 @@ final class BuildCommand extends Command
 
         $standalonePages = [];
         foreach ($parser->parseStandalonePages($contentDir) as $page) {
-            $sourcePath = $page->sourceFilePath();
+            $sourcePath = $page->filePath;
             if ($page->title === '') {
                 $output->writeln('<error>  Skipping ' . $sourcePath . ': no title found</error>');
                 continue;
@@ -327,7 +327,7 @@ final class BuildCommand extends Command
         $diagnostics = new BuildDiagnostics($contentDir, $fileToPermalink, $siteConfig, $authors);
         foreach ($rawEntriesByCollection as $entries) {
             foreach ($entries as $entry) {
-                $sourcePath = $entry->sourceFilePath();
+                $sourcePath = $entry->filePath;
                 if ($changedSet !== null && !isset($changedSet[$sourcePath])) {
                     continue;
                 }
@@ -335,7 +335,7 @@ final class BuildCommand extends Command
             }
         }
         foreach ($standalonePages as $page) {
-            $sourcePath = $page->sourceFilePath();
+            $sourcePath = $page->filePath;
             if ($changedSet !== null && !isset($changedSet[$sourcePath])) {
                 continue;
             }
@@ -360,7 +360,7 @@ final class BuildCommand extends Command
                     continue;
                 }
 
-                $sourcePath = $entry->sourceFilePath();
+                $sourcePath = $entry->filePath;
                 $relativePath = substr($sourcePath, strlen($contentDir) + 1);
                 $permalink = $fileToPermalink[$relativePath];
                 $filePath = $outputDir . $permalink . 'index.html';
@@ -425,7 +425,7 @@ final class BuildCommand extends Command
             }
             foreach ($rawEntriesByCollection as $entries) {
                 foreach ($entries as $entry) {
-                    $sourcePath = $entry->sourceFilePath();
+                    $sourcePath = $entry->filePath;
                     if (!isset($manifest->entries()[$sourcePath])) {
                         $this->removeStaleOutputs($manifest->replace($sourcePath, []));
                     }
@@ -442,7 +442,7 @@ final class BuildCommand extends Command
         $standaloneTasks = [];
         $standaloneRedirectTasks = [];
         foreach ($standalonePages as $page) {
-            $sourcePath = $page->sourceFilePath();
+            $sourcePath = $page->filePath;
             $permalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
             $filePath = $outputDir . $permalink . 'index.html';
 

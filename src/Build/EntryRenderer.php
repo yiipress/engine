@@ -43,7 +43,7 @@ final class EntryRenderer
         ?CrossReferenceResolver $crossRefResolver = null,
     ): string {
         if ($this->cache !== null) {
-            $cached = $this->cache->get($entry->sourceFilePath());
+            $cached = $this->cache->get($entry->filePath);
             if ($cached !== null) {
                 return $cached;
             }
@@ -62,7 +62,7 @@ final class EntryRenderer
         $toc = $siteConfig->toc ? $this->pipeline->collectToc() : [];
         $html = $this->renderTemplate($siteConfig, $entry, $content, $permalink, $navigation, $headAssets, $toc);
 
-        $this->cache?->set($entry->sourceFilePath(), $html);
+        $this->cache?->set($entry->filePath, $html);
 
         return $html;
     }
@@ -70,7 +70,7 @@ final class EntryRenderer
 
     private function resolveContentDir(Entry $entry): string
     {
-        $relative = substr($entry->sourceFilePath(), strlen($this->contentDir) + 1);
+        $relative = substr($entry->filePath, strlen($this->contentDir) + 1);
         $dir = dirname($relative);
         return $dir === '.' ? '' : $dir;
     }
