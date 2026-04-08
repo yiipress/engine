@@ -35,7 +35,7 @@ make bench
 Run a specific benchmark class:
 
 ```bash
-BENCH_FILTER=RealisticBuildBench make bench
+BENCH_FILTER=LargeContentBuildBench make bench
 ```
 
 ## Benchmark classes
@@ -44,36 +44,32 @@ BENCH_FILTER=RealisticBuildBench make bench
 - **`MarkdownRendererBench`** — measures MD4C markdown-to-HTML rendering for short and long documents
 - **`AssetFingerprintingBench`** — measures fingerprint lookup and HTML asset URL rewriting
 - **`OEmbedProcessorBench`** — measures standalone URL-to-embed expansion across pluggable oEmbed providers
-- **`BuildBench`** — measures full build pipeline with 10k small entries, sequential and parallel, cached and uncached
-- **`RealisticBuildBench`** — measures full build pipeline with 1k realistic entries (~27KB each, cross-links, images, tables, styled text)
+- **`SmallSiteBuildBench`** — measures the public `yii build` command end to end on 10k small entries, including full rebuilds and incremental rebuilds
+- **`LargeContentBuildBench`** — measures the public `yii build` command end to end on 1k realistic entries (~27KB each), including full rebuilds and incremental rebuilds
 
 ## Baseline results
 
 ### 10k small entries (~1KB each)
 
-| Benchmark                      | Time   |
-|--------------------------------|--------|
-| Full build, sequential         | ~1.46s |
-| Full build, 2 workers          | ~1.27s |
-| Full build, 4 workers          | ~1.18s |
-| Full build, 8 workers          | ~1.13s |
-| Full build, cached, sequential | ~1.47s |
-| Full build, cached, 4 workers  | ~1.13s |
-| Parse with body read           | ~102ms |
-| Render only (markdown→HTML)    | ~207ms |
+| Benchmark                               | Time   |
+|-----------------------------------------|--------|
+| Full rebuild, sequential                | ~533ms |
+| Full rebuild, 4 workers                 | ~531ms |
+| Incremental rebuild, no changes         | ~453ms |
+| Incremental rebuild, 1 changed entry    | ~448ms |
 
 ### 1k realistic entries (~27KB each)
 
-| Benchmark                      | Time   |
-|--------------------------------|--------|
-| Full build, sequential         | ~249ms |
-| Full build, 4 workers          | ~150ms |
-| Full build, 8 workers          | ~137ms |
-| Full build, cached, sequential | ~156ms |
-| Full build, cached, 4 workers  | ~128ms |
-| Render only (markdown→HTML)    | ~110ms |
+| Benchmark                               | Time    |
+|-----------------------------------------|---------|
+| Full rebuild, sequential                | ~169ms  |
+| Full rebuild, 4 workers                 | ~171ms  |
+| Incremental rebuild, no changes         | ~155ms  |
+| Incremental rebuild, 1 changed entry    | ~151ms  |
 
-Caching provides ~40% speedup for sequential builds with realistic content. Combined with parallel workers, the total speedup is ~2x.
+These end-to-end benchmarks intentionally go through the public CLI entry point instead of internal renderer/parser classes, so they track real rebuild timing rather than component-only throughput.
+
+The current numbers also show that incremental builds are not yet winning at the command level. That aligns with the current architecture: the build still performs substantial parse/index/setup work before it can conclude that little or nothing changed.
 
 Measured on PHP 8.5 with `ext-md4c`, `ext-yaml`, and `ext-pcntl`, xdebug off, OPCache disabled.
 

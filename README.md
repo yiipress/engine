@@ -27,7 +27,7 @@ Write Markdown, run one command, get a fully static site — feeds, sitemaps, ta
 
 ### Build
 
-- **Parallel builds** — configurable worker count; 10 000 entries built in ~1.2 s
+- **Parallel builds** — configurable worker count; 10 000 entries built in ~0.53 s in the current end-to-end benchmark
 - **Incremental builds** — only re-renders files that changed since last build
 - **Build cache** — parsed Markdown and front matter cached between runs
 - **Dry-run mode** — preview what would be generated without writing anything
@@ -67,21 +67,21 @@ Write Markdown, run one command, get a fully static site — feeds, sitemaps, ta
 
 ## Performance
 
-10 000 entries across 3 collections, OPcache on:
+10 000 entries across 3 collections:
 
 | Mode                | Time    |
 |---------------------|---------|
-| Sequential          | ~1.49 s |
-| 4 workers           | ~1.18 s |
-| Incremental (cached)| ~0.05 s |
+| Sequential          | ~533 ms |
+| 4 workers           | ~531 ms |
+| Incremental         | ~453 ms |
 
 1 000 realistic entries (large posts, images, tables, code blocks):
 
 | Mode       | Time    |
 |------------|---------|
-| Sequential | ~252 ms |
-| 4 workers  | ~152 ms |
-| 8 workers  | ~135 ms |
+| Sequential | ~169 ms |
+| 4 workers  | ~171 ms |
+| Incremental| ~155 ms |
 
 ---
 
