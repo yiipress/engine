@@ -62,7 +62,9 @@ use function hrtime;
 use function is_file;
 use function is_readable;
 use function max;
+use function memory_get_peak_usage;
 use function min;
+use function number_format;
 use function pathinfo;
 use function preg_match;
 use function range;
@@ -641,7 +643,13 @@ final class BuildCommand extends Command
             $manifest->save();
         }
 
-        $output->writeln('<info>Build complete in ' . $this->formatElapsedTime((hrtime(true) - $startedAt) / 1_000_000_000) . '.</info>');
+        $output->writeln(
+            '<info>Build complete in '
+            . $this->formatElapsedTime((hrtime(true) - $startedAt) / 1_000_000_000)
+            . '. Peak memory: '
+            . $this->formatMemory(memory_get_peak_usage(true))
+            . '.</info>',
+        );
 
         return ExitCode::OK;
     }
@@ -658,6 +666,17 @@ final class BuildCommand extends Command
         }
 
         return sprintf('%.1fms', round($milliseconds, 1));
+    }
+
+    private function formatMemory(int $bytes): string
+    {
+        $mebibytes = $bytes / (1024 * 1024);
+
+        if ($mebibytes >= 10) {
+            return sprintf('%.0f MiB', round($mebibytes));
+        }
+
+        return number_format(round($mebibytes, 1), 1) . ' MiB';
     }
 
     private function workerMessageSuffix(int $workerCount, bool $autoWorkers): string

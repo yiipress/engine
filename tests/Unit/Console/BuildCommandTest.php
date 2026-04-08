@@ -71,7 +71,7 @@ final class BuildCommandTest extends TestCase
         $outputText = implode("\n", $output);
 
         assertSame(0, $exitCode, "Build failed: $outputText");
-        assertMatchesRegularExpression('/Build complete in \d+(?:\.\d+)?(?:ms|s)\./', $outputText);
+        assertMatchesRegularExpression('/Build complete in \d+(?:\.\d+)?(?:ms|s)\. Peak memory: \d+(?:\.\d+)? MiB\./', $outputText);
         assertDirectoryExists($this->outputDir);
     }
 
@@ -119,7 +119,7 @@ final class BuildCommandTest extends TestCase
         $outputText = implode("\n", $output);
 
         assertSame(0, $exitCode, "Parallel build failed: $outputText");
-        assertMatchesRegularExpression('/Build complete in \d+(?:\.\d+)?(?:ms|s)\./', $outputText);
+        assertMatchesRegularExpression('/Build complete in \d+(?:\.\d+)?(?:ms|s)\. Peak memory: \d+(?:\.\d+)? MiB\./', $outputText);
         assertStringContainsString('2 workers', $outputText);
 
         $entryFile = $this->outputDir . '/blog/test-post/index.html';
@@ -148,7 +148,7 @@ final class BuildCommandTest extends TestCase
         $outputText = implode("\n", $output);
 
         assertSame(0, $exitCode, "Auto worker build failed: $outputText");
-        assertMatchesRegularExpression('/Build complete in \d+(?:\.\d+)?(?:ms|s)\./', $outputText);
+        assertMatchesRegularExpression('/Build complete in \d+(?:\.\d+)?(?:ms|s)\. Peak memory: \d+(?:\.\d+)? MiB\./', $outputText);
         assertStringContainsString('Entries written:', $outputText);
         assertMatchesRegularExpression('/Entries written: .* using \d+ workers? \(auto\)/', $outputText);
         assertFileExists($this->outputDir . '/blog/test-post/index.html');
