@@ -9,6 +9,7 @@ use App\Content\Model\Entry;
 use App\Content\Model\SiteConfig;
 
 use function dirname;
+use function str_contains;
 use function strlen;
 
 final class BuildDiagnostics
@@ -76,7 +77,12 @@ final class BuildDiagnostics
 
     private function checkLinks(Entry $entry): void
     {
-        $body = $this->stripCodeBlocks($entry->body());
+        $rawBody = $entry->body();
+        if (!str_contains($rawBody, '](') && !str_contains($rawBody, '![')) {
+            return;
+        }
+
+        $body = $this->stripCodeBlocks($rawBody);
         if ($body === '') {
             return;
         }

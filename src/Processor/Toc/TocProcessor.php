@@ -9,6 +9,7 @@ use App\Processor\ContentProcessorInterface;
 
 use function htmlspecialchars;
 use function mb_strtolower;
+use function str_contains;
 use function preg_match;
 use function preg_replace;
 use function preg_replace_callback;
@@ -29,6 +30,10 @@ final class TocProcessor implements ContentProcessorInterface, TocAwareInterface
 
     public function process(string $content, Entry $entry): string
     {
+        if (!str_contains($content, '<h')) {
+            return $content;
+        }
+
         $this->toc = [];
         $slugCounts = [];
 
