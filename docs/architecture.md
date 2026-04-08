@@ -239,7 +239,7 @@ Two separate pipelines are configured via Yii3 DI container in `config/common/di
 
 - **MarkdownProcessor** — converts markdown to HTML using md4c. Accepts `MarkdownConfig` for feature toggles
 - **OEmbedProcessor** — expands standalone provider URLs into embed HTML before markdown via pluggable `OEmbedInterface` implementations
-- **SyntaxHighlightProcessor** — server-rendered code block highlighting via Rust FFI. Uses syntect + rayon compiled to a shared library (`src/Highlighter/`)
+- **SyntaxHighlightProcessor** — server-rendered code block highlighting via Rust FFI. Uses syntect + rayon compiled to a shared library (`src/Highlighter/`), with explicit string lengths passed across the FFI boundary to reduce per-call overhead
 
 
 ## Serve mode

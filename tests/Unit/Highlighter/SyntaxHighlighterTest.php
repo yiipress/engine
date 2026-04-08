@@ -72,6 +72,18 @@ final class SyntaxHighlighterTest extends TestCase
         assertStringContainsString('style=', $result);
     }
 
+    public function testLeavesPlainCodeBlocksUntouchedWhenHighlightingLanguageBlocks(): void
+    {
+        $plainBlock = '<pre><code>plain code</code></pre>';
+        $html = $plainBlock
+            . '<pre><code class="language-php">&lt;?php echo 1;</code></pre>';
+
+        $result = $this->highlighter->highlight($html);
+
+        assertStringContainsString($plainBlock, $result);
+        assertStringContainsString('style=', $result);
+    }
+
     public function testHandlesEmptyString(): void
     {
         $result = $this->highlighter->highlight('');
@@ -88,4 +100,13 @@ final class SyntaxHighlighterTest extends TestCase
         assertStringContainsString('some code', $result);
     }
 
+    public function testHighlightsCodeBlockWithAdditionalAttributes(): void
+    {
+        $html = '<pre><code class="language-php" data-line="1">&lt;?php echo 1;</code></pre>';
+
+        $result = $this->highlighter->highlight($html);
+
+        assertStringContainsString('style=', $result);
+        assertStringNotContainsString('data-line="1"', $result);
+    }
 }

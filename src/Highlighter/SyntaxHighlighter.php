@@ -7,10 +7,13 @@ namespace App\Highlighter;
 use FFI;
 use RuntimeException;
 
+use function str_contains;
+use function strlen;
+
 final class SyntaxHighlighter
 {
     private const string HEADER = <<<'C'
-        char *yiipress_highlight(const char *html, char **error);
+        char *yiipress_highlight(const char *html, size_t html_len, size_t *result_len, char **error);
         void yiipress_highlight_free(char *ptr);
         C;
 
@@ -25,36 +28,34 @@ final class SyntaxHighlighter
 
     public function highlight(string $html): string
     {
+        if (!str_contains($html, '<pre><code class="language-')) {
+            return $html;
+        }
+
         // Create FFI CData for error output parameter
         $error = $this->ffi->new('char*');
+        $resultLength = $this->ffi->new('size_t');
 
         /** @var FFI\CData|null $resultPtr */
-        $resultPtr = $this->ffi->yiipress_highlight($html, FFI::addr($error));
+        $resultPtr = $this->ffi->yiipress_highlight($html, strlen($html), FFI::addr($resultLength), FFI::addr($error));
 
         if ($resultPtr === null) {
-            $errorMessage = 'Syntax highlighting failed.';
-
-            // Get detailed error message if available
-            if ($error !== null) {
-                $errorStr = FFI::string($error);
-                if ($errorStr !== '') {
-                    $errorMessage = $errorStr;
-                }
-                $this->ffi->yiipress_highlight_free($error);
+            // null result + null error = no code blocks, input unchanged
+            if ($error === null || FFI::isNull($error)) {
+                return $html;
             }
 
-            throw new RuntimeException($errorMessage);
+            // null result + error = actual failure
+            $errorStr = FFI::string($error);
+            $this->ffi->yiipress_highlight_free($error);
+
+            throw new RuntimeException($errorStr !== '' ? $errorStr : 'Syntax highlighting failed.');
         }
 
         try {
-            return FFI::string($resultPtr);
+            return FFI::string($resultPtr, (int) $resultLength->cdata);
         } finally {
             $this->ffi->yiipress_highlight_free($resultPtr);
-
-            // Clean up error if it was set
-            if ($error !== null) {
-                $this->ffi->yiipress_highlight_free($error);
-            }
         }
     }
 }

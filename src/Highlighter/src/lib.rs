@@ -1,72 +1,75 @@
-use rayon::prelude::*;
-use std::ffi::{CStr, CString};
+use std::borrow::Cow;
+use std::ffi::CString;
 use std::os::raw::c_char;
-use syntect::highlighting::ThemeSet;
+use std::ptr;
+use std::slice;
+use std::str;
+use std::sync::LazyLock;
+
+use rayon::prelude::*;
+use syntect::highlighting::{Theme, ThemeSet};
 use syntect::html::highlighted_html_for_string;
 use syntect::parsing::SyntaxSet;
 
-struct Block {
+const HIGHLIGHTABLE_BLOCK_MARKER: &str = "<pre><code class=\"language-";
+const CODE_BLOCK_END_MARKER: &str = "</code></pre>";
+const PARALLEL_BLOCK_THRESHOLD: usize = 8;
+
+struct Block<'a> {
     start: usize,
     end: usize,
-    language: String,
-    code: String,
+    language: &'a str,
+    code: &'a str,
 }
 
-fn find_code_blocks(html: &str) -> Vec<Block> {
+static SYNTAX_SET: LazyLock<SyntaxSet> = LazyLock::new(SyntaxSet::load_defaults_newlines);
+static THEME_SET: LazyLock<ThemeSet> = LazyLock::new(ThemeSet::load_defaults);
+static THEME: LazyLock<&'static Theme> = LazyLock::new(|| &THEME_SET.themes["InspiredGitHub"]);
+
+fn find_code_blocks(html: &str) -> Vec<Block<'_>> {
+    if !html.contains(HIGHLIGHTABLE_BLOCK_MARKER) {
+        return Vec::new();
+    }
+
     let mut blocks = Vec::new();
     let mut search_from = 0;
 
-    while let Some(pre_start) = html[search_from..].find("<pre><code") {
-        let abs_start = search_from + pre_start;
-        let after_code_tag = &html[abs_start + 10..];
+    while let Some(block_start) = html[search_from..].find(HIGHLIGHTABLE_BLOCK_MARKER) {
+        let start = search_from + block_start;
+        let language_start = start + HIGHLIGHTABLE_BLOCK_MARKER.len();
 
-        let language = if after_code_tag.starts_with(" class=\"language-") {
-            let lang_start = 17; // length of ` class="language-`
-            if let Some(quote_end) = after_code_tag[lang_start..].find('"') {
-                after_code_tag[lang_start..lang_start + quote_end].to_string()
-            } else {
-                search_from = abs_start + 10;
-                continue;
-            }
-        } else {
-            String::new()
-        };
-
-        let tag_close = match html[abs_start..].find('>') {
-            Some(pos) => abs_start + pos + 1,
+        let language_end = match html[language_start..].find('"') {
+            Some(pos) => language_start + pos,
             None => {
-                search_from = abs_start + 10;
+                search_from = language_start;
                 continue;
             }
         };
 
-        // Find the inner > of <code...>
-        let code_content_start = match html[tag_close..].find('>') {
-            Some(pos) => tag_close + pos + 1,
+        let code_tag_end = match html[language_end..].find('>') {
+            Some(pos) => language_end + pos,
             None => {
-                search_from = abs_start + 10;
+                search_from = language_end;
                 continue;
             }
         };
 
-        let end_marker = "</code></pre>";
-        let code_content_end = match html[code_content_start..].find(end_marker) {
+        let code_content_start = code_tag_end + 1;
+        let code_content_end = match html[code_content_start..].find(CODE_BLOCK_END_MARKER) {
             Some(pos) => code_content_start + pos,
             None => {
-                search_from = abs_start + 10;
+                search_from = code_content_start;
                 continue;
             }
         };
 
-        let block_end = code_content_end + end_marker.len();
-
-        let code = html[code_content_start..code_content_end].to_string();
+        let block_end = code_content_end + CODE_BLOCK_END_MARKER.len();
 
         blocks.push(Block {
-            start: abs_start,
+            start,
             end: block_end,
-            language,
-            code,
+            language: &html[language_start..language_end],
+            code: &html[code_content_start..code_content_end],
         });
 
         search_from = block_end;
@@ -75,16 +78,45 @@ fn find_code_blocks(html: &str) -> Vec<Block> {
     blocks
 }
 
-fn decode_html_entities(s: &str) -> String {
-    s.replace("&amp;", "&")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&quot;", "\"")
-        .replace("&#39;", "'")
-        .replace("&#x27;", "'")
+fn decode_html_entities(s: &str) -> Cow<'_, str> {
+    if !s.contains('&') {
+        return Cow::Borrowed(s);
+    }
+
+    let mut result = String::with_capacity(s.len());
+    let mut cursor = 0;
+
+    while let Some(offset) = s[cursor..].find('&') {
+        let entity_start = cursor + offset;
+        result.push_str(&s[cursor..entity_start]);
+
+        let remaining = &s[entity_start..];
+        if remaining.starts_with("&amp;") {
+            result.push('&');
+            cursor = entity_start + 5;
+        } else if remaining.starts_with("&lt;") {
+            result.push('<');
+            cursor = entity_start + 4;
+        } else if remaining.starts_with("&gt;") {
+            result.push('>');
+            cursor = entity_start + 4;
+        } else if remaining.starts_with("&quot;") {
+            result.push('"');
+            cursor = entity_start + 6;
+        } else if remaining.starts_with("&#39;") || remaining.starts_with("&#x27;") {
+            result.push('\'');
+            cursor = entity_start + 5 + usize::from(remaining.starts_with("&#x27;"));
+        } else {
+            result.push('&');
+            cursor = entity_start + 1;
+        }
+    }
+
+    result.push_str(&s[cursor..]);
+    Cow::Owned(result)
 }
 
-fn strip_leading_php_open_tag(html: &str) -> String {
+fn strip_leading_php_open_tag(html: &str) -> Cow<'_, str> {
     if let Some(idx) = html.find("&lt;?php") {
         // Remove the escaped opening tag and following plain-space/newline if present
         let mut end = idx + "&lt;?php".len();
@@ -95,126 +127,193 @@ fn strip_leading_php_open_tag(html: &str) -> String {
         let mut result = String::with_capacity(html.len() - (end - idx));
         result.push_str(&html[..idx]);
         result.push_str(&html[end..]);
-        return result;
+        return Cow::Owned(result);
     }
-    html.to_string()
+    Cow::Borrowed(html)
 }
 
-fn highlight_block(ss: &SyntaxSet, theme: &syntect::highlighting::Theme, block: &Block) -> String {
-    if block.language.is_empty() {
-        return String::new();
-    }
-
+fn highlight_block(ss: &SyntaxSet, theme: &Theme, block: &Block<'_>) -> Option<String> {
     let syntax = ss
         .find_syntax_by_token(&block.language)
         .unwrap_or_else(|| ss.find_syntax_plain_text());
 
-    let mut decoded = decode_html_entities(&block.code);
+    let decoded = decode_html_entities(&block.code);
 
     let is_php = block.language.eq_ignore_ascii_case("php");
     let needs_php_tag = is_php && !decoded.trim_start().starts_with("<?");
-    if needs_php_tag {
-        decoded = format!("<?php\n{}", decoded);
-    }
 
-    let mut out = match highlighted_html_for_string(&decoded, ss, syntax, theme) {
-        Ok(highlighted) => highlighted,
-        Err(_) => String::new(),
+    let source: Cow<'_, str> = if needs_php_tag {
+        let mut s = String::with_capacity(7 + decoded.len());
+        s.push_str("<?php\n");
+        s.push_str(&decoded);
+        Cow::Owned(s)
+    } else {
+        decoded
     };
 
+    let out = highlighted_html_for_string(&source, ss, syntax, theme).ok()?;
+
     if needs_php_tag {
-        out = strip_leading_php_open_tag(&out);
+        Some(strip_leading_php_open_tag(&out).into_owned())
+    } else {
+        Some(out)
+    }
+}
+
+fn merge_replacements(
+    html: &str,
+    blocks: &[Block<'_>],
+    replacements: &[Option<String>],
+) -> String {
+    let mut result = String::with_capacity(html.len() + html.len() / 4);
+    let mut last_end = 0;
+
+    for (block, replacement) in blocks.iter().zip(replacements.iter()) {
+        result.push_str(&html[last_end..block.start]);
+
+        if let Some(replacement) = replacement {
+            result.push_str(replacement);
+        } else {
+            result.push_str(&html[block.start..block.end]);
+        }
+
+        last_end = block.end;
     }
 
-    out
+    result.push_str(&html[last_end..]);
+    result
+}
+
+fn highlight_blocks_sequential(
+    html: &str,
+    blocks: &[Block<'_>],
+    ss: &SyntaxSet,
+    theme: &Theme,
+) -> Option<String> {
+    let mut result = String::with_capacity(html.len() + html.len() / 4);
+    let mut last_end = 0;
+    let mut has_replacements = false;
+
+    for block in blocks {
+        result.push_str(&html[last_end..block.start]);
+
+        if let Some(replacement) = highlight_block(ss, theme, block) {
+            result.push_str(&replacement);
+            has_replacements = true;
+        } else {
+            result.push_str(&html[block.start..block.end]);
+        }
+
+        last_end = block.end;
+    }
+
+    result.push_str(&html[last_end..]);
+
+    has_replacements.then_some(result)
+}
+
+fn into_raw_c_string_unchecked(value: String) -> *mut c_char {
+    // HTML produced by YiiPress is text-only. Interior NUL bytes are unsupported at this FFI boundary.
+    unsafe { CString::from_vec_unchecked(value.into_bytes()).into_raw() }
+}
+
+fn str_to_raw_c_string_unchecked(value: &str) -> *mut c_char {
+    unsafe { CString::from_vec_unchecked(value.as_bytes().to_vec()).into_raw() }
+}
+
+fn set_error(error_ptr: *mut *const c_char, message: &str) {
+    if error_ptr.is_null() {
+        return;
+    }
+
+    let error_msg = str_to_raw_c_string_unchecked(message);
+
+    unsafe {
+        *error_ptr = error_msg.cast_const();
+    }
 }
 
 /// Highlights all `<pre><code class="language-xxx">` blocks in the given HTML string.
 ///
 /// # Safety
 ///
-/// `html_ptr` must be a valid null-terminated UTF-8 C string.
+/// `html_ptr` must point to `html_len` bytes of valid UTF-8 data.
+/// `result_len_ptr` must be a valid pointer to a `usize` that will be set to the result length
+/// (or zero if no replacement was produced).
 /// `error_ptr` must be a valid pointer to a `*const c_char` that will be set to an error message
 /// (or null if successful). The error message must be freed by calling `yiipress_highlight_free`.
 /// The returned pointer must be freed by calling `yiipress_highlight_free`.
 #[no_mangle]
 pub unsafe extern "C" fn yiipress_highlight(
     html_ptr: *const c_char,
+    html_len: usize,
+    result_len_ptr: *mut usize,
     error_ptr: *mut *const c_char,
 ) -> *mut c_char {
-    // Initialize error to null
-    unsafe { *error_ptr = std::ptr::null_mut() };
-    
-    if html_ptr.is_null() {
-        let error_msg = match CString::new("HTML input pointer is null") {
-            Ok(c) => c.into_raw(),
-            Err(_) => return std::ptr::null_mut(),
-        };
-        unsafe { *error_ptr = error_msg };
-        return std::ptr::null_mut();
+    if !error_ptr.is_null() {
+        unsafe {
+            *error_ptr = ptr::null();
+        }
     }
 
-    let html = match unsafe { CStr::from_ptr(html_ptr) }.to_str() {
+    if !result_len_ptr.is_null() {
+        unsafe {
+            *result_len_ptr = 0;
+        }
+    }
+
+    if html_ptr.is_null() {
+        set_error(error_ptr, "HTML input pointer is null");
+        return ptr::null_mut();
+    }
+
+    if result_len_ptr.is_null() {
+        set_error(error_ptr, "Result length pointer is null");
+        return ptr::null_mut();
+    }
+
+    let html_bytes = unsafe { slice::from_raw_parts(html_ptr.cast::<u8>(), html_len) };
+    let html = match str::from_utf8(html_bytes) {
         Ok(s) => s,
         Err(e) => {
-            let error_msg = match CString::new(format!("Invalid UTF-8 in HTML input: {}", e)) {
-                Ok(c) => c.into_raw(),
-                Err(_) => return std::ptr::null_mut(),
-            };
-            unsafe { *error_ptr = error_msg };
-            return std::ptr::null_mut();
+            set_error(error_ptr, &format!("Invalid UTF-8 in HTML input: {}", e));
+            return ptr::null_mut();
         }
     };
 
     let blocks = find_code_blocks(html);
     if blocks.is_empty() {
-        return match CString::new(html) {
-            Ok(c) => c.into_raw(),
-            Err(_) => {
-                let error_msg = match CString::new("Failed to allocate memory for result") {
-                    Ok(c) => c.into_raw(),
-                    Err(_) => return std::ptr::null_mut(),
-                };
-                unsafe { *error_ptr = error_msg };
-                std::ptr::null_mut()
-            }
-        };
+        // Return null to signal "no changes needed" — PHP should use the original string.
+        return ptr::null_mut();
     }
 
-    let ss = SyntaxSet::load_defaults_newlines();
-    let ts = ThemeSet::load_defaults();
-    let theme = &ts.themes["InspiredGitHub"];
+    let ss = &*SYNTAX_SET;
+    let theme = &**THEME;
 
-    let highlighted: Vec<String> = blocks
-        .par_iter()
-        .map(|block| highlight_block(&ss, theme, block))
-        .collect();
-
-    let mut result = String::with_capacity(html.len());
-    let mut last_end = 0;
-
-    for (block, replacement) in blocks.iter().zip(highlighted.iter()) {
-        result.push_str(&html[last_end..block.start]);
-        if replacement.is_empty() {
-            result.push_str(&html[block.start..block.end]);
-        } else {
-            result.push_str(replacement);
+    let result = if blocks.len() < PARALLEL_BLOCK_THRESHOLD {
+        match highlight_blocks_sequential(html, &blocks, ss, theme) {
+            Some(result) => result,
+            None => return ptr::null_mut(),
         }
-        last_end = block.end;
-    }
-    result.push_str(&html[last_end..]);
+    } else {
+        // Rayon thread dispatch has overhead; only parallelize larger pages with many code blocks.
+        let replacements: Vec<Option<String>> = blocks
+            .par_iter()
+            .map(|block| highlight_block(ss, theme, block))
+            .collect();
 
-    match CString::new(result) {
-        Ok(c) => c.into_raw(),
-        Err(e) => {
-            let error_msg = match CString::new(format!("Failed to allocate memory for result: {}", e)) {
-                Ok(c) => c.into_raw(),
-                Err(_) => std::ptr::null_mut(),
-            };
-            unsafe { *error_ptr = error_msg };
-            std::ptr::null_mut()
+        if replacements.iter().all(Option::is_none) {
+            return ptr::null_mut();
         }
+
+        merge_replacements(html, &blocks, &replacements)
+    };
+
+    unsafe {
+        *result_len_ptr = result.len();
     }
+
+    into_raw_c_string_unchecked(result)
 }
 
 /// Frees a string previously returned by `yiipress_highlight`.

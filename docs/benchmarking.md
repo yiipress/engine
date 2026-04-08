@@ -48,6 +48,7 @@ make profile-build CLI_ARGS='build --content-dir=benchmarks/data/content --outpu
 
 - **`ContentParserBench`** — measures parsing speed for site config, navigation, collections, authors, and entries (with and without body loading)
 - **`MarkdownRendererBench`** — measures MD4C markdown-to-HTML rendering for short and long documents
+- **`SyntaxHighlighterBench`** — measures the PHP FFI syntax highlighter path for plain HTML, a single highlighted block, and a page with many highlighted blocks
 - **`AssetFingerprintingBench`** — measures fingerprint lookup and HTML asset URL rewriting
 - **`OEmbedProcessorBench`** — measures standalone URL-to-embed expansion across pluggable oEmbed providers
 - **`SmallSiteBuildBench`** — measures the public `yii build` command end to end on 10k small entries, including full rebuilds and incremental rebuilds
@@ -59,19 +60,19 @@ make profile-build CLI_ARGS='build --content-dir=benchmarks/data/content --outpu
 
 | Benchmark                               | Time   |
 |-----------------------------------------|--------|
-| Full rebuild, sequential                | ~10.042s |
-| Full rebuild, 4 workers                 | ~4.586s  |
-| Incremental rebuild, no changes         | ~367.443ms |
-| Incremental rebuild, 1 changed entry    | ~358.293ms |
+| Full rebuild, sequential                | ~3.438s |
+| Full rebuild, 4 workers                 | ~2.830s |
+| Incremental rebuild, no changes         | ~357.636ms |
+| Incremental rebuild, 1 changed entry    | ~357.465ms |
 
 ### 1k realistic entries (~27KB each)
 
 | Benchmark                               | Time    |
 |-----------------------------------------|---------|
-| Full rebuild, sequential                | ~2.738s |
-| Full rebuild, 4 workers                 | ~1.332s |
-| Incremental rebuild, no changes         | ~102.017ms |
-| Incremental rebuild, 1 changed entry    | ~105.087ms |
+| Full rebuild, sequential                | ~2.016s |
+| Full rebuild, 4 workers                 | ~1.068s |
+| Incremental rebuild, no changes         | ~107.945ms |
+| Incremental rebuild, 1 changed entry    | ~108.596ms |
 
 These end-to-end benchmarks intentionally go through the public CLI entry point instead of internal renderer/parser classes,
 so they track real rebuild timing rather than component-only throughput.

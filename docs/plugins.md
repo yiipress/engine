@@ -50,6 +50,9 @@ and [rayon](https://github.com/rayon-rs/rayon), called from PHP via FFI. It proc
 `<pre><code class="language-xxx">` blocks in the rendered HTML, replacing them with
 inline-styled highlighted output.
 
+The FFI binding passes explicit input and output lengths so repeated highlighting calls avoid
+extra C-string scans at the PHP/Rust boundary.
+
 Rayon parallelizes highlighting across code blocks within a single page, which helps
 when a page contains many code blocks (e.g., documentation pages).
 
