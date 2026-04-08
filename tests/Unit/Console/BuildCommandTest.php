@@ -17,6 +17,7 @@ use function PHPUnit\Framework\assertFileExists;
 use function PHPUnit\Framework\assertLessThan;
 use function PHPUnit\Framework\assertNotFalse;
 use function PHPUnit\Framework\assertSame;
+use function PHPUnit\Framework\assertMatchesRegularExpression;
 use function PHPUnit\Framework\assertStringContainsString;
 use function PHPUnit\Framework\assertStringNotContainsString;
 
@@ -70,7 +71,7 @@ final class BuildCommandTest extends TestCase
         $outputText = implode("\n", $output);
 
         assertSame(0, $exitCode, "Build failed: $outputText");
-        assertStringContainsString('Build complete.', $outputText);
+        assertMatchesRegularExpression('/Build complete in \d+(?:\.\d+)?(?:ms|s)\./', $outputText);
         assertDirectoryExists($this->outputDir);
     }
 
@@ -118,7 +119,7 @@ final class BuildCommandTest extends TestCase
         $outputText = implode("\n", $output);
 
         assertSame(0, $exitCode, "Parallel build failed: $outputText");
-        assertStringContainsString('Build complete.', $outputText);
+        assertMatchesRegularExpression('/Build complete in \d+(?:\.\d+)?(?:ms|s)\./', $outputText);
         assertStringContainsString('2 workers', $outputText);
 
         $entryFile = $this->outputDir . '/blog/test-post/index.html';

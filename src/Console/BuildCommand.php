@@ -56,9 +56,12 @@ use function array_filter;
 use function array_unique;
 use function array_values;
 use function hash;
+use function hrtime;
 use function is_file;
 use function pathinfo;
+use function round;
 use function sort;
+use function sprintf;
 use function str_starts_with;
 use function strtolower;
 use function substr;
@@ -131,6 +134,7 @@ final class BuildCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $startedAt = hrtime(true);
         $rootPath = $this->rootPath;
 
         /** @var string $contentDirOption */
@@ -615,9 +619,23 @@ final class BuildCommand extends Command
             $manifest->save();
         }
 
-        $output->writeln('<info>Build complete.</info>');
+        $output->writeln('<info>Build complete in ' . $this->formatElapsedTime((hrtime(true) - $startedAt) / 1_000_000_000) . '.</info>');
 
         return ExitCode::OK;
+    }
+
+    private function formatElapsedTime(float $seconds): string
+    {
+        if ($seconds >= 1) {
+            return sprintf('%.2fs', round($seconds, 2));
+        }
+
+        $milliseconds = $seconds * 1000;
+        if ($milliseconds >= 10) {
+            return sprintf('%.0fms', round($milliseconds));
+        }
+
+        return sprintf('%.1fms', round($milliseconds, 1));
     }
 
     /**
