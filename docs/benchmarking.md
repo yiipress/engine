@@ -38,6 +38,12 @@ Run a specific benchmark class:
 BENCH_FILTER=LargeContentBuildBench make bench
 ```
 
+Profile the public build command with Xdebug:
+
+```bash
+make profile-build CLI_ARGS='build --content-dir=benchmarks/data/content --output-dir=runtime/profile-output --workers=1 --no-cache'
+```
+
 ## Benchmark classes
 
 - **`ContentParserBench`** — measures parsing speed for site config, navigation, collections, authors, and entries (with and without body loading)
@@ -53,19 +59,19 @@ BENCH_FILTER=LargeContentBuildBench make bench
 
 | Benchmark                               | Time   |
 |-----------------------------------------|--------|
-| Full rebuild, sequential                | ~531ms |
-| Full rebuild, 4 workers                 | ~540ms |
-| Incremental rebuild, no changes         | ~169ms |
+| Full rebuild, sequential                | ~547ms |
+| Full rebuild, 4 workers                 | ~526ms |
+| Incremental rebuild, no changes         | ~167ms |
 | Incremental rebuild, 1 changed entry    | ~167ms |
 
 ### 1k realistic entries (~27KB each)
 
 | Benchmark                               | Time    |
 |-----------------------------------------|---------|
-| Full rebuild, sequential                | ~168ms  |
-| Full rebuild, 4 workers                 | ~168ms  |
+| Full rebuild, sequential                | ~175ms  |
+| Full rebuild, 4 workers                 | ~172ms  |
 | Incremental rebuild, no changes         | ~84ms   |
-| Incremental rebuild, 1 changed entry    | ~87ms   |
+| Incremental rebuild, 1 changed entry    | ~86ms   |
 
 These end-to-end benchmarks intentionally go through the public CLI entry point instead of internal renderer/parser classes,
 so they track real rebuild timing rather than component-only throughput.

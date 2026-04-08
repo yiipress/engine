@@ -30,7 +30,9 @@ final readonly class CollectionListingWriter
         array $entries,
         string $outputDir,
         ?Navigation $navigation = null,
+        int $workerCount = 1,
     ): int {
+        $renderer = new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest);
         $perPage = $collection->entriesPerPage;
         if ($perPage <= 0) {
             $perPage = count($entries) ?: 1;
@@ -38,7 +40,7 @@ final readonly class CollectionListingWriter
 
         $pages = $entries !== [] ? array_chunk($entries, $perPage) : [[]];
         $totalPages = count($pages);
-        $pageCount = 0;
+        $tasks = [];
 
         foreach ($pages as $pageIndex => $pageEntries) {
             $pageNumber = $pageIndex + 1;
@@ -48,18 +50,6 @@ final readonly class CollectionListingWriter
                 : '/' . $collection->name . '/page/' . $pageNumber . '/';
             $rootPath = RelativePathHelper::rootPath($currentPermalink);
 
-            $entryData = [];
-            foreach ($pageEntries as $entry) {
-                $entryData[] = [
-                    'title' => $entry->title,
-                    'url' => RelativePathHelper::relativize(PermalinkResolver::resolve($entry, $collection), $rootPath),
-                    'date' => $entry->date?->format($siteConfig->dateFormat) ?? '',
-                    'dateISO' => $entry->date?->format('Y-m-d') ?? '',
-                    'draft' => $entry->draft,
-                    'summary' => $entry->summary(),
-                ];
-            }
-
             $pagination = [
                 'currentPage' => $pageNumber,
                 'totalPages' => $totalPages,
@@ -67,28 +57,49 @@ final readonly class CollectionListingWriter
                 'nextUrl' => $this->resolvePageUrl($collection->name, $pageNumber + 1, $totalPages, $rootPath),
             ];
 
-            $html = $this->renderPage($siteConfig, $collection, $entryData, $pagination, $navigation, $rootPath, $currentPermalink);
-
             $dir = $pageNumber === 1
                 ? $outputDir . '/' . $collection->name
                 : $outputDir . '/' . $collection->name . '/page/' . $pageNumber;
 
-            if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
-                throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
-            }
-
-            file_put_contents($dir . '/index.html', $html);
-            $pageCount++;
+            $tasks[] = [
+                'entries' => $pageEntries,
+                'pagination' => $pagination,
+                'rootPath' => $rootPath,
+                'permalink' => $currentPermalink,
+                'dir' => $dir,
+            ];
         }
 
-        return $pageCount;
+        $taskRunner = new ParallelTaskRunner();
+
+        return $taskRunner->run($tasks, $workerCount, function (array $task) use ($renderer, $siteConfig, $collection, $navigation): int {
+            $html = $this->renderPage(
+                $renderer,
+                $siteConfig,
+                $collection,
+                $task['entries'],
+                $task['pagination'],
+                $navigation,
+                $task['rootPath'],
+                $task['permalink'],
+            );
+
+            if (!is_dir($task['dir']) && !mkdir($task['dir'], 0o755, true) && !is_dir($task['dir'])) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $task['dir']));
+            }
+
+            file_put_contents($task['dir'] . '/index.html', $html);
+
+            return 1;
+        });
     }
 
     /**
-     * @param list<array{title: string, url: string, date: string, dateISO: string, draft: bool, summary: string}> $entries
+     * @param list<Entry> $entries
      * @param array{currentPage: int, totalPages: int, previousUrl: string, nextUrl: string} $pagination
      */
     private function renderPage(
+        PageTemplateRenderer $renderer,
         SiteConfig $siteConfig,
         Collection $collection,
         array $entries,
@@ -97,20 +108,30 @@ final readonly class CollectionListingWriter
         string $rootPath,
         string $permalink,
     ): string {
-        $siteTitle = $siteConfig->title;
-        $collectionTitle = $collection->title;
-        $collectionName = $collection->name;
-        $nav = $navigation;
-        $templateContext = new TemplateContext($this->templateResolver, $siteConfig->theme, $this->assetManifest);
-        $partial = $templateContext->partial(...);
-        $metaTags = MetaTagsBuilder::forPage($siteConfig, $collectionTitle, $collection->description, $permalink);
-        $assetManifest = $this->assetManifest;
-        $search = $siteConfig->search !== null;
-        $searchResults = $siteConfig->search?->results ?? 10;
+        $entryData = [];
+        foreach ($entries as $entry) {
+            $entryData[] = [
+                'title' => $entry->title,
+                'url' => RelativePathHelper::relativize(PermalinkResolver::resolve($entry, $collection), $rootPath),
+                'date' => $entry->date?->format($siteConfig->dateFormat) ?? '',
+                'dateISO' => $entry->date?->format('Y-m-d') ?? '',
+                'draft' => $entry->draft,
+                'summary' => $entry->summary(),
+            ];
+        }
 
-        ob_start();
-        require $this->templateResolver->resolve('collection_listing');
-        return $templateContext->rewriteHtml((string) ob_get_clean(), $rootPath);
+        return $renderer->render('collection_listing', [
+            'siteTitle' => $siteConfig->title,
+            'collectionTitle' => $collection->title,
+            'collectionName' => $collection->name,
+            'entries' => $entryData,
+            'pagination' => $pagination,
+            'nav' => $navigation,
+            'rootPath' => $rootPath,
+            'metaTags' => MetaTagsBuilder::forPage($siteConfig, $collection->title, $collection->description, $permalink),
+            'search' => $siteConfig->search !== null,
+            'searchResults' => $siteConfig->search?->results ?? 10,
+        ], $rootPath);
     }
 
     private function resolvePageUrl(string $collectionName, int $pageNumber, int $totalPages, string $rootPath): string

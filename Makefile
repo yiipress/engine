@@ -132,6 +132,12 @@ bench-profile: ## Run benchmarks with XDebug profiling. Use BENCH_FILTER=ClassNa
 	$(DOCKER_COMPOSE_DEV) run --rm -e XDEBUG_MODE=profile -e XDEBUG_OUTPUT_DIR=/app/runtime/xdebug app ./vendor/bin/phpbench run --iterations=1 --revs=1 --warmup=1 --php-config='{"xdebug.output_dir":"/app/runtime/xdebug"}' $(if $(BENCH_FILTER),--filter=$(BENCH_FILTER)) $(CLI_ARGS)
 endif
 
+ifeq ($(PRIMARY_GOAL),profile-build)
+profile-build: ## Run yii build with XDebug profiling. Pass build args after target.
+	@mkdir -p runtime/xdebug
+	$(DOCKER_COMPOSE_DEV) run --rm -e XDEBUG_MODE=profile app php -d xdebug.start_with_request=yes -d xdebug.output_dir=/app/runtime/xdebug yii $(CLI_ARGS)
+endif
+
 ifeq ($(PRIMARY_GOAL),php)
 php: ## Run a PHP script
 	$(DOCKER_COMPOSE_DEV) run --rm app php $(CLI_ARGS)

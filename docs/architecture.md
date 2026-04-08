@@ -87,14 +87,14 @@ Prefer PHP built-ins and small, focused C extensions over large PHP libraries:
 ### Principle 3: Parallelize output
 
 Entry rendering (template execution + file write) consumes 40–60% of total build time.
-Each entry page is independent — no entry's rendered output depends on another entry's output.
+Each content page is independent — no page's rendered output depends on another page's output.
 
-Use `pcntl_fork()` to render and write entries in parallel (benchmarked; fibers don't help since work is CPU-bound):
+Use `pcntl_fork()` to render and write content pages in parallel (benchmarked; fibers don't help since work is CPU-bound):
 
 ```
-entries = indexedEntries
+pages = entryPages + standalonePages
 N workers
-each worker processes entries[i] where i % N == workerIndex
+each worker processes a contiguous chunk of pages
 parent waits for all workers
 continue with collection index pages (serial, fast)
 ```
@@ -102,6 +102,9 @@ continue with collection index pages (serial, fast)
 This approach requires no shared memory or synchronization — each worker writes to a different file path.
 The parent process handles collection listing pages, taxonomy pages, feeds, and sitemap serially
 (these are few and fast).
+
+Secondary page generation is also batched where the page count is high enough to amortize process startup cost.
+Writers such as collection listings and archives parallelize only when there is enough page volume; small page sets stay sequential.
 
 ### Principle 4: Leverage PHP runtime optimizations
 
@@ -198,7 +201,7 @@ raw markdown → plugins (pre-parse) → markdown-to-HTML → plugins (post-pars
 
 **Performance considerations:**
 - Render pages independently — no page depends on another page's rendered output.
-- Parallelize entry rendering via `pcntl_fork()` — distribute entries across N workers (see Performance architecture above).
+- Parallelize content page rendering via `pcntl_fork()` — distribute entry and standalone page rendering across N workers (see Performance architecture above).
 - Cache parsed markdown between builds (keyed by file content hash).
 - OPCache eliminates repeated PHP template compilation. Ensure templates are stable files, not generated on the fly.
 
@@ -207,8 +210,8 @@ raw markdown → plugins (pre-parse) → markdown-to-HTML → plugins (post-pars
 Outputs rendered pages to their destination.
 
 - **StaticWriter** — writes `Page` objects as files to `output/` directory, creating directory structure from permalinks.
-  In parallel mode, each forked worker writes its own subset of entry pages via `file_put_contents()`.
-  Collection index pages, feeds, sitemap, and taxonomy pages are written by the parent process after workers finish
+  In parallel mode, each forked worker writes its own subset of entry and standalone pages via `file_put_contents()`.
+  Collection index pages, feeds, sitemap, taxonomy pages, and redirect pages are written by the parent process after workers finish
 - **AssetCopier** — copies `content/assets/`, `content/<collection>/assets/`, and processed build assets to `output/`
 - **HttpResponder** — in serve mode, returns the rendered page as an HTTP response instead of writing to disk
 

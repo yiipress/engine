@@ -27,7 +27,9 @@ final readonly class DateArchiveWriter
         array $entries,
         string $outputDir,
         ?Navigation $navigation = null,
+        int $workerCount = 1,
     ): int {
+        $renderer = new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest);
         $byYear = [];
         $byMonth = [];
 
@@ -49,75 +51,101 @@ final readonly class DateArchiveWriter
 
         krsort($byYear);
 
-        $pageCount = 0;
-
-        // Write archive index page
-        $this->writeArchiveIndexPage(
-            $siteConfig,
-            $collection,
-            array_keys($byYear),
-            $outputDir,
-            $navigation,
-        );
-        $pageCount++;
+        $tasks = [[
+            'type' => 'index',
+            'years' => array_keys($byYear),
+        ]];
 
         foreach ($byYear as $year => $yearEntries) {
-            $this->writeYearlyPage(
-                $siteConfig,
-                $collection,
-                (string) $year,
-                $yearEntries,
-                array_keys($byMonth[$year]),
-                $outputDir,
-                $navigation,
-            );
-            $pageCount++;
+            $tasks[] = [
+                'type' => 'year',
+                'year' => (string) $year,
+                'entries' => $yearEntries,
+                'months' => array_keys($byMonth[$year]),
+            ];
 
             $months = $byMonth[$year];
             krsort($months);
 
             foreach ($months as $month => $monthEntries) {
-                $this->writeMonthlyPage(
-                    $siteConfig,
-                    $collection,
-                    (string) $year,
-                    (string) $month,
-                    $monthEntries,
-                    $outputDir,
-                    $navigation,
-                );
-                $pageCount++;
+                $tasks[] = [
+                    'type' => 'month',
+                    'year' => (string) $year,
+                    'month' => (string) $month,
+                    'entries' => $monthEntries,
+                ];
             }
         }
 
-        return $pageCount;
+        $taskRunner = new ParallelTaskRunner();
+
+        return $taskRunner->run($tasks, $workerCount, function (array $task) use ($renderer, $siteConfig, $collection, $outputDir, $navigation): int {
+            if ($task['type'] === 'index') {
+                $this->writeArchiveIndexPage(
+                    $renderer,
+                    $siteConfig,
+                    $collection,
+                    $task['years'],
+                    $outputDir,
+                    $navigation,
+                );
+
+                return 1;
+            }
+
+            if ($task['type'] === 'year') {
+                $this->writeYearlyPage(
+                    $renderer,
+                    $siteConfig,
+                    $collection,
+                    $task['year'],
+                    $task['entries'],
+                    $task['months'],
+                    $outputDir,
+                    $navigation,
+                );
+
+                return 1;
+            }
+
+            $this->writeMonthlyPage(
+                $renderer,
+                $siteConfig,
+                $collection,
+                $task['year'],
+                $task['month'],
+                $task['entries'],
+                $outputDir,
+                $navigation,
+            );
+
+            return 1;
+        });
     }
 
     /**
      * @param list<string> $years
      */
     private function writeArchiveIndexPage(
+        PageTemplateRenderer $renderer,
         SiteConfig $siteConfig,
         Collection $collection,
         array $years,
         string $outputDir,
         ?Navigation $navigation,
     ): void {
-        $siteTitle = $siteConfig->title;
-        $collectionName = $collection->name;
-        $collectionTitle = $collection->title;
-        $nav = $navigation;
-        $templateContext = new TemplateContext($this->templateResolver, $siteConfig->theme, $this->assetManifest);
-        $partial = $templateContext->partial(...);
         $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/archive/');
-        $metaTags = MetaTagsBuilder::forPage($siteConfig, $collection->title . ' Archive', $siteConfig->description, '/' . $collection->name . '/archive/');
-        $assetManifest = $this->assetManifest;
-        $search = $siteConfig->search !== null;
-        $searchResults = $siteConfig->search?->results ?? 10;
-
-        ob_start();
-        require $this->templateResolver->resolve('archive_index');
-        $html = $templateContext->rewriteHtml((string) ob_get_clean(), $rootPath);
+        $html = $renderer->render('archive_index', [
+            'siteTitle' => $siteConfig->title,
+            'collectionName' => $collection->name,
+            'collectionTitle' => $collection->title,
+            'years' => $years,
+            'nav' => $navigation,
+            'rootPath' => $rootPath,
+            'metaTags' => MetaTagsBuilder::forPage($siteConfig, $collection->title . ' Archive', $siteConfig->description, '/' . $collection->name . '/archive/'),
+            'search' => $siteConfig->search !== null,
+            'searchResults' => $siteConfig->search?->results ?? 10,
+        ], $rootPath);
 
         $dir = $outputDir . '/' . $collection->name . '/archive';
         if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
@@ -132,6 +160,7 @@ final readonly class DateArchiveWriter
      * @param list<string> $months
      */
     private function writeYearlyPage(
+        PageTemplateRenderer $renderer,
         SiteConfig $siteConfig,
         Collection $collection,
         string $year,
@@ -140,17 +169,7 @@ final readonly class DateArchiveWriter
         string $outputDir,
         ?Navigation $navigation,
     ): void {
-        $siteTitle = $siteConfig->title;
-        $collectionName = $collection->name;
-        $collectionTitle = $collection->title;
-        $nav = $navigation;
-        $templateContext = new TemplateContext($this->templateResolver, $siteConfig->theme, $this->assetManifest);
-        $partial = $templateContext->partial(...);
         $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/' . $year . '/');
-        $metaTags = MetaTagsBuilder::forPage($siteConfig, $collection->title . ': ' . $year, $siteConfig->description, '/' . $collection->name . '/' . $year . '/');
-        $assetManifest = $this->assetManifest;
-        $search = $siteConfig->search !== null;
-        $searchResults = $siteConfig->search?->results ?? 10;
 
         rsort($months);
 
@@ -165,9 +184,19 @@ final readonly class DateArchiveWriter
 
         $entries = $entryData;
 
-        ob_start();
-        require $this->templateResolver->resolve('archive_yearly');
-        $html = $templateContext->rewriteHtml((string) ob_get_clean(), $rootPath);
+        $html = $renderer->render('archive_yearly', [
+            'siteTitle' => $siteConfig->title,
+            'collectionName' => $collection->name,
+            'collectionTitle' => $collection->title,
+            'year' => $year,
+            'months' => $months,
+            'entries' => $entries,
+            'nav' => $navigation,
+            'rootPath' => $rootPath,
+            'metaTags' => MetaTagsBuilder::forPage($siteConfig, $collection->title . ': ' . $year, $siteConfig->description, '/' . $collection->name . '/' . $year . '/'),
+            'search' => $siteConfig->search !== null,
+            'searchResults' => $siteConfig->search?->results ?? 10,
+        ], $rootPath);
 
         $dir = $outputDir . '/' . $collection->name . '/' . $year;
         if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
@@ -181,6 +210,7 @@ final readonly class DateArchiveWriter
      * @param list<Entry> $entries
      */
     private function writeMonthlyPage(
+        PageTemplateRenderer $renderer,
         SiteConfig $siteConfig,
         Collection $collection,
         string $year,
@@ -189,18 +219,8 @@ final readonly class DateArchiveWriter
         string $outputDir,
         ?Navigation $navigation,
     ): void {
-        $siteTitle = $siteConfig->title;
-        $collectionName = $collection->name;
-        $collectionTitle = $collection->title;
-        $nav = $navigation;
-        $templateContext = new TemplateContext($this->templateResolver, $siteConfig->theme, $this->assetManifest);
-        $partial = $templateContext->partial(...);
         $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/' . $year . '/' . $month . '/');
         $monthName = date('F', mktime(0, 0, 0, (int) $month, 1));
-        $metaTags = MetaTagsBuilder::forPage($siteConfig, $collection->title . ': ' . $monthName . ' ' . $year, $siteConfig->description, '/' . $collection->name . '/' . $year . '/' . $month . '/');
-        $assetManifest = $this->assetManifest;
-        $search = $siteConfig->search !== null;
-        $searchResults = $siteConfig->search?->results ?? 10;
 
         $entryData = [];
         foreach ($entries as $entry) {
@@ -213,9 +233,20 @@ final readonly class DateArchiveWriter
 
         $entries = $entryData;
 
-        ob_start();
-        require $this->templateResolver->resolve('archive_monthly');
-        $html = $templateContext->rewriteHtml((string) ob_get_clean(), $rootPath);
+        $html = $renderer->render('archive_monthly', [
+            'siteTitle' => $siteConfig->title,
+            'collectionName' => $collection->name,
+            'collectionTitle' => $collection->title,
+            'year' => $year,
+            'month' => $month,
+            'monthName' => $monthName,
+            'entries' => $entries,
+            'nav' => $navigation,
+            'rootPath' => $rootPath,
+            'metaTags' => MetaTagsBuilder::forPage($siteConfig, $collection->title . ': ' . $monthName . ' ' . $year, $siteConfig->description, '/' . $collection->name . '/' . $year . '/' . $month . '/'),
+            'search' => $siteConfig->search !== null,
+            'searchResults' => $siteConfig->search?->results ?? 10,
+        ], $rootPath);
 
         $dir = $outputDir . '/' . $collection->name . '/' . $year . '/' . $month;
         if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {

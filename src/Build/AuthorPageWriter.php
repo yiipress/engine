@@ -39,12 +39,14 @@ final class AuthorPageWriter
             return 0;
         }
 
-        $this->writeIndexPage($siteConfig, $authors, $outputDir, $navigation);
+        $renderer = new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest);
+
+        $this->writeIndex($siteConfig, $authors, $outputDir, $navigation);
         $pageCount = 1;
 
         foreach ($authors as $slug => $author) {
             $entries = $entriesByAuthor[$slug] ?? [];
-            $this->writeAuthorPage($siteConfig, $author, $entries, $collections, $outputDir, $navigation);
+            $this->writeAuthor($siteConfig, $author, $entries, $collections, $outputDir, $navigation, $renderer);
             $pageCount++;
         }
 
@@ -54,21 +56,56 @@ final class AuthorPageWriter
     /**
      * @param array<string, Author> $authors
      */
+    public function writeIndex(
+        SiteConfig $siteConfig,
+        array $authors,
+        string $outputDir,
+        ?Navigation $navigation = null,
+    ): void {
+        $this->writeIndexPage(
+            new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest),
+            $siteConfig,
+            $authors,
+            $outputDir,
+            $navigation,
+        );
+    }
+
+    /**
+     * @param list<Entry> $entries
+     * @param array<string, Collection> $collections
+     */
+    public function writeAuthor(
+        SiteConfig $siteConfig,
+        Author $author,
+        array $entries,
+        array $collections,
+        string $outputDir,
+        ?Navigation $navigation = null,
+        ?PageTemplateRenderer $renderer = null,
+    ): void {
+        $this->writeAuthorPage(
+            $renderer ?? new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest),
+            $siteConfig,
+            $author,
+            $entries,
+            $collections,
+            $outputDir,
+            $navigation,
+        );
+    }
+
+    /**
+     * @param array<string, Author> $authors
+     */
     private function writeIndexPage(
+        PageTemplateRenderer $renderer,
         SiteConfig $siteConfig,
         array $authors,
         string $outputDir,
         ?Navigation $navigation,
     ): void {
-        $siteTitle = $siteConfig->title;
-        $nav = $navigation;
-        $templateContext = new TemplateContext($this->templateResolver, $siteConfig->theme, $this->assetManifest);
-        $partial = $templateContext->partial(...);
         $rootPath = RelativePathHelper::rootPath('/authors/');
-        $metaTags = MetaTagsBuilder::forPage($siteConfig, 'Authors', $siteConfig->description, '/authors/');
-        $assetManifest = $this->assetManifest;
-        $search = $siteConfig->search !== null;
-        $searchResults = $siteConfig->search?->results ?? 10;
 
         $authorList = [];
         foreach ($authors as $slug => $author) {
@@ -79,9 +116,15 @@ final class AuthorPageWriter
             ];
         }
 
-        ob_start();
-        require $this->templateResolver->resolve('author_index');
-        $html = $templateContext->rewriteHtml((string) ob_get_clean(), $rootPath);
+        $html = $renderer->render('author_index', [
+            'siteTitle' => $siteConfig->title,
+            'authorList' => $authorList,
+            'nav' => $navigation,
+            'rootPath' => $rootPath,
+            'metaTags' => MetaTagsBuilder::forPage($siteConfig, 'Authors', $siteConfig->description, '/authors/'),
+            'search' => $siteConfig->search !== null,
+            'searchResults' => $siteConfig->search?->results ?? 10,
+        ], $rootPath);
 
         $dir = $outputDir . '/authors';
         if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
@@ -96,6 +139,7 @@ final class AuthorPageWriter
      * @param array<string, Collection> $collections
      */
     private function writeAuthorPage(
+        PageTemplateRenderer $renderer,
         SiteConfig $siteConfig,
         Author $author,
         array $entries,
@@ -103,15 +147,7 @@ final class AuthorPageWriter
         string $outputDir,
         ?Navigation $navigation,
     ): void {
-        $siteTitle = $siteConfig->title;
-        $nav = $navigation;
-        $templateContext = new TemplateContext($this->templateResolver, $siteConfig->theme, $this->assetManifest);
-        $partial = $templateContext->partial(...);
         $rootPath = RelativePathHelper::rootPath('/authors/' . $author->slug . '/');
-        $metaTags = MetaTagsBuilder::forPage($siteConfig, $author->title, $siteConfig->description, '/authors/' . $author->slug . '/');
-        $assetManifest = $this->assetManifest;
-        $search = $siteConfig->search !== null;
-        $searchResults = $siteConfig->search?->results ?? 10;
 
         $authorTitle = $author->title;
         $authorEmail = $author->email;
@@ -138,9 +174,20 @@ final class AuthorPageWriter
 
         $entries = $entryData;
 
-        ob_start();
-        require $this->templateResolver->resolve('author');
-        $html = $templateContext->rewriteHtml((string) ob_get_clean(), $rootPath);
+        $html = $renderer->render('author', [
+            'siteTitle' => $siteConfig->title,
+            'authorTitle' => $authorTitle,
+            'authorEmail' => $authorEmail,
+            'authorUrl' => $authorUrl,
+            'authorAvatar' => $authorAvatar,
+            'authorBio' => $authorBio,
+            'entries' => $entries,
+            'nav' => $navigation,
+            'rootPath' => $rootPath,
+            'metaTags' => MetaTagsBuilder::forPage($siteConfig, $author->title, $siteConfig->description, '/authors/' . $author->slug . '/'),
+            'search' => $siteConfig->search !== null,
+            'searchResults' => $siteConfig->search?->results ?? 10,
+        ], $rootPath);
 
         $dir = $outputDir . '/authors/' . $author->slug;
         if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {

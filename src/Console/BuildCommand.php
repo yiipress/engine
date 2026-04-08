@@ -17,7 +17,6 @@ use App\Build\RedirectPageWriter;
 use App\Build\RobotsTxtGenerator;
 use App\Build\SearchIndexGenerator;
 use App\Build\ThemeAssetCopier;
-use App\Build\EntryRenderer;
 use App\Build\FeedGenerator;
 use App\Build\ParallelEntryWriter;
 use App\Build\SitemapGenerator;
@@ -283,12 +282,13 @@ final class BuildCommand extends Command
         foreach ($collections as $collectionName => $collection) {
             $collectionEntries = [];
             foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
+                $sourcePath = $entry->sourceFilePath();
                 if ($entry->title === '') {
-                    $output->writeln('<error>  Skipping ' . $entry->sourceFilePath() . ': no title found</error>');
+                    $output->writeln('<error>  Skipping ' . $sourcePath . ': no title found</error>');
                     continue;
                 }
                 $collectionEntries[] = $entry;
-                $relativePath = substr($entry->sourceFilePath(), strlen($contentDir) + 1);
+                $relativePath = substr($sourcePath, strlen($contentDir) + 1);
                 $fileToPermalink[$relativePath] = PermalinkResolver::resolve($entry, $collection);
             }
             $rawEntriesByCollection[$collectionName] = $collectionEntries;
@@ -296,12 +296,13 @@ final class BuildCommand extends Command
 
         $standalonePages = [];
         foreach ($parser->parseStandalonePages($contentDir) as $page) {
+            $sourcePath = $page->sourceFilePath();
             if ($page->title === '') {
-                $output->writeln('<error>  Skipping ' . $page->sourceFilePath() . ': no title found</error>');
+                $output->writeln('<error>  Skipping ' . $sourcePath . ': no title found</error>');
                 continue;
             }
             $standalonePages[] = $page;
-            $relativePath = substr($page->sourceFilePath(), strlen($contentDir) + 1);
+            $relativePath = substr($sourcePath, strlen($contentDir) + 1);
             $fileToPermalink[$relativePath] = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
         }
 
@@ -311,14 +312,16 @@ final class BuildCommand extends Command
         $diagnostics = new BuildDiagnostics($contentDir, $fileToPermalink, $siteConfig, $authors);
         foreach ($rawEntriesByCollection as $entries) {
             foreach ($entries as $entry) {
-                if ($changedSet !== null && !isset($changedSet[$entry->sourceFilePath()])) {
+                $sourcePath = $entry->sourceFilePath();
+                if ($changedSet !== null && !isset($changedSet[$sourcePath])) {
                     continue;
                 }
                 $diagnostics->check($entry);
             }
         }
         foreach ($standalonePages as $page) {
-            if ($changedSet !== null && !isset($changedSet[$page->sourceFilePath()])) {
+            $sourcePath = $page->sourceFilePath();
+            if ($changedSet !== null && !isset($changedSet[$sourcePath])) {
                 continue;
             }
             $diagnostics->check($page);
@@ -342,12 +345,13 @@ final class BuildCommand extends Command
                     continue;
                 }
 
-                $relativePath = substr($entry->sourceFilePath(), strlen($contentDir) + 1);
+                $sourcePath = $entry->sourceFilePath();
+                $relativePath = substr($sourcePath, strlen($contentDir) + 1);
                 $permalink = $fileToPermalink[$relativePath];
                 $filePath = $outputDir . $permalink . 'index.html';
 
                 if ($entry->redirectTo !== '') {
-                    $redirectTasks[] = ['entry' => $entry, 'filePath' => $filePath];
+                    $redirectTasks[] = ['entry' => $entry, 'filePath' => $filePath, 'sourcePath' => $sourcePath];
                     continue;
                 }
 
@@ -356,6 +360,7 @@ final class BuildCommand extends Command
                     'entry' => $entry,
                     'filePath' => $filePath,
                     'permalink' => $permalink,
+                    'sourcePath' => $sourcePath,
                 ];
             }
             $entriesByCollection[$collectionName] = EntrySorter::sort($filtered, $collection);
@@ -370,7 +375,7 @@ final class BuildCommand extends Command
         if ($changedSet !== null) {
             $tasksToWrite = array_values(array_filter(
                 $allTasks,
-                static fn (array $task) => isset($changedSet[$task['entry']->sourceFilePath()]),
+                static fn (array $task) => isset($changedSet[$task['sourcePath']]),
             ));
         } else {
             $tasksToWrite = $allTasks;
@@ -391,15 +396,16 @@ final class BuildCommand extends Command
 
         if ($manifest !== null) {
             foreach ($allTasks as $task) {
-                $this->removeStaleOutputs($manifest->replace($task['entry']->sourceFilePath(), [$task['filePath']]));
+                $this->removeStaleOutputs($manifest->replace($task['sourcePath'], [$task['filePath']]));
             }
             foreach ($redirectTasks as $task) {
-                $this->removeStaleOutputs($manifest->replace($task['entry']->sourceFilePath(), [$task['filePath']]));
+                $this->removeStaleOutputs($manifest->replace($task['sourcePath'], [$task['filePath']]));
             }
             foreach ($rawEntriesByCollection as $entries) {
                 foreach ($entries as $entry) {
-                    if (!isset($manifest->entries()[$entry->sourceFilePath()])) {
-                        $this->removeStaleOutputs($manifest->replace($entry->sourceFilePath(), []));
+                    $sourcePath = $entry->sourceFilePath();
+                    if (!isset($manifest->entries()[$sourcePath])) {
+                        $this->removeStaleOutputs($manifest->replace($sourcePath, []));
                     }
                 }
             }
@@ -411,33 +417,55 @@ final class BuildCommand extends Command
         if (!$includeFuture) {
             $standalonePages = array_values(array_filter($standalonePages, static fn ($e) => $e->date === null || $e->date <= $now));
         }
-        $renderer = new EntryRenderer($this->contentPipeline, $this->templateResolver, $cache, $contentDir, $authors, $assetManifest);
-        $redirectWriter ??= new RedirectPageWriter();
-        $standalonePagesWritten = 0;
+        $standaloneTasks = [];
+        $standaloneRedirectTasks = [];
         foreach ($standalonePages as $page) {
+            $sourcePath = $page->sourceFilePath();
             $permalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
             $filePath = $outputDir . $permalink . 'index.html';
 
-            if ($changedSet !== null && !isset($changedSet[$page->sourceFilePath()])) {
-                $manifest?->record($page->sourceFilePath(), [$filePath]);
+            if ($changedSet !== null && !isset($changedSet[$sourcePath])) {
+                $manifest?->record($sourcePath, [$filePath]);
                 continue;
             }
 
             if ($page->redirectTo !== '') {
-                $redirectWriter->write($page, $filePath);
+                $standaloneRedirectTasks[] = ['entry' => $page, 'filePath' => $filePath, 'sourcePath' => $sourcePath];
             } else {
-                $dirPath = dirname($filePath);
-                if (!is_dir($dirPath) && !mkdir($dirPath, 0o755, true) && !is_dir($dirPath)) {
-                    throw new RuntimeException(sprintf('Directory "%s" was not created', $dirPath));
-                }
-                file_put_contents($filePath, $renderer->render($siteConfig, $page, $permalink, $navigation, $crossRefResolver));
-            }
-            $standalonePagesWritten++;
-
-            if ($manifest !== null) {
-                $this->removeStaleOutputs($manifest->replace($page->sourceFilePath(), [$filePath]));
+                $standaloneTasks[] = [
+                    'entry' => $page,
+                    'filePath' => $filePath,
+                    'permalink' => $permalink,
+                    'sourcePath' => $sourcePath,
+                ];
             }
         }
+
+        $standalonePagesWritten = $writer->write(
+            $siteConfig,
+            $standaloneTasks,
+            $contentDir,
+            $workerCount,
+            $navigation,
+            $crossRefResolver,
+            $authors,
+        );
+
+        $redirectWriter ??= new RedirectPageWriter();
+        foreach ($standaloneRedirectTasks as $task) {
+            $redirectWriter->write($task['entry'], $task['filePath']);
+        }
+        $standalonePagesWritten += count($standaloneRedirectTasks);
+
+        if ($manifest !== null) {
+            foreach ($standaloneTasks as $task) {
+                $this->removeStaleOutputs($manifest->replace($task['sourcePath'], [$task['filePath']]));
+            }
+            foreach ($standaloneRedirectTasks as $task) {
+                $this->removeStaleOutputs($manifest->replace($task['sourcePath'], [$task['filePath']]));
+            }
+        }
+
         if ($standalonePages !== []) {
             $output->writeln("  Standalone pages: <comment>$standalonePagesWritten</comment>" . ($incremental ? ' (of ' . count($standalonePages) . ' total)' : ''));
         }
@@ -510,6 +538,7 @@ final class BuildCommand extends Command
                 $entriesByCollection[$collectionName] ?? [],
                 $outputDir,
                 $navigation,
+                $workerCount,
             );
         }
         if ($listingPageCount > 0) {
@@ -528,6 +557,7 @@ final class BuildCommand extends Command
                 $entriesByCollection[$collectionName] ?? [],
                 $outputDir,
                 $navigation,
+                $workerCount,
             );
         }
         if ($archivePageCount > 0) {
@@ -848,6 +878,7 @@ final class BuildCommand extends Command
             'configFiles' => $configFiles,
         ];
     }
+
 
     /**
      * @return list<string>

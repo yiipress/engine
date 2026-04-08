@@ -27,7 +27,7 @@ Write Markdown, run one command, get a fully static site — feeds, sitemaps, ta
 
 ### Build
 
-- **Parallel builds** — configurable worker count; 10 000 entries built in ~0.53 s in the current end-to-end benchmark
+- **Parallel builds** — configurable worker count; 10 000 entries built in ~0.55 s in the current end-to-end benchmark
 - **Incremental builds** — only re-renders files that changed since last build
 - **Build cache** — parsed Markdown and front matter cached between runs
 - **Dry-run mode** — preview what would be generated without writing anything
@@ -71,16 +71,16 @@ Write Markdown, run one command, get a fully static site — feeds, sitemaps, ta
 
 | Mode                | Time    |
 |---------------------|---------|
-| Sequential          | ~531 ms |
-| 4 workers           | ~540 ms |
-| Incremental         | ~169 ms |
+| Sequential          | ~547 ms |
+| 4 workers           | ~526 ms |
+| Incremental         | ~167 ms |
 
 1 000 realistic entries (large posts, images, tables, code blocks):
 
 | Mode       | Time    |
 |------------|---------|
-| Sequential | ~168 ms |
-| 4 workers  | ~168 ms |
+| Sequential | ~175 ms |
+| 4 workers  | ~172 ms |
 | Incremental| ~84 ms |
 
 ---

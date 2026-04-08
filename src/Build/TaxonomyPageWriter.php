@@ -29,6 +29,7 @@ final readonly class TaxonomyPageWriter
         string $outputDir,
         ?Navigation $navigation = null,
     ): int {
+        $renderer = new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest);
         $pageCount = 0;
 
         foreach ($taxonomyData as $taxonomyName => $terms) {
@@ -38,11 +39,11 @@ final readonly class TaxonomyPageWriter
 
             // PHP converts numeric string keys to integers - cast back to strings
             $termNames = array_map(strval(...), array_keys($terms));
-            $this->writeIndexPage($siteConfig, $taxonomyName, $termNames, $outputDir, $navigation);
+            $this->writeIndexPage($renderer, $siteConfig, $taxonomyName, $termNames, $outputDir, $navigation);
             $pageCount++;
 
             foreach ($terms as $term => $entries) {
-                $this->writeTermPage($siteConfig, $taxonomyName, (string) $term, $entries, $collections, $outputDir, $navigation);
+                $this->writeTermPage($renderer, $siteConfig, $taxonomyName, (string) $term, $entries, $collections, $outputDir, $navigation);
                 $pageCount++;
             }
         }
@@ -54,25 +55,24 @@ final readonly class TaxonomyPageWriter
      * @param list<string> $terms
      */
     private function writeIndexPage(
+        PageTemplateRenderer $renderer,
         SiteConfig $siteConfig,
         string $taxonomyName,
         array $terms,
         string $outputDir,
         ?Navigation $navigation,
     ): void {
-        $siteTitle = $siteConfig->title;
-        $nav = $navigation;
-        $templateContext = new TemplateContext($this->templateResolver, $siteConfig->theme, $this->assetManifest);
-        $partial = $templateContext->partial(...);
         $rootPath = RelativePathHelper::rootPath('/' . $taxonomyName . '/');
-        $metaTags = MetaTagsBuilder::forPage($siteConfig, ucfirst($taxonomyName), $siteConfig->description, '/' . $taxonomyName . '/');
-        $assetManifest = $this->assetManifest;
-        $search = $siteConfig->search !== null;
-        $searchResults = $siteConfig->search?->results ?? 10;
-
-        ob_start();
-        require $this->templateResolver->resolve('taxonomy_index');
-        $html = $templateContext->rewriteHtml((string) ob_get_clean(), $rootPath);
+        $html = $renderer->render('taxonomy_index', [
+            'siteTitle' => $siteConfig->title,
+            'taxonomyName' => $taxonomyName,
+            'terms' => $terms,
+            'nav' => $navigation,
+            'rootPath' => $rootPath,
+            'metaTags' => MetaTagsBuilder::forPage($siteConfig, ucfirst($taxonomyName), $siteConfig->description, '/' . $taxonomyName . '/'),
+            'search' => $siteConfig->search !== null,
+            'searchResults' => $siteConfig->search?->results ?? 10,
+        ], $rootPath);
 
         $dir = $outputDir . '/' . $taxonomyName;
         if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
@@ -87,6 +87,7 @@ final readonly class TaxonomyPageWriter
      * @param array<string, Collection> $collections
      */
     private function writeTermPage(
+        PageTemplateRenderer $renderer,
         SiteConfig $siteConfig,
         string $taxonomyName,
         string $term,
@@ -95,15 +96,7 @@ final readonly class TaxonomyPageWriter
         string $outputDir,
         ?Navigation $navigation,
     ): void {
-        $siteTitle = $siteConfig->title;
-        $nav = $navigation;
-        $templateContext = new TemplateContext($this->templateResolver, $siteConfig->theme, $this->assetManifest);
-        $partial = $templateContext->partial(...);
         $rootPath = RelativePathHelper::rootPath('/' . $taxonomyName . '/' . $term . '/');
-        $metaTags = MetaTagsBuilder::forPage($siteConfig, $term . ' — ' . ucfirst($taxonomyName), $siteConfig->description, '/' . $taxonomyName . '/' . $term . '/');
-        $assetManifest = $this->assetManifest;
-        $search = $siteConfig->search !== null;
-        $searchResults = $siteConfig->search?->results ?? 10;
 
         $entryData = [];
         foreach ($entries as $entry) {
@@ -121,9 +114,17 @@ final readonly class TaxonomyPageWriter
 
         $entries = $entryData;
 
-        ob_start();
-        require $this->templateResolver->resolve('taxonomy_term');
-        $html = $templateContext->rewriteHtml((string) ob_get_clean(), $rootPath);
+        $html = $renderer->render('taxonomy_term', [
+            'siteTitle' => $siteConfig->title,
+            'taxonomyName' => $taxonomyName,
+            'term' => $term,
+            'entries' => $entries,
+            'nav' => $navigation,
+            'rootPath' => $rootPath,
+            'metaTags' => MetaTagsBuilder::forPage($siteConfig, $term . ' — ' . ucfirst($taxonomyName), $siteConfig->description, '/' . $taxonomyName . '/' . $term . '/'),
+            'search' => $siteConfig->search !== null,
+            'searchResults' => $siteConfig->search?->results ?? 10,
+        ], $rootPath);
 
         $dir = $outputDir . '/' . $taxonomyName . '/' . $term;
         if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {

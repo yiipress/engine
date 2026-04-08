@@ -11,13 +11,19 @@ use App\Content\Model\SiteConfig;
 use App\Processor\ContentProcessorPipeline;
 use RuntimeException;
 
+use function array_slice;
+use function ceil;
 use function count;
 use function dirname;
+use function min;
 use function pcntl_fork;
+use function pcntl_wexitstatus;
 use function pcntl_waitpid;
 
 final readonly class ParallelEntryWriter
 {
+    private const int MIN_TASKS_PER_WORKER = 64;
+
     public function __construct(
         private ContentProcessorPipeline $pipeline,
         private TemplateResolver $templateResolver,
@@ -42,6 +48,8 @@ final readonly class ParallelEntryWriter
             return 0;
         }
 
+        $effectiveWorkerCount = $this->effectiveWorkerCount(count($tasks), $workerCount);
+
         $dirs = [];
         foreach ($tasks as $task) {
             $dirs[dirname($task['filePath'])] = true;
@@ -52,10 +60,10 @@ final readonly class ParallelEntryWriter
             }
         }
 
-        if ($workerCount <= 1) {
+        if ($effectiveWorkerCount <= 1) {
             $this->writeEntries($siteConfig, $tasks, $contentDir, $navigation, $crossRefResolver, $authors);
         } else {
-            $this->writeParallel($siteConfig, $tasks, $contentDir, $workerCount, $navigation, $crossRefResolver, $authors);
+            $this->writeParallel($siteConfig, $tasks, $contentDir, $effectiveWorkerCount, $navigation, $crossRefResolver, $authors);
         }
 
         return count($tasks);
@@ -78,10 +86,10 @@ final readonly class ParallelEntryWriter
      */
     private function writeParallel(SiteConfig $siteConfig, array $tasks, string $contentDir, int $workerCount, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors): void
     {
-        $totalEntries = count($tasks);
+        $taskChunks = $this->partitionTasks($tasks, $workerCount);
         $pids = [];
 
-        for ($workerIndex = 0; $workerIndex < $workerCount; $workerIndex++) {
+        foreach ($taskChunks as $chunk) {
             $pid = pcntl_fork();
 
             if ($pid === -1) {
@@ -91,8 +99,7 @@ final readonly class ParallelEntryWriter
             if ($pid === 0) {
                 $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors, $this->assetManifest);
 
-                for ($i = $workerIndex; $i < $totalEntries; $i += $workerCount) {
-                    $task = $tasks[$i];
+                foreach ($chunk as $task) {
                     file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver));
                 }
 
@@ -105,7 +112,7 @@ final readonly class ParallelEntryWriter
         $failed = false;
         foreach ($pids as $pid) {
             pcntl_waitpid($pid, $status);
-            if ($status !== 0) {
+            if (pcntl_wexitstatus($status) !== 0) {
                 $failed = true;
             }
         }
@@ -115,4 +122,28 @@ final readonly class ParallelEntryWriter
         }
     }
 
+    private function effectiveWorkerCount(int $taskCount, int $requestedWorkerCount): int
+    {
+        if ($requestedWorkerCount <= 1 || $taskCount < self::MIN_TASKS_PER_WORKER * 2) {
+            return 1;
+        }
+
+        return min($requestedWorkerCount, $taskCount);
+    }
+
+    /**
+     * @param list<array{entry: Entry, filePath: string, permalink: string}> $tasks
+     * @return list<list<array{entry: Entry, filePath: string, permalink: string}>>
+     */
+    private function partitionTasks(array $tasks, int $workerCount): array
+    {
+        $chunkSize = (int) ceil(count($tasks) / $workerCount);
+        $chunks = [];
+
+        for ($offset = 0, $taskCount = count($tasks); $offset < $taskCount; $offset += $chunkSize) {
+            $chunks[] = array_slice($tasks, $offset, $chunkSize);
+        }
+
+        return $chunks;
+    }
 }
