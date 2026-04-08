@@ -960,19 +960,9 @@ final class BuildCommand extends Command
     private function prepareOutputDir(string $outputDir): void
     {
         if (is_dir($outputDir)) {
-            $iterator = new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($outputDir, FilesystemIterator::SKIP_DOTS),
-                RecursiveIteratorIterator::CHILD_FIRST,
-            );
-            foreach ($iterator as $item) {
-                /** @var SplFileInfo $item */
-                if ($item->isDir()) {
-                    rmdir($item->getPathname());
-                } else {
-                    unlink($item->getPathname());
-                }
-            }
-        } elseif (!mkdir($outputDir, 0o755, true) && !is_dir($outputDir)) {
+            exec('rm -rf ' . escapeshellarg($outputDir));
+        }
+        if (!mkdir($outputDir, 0o755, true) && !is_dir($outputDir)) {
             throw new RuntimeException(sprintf('Directory "%s" was not created', $outputDir));
         }
     }
