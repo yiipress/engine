@@ -143,6 +143,8 @@ Use multiple workers for faster builds:
 make yii build -- --workers=4
 ```
 
+By default, YiiPress uses `--workers=auto`, which detects available CPU capacity and uses up to 4 workers automatically.
+
 Disable cache for a clean build:
 
 ```bash

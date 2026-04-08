@@ -130,6 +130,30 @@ final class BuildCommandTest extends TestCase
         assertStringContainsString('<p>This is the body of the test post.</p>', $html);
     }
 
+    public function testBuildWithAutoWorkers(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' --workers=auto'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        $outputText = implode("\n", $output);
+
+        assertSame(0, $exitCode, "Auto worker build failed: $outputText");
+        assertMatchesRegularExpression('/Build complete in \d+(?:\.\d+)?(?:ms|s)\./', $outputText);
+        assertStringContainsString('Entries written:', $outputText);
+        assertMatchesRegularExpression('/Entries written: .* using \d+ workers? \(auto\)/', $outputText);
+        assertFileExists($this->outputDir . '/blog/test-post/index.html');
+    }
+
     public function testBuildGeneratesFeedsForCollectionsWithFeedEnabled(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';

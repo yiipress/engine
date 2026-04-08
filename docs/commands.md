@@ -7,14 +7,14 @@ All commands are run via the `yii` CLI entry point (or `composer serve` for the 
 Generates static HTML content from source files.
 
 ```
-yii build [--content-dir=content] [--output-dir=output] [--workers=1] [--no-cache] [--drafts] [--future] [--dry-run]
+yii build [--content-dir=content] [--output-dir=output] [--workers=auto] [--no-cache] [--drafts] [--future] [--dry-run]
 ```
 
 **Options:**
 
 - `--content-dir`, `-c` — path to the content directory (default: `content`). Absolute or relative to project root.
 - `--output-dir`, `-o` — path to the output directory (default: `output`). Absolute or relative to project root.
-- `--workers`, `-w` — number of parallel workers (default: `1`). Uses `pcntl_fork()` to distribute entry rendering across processes.
+- `--workers`, `-w` — number of parallel workers or `auto` (default: `auto`). Auto mode detects available CPU capacity inside the container, caps it at `4`, and still falls back to sequential work for small task sets.
 - `--no-cache` — disable build cache and incremental builds. Forces a full rebuild, clearing the output directory. By default, rendered HTML is cached in `runtime/cache/build/` and a build manifest tracks source file hashes for incremental builds.
 - `--drafts` — include draft entries in the build. By default, entries with `draft: true` in front matter are excluded from HTML output, feeds, and sitemap.
 - `--future` — include future-dated entries in the build. By default, entries with a date in the future are excluded from HTML output, feeds, and sitemap.
@@ -54,7 +54,7 @@ The command:
 9. Generates `sitemap.xml` containing all entry URLs, standalone page URLs, collection listing URLs, and the home page.
 10. Generates taxonomy pages for each taxonomy defined in `config.yaml` (e.g., `/tags/`, `/tags/php/`, `/categories/`).
 
-With `--workers=N` (N > 1), entry rendering and writing is parallelized across N forked processes. Feeds and sitemap are generated after entry writing in the parent process.
+With `--workers=N` (N > 1), entry rendering and writing is parallelized across N forked processes. With `--workers=auto`, YiiPress uses up to the detected worker count and lets the page writers clamp back to sequential mode for smaller workloads. Feeds and sitemap are generated after entry writing in the parent process.
 
 ## `yii serve`
 

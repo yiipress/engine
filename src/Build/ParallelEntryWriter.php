@@ -48,7 +48,7 @@ final readonly class ParallelEntryWriter
             return 0;
         }
 
-        $effectiveWorkerCount = $this->effectiveWorkerCount(count($tasks), $workerCount);
+        $effectiveWorkerCount = $this->workerCountFor(count($tasks), $workerCount);
 
         $dirs = [];
         foreach ($tasks as $task) {
@@ -122,7 +122,7 @@ final readonly class ParallelEntryWriter
         }
     }
 
-    private function effectiveWorkerCount(int $taskCount, int $requestedWorkerCount): int
+    public function workerCountFor(int $taskCount, int $requestedWorkerCount): int
     {
         if ($requestedWorkerCount <= 1 || $taskCount < self::MIN_TASKS_PER_WORKER * 2) {
             return 1;

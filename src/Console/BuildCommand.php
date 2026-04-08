@@ -55,10 +55,19 @@ use function array_keys;
 use function array_filter;
 use function array_unique;
 use function array_values;
+use function ctype_digit;
+use function explode;
 use function hash;
 use function hrtime;
 use function is_file;
+use function is_readable;
+use function max;
+use function min;
 use function pathinfo;
+use function preg_match;
+use function preg_split;
+use function range;
+use function shell_exec;
 use function round;
 use function sort;
 use function sprintf;
@@ -66,6 +75,7 @@ use function str_starts_with;
 use function strtolower;
 use function substr;
 use function strlen;
+use function trim;
 
 #[AsCommand(
     name: 'build',
@@ -73,6 +83,8 @@ use function strlen;
 )]
 final class BuildCommand extends Command
 {
+    private const int MAX_AUTO_WORKERS = 4;
+
     public function __construct(
         private readonly string $rootPath,
         private readonly ContentProcessorPipeline $contentPipeline,
@@ -103,8 +115,8 @@ final class BuildCommand extends Command
             'workers',
             'w',
             InputOption::VALUE_REQUIRED,
-            'Number of parallel workers (1 = sequential)',
-            '1',
+            'Number of parallel workers or "auto"',
+            'auto',
         );
         $this->addOption(
             'no-cache',
@@ -147,7 +159,8 @@ final class BuildCommand extends Command
 
         /** @var string $workersOption */
         $workersOption = $input->getOption('workers');
-        $workerCount = max(1, (int) $workersOption);
+        $autoWorkers = strtolower(trim($workersOption)) === 'auto';
+        $workerCount = $autoWorkers ? $this->detectAutoWorkerCount() : max(1, (int) $workersOption);
         $noCache = (bool) $input->getOption('no-cache');
         $includeDrafts = $input->getOption('drafts') !== false ? (bool) $input->getOption('drafts') : Environment::isDev();
         $includeFuture = $input->getOption('future') !== false ? (bool) $input->getOption('future') : Environment::isDev();
@@ -221,15 +234,15 @@ final class BuildCommand extends Command
             if ($changedSourceFiles !== null) {
                 $incremental = true;
                 $output->writeln(
-                    $workerCount > 1
-                        ? '<info>Incremental build with ' . $workerCount . ' workers (' . count($changedSourceFiles) . ' changed)...</info>'
-                        : '<info>Incremental build (' . count($changedSourceFiles) . ' changed)...</info>',
+                    '<info>Incremental build'
+                    . $this->workerMessageSuffix($workerCount, false)
+                    . ' (' . count($changedSourceFiles) . ' changed)...</info>',
                 );
             } else {
                 $output->writeln(
-                    $workerCount > 1
-                        ? "<info>Full rebuild with $workerCount workers (config changed)...</info>"
-                        : '<info>Full rebuild (config changed)...</info>',
+                    '<info>Full rebuild'
+                    . $this->workerMessageSuffix($workerCount, false)
+                    . ' (config changed)...</info>',
                 );
             }
 
@@ -238,9 +251,7 @@ final class BuildCommand extends Command
             }
         } elseif (!$dryRun) {
             $output->writeln(
-                $workerCount > 1
-                    ? "<info>Rendering and writing output with $workerCount workers...</info>"
-                    : '<info>Rendering and writing output...</info>',
+                '<info>Rendering and writing output' . $this->workerMessageSuffix($workerCount, false) . '...</info>',
             );
 
             $this->prepareOutputDir($outputDir);
@@ -386,9 +397,16 @@ final class BuildCommand extends Command
         }
 
         $writer = new ParallelEntryWriter($this->contentPipeline, $this->templateResolver, $cache, $assetManifest);
+        $effectiveEntryWorkerCount = $writer->workerCountFor(count($tasksToWrite), $workerCount);
         $entriesWritten = $writer->write($siteConfig, $tasksToWrite, $contentDir, $workerCount, $navigation, $crossRefResolver, $authors);
 
-        $output->writeln("  Entries written: <comment>$entriesWritten</comment>" . ($incremental ? ' (of ' . count($allTasks) . ' total)' : ''));
+        $output->writeln(
+            "  Entries written: <comment>$entriesWritten</comment>"
+            . ($incremental ? ' (of ' . count($allTasks) . ' total)' : '')
+            . ' using <comment>' . $effectiveEntryWorkerCount . '</comment> '
+            . ($effectiveEntryWorkerCount === 1 ? 'worker' : 'workers')
+            . ($autoWorkers ? ' (auto)' : ''),
+        );
 
         if ($redirectTasks !== []) {
             $redirectWriter = new RedirectPageWriter();
@@ -636,6 +654,140 @@ final class BuildCommand extends Command
         }
 
         return sprintf('%.1fms', round($milliseconds, 1));
+    }
+
+    private function workerMessageSuffix(int $workerCount, bool $autoWorkers): string
+    {
+        if ($workerCount <= 1) {
+            return '';
+        }
+
+        if ($autoWorkers) {
+            return '';
+        }
+
+        return ' with ' . $workerCount . ' workers';
+    }
+
+    private function detectAutoWorkerCount(): int
+    {
+        $cpuCount = $this->detectCpuCount();
+
+        return min(self::MAX_AUTO_WORKERS, max(1, $cpuCount));
+    }
+
+    private function detectCpuCount(): int
+    {
+        $cgroupV2 = $this->detectCpuCountFromCgroupV2();
+        if ($cgroupV2 !== null) {
+            return $cgroupV2;
+        }
+
+        $cgroupV1 = $this->detectCpuCountFromCgroupV1();
+        if ($cgroupV1 !== null) {
+            return $cgroupV1;
+        }
+
+        $allowedCpuCount = $this->detectCpuCountFromProcStatus();
+        if ($allowedCpuCount !== null) {
+            return $allowedCpuCount;
+        }
+
+        $nproc = trim((string) shell_exec('nproc 2>/dev/null'));
+        if (ctype_digit($nproc) && (int) $nproc > 0) {
+            return (int) $nproc;
+        }
+
+        return 1;
+    }
+
+    private function detectCpuCountFromCgroupV2(): ?int
+    {
+        $contents = $this->readTrimmedFile('/sys/fs/cgroup/cpu.max');
+        if ($contents === null) {
+            return null;
+        }
+
+        [$quota, $period] = explode(' ', $contents) + [null, null];
+        if ($quota === null || $period === null || $quota === 'max' || !ctype_digit($quota) || !ctype_digit($period)) {
+            return null;
+        }
+
+        $quotaValue = (int) $quota;
+        $periodValue = (int) $period;
+        if ($quotaValue <= 0 || $periodValue <= 0) {
+            return null;
+        }
+
+        return max(1, (int) ceil($quotaValue / $periodValue));
+    }
+
+    private function detectCpuCountFromCgroupV1(): ?int
+    {
+        $quota = $this->readTrimmedFile('/sys/fs/cgroup/cpu/cpu.cfs_quota_us');
+        $period = $this->readTrimmedFile('/sys/fs/cgroup/cpu/cpu.cfs_period_us');
+        if ($quota === null || $period === null || !ctype_digit($quota) || !ctype_digit($period)) {
+            return null;
+        }
+
+        $quotaValue = (int) $quota;
+        $periodValue = (int) $period;
+        if ($quotaValue <= 0 || $periodValue <= 0) {
+            return null;
+        }
+
+        return max(1, (int) ceil($quotaValue / $periodValue));
+    }
+
+    private function detectCpuCountFromProcStatus(): ?int
+    {
+        $status = $this->readTrimmedFile('/proc/self/status');
+        if ($status === null || !preg_match('/^Cpus_allowed_list:\s+([0-9,\-]+)$/m', $status, $matches)) {
+            return null;
+        }
+
+        return $this->countCpuList($matches[1]);
+    }
+
+    private function countCpuList(string $cpuList): ?int
+    {
+        $count = 0;
+        foreach (preg_split('/,/', $cpuList) ?: [] as $part) {
+            $part = trim($part);
+            if ($part === '') {
+                continue;
+            }
+
+            if (ctype_digit($part)) {
+                $count++;
+                continue;
+            }
+
+            if (!preg_match('/^(\d+)-(\d+)$/', $part, $matches)) {
+                return null;
+            }
+
+            $start = (int) $matches[1];
+            $end = (int) $matches[2];
+            if ($end < $start) {
+                return null;
+            }
+
+            $count += count(range($start, $end));
+        }
+
+        return $count > 0 ? $count : null;
+    }
+
+    private function readTrimmedFile(string $path): ?string
+    {
+        if (!is_readable($path)) {
+            return null;
+        }
+
+        $contents = file_get_contents($path);
+
+        return $contents === false ? null : trim($contents);
     }
 
     /**

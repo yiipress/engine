@@ -27,7 +27,7 @@ Write Markdown, run one command, get a fully static site — feeds, sitemaps, ta
 
 ### Build
 
-- **Parallel builds** — configurable worker count; 10 000 entries built in ~0.55 s in the current end-to-end benchmark
+- **Parallel builds** — auto-selects a sensible worker count by default, with manual override available; 10 000 entries built in ~0.55 s in the current end-to-end benchmark
 - **Incremental builds** — only re-renders files that changed since last build
 - **Build cache** — parsed Markdown and front matter cached between runs
 - **Dry-run mode** — preview what would be generated without writing anything
