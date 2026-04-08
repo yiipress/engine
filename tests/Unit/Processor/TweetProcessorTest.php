@@ -37,6 +37,13 @@ final class TweetProcessorTest extends TestCase
         $this->assertStringContainsString('twitter.com/i/web/status/1234567890', $result);
     }
 
+    public function testSkipsRegexWorkWhenContentHasNoTweetShortcodeMarker(): void
+    {
+        $input = 'Plain content without shortcode markers.';
+
+        assertSame($input, $this->processor->process($input, $this->createEntry()));
+    }
+
     public function testEmbedHasDoNotTrackAttribute(): void
     {
         $result = $this->processor->process('[tweet id="1234567890" /]', $this->createEntry());

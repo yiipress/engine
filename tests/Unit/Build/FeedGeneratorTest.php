@@ -8,6 +8,7 @@ use App\Build\FeedGenerator;
 use App\Content\Model\Collection;
 use App\Content\Model\Entry;
 use App\Content\Model\SiteConfig;
+use App\Processor\ContentProcessorInterface;
 use App\Processor\ContentProcessorPipeline;
 use App\Processor\MarkdownProcessor;
 use App\Render\MarkdownRenderer;
@@ -17,6 +18,7 @@ use PHPUnit\Framework\TestCase;
 use function PHPUnit\Framework\assertStringContainsString;
 use function PHPUnit\Framework\assertStringNotContainsString;
 use function PHPUnit\Framework\assertStringStartsWith;
+use function PHPUnit\Framework\assertFileExists;
 
 final class FeedGeneratorTest extends TestCase
 {
@@ -162,6 +164,32 @@ final class FeedGeneratorTest extends TestCase
         assertStringNotContainsString('<item>', $rss);
     }
 
+    public function testFeedFilesCanBeWrittenDirectly(): void
+    {
+        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())));
+        $entries = $this->createEntries();
+        $atomPath = sys_get_temp_dir() . '/yiipress-feed-atom-' . uniqid() . '.xml';
+        $rssPath = sys_get_temp_dir() . '/yiipress-feed-rss-' . uniqid() . '.xml';
+
+        try {
+            $generator->writeAtomFile($atomPath, $this->siteConfig, $this->collection, $entries);
+            $generator->writeRssFile($rssPath, $this->siteConfig, $this->collection, $entries);
+
+            assertFileExists($atomPath);
+            assertFileExists($rssPath);
+            assertStringContainsString('<feed xmlns="http://www.w3.org/2005/Atom">', (string) file_get_contents($atomPath));
+            assertStringContainsString('<rss version="2.0"', (string) file_get_contents($rssPath));
+        } finally {
+            if (is_file($atomPath)) {
+                unlink($atomPath);
+            }
+
+            if (is_file($rssPath)) {
+                unlink($rssPath);
+            }
+        }
+    }
+
     public function testCollectionWithoutDescriptionUsesSiteDescription(): void
     {
         $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())));
@@ -180,6 +208,28 @@ final class FeedGeneratorTest extends TestCase
         $rss = $generator->generateRss($this->siteConfig, $collection, []);
 
         assertStringContainsString('<description>A test site</description>', $rss);
+    }
+
+    public function testRenderedFeedContentIsReusedAcrossAtomAndRss(): void
+    {
+        $processor = new class () implements ContentProcessorInterface {
+            public int $calls = 0;
+
+            public function process(string $content, Entry $entry): string
+            {
+                $this->calls++;
+
+                return '<p>processed</p>';
+            }
+        };
+
+        $generator = new FeedGenerator(new ContentProcessorPipeline($processor));
+        $entries = [$this->createEntries()[0]];
+
+        $generator->generateAtom($this->siteConfig, $this->collection, $entries);
+        $generator->generateRss($this->siteConfig, $this->collection, $entries);
+
+        $this->assertSame(1, $processor->calls);
     }
 
     /**

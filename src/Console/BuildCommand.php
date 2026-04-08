@@ -65,7 +65,6 @@ use function max;
 use function min;
 use function pathinfo;
 use function preg_match;
-use function preg_split;
 use function range;
 use function shell_exec;
 use function round;
@@ -521,25 +520,30 @@ final class BuildCommand extends Command
             $output->writeln('  Asset fingerprints generated: <comment>' . count($assetManifest->all()) . '</comment>');
         }
 
-        $feedGenerator = new FeedGenerator($this->feedPipeline, $authors);
         $feedCount = 0;
         foreach ($collections as $collectionName => $collection) {
             if (!$collection->feed) {
                 continue;
             }
 
+            $feedGenerator = new FeedGenerator($this->feedPipeline, $authors);
+
             $feedDir = $outputDir . '/' . $collectionName;
             if (!is_dir($feedDir) && !mkdir($feedDir, 0o755, true) && !is_dir($feedDir)) {
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $feedDir));
             }
 
-            file_put_contents(
+            $feedGenerator->writeAtomFile(
                 $feedDir . '/feed.xml',
-                $feedGenerator->generateAtom($siteConfig, $collection, $entriesByCollection[$collectionName]),
+                $siteConfig,
+                $collection,
+                $entriesByCollection[$collectionName],
             );
-            file_put_contents(
+            $feedGenerator->writeRssFile(
                 $feedDir . '/rss.xml',
-                $feedGenerator->generateRss($siteConfig, $collection, $entriesByCollection[$collectionName]),
+                $siteConfig,
+                $collection,
+                $entriesByCollection[$collectionName],
             );
             $feedCount++;
         }
@@ -752,7 +756,7 @@ final class BuildCommand extends Command
     private function countCpuList(string $cpuList): ?int
     {
         $count = 0;
-        foreach (preg_split('/,/', $cpuList) ?: [] as $part) {
+        foreach (explode(',', $cpuList) ?: [] as $part) {
             $part = trim($part);
             if ($part === '') {
                 continue;

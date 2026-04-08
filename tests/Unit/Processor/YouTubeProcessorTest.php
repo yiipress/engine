@@ -42,6 +42,13 @@ final class YouTubeProcessorTest extends TestCase
         $this->assertStringContainsString('youtube.com/embed/dQw4w9WgXcQ', $result);
     }
 
+    public function testSkipsRegexWorkWhenContentHasNoYouTubeShortcodeMarker(): void
+    {
+        $input = 'Plain content without shortcode markers.';
+
+        assertSame($input, $this->processor->process($input, $this->createEntry()));
+    }
+
     public function testYouTubeShortcodeWithStartTime(): void
     {
         $input = '[youtube id="dQw4w9WgXcQ" start="30" /]';

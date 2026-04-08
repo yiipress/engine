@@ -59,19 +59,19 @@ make profile-build CLI_ARGS='build --content-dir=benchmarks/data/content --outpu
 
 | Benchmark                               | Time   |
 |-----------------------------------------|--------|
-| Full rebuild, sequential                | ~423ms |
-| Full rebuild, 4 workers                 | ~418ms |
-| Incremental rebuild, no changes         | ~167ms |
-| Incremental rebuild, 1 changed entry    | ~171ms |
+| Full rebuild, sequential                | ~10.042s |
+| Full rebuild, 4 workers                 | ~4.586s  |
+| Incremental rebuild, no changes         | ~367.443ms |
+| Incremental rebuild, 1 changed entry    | ~358.293ms |
 
 ### 1k realistic entries (~27KB each)
 
 | Benchmark                               | Time    |
 |-----------------------------------------|---------|
-| Full rebuild, sequential                | ~175ms  |
-| Full rebuild, 4 workers                 | ~172ms  |
-| Incremental rebuild, no changes         | ~84ms   |
-| Incremental rebuild, 1 changed entry    | ~86ms   |
+| Full rebuild, sequential                | ~2.738s |
+| Full rebuild, 4 workers                 | ~1.332s |
+| Incremental rebuild, no changes         | ~102.017ms |
+| Incremental rebuild, 1 changed entry    | ~105.087ms |
 
 These end-to-end benchmarks intentionally go through the public CLI entry point instead of internal renderer/parser classes,
 so they track real rebuild timing rather than component-only throughput.

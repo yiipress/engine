@@ -60,6 +60,32 @@ final class AssetFingerprintManifestTest extends TestCase
         assertSame('<link href="/' . $fingerprinted . '">', $absolute);
     }
 
+    public function testRewriterSkipsHtmlWithoutAssetReferences(): void
+    {
+        $manifest = new AssetFingerprintManifest();
+        $source = $this->tempDir . '/style.css';
+        file_put_contents($source, 'body{color:red}');
+        $manifest->register('assets/theme/style.css', $source);
+        $rewriter = new AssetUrlRewriter($manifest);
+
+        $html = '<div><p>No local asset URLs here.</p></div>';
+
+        assertSame($html, $rewriter->rewrite($html, '../../'));
+    }
+
+    public function testRewriterSkipsHtmlWithAlreadyFingerprintedAssetUrls(): void
+    {
+        $manifest = new AssetFingerprintManifest();
+        $source = $this->tempDir . '/style.css';
+        file_put_contents($source, 'body{color:red}');
+        $fingerprinted = $manifest->register('assets/theme/style.css', $source);
+        $rewriter = new AssetUrlRewriter($manifest);
+
+        $html = '<link href="../../' . $fingerprinted . '">';
+
+        assertSame($html, $rewriter->rewrite($html, '../../'));
+    }
+
     private function removeDir(string $path): void
     {
         if (!is_dir($path)) {

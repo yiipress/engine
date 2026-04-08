@@ -8,6 +8,8 @@ use App\Content\Model\Entry;
 use App\Processor\AssetProcessorInterface;
 use App\Processor\ContentProcessorInterface;
 
+use function str_contains;
+
 /**
  * Converts Mermaid diagram code blocks into div elements for client-side rendering.
  *
@@ -22,6 +24,10 @@ final readonly class MermaidProcessor implements ContentProcessorInterface, Asse
 {
     public function process(string $content, Entry $entry): string
     {
+        if (!str_contains($content, 'language-mermaid')) {
+            return $content;
+        }
+
         return (string) preg_replace_callback(
             '/<pre><code class="language-mermaid">(.+?)<\/code><\/pre>/s',
             static function (array $matches): string {

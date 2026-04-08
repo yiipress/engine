@@ -87,4 +87,5 @@ final class SyntaxHighlighterTest extends TestCase
 
         assertStringContainsString('some code', $result);
     }
+
 }

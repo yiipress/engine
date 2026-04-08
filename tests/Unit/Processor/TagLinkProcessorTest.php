@@ -153,6 +153,14 @@ final class TagLinkProcessorTest extends TestCase
         assertSame('', $result);
     }
 
+    public function testSkipsRegexWorkWhenContentHasNoHashCharacter(): void
+    {
+        $processor = new TagLinkProcessor('/');
+        $content = '<p>Plain rendered HTML without hashtags.</p>';
+
+        assertSame($content, $processor->process($content, $this->createEntry()));
+    }
+
     public function testUsesCustomRootPath(): void
     {
         $processor = new TagLinkProcessor('/blog/');

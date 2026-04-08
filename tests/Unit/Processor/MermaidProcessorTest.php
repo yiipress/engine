@@ -64,6 +64,13 @@ final class MermaidProcessorTest extends TestCase
         $this->assertStringContainsString('<div class="mermaid">', $result);
     }
 
+    public function testSkipsRegexWorkWhenContentHasNoMermaidMarker(): void
+    {
+        $input = '<p>Regular rendered HTML without mermaid blocks.</p>';
+
+        assertSame($input, $this->processor->process($input, $this->createEntry()));
+    }
+
     public function testHandlesMultipleMermaidBlocks(): void
     {
         $input = '<pre><code class="language-mermaid">graph TD; A-->B;</code></pre>

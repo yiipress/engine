@@ -13,6 +13,7 @@ use function parse_url;
 use function preg_match;
 use function preg_replace_callback;
 use function sprintf;
+use function str_contains;
 use function strtolower;
 
 /**
@@ -32,6 +33,10 @@ final readonly class VimeoProcessor implements ContentProcessorInterface, OEmbed
 
     public function process(string $content, Entry $entry): string
     {
+        if (!str_contains(strtolower($content), '[vimeo')) {
+            return $content;
+        }
+
         return (string) preg_replace_callback(
             self::SHORTCODE_PATTERN,
             function (array $matches): string {

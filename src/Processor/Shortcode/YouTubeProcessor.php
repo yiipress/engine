@@ -16,6 +16,7 @@ use function parse_url;
 use function preg_match;
 use function preg_replace_callback;
 use function sprintf;
+use function str_contains;
 use function strtolower;
 use function trim;
 
@@ -37,6 +38,10 @@ final readonly class YouTubeProcessor implements ContentProcessorInterface, OEmb
 
     public function process(string $content, Entry $entry): string
     {
+        if (!str_contains(strtolower($content), '[youtube')) {
+            return $content;
+        }
+
         return (string) preg_replace_callback(
             self::SHORTCODE_PATTERN,
             function (array $matches): string {

@@ -6,7 +6,7 @@ namespace App\Content\Model;
 
 use DateTimeImmutable;
 
-final readonly class Entry
+final class Entry
 {
     /**
      * @param list<string> $tags
@@ -38,6 +38,8 @@ final readonly class Entry
         public string $image = '',
         public array $inlineTags = [],
     ) {}
+
+    private ?string $bodyCache = null;
 
     public function sourceFilePath(): string
     {
@@ -143,6 +145,10 @@ final readonly class Entry
 
     public function body(): string
     {
+        if ($this->bodyCache !== null) {
+            return $this->bodyCache;
+        }
+
         if ($this->bodyLength === 0) {
             return '';
         }
@@ -155,7 +161,9 @@ final readonly class Entry
         try {
             fseek($handle, $this->bodyOffset);
             $body = fread($handle, $this->bodyLength);
-            return $body === false ? '' : $body;
+            $this->bodyCache = $body === false ? '' : $body;
+
+            return $this->bodyCache;
         } finally {
             fclose($handle);
         }

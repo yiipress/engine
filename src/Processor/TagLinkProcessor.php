@@ -6,6 +6,8 @@ namespace App\Processor;
 
 use App\Content\Model\Entry;
 
+use function str_contains;
+
 final readonly class TagLinkProcessor implements ContentProcessorInterface
 {
     public function __construct(
@@ -14,6 +16,10 @@ final readonly class TagLinkProcessor implements ContentProcessorInterface
 
     public function process(string $content, Entry $entry): string
     {
+        if (!str_contains($content, '#')) {
+            return $content;
+        }
+
         // Protect pre/code/a blocks (their content shouldn't have hashtags converted)
         // Then split by remaining HTML tags to exclude hashtags in attributes
         $parts = preg_split('/(<pre[^>]*>.*?<\/pre>|<code[^>]*>.*?<\/code>|<a[^>]*>.*?<\/a>|<[^>]+>)/s', $content, -1, PREG_SPLIT_DELIM_CAPTURE);

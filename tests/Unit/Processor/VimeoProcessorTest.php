@@ -42,6 +42,13 @@ final class VimeoProcessorTest extends TestCase
         $this->assertStringContainsString('player.vimeo.com/video/123456789', $result);
     }
 
+    public function testSkipsRegexWorkWhenContentHasNoVimeoShortcodeMarker(): void
+    {
+        $input = 'Plain content without shortcode markers.';
+
+        assertSame($input, $this->processor->process($input, $this->createEntry()));
+    }
+
     public function testVimeoEmbedHasDoNotTrackParam(): void
     {
         $input = '[vimeo id="123456789" /]';

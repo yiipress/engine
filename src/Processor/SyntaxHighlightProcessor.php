@@ -8,6 +8,8 @@ use App\Content\Model\Entry;
 use App\Highlighter\SyntaxHighlighter;
 use RuntimeException;
 
+use function str_contains;
+
 final readonly class SyntaxHighlightProcessor implements ContentProcessorInterface
 {
     public function __construct(
@@ -16,6 +18,10 @@ final readonly class SyntaxHighlightProcessor implements ContentProcessorInterfa
 
     public function process(string $content, Entry $entry): string
     {
+        if (!str_contains($content, '<pre><code class="language-')) {
+            return $content;
+        }
+
         try {
             return $this->highlighter->highlight($content);
         } catch (RuntimeException $e) {

@@ -8,9 +8,10 @@ use App\Content\Model\Entry;
 use App\Processor\ContentProcessorInterface;
 
 use function preg_replace_callback;
+use function str_contains;
 
 /**
- * Expands standalone provider URLs into embed HTML before markdown processing.
+ * Expands standalone provider URLs into embed HTML before Markdown processing.
  */
 final readonly class OEmbedProcessor implements ContentProcessorInterface
 {
@@ -27,6 +28,10 @@ final readonly class OEmbedProcessor implements ContentProcessorInterface
 
     public function process(string $content, Entry $entry): string
     {
+        if (!str_contains($content, 'http://') && !str_contains($content, 'https://')) {
+            return $content;
+        }
+
         return (string) preg_replace_callback(
             self::URL_LINE_PATTERN,
             function (array $matches): string {

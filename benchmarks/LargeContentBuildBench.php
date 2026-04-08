@@ -23,6 +23,7 @@ use function hash;
 use function is_dir;
 use function is_file;
 use function mkdir;
+use function usleep;
 use function sys_get_temp_dir;
 use function unlink;
 
@@ -30,7 +31,6 @@ use function unlink;
 #[AfterMethods('tearDown')]
 final class LargeContentBuildBench
 {
-    private string $sourceDataDir;
     private string $contentDir;
     private string $outputDir;
     private string $rootPath;
@@ -40,9 +40,9 @@ final class LargeContentBuildBench
     public function setUp(): void
     {
         $this->rootPath = dirname(__DIR__);
-        $this->sourceDataDir = __DIR__ . '/data/realistic-content';
+        $sourceDataDir = __DIR__ . '/data/realistic-content';
 
-        if (!is_dir($this->sourceDataDir)) {
+        if (!is_dir($sourceDataDir)) {
             throw new RuntimeException('Realistic benchmark data not found. Run: make bench-generate-realistic');
         }
 
@@ -51,7 +51,7 @@ final class LargeContentBuildBench
         $this->outputDir = $this->tempDir . '/output';
         $this->touchFile = $this->contentDir . '/collection-1/2025-09-02-entry-610.md';
 
-        $this->copyDir($this->sourceDataDir, $this->contentDir);
+        $this->copyDir($sourceDataDir, $this->contentDir);
     }
 
     public function tearDown(): void
@@ -167,18 +167,25 @@ final class LargeContentBuildBench
 
     private function removeDir(string $path): void
     {
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
-            RecursiveIteratorIterator::CHILD_FIRST,
-        );
-        foreach ($iterator as $item) {
-            /** @var SplFileInfo $item */
-            if ($item->isDir()) {
-                rmdir($item->getPathname());
-            } else {
-                unlink($item->getPathname());
+        while (is_dir($path)) {
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::CHILD_FIRST,
+            );
+            foreach ($iterator as $item) {
+                /** @var SplFileInfo $item */
+                if ($item->isDir()) {
+                    rmdir($item->getPathname());
+                } else {
+                    unlink($item->getPathname());
+                }
             }
+
+            if (@rmdir($path)) {
+                return;
+            }
+
+            usleep(10_000);
         }
-        rmdir($path);
     }
 }

@@ -23,6 +23,7 @@ use function hash;
 use function is_dir;
 use function is_file;
 use function mkdir;
+use function usleep;
 use function sys_get_temp_dir;
 use function unlink;
 
@@ -167,18 +168,25 @@ final class SmallSiteBuildBench
 
     private function removeDir(string $path): void
     {
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
-            RecursiveIteratorIterator::CHILD_FIRST,
-        );
-        foreach ($iterator as $item) {
-            /** @var SplFileInfo $item */
-            if ($item->isDir()) {
-                rmdir($item->getPathname());
-            } else {
-                unlink($item->getPathname());
+        while (is_dir($path)) {
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::CHILD_FIRST,
+            );
+            foreach ($iterator as $item) {
+                /** @var SplFileInfo $item */
+                if ($item->isDir()) {
+                    rmdir($item->getPathname());
+                } else {
+                    unlink($item->getPathname());
+                }
             }
+
+            if (@rmdir($path)) {
+                return;
+            }
+
+            usleep(10_000);
         }
-        rmdir($path);
     }
 }

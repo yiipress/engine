@@ -24,7 +24,9 @@ if (is_dir($targetDir)) {
     }
 }
 
-mkdir($targetDir, 0o755, true);
+if (!is_dir($targetDir)) {
+    mkdir($targetDir, 0o755, true);
+}
 
 file_put_contents($targetDir . '/config.yaml', <<<'YAML'
 title: "Benchmark Site"
@@ -66,9 +68,22 @@ for ($cat = 0; $cat < 10; $cat++) {
     $categories[] = "category-$cat";
 }
 
-function generateRealisticBody(int $entryIndex, int $totalEntries): string
+function resolveCollectionPathForEntry(int $entryIndex, int $entriesPerCollection, int $collectionCount): string
+{
+    $collectionIndex = min(intdiv($entryIndex, $entriesPerCollection), $collectionCount - 1);
+
+    return "/collection-$collectionIndex/entry-$entryIndex/";
+}
+
+function generateRealisticBody(
+    int $entryIndex,
+    int $totalEntries,
+    int $entriesPerCollection,
+    int $collectionCount,
+): string
 {
     $sections = [];
+    $hasCodeExamples = $entryIndex % 10 < 3;
 
     $sections[] = <<<'MD'
 ## Introduction
@@ -92,16 +107,21 @@ MD;
         $linkedEntries[] = $linked;
     }
 
+    $relatedUrls = array_map(
+        static fn (int $linked): string => resolveCollectionPathForEntry($linked, $entriesPerCollection, $collectionCount),
+        $linkedEntries,
+    );
+
     $sections[] = <<<MD
 ## Related Articles
 
 Here are some related articles you might find interesting:
 
-- [Entry $linkedEntries[0]: A Deep Dive](/collection-0/entry-$linkedEntries[0]/)
-- [Entry $linkedEntries[1]: Advanced Techniques](/collection-1/entry-$linkedEntries[1]/)
-- [Entry $linkedEntries[2]: Getting Started Guide](/collection-2/entry-$linkedEntries[2]/)
-- [Entry $linkedEntries[3]: Best Practices](/collection-0/entry-$linkedEntries[3]/)
-- [Entry $linkedEntries[4]: Performance Tips](/collection-1/entry-$linkedEntries[4]/)
+- [Entry $linkedEntries[0]: A Deep Dive]({$relatedUrls[0]})
+- [Entry $linkedEntries[1]: Advanced Techniques]({$relatedUrls[1]})
+- [Entry $linkedEntries[2]: Getting Started Guide]({$relatedUrls[2]})
+- [Entry $linkedEntries[3]: Best Practices]({$relatedUrls[3]})
+- [Entry $linkedEntries[4]: Performance Tips]({$relatedUrls[4]})
 
 For more context, see also the [official documentation](https://example.com/docs) and the
 [API reference](https://example.com/api). You can also check the [FAQ](https://example.com/faq)
@@ -192,7 +212,8 @@ MD;
 MD;
 
     for ($page = 1; $page <= 6; $page++) {
-        $sections[] = <<<MD
+        if ($hasCodeExamples) {
+            $implementationSection = <<<MD
 ## Chapter $page: Extended Content
 
 ### Section $page.1: Background
@@ -268,10 +289,74 @@ eiusmod tempor incididunt ut labore et dolore magna aliqua.
 
 ![Chapter $page Diagram](https://example.com/images/chapter-$page-diagram.png)
 
-See also [Entry $linkedEntries[0]](/collection-0/entry-$linkedEntries[0]/) for more details
+See also [Entry $linkedEntries[0]]({$relatedUrls[0]}) for more details
 on this topic, and [the architecture docs](https://example.com/docs/architecture) for the
 overall design.
 MD;
+        } else {
+            $implementationSection = <<<MD
+## Chapter $page: Extended Content
+
+### Section $page.1: Background
+
+Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium,
+totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae
+dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit,
+sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam
+est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius
+modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.
+
+Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut
+aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit
+esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?
+
+At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum
+deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non
+provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum
+fuga. Et harum quidem rerum facilis est et expedita distinctio.
+
+### Section $page.2: Implementation Details
+
+Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod
+maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus
+autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates
+repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus,
+ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores
+repellat.
+
+This section describes the implementation approach for entry $entryIndex in prose instead of showing
+a full source listing. The chapter still references the render-and-cache pipeline, incremental build
+behavior, and worker execution model, but focuses on architecture rather than verbatim code.
+
+| Metric | Chapter $page | Previous | Delta |
+|--------|-------------|----------|-------|
+| Lines of code | {$page}42 | {$page}38 | +4 |
+| Test coverage | 9$page% | 8{$page}% | +10% |
+| Build time impact | +{$page}ms | — | — |
+| Memory overhead | +{$page}KB | — | — |
+
+### Section $page.3: Analysis
+
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt
+mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
+1. First, we initialize the **parser** with the content directory
+2. Then, we iterate over all *collections* and their entries
+3. For each entry, we check the `BuildCache` for a cached version
+4. If not cached, we render the markdown and apply the template
+5. Finally, we write the output to the `output/` directory
+
+![Chapter $page Diagram](https://example.com/images/chapter-$page-diagram.png)
+
+See also [Entry $linkedEntries[0]]({$relatedUrls[0]}) for more details
+on this topic, and [the architecture docs](https://example.com/docs/architecture) for the
+overall design.
+MD;
+        }
+
+        $sections[] = $implementationSection;
     }
 
     $sections[] = <<<'MD'
@@ -338,8 +423,9 @@ YAML);
             'summary' => "A comprehensive benchmark entry with links, images, tables, and 10 pages of styled text.",
         ], YAML_UTF8_ENCODING, YAML_LN_BREAK);
 
-        $frontMatter = trim($frontMatter, ".\n");
-        $body = generateRealisticBody($globalIndex, $entryCount);
+        $frontMatter = preg_replace('/^---\n|\.\.\.\n?$/', '', $frontMatter) ?? $frontMatter;
+        $frontMatter = rtrim($frontMatter, "\n");
+        $body = generateRealisticBody($globalIndex, $entryCount, $entriesPerCollection, $collectionCount);
 
         file_put_contents(
             $collectionDir . "/$date-$slug.md",

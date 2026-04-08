@@ -24,7 +24,9 @@ if (is_dir($targetDir)) {
     }
 }
 
-mkdir($targetDir, 0o755, true);
+if (!is_dir($targetDir)) {
+    mkdir($targetDir, 0o755, true);
+}
 
 file_put_contents($targetDir . '/config.yaml', <<<'YAML'
 title: "Benchmark Site"
@@ -66,7 +68,50 @@ for ($cat = 0; $cat < 10; $cat++) {
     $categories[] = "category-$cat";
 }
 
-$body = <<<'MD'
+function generateBody(int $entryIndex, string $collectionName): string
+{
+    $language = match ($entryIndex % 4) {
+        0 => 'php',
+        1 => 'yaml',
+        2 => 'javascript',
+        default => 'json',
+    };
+    $hasCodeBlock = $entryIndex % 10 < 3;
+
+    $codeBlock = match ($language) {
+        'php' => <<<CODE
+```php
+\$article = new ArticleRenderer('entry-$entryIndex');
+\$article->setCollection('$collectionName');
+\$article->render();
+```
+CODE,
+        'yaml' => <<<CODE
+```yaml
+entry: entry-$entryIndex
+collection: $collectionName
+draft: false
+```
+CODE,
+        'javascript' => <<<CODE
+```javascript
+const entryId = 'entry-$entryIndex';
+renderEntry(entryId, '$collectionName');
+```
+CODE,
+        default => <<<CODE
+```json
+{"entry":"entry-$entryIndex","collection":"$collectionName","published":true}
+```
+CODE,
+    };
+    $detailsSection = $hasCodeBlock ? $codeBlock : <<<TEXT
+This entry focuses on prose content without a source listing. It still references
+entry-$entryIndex in collection $collectionName and describes the same feature set
+using regular paragraphs instead of a code example.
+TEXT;
+
+    return <<<MD
 
 ## Introduction
 
@@ -82,20 +127,18 @@ Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deseru
 - Item two with *italic* text
 - Item three with `code` text
 
-```php
-$example = new Example();
-$example->run();
-```
+$detailsSection
 
 | Column A | Column B | Column C |
 |----------|----------|----------|
-| Value 1  | Value 2  | Value 3  |
+| Value $entryIndex  | Value $collectionName  | Value $language  |
 | Value 4  | Value 5  | Value 6  |
 
 > A blockquote with some wisdom about static site generation.
 
-Final paragraph with a [link](https://example.com) and some concluding thoughts.
+Final paragraph with a [link](https://example.com/entries/$entryIndex) and some concluding thoughts.
 MD;
+}
 
 $entriesPerCollection = (int) ceil($entryCount / $collectionCount);
 
@@ -135,7 +178,9 @@ YAML);
             'summary' => "Summary for benchmark entry $globalIndex.",
         ], YAML_UTF8_ENCODING, YAML_LN_BREAK);
 
-        $frontMatter = trim($frontMatter, ".\n");
+        $frontMatter = preg_replace('/^---\n|\.\.\.\n?$/', '', $frontMatter) ?? $frontMatter;
+        $frontMatter = rtrim($frontMatter, "\n");
+        $body = generateBody($globalIndex, $collectionName);
 
         file_put_contents(
             $collectionDir . "/$date-$slug.md",

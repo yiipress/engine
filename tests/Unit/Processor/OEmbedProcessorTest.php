@@ -88,6 +88,13 @@ final class OEmbedProcessorTest extends TestCase
         assertSame($input, $result);
     }
 
+    public function testSkipsRegexWorkWhenContentHasNoHttpMarker(): void
+    {
+        $input = 'Standalone text without URLs.';
+
+        assertSame($input, $this->processor->process($input, $this->createEntry()));
+    }
+
     public function testLeavesUnsupportedProvidersUnchanged(): void
     {
         $input = 'https://example.com/video/123';

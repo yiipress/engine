@@ -34,6 +34,10 @@ final readonly class TweetProcessor implements ContentProcessorInterface, AssetP
 
     public function process(string $content, Entry $entry): string
     {
+        if (!str_contains(strtolower($content), '[tweet')) {
+            return $content;
+        }
+
         return (string) preg_replace_callback(
             self::SHORTCODE_PATTERN,
             function (array $matches): string {
