@@ -64,6 +64,36 @@ final class BuildDiagnosticsTest extends TestCase
         assertEmpty($diagnostics->warnings());
     }
 
+    public function testNoWarningForValidPermalinkLink(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Post\n---\n\nSee [entry](/collection-0/entry-15/) for details.\n");
+
+        $entry = $this->createEntry($entryFile, 'blog', 'post');
+        $diagnostics = $this->createDiagnostics([
+            'blog/post.md' => '/blog/post/',
+            'collection-0/2024-01-16-entry-15.md' => '/collection-0/entry-15/',
+        ]);
+        $diagnostics->check($entry);
+
+        assertEmpty($diagnostics->warnings());
+    }
+
+    public function testNoWarningForInternalLinkWithFragment(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Post\n---\n\nSee [other](./other.md#details) for details.\n");
+
+        $entry = $this->createEntry($entryFile, 'blog', 'post');
+        $diagnostics = $this->createDiagnostics([
+            'blog/post.md' => '/blog/post/',
+            'blog/other.md' => '/blog/other/',
+        ]);
+        $diagnostics->check($entry);
+
+        assertEmpty($diagnostics->warnings());
+    }
+
     public function testWarnsOnMissingImage(): void
     {
         $entryFile = $this->contentDir . '/blog/post.md';

@@ -15,6 +15,8 @@ final class BuildDiagnostics
 {
     /** @var list<string> */
     private array $warnings = [];
+    /** @var array<string, true> */
+    private array $permalinkLookup = [];
 
     /**
      * @param array<string, string> $fileToPermalink content-relative .md path => permalink
@@ -25,7 +27,11 @@ final class BuildDiagnostics
         private readonly array $fileToPermalink,
         private readonly SiteConfig $siteConfig,
         private readonly array $authors,
-    ) {}
+    ) {
+        foreach ($this->fileToPermalink as $permalink) {
+            $this->permalinkLookup[$permalink] = true;
+        }
+    }
 
     public function check(Entry $entry): void
     {
@@ -83,18 +89,27 @@ final class BuildDiagnostics
             $isImage = $match[1] === '!';
             $path = $match[3];
 
-            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            if ($path === '' || $path[0] === '#') {
                 continue;
             }
 
-            $resolved = $this->resolveLinkPath($path, $entryDir);
+            $normalizedPath = $this->normalizeLinkTarget($path);
+            if ($normalizedPath === '') {
+                continue;
+            }
+
+            if (str_starts_with($normalizedPath, 'http://') || str_starts_with($normalizedPath, 'https://')) {
+                continue;
+            }
+
+            $resolved = $this->resolveLinkPath($normalizedPath, $entryDir);
 
             // Check image.
             if ($isImage) {
-                if (str_starts_with($path, '/')) {
-                    $absolute = $this->contentDir . $path;
+                if (str_starts_with($normalizedPath, '/')) {
+                    $absolute = $this->contentDir . $normalizedPath;
                 } else {
-                    $absolute = $entryDir . '/' . $path;
+                    $absolute = $entryDir . '/' . $normalizedPath;
                 }
 
                 $real = realpath($absolute);
@@ -105,6 +120,9 @@ final class BuildDiagnostics
             } else {
                 // Check content.
                 if (isset($this->fileToPermalink[$resolved])) {
+                    continue;
+                }
+                if (str_starts_with($resolved, '/') && isset($this->permalinkLookup[$resolved])) {
                     continue;
                 }
                 $this->warnings[] = "$source: broken link to \"$path\"";
@@ -155,5 +173,20 @@ final class BuildDiagnostics
         }
 
         return implode('/', $parts);
+    }
+
+    private function normalizeLinkTarget(string $path): string
+    {
+        $fragmentPos = strpos($path, '#');
+        if ($fragmentPos !== false) {
+            $path = substr($path, 0, $fragmentPos);
+        }
+
+        $queryPos = strpos($path, '?');
+        if ($queryPos !== false) {
+            $path = substr($path, 0, $queryPos);
+        }
+
+        return trim($path);
     }
 }
