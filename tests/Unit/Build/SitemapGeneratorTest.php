@@ -10,6 +10,7 @@ use App\Content\Model\Entry;
 use App\Content\Model\SiteConfig;
 use DateTimeImmutable;
 use FilesystemIterator;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 use RecursiveDirectoryIterator;
@@ -19,6 +20,7 @@ use SplFileInfo;
 use function PHPUnit\Framework\assertFileExists;
 use function PHPUnit\Framework\assertStringContainsString;
 use function PHPUnit\Framework\assertStringNotContainsString;
+use function rawurlencode;
 
 final class SitemapGeneratorTest extends TestCase
 {
@@ -236,5 +238,106 @@ final class SitemapGeneratorTest extends TestCase
         $xml = file_get_contents($this->outputDir . '/sitemap.xml');
         assertStringContainsString('https://test.example.com/custom/path/', $xml);
         assertStringNotContainsString('hello-world', $xml);
+    }
+
+    public static function internationalUrlProvider(): array
+    {
+        return [
+            'russian' => ['привет-мир'],
+            'arabic' => ['مرحبا-بالعالم'],
+            'chinese' => ['你好-世界'],
+        ];
+    }
+
+    #[DataProvider('internationalUrlProvider')]
+    public function testSitemapEncodesInternationalEntrySlugsOnce(string $slug): void
+    {
+        $generator = new SitemapGenerator();
+        $collection = new Collection(
+            name: 'blog',
+            title: 'Blog',
+            description: '',
+            permalink: '/blog/:slug/',
+            sortBy: 'date',
+            sortOrder: 'desc',
+            entriesPerPage: 10,
+            feed: true,
+            listing: true,
+        );
+
+        $entries = [$this->createEntry(slug: $slug)];
+
+        $generator->generate(
+            $this->siteConfig,
+            ['blog' => $collection],
+            ['blog' => $entries],
+            $this->outputDir,
+        );
+
+        $xml = (string) file_get_contents($this->outputDir . '/sitemap.xml');
+        $encodedSlug = rawurlencode($slug);
+
+        assertStringContainsString('https://test.example.com/blog/' . $encodedSlug . '/', $xml);
+        assertStringNotContainsString(rawurlencode($encodedSlug), $xml);
+    }
+
+    #[DataProvider('internationalUrlProvider')]
+    public function testSitemapEncodesInternationalCustomPermalinksOnce(string $segment): void
+    {
+        $generator = new SitemapGenerator();
+        $collection = new Collection(
+            name: 'blog',
+            title: 'Blog',
+            description: '',
+            permalink: '/blog/:slug/',
+            sortBy: 'date',
+            sortOrder: 'desc',
+            entriesPerPage: 10,
+            feed: true,
+            listing: true,
+        );
+
+        $permalink = '/custom/' . $segment . '/';
+        $entries = [$this->createEntry(permalink: $permalink)];
+
+        $generator->generate(
+            $this->siteConfig,
+            ['blog' => $collection],
+            ['blog' => $entries],
+            $this->outputDir,
+        );
+
+        $xml = (string) file_get_contents($this->outputDir . '/sitemap.xml');
+        $encodedSegment = rawurlencode($segment);
+
+        assertStringContainsString('https://test.example.com/custom/' . $encodedSegment . '/', $xml);
+        assertStringNotContainsString(rawurlencode($encodedSegment), $xml);
+    }
+
+    private function createEntry(
+        string $slug = 'hello-world',
+        string $permalink = '',
+    ): Entry {
+        return new Entry(
+            filePath: $this->tempFile,
+            collection: 'blog',
+            slug: $slug,
+            title: 'Hello World',
+            date: new DateTimeImmutable('2024-03-15'),
+            draft: false,
+            tags: [],
+            categories: [],
+            authors: [],
+            summary: '',
+            permalink: $permalink,
+            layout: '',
+            theme: '',
+            weight: 0,
+            language: '',
+            redirectTo: '',
+            extra: [],
+            bodyOffset: 0,
+            bodyLength: (int) filesize($this->tempFile),
+        );
     }
 }
