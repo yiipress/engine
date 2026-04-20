@@ -2,8 +2,8 @@
     <img src="logo.svg" alt="YiiPress" width="280">
 </p>
 
-**YiiPress** is a fast, file-based static blog engine built on [Yii3](https://www.yiiframework.com/) and PHP 8.5. 
-Write Markdown, run one command, get a fully static site — feeds, sitemaps, taxonomy pages, authors, search, and all.
+**YiiPress** is a fast, file-based static website generator built on [Yii3](https://www.yiiframework.com/) and PHP 8.5. 
+Write Markdown, run one command, get a fully static site — blogs, docs, portfolios, feeds, sitemaps, taxonomy pages, authors, search, and all.
 
 [![PHP 8.5](https://img.shields.io/badge/PHP-8.5-777bb4?logo=php&logoColor=white)](https://www.php.net/)
 [![Yii3](https://img.shields.io/badge/Yii-3-007bff)](https://www.yiiframework.com/)
@@ -89,14 +89,14 @@ Write Markdown, run one command, get a fully static site — feeds, sitemaps, ta
 ## Quick Start
 
 ```bash
-composer create-project yiipress/engine myblog
-cd myblog
+composer create-project yiipress/engine mysite
+cd mysite
 ```
 
 Configure `content/config.yaml`:
 
 ```yaml
-title: My Blog
+title: My Site
 base_url: https://example.com
 permalink: /:collection/:slug/
 taxonomies:
@@ -105,17 +105,17 @@ taxonomies:
 highlight_theme: "Solarized (dark)"
 ```
 
-Create a collection in `content/blog/_collection.yaml`:
+Create a collection in `content/posts/_collection.yaml`:
 
 ```yaml
-title: Blog
+title: Posts
 sort_by: date
 sort_direction: desc
 feed: true
 listing: true
 ```
 
-Write a post in `content/blog/2024-01-15-hello-world.md`:
+Write a page in `content/posts/2024-01-15-hello-world.md`:
 
 ```markdown
 ---
@@ -124,7 +124,7 @@ tags:
   - general
 ---
 
-Welcome to my blog!
+Welcome to my site!
 ```
 
 Build and preview:
