@@ -50,6 +50,21 @@ final class LiveReloadMiddlewareTest extends TestCase
         assertSame(true, $scriptPos < $bodyClosePos);
     }
 
+    public function testPingEventsDoNotTriggerManualReconnect(): void
+    {
+        $middleware = new LiveReloadMiddleware(new StreamFactory());
+        $html = '<html><body><p>Hello</p></body></html>';
+
+        $response = $middleware->process(
+            new ServerRequest(),
+            $this->createHandler($html, 'text/html'),
+        );
+
+        $body = (string) $response->getBody();
+        assertStringContainsString('es.addEventListener("ping", function() {});', $body);
+        assertStringNotContainsString('es.addEventListener("ping", function() { es.close(); connect(); });', $body);
+    }
+
     public function testSkipsNonHtmlResponses(): void
     {
         $middleware = new LiveReloadMiddleware(new StreamFactory());

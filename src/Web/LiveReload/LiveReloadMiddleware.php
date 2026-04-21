@@ -17,8 +17,8 @@ final readonly class LiveReloadMiddleware implements MiddlewareInterface
 (function(){
     function connect() {
         var es = new EventSource("/_live-reload");
-        es.addEventListener("reload", function() { location.reload(); });
-        es.addEventListener("ping", function() { es.close(); connect(); });
+        es.addEventListener("reload", function() { es.close(); location.reload(); });
+        es.addEventListener("ping", function() {});
         es.onerror = function() { es.close(); setTimeout(connect, 2000); };
     }
     connect();

@@ -10,20 +10,21 @@ use Psr\Http\Message\StreamFactoryInterface;
 
 final readonly class LiveReloadAction
 {
-    private const int RETRY_MILLISECONDS = 500;
+    private const int RETRY_MILLISECONDS = 1_000;
 
     public function __construct(
         private ResponseFactoryInterface $responseFactory,
         private StreamFactoryInterface $streamFactory,
         private FileWatcher $fileWatcher,
         private SiteBuildRunner $buildRunner,
+        private int $waitTimeoutMilliseconds = 20_000,
     ) {}
 
     public function __invoke(): ResponseInterface
     {
         $body = 'retry: ' . self::RETRY_MILLISECONDS . "\n";
 
-        if ($this->fileWatcher->hasChanges()) {
+        if ($this->fileWatcher->waitForChanges($this->waitTimeoutMilliseconds)) {
             $this->buildRunner->build();
             $body .= "event: reload\ndata: changed\n\n";
         } else {

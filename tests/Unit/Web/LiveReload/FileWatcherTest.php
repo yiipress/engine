@@ -13,7 +13,10 @@ use RecursiveIteratorIterator;
 use SplFileInfo;
 
 use function PHPUnit\Framework\assertFalse;
+use function PHPUnit\Framework\assertNotSame;
 use function PHPUnit\Framework\assertTrue;
+use function pcntl_fork;
+use function pcntl_waitpid;
 
 final class FileWatcherTest extends TestCase
 {
@@ -98,6 +101,40 @@ final class FileWatcherTest extends TestCase
 
         assertFalse($watcher->hasChanges());
         assertFalse($watcher->hasChanges());
+    }
+
+    public function testWaitForChangesTimesOutWhenNothingChanges(): void
+    {
+        file_put_contents($this->tempDir . '/test.md', 'hello');
+
+        $watcher = new FileWatcher([$this->tempDir]);
+        $watcher->hasChanges();
+
+        assertFalse($watcher->waitForChanges(50));
+    }
+
+    public function testWaitForChangesDetectsFileModification(): void
+    {
+        $file = $this->tempDir . '/test.md';
+        file_put_contents($file, 'hello');
+
+        $watcher = new FileWatcher([$this->tempDir]);
+        $watcher->hasChanges();
+
+        $pid = pcntl_fork();
+        assertNotSame(-1, $pid);
+
+        if ($pid === 0) {
+            usleep(100_000);
+            file_put_contents($file, 'updated');
+            exit(0);
+        }
+
+        try {
+            assertTrue($watcher->waitForChanges(1_000));
+        } finally {
+            pcntl_waitpid($pid, $status);
+        }
     }
 
     public function testWatchesMultipleDirectories(): void

@@ -18,7 +18,6 @@ final readonly class SiteBuildRunner
             . ' build'
             . ' --content-dir=' . escapeshellarg($this->contentDir)
             . ' --output-dir=' . escapeshellarg($this->outputDir)
-            . ' --no-cache'
             . ' 2>&1';
 
         exec($command, $output, $exitCode);

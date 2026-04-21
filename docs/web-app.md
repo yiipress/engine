@@ -1,6 +1,6 @@
 # Web application
 
-The web application serves the built site for local development. It runs on FrankenPHP via `make up` or on PHP's built-in server via `yii serve`.
+The web application serves the built site for local development. It runs on FrankenPHP via `make up` or on PHP's built-in server via `yii serve`. Live reload requires PHP `ext-inotify`; the Docker images install it by default.
 
 ## Static file serving
 
@@ -16,6 +16,7 @@ How it works:
 
 1. `LiveReloadMiddleware` injects a small JavaScript snippet before `</body>` in every HTML response.
 2. The snippet opens an SSE (Server-Sent Events) connection to `/_live-reload`.
-3. `LiveReloadAction` polls `content/` and `src/Render/Template/` for file changes every 500ms.
-4. When a change is detected, `SiteBuildRunner` triggers a full `yii build` to regenerate the output directory.
-5. After the build completes, the server sends a `reload` event and the browser refreshes.
+3. `LiveReloadAction` keeps that request open for up to 20 seconds while `FileWatcher` watches `content/` and `themes/`.
+4. `FileWatcher` waits for native `inotify` filesystem events instead of rescanning watched directories on a timer.
+5. When a change is detected, `SiteBuildRunner` triggers a normal `yii build`, so live reload benefits from the same incremental build pipeline as manual builds.
+6. After the build completes, the server sends a `reload` event and the browser refreshes.
