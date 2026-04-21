@@ -99,6 +99,37 @@ final class CleanCommandTest extends TestCase
         assertStringContainsString('Removed cache directory', implode("\n", $cleanOutput));
     }
 
+    public function testClearAliasExecutesCleanCommand(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' --no-cache'
+            . ' 2>&1',
+            $buildOutput,
+            $buildExitCode,
+        );
+
+        assertSame(0, $buildExitCode);
+        assertDirectoryExists($this->outputDir);
+
+        exec(
+            $yii . ' clear'
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' 2>&1',
+            $clearOutput,
+            $clearExitCode,
+        );
+
+        assertSame(0, $clearExitCode);
+        assertDirectoryDoesNotExist($this->outputDir);
+        assertStringContainsString('Removed output directory', implode("\n", $clearOutput));
+    }
+
     public function testCleanHandlesMissingDirectories(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';

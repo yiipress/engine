@@ -17,6 +17,7 @@ declare(strict_types=1);
  * @var list<string> $uiLanguages
  * @var array<string, array<string, string>> $uiCatalogs
  * @var App\I18n\UiText $ui
+ * @var Closure(string, int, ?string, bool): string $h
  */
 
 use App\Content\Model\Navigation;
@@ -26,7 +27,7 @@ $taxonomyLabel = $ui->taxonomyLabel($taxonomyName);
 $taxonomyKey = 'taxonomy.' . strtolower($taxonomyName);
 ?>
 <!DOCTYPE html>
-<html lang="<?= htmlspecialchars($language) ?>">
+<html lang="<?= $h($language) ?>">
 <head>
 <?= $partial('head', ['title' => $taxonomyLabel . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'metaTags' => $metaTags, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage], 'uiCatalogs' => $uiCatalogs ?? [$uiLanguage => []]]) ?>
 </head>
@@ -34,10 +35,10 @@ $taxonomyKey = 'taxonomy.' . strtolower($taxonomyName);
 <?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage]]) ?>
 <main>
     <div class="container">
-        <h1 data-ui-key="<?= htmlspecialchars($taxonomyKey) ?>"><?= htmlspecialchars($taxonomyLabel) ?></h1>
+        <h1 data-ui-key="<?= $h($taxonomyKey) ?>"><?= $h($taxonomyLabel) ?></h1>
         <ul class="term-list">
 <?php foreach ($terms as $term): ?>
-            <li><a href="<?= $rootPath . htmlspecialchars($taxonomyName) ?>/<?= htmlspecialchars($term) ?>/"><?= htmlspecialchars($term) ?></a></li>
+            <li><a href="<?= $rootPath . $h($taxonomyName) ?>/<?= $h($term) ?>/"><?= $h($term) ?></a></li>
 <?php endforeach; ?>
         </ul>
     </div>

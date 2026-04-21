@@ -59,7 +59,7 @@ Write Markdown, run one command, get a fully static site — blogs, docs, portfo
 
 - Live-reload dev server (`make up`)
 - `yiipress new` — scaffold entries from archetypes
-- `yiipress clean` — wipe output and caches
+- `yiipress clean` / `yiipress clear` — wipe output and caches
 - PHP template engine with partials — no new templating language to learn
 - Theme system — installable and distributable themes
 - Docker-based setup — one command to start

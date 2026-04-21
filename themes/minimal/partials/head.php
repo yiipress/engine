@@ -12,6 +12,8 @@
  * @var list<string> $uiLanguages
  * @var array<string, array<string, string>> $uiCatalogs
  * @var App\I18n\UiText $ui
+ * @var Closure(string, int, ?string, bool): string $h
+ * @var Closure(string, array): string $t
  */
 
 use App\Build\AssetFingerprintManifest;
@@ -29,27 +31,27 @@ $uiCatalogs ??= [$uiLanguage => []];
 ?>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= htmlspecialchars($title) ?></title>
+    <title><?= $h($title) ?></title>
 <?php if ($metaTags !== null): ?>
 <?php if ($metaTags->canonicalUrl !== ''): ?>
-    <link rel="canonical" href="<?= htmlspecialchars($metaTags->canonicalUrl) ?>">
+    <link rel="canonical" href="<?= $h($metaTags->canonicalUrl) ?>">
 <?php endif; ?>
-    <meta name="description" content="<?= htmlspecialchars($metaTags->description) ?>">
-    <meta property="og:title" content="<?= htmlspecialchars($metaTags->title) ?>">
-    <meta property="og:description" content="<?= htmlspecialchars($metaTags->description) ?>">
-    <meta property="og:type" content="<?= htmlspecialchars($metaTags->type) ?>">
+    <meta name="description" content="<?= $h($metaTags->description) ?>">
+    <meta property="og:title" content="<?= $h($metaTags->title) ?>">
+    <meta property="og:description" content="<?= $h($metaTags->description) ?>">
+    <meta property="og:type" content="<?= $h($metaTags->type) ?>">
 <?php if ($metaTags->canonicalUrl !== ''): ?>
-    <meta property="og:url" content="<?= htmlspecialchars($metaTags->canonicalUrl) ?>">
+    <meta property="og:url" content="<?= $h($metaTags->canonicalUrl) ?>">
 <?php endif; ?>
 <?php if ($metaTags->image !== ''): ?>
-    <meta property="og:image" content="<?= htmlspecialchars($metaTags->image) ?>">
+    <meta property="og:image" content="<?= $h($metaTags->image) ?>">
 <?php endif; ?>
-    <meta name="twitter:card" content="<?= htmlspecialchars($metaTags->twitterCard) ?>">
+    <meta name="twitter:card" content="<?= $h($metaTags->twitterCard) ?>">
 <?php if ($metaTags->twitterSite !== ''): ?>
-    <meta name="twitter:site" content="<?= htmlspecialchars($metaTags->twitterSite) ?>">
+    <meta name="twitter:site" content="<?= $h($metaTags->twitterSite) ?>">
 <?php endif; ?>
 <?php foreach ($metaTags->alternateLanguages as $hreflang => $url): ?>
-    <link rel="alternate" hreflang="<?= htmlspecialchars($hreflang) ?>" href="<?= htmlspecialchars($url) ?>">
+    <link rel="alternate" hreflang="<?= $h($hreflang) ?>" href="<?= $h($url) ?>">
 <?php endforeach; ?>
 <?php endif; ?>
     <script>
@@ -174,16 +176,16 @@ $uiCatalogs ??= [$uiLanguage => []];
             root.style.colorScheme = theme;
         })();
     </script>
-    <script id="yiipress-ui-catalogs" type="application/json" data-default-language="<?= htmlspecialchars($uiLanguage) ?>"><?= json_encode($uiCatalogs, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
-    <link rel="stylesheet" href="<?= htmlspecialchars(Asset::url('assets/theme/style.css', $rootPath, $assetManifest)) ?>">
+    <script id="yiipress-ui-catalogs" type="application/json" data-default-language="<?= $h($uiLanguage) ?>"><?= json_encode($uiCatalogs, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
+    <link rel="stylesheet" href="<?= $h(Asset::url('assets/theme/style.css', $rootPath, $assetManifest)) ?>">
 <?php if ($collectionName !== null): ?>
-    <link rel="alternate" type="application/rss+xml" title="<?= htmlspecialchars($t('rss_feed')) ?>" data-ui-attr-title="rss_feed" href="<?= $rootPath . htmlspecialchars($collectionName) ?>/rss.xml">
-    <link rel="alternate" type="application/atom+xml" title="<?= htmlspecialchars($t('atom_feed')) ?>" data-ui-attr-title="atom_feed" href="<?= $rootPath . htmlspecialchars($collectionName) ?>/feed.xml">
+    <link rel="alternate" type="application/rss+xml" title="<?= $h($t('rss_feed')) ?>" data-ui-attr-title="rss_feed" href="<?= $rootPath . $h($collectionName) ?>/rss.xml">
+    <link rel="alternate" type="application/atom+xml" title="<?= $h($t('atom_feed')) ?>" data-ui-attr-title="atom_feed" href="<?= $rootPath . $h($collectionName) ?>/feed.xml">
 <?php endif; ?>
-    <script src="<?= htmlspecialchars(Asset::url('assets/theme/image-zoom.js', $rootPath, $assetManifest)) ?>" defer></script>
-    <script src="<?= htmlspecialchars(Asset::url('assets/theme/ui-language.js', $rootPath, $assetManifest)) ?>" defer></script>
+    <script src="<?= $h(Asset::url('assets/theme/image-zoom.js', $rootPath, $assetManifest)) ?>" defer></script>
+    <script src="<?= $h(Asset::url('assets/theme/ui-language.js', $rootPath, $assetManifest)) ?>" defer></script>
 <?php if ($search): ?>
-    <link rel="stylesheet" href="<?= htmlspecialchars(Asset::url('assets/theme/search.css', $rootPath, $assetManifest)) ?>">
-    <script src="<?= htmlspecialchars(Asset::url('assets/theme/search.js', $rootPath, $assetManifest)) ?>" defer></script>
+    <link rel="stylesheet" href="<?= $h(Asset::url('assets/theme/search.css', $rootPath, $assetManifest)) ?>">
+    <script src="<?= $h(Asset::url('assets/theme/search.js', $rootPath, $assetManifest)) ?>" defer></script>
 <?php endif; ?>
 <?= $headAssets ?>

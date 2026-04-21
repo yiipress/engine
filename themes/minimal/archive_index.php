@@ -18,6 +18,7 @@ declare(strict_types=1);
  * @var list<string> $uiLanguages
  * @var array<string, array<string, string>> $uiCatalogs
  * @var App\I18n\UiText $ui
+ * @var Closure(string, int, ?string, bool): string $h
  * @var Closure(string, array): string $t
  */
 
@@ -26,7 +27,7 @@ $language ??= 'en';
 $uiLanguage ??= 'en';
 ?>
 <!DOCTYPE html>
-<html lang="<?= htmlspecialchars($language) ?>">
+<html lang="<?= $h($language) ?>">
 <head>
 <?= $partial('head', ['title' => $collectionTitle . ' ' . $t('archive') . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'metaTags' => $metaTags, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage], 'uiCatalogs' => $uiCatalogs ?? [$uiLanguage => []]]) ?>
 </head>
@@ -34,10 +35,10 @@ $uiLanguage ??= 'en';
 <?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage]]) ?>
 <main>
     <div class="container">
-        <h1><?= htmlspecialchars($collectionTitle) ?> <span data-ui-key="archive"><?= htmlspecialchars($t('archive')) ?></span></h1>
+        <h1><?= $h($collectionTitle) ?> <span data-ui-key="archive"><?= $h($t('archive')) ?></span></h1>
         <ul class="archive-years">
 <?php foreach ($years as $year): ?>
-            <li><a href="<?= $rootPath . htmlspecialchars($collectionName) . '/' . htmlspecialchars((string)$year) ?>/"><?= htmlspecialchars((string)$year) ?></a></li>
+            <li><a href="<?= $rootPath . $h($collectionName) . '/' . $h((string)$year) ?>/"><?= $h((string)$year) ?></a></li>
 <?php endforeach; ?>
         </ul>
     </div>

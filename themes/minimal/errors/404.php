@@ -14,6 +14,7 @@ declare(strict_types=1);
  * @var list<string> $uiLanguages
  * @var array<string, array<string, string>> $uiCatalogs
  * @var App\I18n\UiText $ui
+ * @var Closure(string, int, ?string, bool): string $h
  * @var Closure(string, array): string $t
  */
 
@@ -22,7 +23,7 @@ $language ??= 'en';
 $uiLanguage ??= 'en';
 ?>
 <!DOCTYPE html>
-<html lang="<?= htmlspecialchars($language) ?>">
+<html lang="<?= $h($language) ?>">
 <head>
 <?= $partial('head', ['title' => $t('page_not_found') . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage], 'uiCatalogs' => $uiCatalogs ?? [$uiLanguage => []]]) ?>
 </head>
@@ -32,8 +33,8 @@ $uiLanguage ??= 'en';
     <div class="container">
         <div class="error-page">
             <h1>404</h1>
-            <p data-ui-key="page_not_found_description"><?= htmlspecialchars($t('page_not_found_description')) ?></p>
-            <p><a href="<?= $rootPath ?>" data-ui-key="go_to_home_page"><?= htmlspecialchars($t('go_to_home_page')) ?></a></p>
+            <p data-ui-key="page_not_found_description"><?= $h($t('page_not_found_description')) ?></p>
+            <p><a href="<?= $h($rootPath) ?>" data-ui-key="go_to_home_page"><?= $h($t('go_to_home_page')) ?></a></p>
         </div>
     </div>
 </main>

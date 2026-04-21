@@ -35,7 +35,7 @@ final class TemplateContextTest extends TestCase
     {
         file_put_contents(
             $this->tempDir . '/partials/greeting.php',
-            'Hello, <?= htmlspecialchars($name) ?>!',
+            'Hello, <?= $h($name) ?>!',
         );
         $context = $this->createContext();
 
@@ -87,7 +87,7 @@ final class TemplateContextTest extends TestCase
     {
         file_put_contents(
             $this->tempDir . '/partials/escape.php',
-            '<?= htmlspecialchars($text) ?>',
+            '<?= $h($text) ?>',
         );
         $context = $this->createContext();
 

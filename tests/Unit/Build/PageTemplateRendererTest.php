@@ -33,7 +33,7 @@ final class PageTemplateRendererTest extends TestCase
 
 declare(strict_types=1);
 ?>
-<h1><?= htmlspecialchars($t('search')) ?></h1>
+<h1><?= $h($t('search')) ?></h1>
 <?= $partial('message', ['ui' => $ui]) ?>
 PHP,
         );
@@ -45,7 +45,7 @@ PHP,
 
 declare(strict_types=1);
 ?>
-<p><?= htmlspecialchars($t('next')) ?></p>
+<p><?= $h($t('next')) ?></p>
 PHP,
         );
     }

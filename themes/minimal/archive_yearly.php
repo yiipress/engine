@@ -20,6 +20,7 @@ declare(strict_types=1);
  * @var list<string> $uiLanguages
  * @var array<string, array<string, string>> $uiCatalogs
  * @var App\I18n\UiText $ui
+ * @var Closure(string, int, ?string, bool): string $h
  */
 
 use App\Content\Model\Navigation;
@@ -27,7 +28,7 @@ $language ??= 'en';
 $uiLanguage ??= 'en';
 ?>
 <!DOCTYPE html>
-<html lang="<?= htmlspecialchars($language) ?>">
+<html lang="<?= $h($language) ?>">
 <head>
 <?= $partial('head', ['title' => $collectionTitle . ': ' . $year . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'metaTags' => $metaTags, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage], 'uiCatalogs' => $uiCatalogs ?? [$uiLanguage => []]]) ?>
 </head>
@@ -35,21 +36,21 @@ $uiLanguage ??= 'en';
 <?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage]]) ?>
 <main>
     <div class="container">
-        <h1><?= htmlspecialchars($collectionTitle) ?>: <?= $year ?></h1>
+        <h1><?= $h($collectionTitle) ?>: <?= $h($year) ?></h1>
         <nav class="archive-months">
             <ul>
 <?php foreach ($months as $m): ?>
 <?php $month = (string) $m; ?>
-                <li><a href="<?= $rootPath . htmlspecialchars($collectionName) ?>/<?= $year ?>/<?= $month ?>/"><span data-ui-month="<?= htmlspecialchars($month) ?>"><?= htmlspecialchars($ui->monthName((int) $month)) ?></span></a></li>
+                <li><a href="<?= $rootPath . $h($collectionName) ?>/<?= $h($year) ?>/<?= $h($month) ?>/"><span data-ui-month="<?= $h($month) ?>"><?= $h($ui->monthName((int) $month)) ?></span></a></li>
 <?php endforeach; ?>
             </ul>
         </nav>
         <ul class="entry-list">
 <?php foreach ($entries as $entry): ?>
             <li>
-                <a href="<?= htmlspecialchars($entry['url']) ?>"><?= htmlspecialchars($entry['title']) ?></a>
+                <a href="<?= $h($entry['url']) ?>"><?= $h($entry['title']) ?></a>
 <?php if ($entry['date'] !== ''): ?>
-                <time><?= htmlspecialchars($entry['date']) ?></time>
+                <time><?= $h($entry['date']) ?></time>
 <?php endif; ?>
             </li>
 <?php endforeach; ?>

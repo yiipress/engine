@@ -16,6 +16,7 @@ declare(strict_types=1);
  * @var list<string> $uiLanguages
  * @var array<string, array<string, string>> $uiCatalogs
  * @var App\I18n\UiText $ui
+ * @var Closure(string, int, ?string, bool): string $h
  * @var Closure(string, array): string $t
  */
 
@@ -24,7 +25,7 @@ $language ??= 'en';
 $uiLanguage ??= 'en';
 ?>
 <!DOCTYPE html>
-<html lang="<?= htmlspecialchars($language) ?>">
+<html lang="<?= $h($language) ?>">
 <head>
 <?= $partial('head', ['title' => $t('authors') . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'metaTags' => $metaTags, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage], 'uiCatalogs' => $uiCatalogs ?? [$uiLanguage => []]]) ?>
 </head>
@@ -32,14 +33,14 @@ $uiLanguage ??= 'en';
 <?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage]]) ?>
 <main>
     <div class="container">
-        <h1 data-ui-key="authors"><?= htmlspecialchars($t('authors')) ?></h1>
+        <h1 data-ui-key="authors"><?= $h($t('authors')) ?></h1>
         <ul class="author-grid">
 <?php foreach ($authorList as $author): ?>
             <li>
 <?php if ($author['avatar'] !== ''): ?>
-                <img src="<?= htmlspecialchars($author['avatar']) ?>" alt="<?= htmlspecialchars($author['title']) ?>">
+                <img src="<?= $h($author['avatar']) ?>" alt="<?= $h($author['title']) ?>">
 <?php endif; ?>
-                <a href="<?= htmlspecialchars($author['url']) ?>"><?= htmlspecialchars($author['title']) ?></a>
+                <a href="<?= $h($author['url']) ?>"><?= $h($author['title']) ?></a>
             </li>
 <?php endforeach; ?>
         </ul>

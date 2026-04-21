@@ -21,6 +21,7 @@ declare(strict_types=1);
  * @var list<string> $uiLanguages
  * @var array<string, array<string, string>> $uiCatalogs
  * @var App\I18n\UiText $ui
+ * @var Closure(string, int, ?string, bool): string $h
  * @var Closure(string, array): string $t
  */
 
@@ -29,7 +30,7 @@ $language ??= 'en';
 $uiLanguage ??= 'en';
 ?>
 <!DOCTYPE html>
-<html lang="<?= htmlspecialchars($language) ?>">
+<html lang="<?= $h($language) ?>">
 <head>
 <?= $partial('head', ['title' => $authorTitle . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'metaTags' => $metaTags, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage], 'uiCatalogs' => $uiCatalogs ?? [$uiLanguage => []]]) ?>
 </head>
@@ -39,17 +40,17 @@ $uiLanguage ??= 'en';
     <div class="container">
         <div class="author-profile">
 <?php if ($authorAvatar !== ''): ?>
-            <img src="<?= htmlspecialchars($authorAvatar) ?>" alt="<?= htmlspecialchars($authorTitle) ?>">
+            <img src="<?= $h($authorAvatar) ?>" alt="<?= $h($authorTitle) ?>">
 <?php endif; ?>
             <div class="author-info">
-                <h1><?= htmlspecialchars($authorTitle) ?></h1>
+                <h1><?= $h($authorTitle) ?></h1>
 <?php if ($authorEmail !== '' || $authorUrl !== ''): ?>
                 <div class="author-links">
 <?php if ($authorEmail !== ''): ?>
-                    <a href="mailto:<?= htmlspecialchars($authorEmail) ?>"><?= htmlspecialchars($authorEmail) ?></a>
+                    <a href="mailto:<?= $h($authorEmail) ?>"><?= $h($authorEmail) ?></a>
 <?php endif; ?>
 <?php if ($authorUrl !== ''): ?>
-                    <a href="<?= htmlspecialchars($authorUrl) ?>"><?= htmlspecialchars($authorUrl) ?></a>
+                    <a href="<?= $h($authorUrl) ?>"><?= $h($authorUrl) ?></a>
 <?php endif; ?>
                 </div>
 <?php endif; ?>
@@ -59,13 +60,13 @@ $uiLanguage ??= 'en';
             </div>
         </div>
 <?php if ($entries !== []): ?>
-        <h2 data-ui-key="posts"><?= htmlspecialchars($t('posts')) ?></h2>
+        <h2 data-ui-key="posts"><?= $h($t('posts')) ?></h2>
         <ul class="entry-list">
 <?php foreach ($entries as $entry): ?>
             <li>
-                <a href="<?= htmlspecialchars($entry['url']) ?>"><?= htmlspecialchars($entry['title']) ?></a>
+                <a href="<?= $h($entry['url']) ?>"><?= $h($entry['title']) ?></a>
 <?php if ($entry['date'] !== ''): ?>
-                <time><?= htmlspecialchars($entry['date']) ?></time>
+                <time><?= $h($entry['date']) ?></time>
 <?php endif; ?>
             </li>
 <?php endforeach; ?>

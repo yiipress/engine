@@ -32,6 +32,7 @@ final readonly class NotFoundPageWriter
         $uiLanguages = $uiViewData->languages;
         $uiCatalogs = $uiViewData->catalogs;
         $t = static fn (string $key, array $params = []): string => $ui->get($key, $params);
+        $h = TemplateHelpers::escape(...);
 
         ob_start();
         require $this->templateResolver->resolve('errors/404', $siteConfig->theme);

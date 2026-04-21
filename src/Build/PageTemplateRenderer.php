@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Build;
 
-use App\I18n\UiText;
 use Closure;
 
 final class PageTemplateRenderer
@@ -51,10 +50,7 @@ final class PageTemplateRenderer
 
         $variables['partial'] = $this->partialClosures[$this->themeName];
         $variables['assetManifest'] = $this->assetManifest;
-        if (($variables['ui'] ?? null) instanceof UiText && !isset($variables['t'])) {
-            $ui = $variables['ui'];
-            $variables['t'] = static fn (string $key, array $params = []): string => $ui->get($key, $params);
-        }
+        $variables = TemplateHelpers::inject($variables);
 
         $html = ($this->templateClosures[$templatePath])($variables);
 

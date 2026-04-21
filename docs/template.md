@@ -89,17 +89,18 @@ All built-in page templates receive these additional variables:
 | `$uiLanguages` | `list<string>`       | Available UI languages exposed by the site                    |
 | `$uiCatalogs` | `array<string, array<string, string>>` | Theme UI catalogs for client-side switching |
 | `$ui`       | `App\I18n\UiText`       | Injected localized UI-text helper for bundled theme labels    |
+| `$h`        | `Closure(string, int, ?string, bool): string` | Injected alias for `htmlspecialchars()` |
 | `$t`        | `Closure(string, array): string` | Injected shortcut for `$ui->get()` in templates      |
 
 Example:
 
 ```php
-<html lang="<?= htmlspecialchars($language) ?>">
-<button aria-label="<?= htmlspecialchars($t('search')) ?>">
+<html lang="<?= $h($language) ?>">
+<button aria-label="<?= $h($t('search')) ?>">
 ```
 
 In the bundled `minimal` theme, `$language` is the content language of the current page, while the remembered UI language can differ and is applied client-side after load.
-Built-in templates and partials expect `$ui` to be passed by the renderer; `PageTemplateRenderer` and `TemplateContext` automatically provide `$t` when `$ui` is present.
+Built-in templates and partials expect `$ui` to be passed by the renderer; `PageTemplateRenderer`, `TemplateContext`, and `EntryRenderer` automatically provide `$t`, and all render paths inject `$h`.
 
 ### Entry template (`entry.php`)
 
@@ -122,12 +123,12 @@ Example:
 
 ```php
 <article>
-    <h1><?= htmlspecialchars($entryTitle) ?></h1>
+    <h1><?= $h($entryTitle) ?></h1>
 <?php if ($date !== ''): ?>
-    <time datetime="<?= htmlspecialchars($dateISO) ?>"><?= htmlspecialchars($date) ?></time>
+    <time datetime="<?= $h($dateISO) ?>"><?= $h($date) ?></time>
 <?php endif; ?>
 <?php if ($author !== ''): ?>
-    <span class="author"><?= htmlspecialchars($author) ?></span>
+    <span class="author"><?= $h($author) ?></span>
 <?php endif; ?>
     <div class="content"><?= $content ?></div>
 </article>
@@ -150,16 +151,16 @@ The bundled `minimal` theme also uses `$ui` to localize built-in labels such as
 Example:
 
 ```php
-<h1><?= htmlspecialchars($collectionTitle) ?></h1>
+<h1><?= $h($collectionTitle) ?></h1>
 <ul>
 <?php foreach ($entries as $entry): ?>
     <li>
-        <a href="<?= htmlspecialchars($entry['url']) ?>"><?= htmlspecialchars($entry['title']) ?></a>
+        <a href="<?= $h($entry['url']) ?>"><?= $h($entry['title']) ?></a>
 <?php if ($entry['date'] !== ''): ?>
-        <time><?= htmlspecialchars($entry['date']) ?></time>
+        <time><?= $h($entry['date']) ?></time>
 <?php endif; ?>
 <?php if ($entry['summary'] !== ''): ?>
-        <p><?= htmlspecialchars($entry['summary']) ?></p>
+        <p><?= $h($entry['summary']) ?></p>
 <?php endif; ?>
     </li>
 <?php endforeach; ?>
@@ -167,11 +168,11 @@ Example:
 <?php if ($pagination['totalPages'] > 1): ?>
 <nav class="pagination">
 <?php if ($pagination['previousUrl'] !== ''): ?>
-    <a href="<?= htmlspecialchars($pagination['previousUrl']) ?>" rel="prev">← Previous</a>
+    <a href="<?= $h($pagination['previousUrl']) ?>" rel="prev">← Previous</a>
 <?php endif; ?>
     <span>Page <?= $pagination['currentPage'] ?> of <?= $pagination['totalPages'] ?></span>
 <?php if ($pagination['nextUrl'] !== ''): ?>
-    <a href="<?= htmlspecialchars($pagination['nextUrl']) ?>" rel="next">Next →</a>
+    <a href="<?= $h($pagination['nextUrl']) ?>" rel="next">Next →</a>
 <?php endif; ?>
 </nav>
 <?php endif; ?>
@@ -189,10 +190,10 @@ Example:
 Example:
 
 ```php
-<h1><?= htmlspecialchars(ucfirst($taxonomyName)) ?></h1>
+<h1><?= $h(ucfirst($taxonomyName)) ?></h1>
 <ul>
 <?php foreach ($terms as $term): ?>
-    <li><a href="/<?= htmlspecialchars($taxonomyName) ?>/<?= htmlspecialchars($term) ?>/"><?= htmlspecialchars($term) ?></a></li>
+    <li><a href="/<?= $h($taxonomyName) ?>/<?= $h($term) ?>/"><?= $h($term) ?></a></li>
 <?php endforeach; ?>
 </ul>
 ```
@@ -286,8 +287,8 @@ Templates and partials should use `Asset::url()` to resolve the final public URL
 
 use App\Build\Asset;
 ?>
-<link rel="stylesheet" href="<?= htmlspecialchars(Asset::url('assets/theme/style.css', $rootPath, $assetManifest)) ?>">
-<script src="<?= htmlspecialchars(Asset::url('assets/theme/search.js', $rootPath, $assetManifest)) ?>" defer></script>
+<link rel="stylesheet" href="<?= $h(Asset::url('assets/theme/style.css', $rootPath, $assetManifest)) ?>">
+<script src="<?= $h(Asset::url('assets/theme/search.js', $rootPath, $assetManifest)) ?>" defer></script>
 ```
 
 This is especially useful when `assets.fingerprint: true` is enabled in `content/config.yaml`.
@@ -310,7 +311,7 @@ Create a PHP file in `themes/<name>/partials/`:
 ?>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= htmlspecialchars($title) ?></title>
+    <title><?= $h($title) ?></title>
     <link rel="stylesheet" href="/assets/theme/style.css">
 ```
 
@@ -337,11 +338,6 @@ Partials can include other partials — the `$partial` function is automatically
 | `head`        | `$title`             | `<meta>` tags, `<title>`, stylesheet link        |
 | `header`      | `$siteTitle`, `$nav` | Site header with navigation and dark mode toggle |
 | `footer`      | `$nav`               | Footer navigation and dark mode script           |
-| `navigation`  | `$navigation`        | Main navigation `<nav>` list                     |
-| `author-card` | `$author`            | Author name and bio card                         |
-| `entry-card`  | `$entry`             | Entry summary card with date                     |
-| `pagination`  | `$collection`        | Previous/next pagination links                   |
-| `sidebar`     | `$entry`             | Sidebar with author cards                        |
 
 ### Theme resolution
 
@@ -354,6 +350,7 @@ All templates receive the following helper functions as local variables:
 | Function   | Signature                                       | Description                                              |
 |------------|-------------------------------------------------|----------------------------------------------------------|
 | `$partial` | `(string $name, array $variables = []): string` | Render a partial template from the `partials/` directory |
+| `$h`       | `(string $string, int $flags = ENT_QUOTES | ENT_SUBSTITUTE, ?string $encoding = 'UTF-8', bool $doubleEncode = true): string` | Escape HTML output |
 | `$t`       | `(string $key, array $params = []): string`     | Translate a theme UI-text key via the injected `$ui`     |
 
 Additional helpers available via static methods:
@@ -361,7 +358,7 @@ Additional helpers available via static methods:
 | Helper                         | Usage                                      | Description                                             |
 |--------------------------------|--------------------------------------------|---------------------------------------------------------|
 | `NavigationRenderer::render()` | `NavigationRenderer::render($nav, 'main')` | Render a navigation menu as nested `<nav><ul><li>` HTML |
-| `htmlspecialchars()`           | `htmlspecialchars($text)`                  | PHP built-in for escaping HTML output                   |
+| `$h()`                         | `$h($text)`                               | Template alias for `htmlspecialchars()`                 |
 
 ## Customizing templates
 
@@ -397,10 +394,10 @@ Create `content/templates/wide.php` (with `theme: local` in config):
 ?>
 <!DOCTYPE html>
 <html>
-<head><title><?= htmlspecialchars($entryTitle) ?> — <?= htmlspecialchars($siteTitle) ?></title></head>
+<head><title><?= $h($entryTitle) ?> — <?= $h($siteTitle) ?></title></head>
 <body>
 <div class="wide-container">
-    <h1><?= htmlspecialchars($entryTitle) ?></h1>
+    <h1><?= $h($entryTitle) ?></h1>
     <div class="content"><?= $content ?></div>
 </div>
 </body>

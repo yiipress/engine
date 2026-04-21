@@ -10,6 +10,7 @@ use App\Build\Asset;
  * @var string $rootPath
  * @var AssetFingerprintManifest|null $assetManifest
  * @var string $uiLanguage
+ * @var Closure(string, int, ?string, bool): string $h
  */
 $uiLanguage ??= 'en';
 ?>
@@ -29,4 +30,4 @@ $uiLanguage ??= 'en';
     </div>
 </footer>
 <?php endif; ?>
-<script src="<?= htmlspecialchars(Asset::url('assets/theme/dark-mode.js', $rootPath, $assetManifest)) ?>"></script>
+<script src="<?= $h(Asset::url('assets/theme/dark-mode.js', $rootPath, $assetManifest)) ?>"></script>

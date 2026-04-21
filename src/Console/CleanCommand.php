@@ -20,6 +20,7 @@ use function str_starts_with;
 #[AsCommand(
     name: 'clean',
     description: 'Clears build output and caches',
+    aliases: ['clear'],
 )]
 final class CleanCommand extends Command
 {

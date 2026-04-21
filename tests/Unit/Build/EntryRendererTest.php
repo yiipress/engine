@@ -94,7 +94,7 @@ final class EntryRendererTest extends TestCase
 /** @var string $entryTitle */
 /** @var string $content */
 ?>
-<div class="wide-layout"><h1><?= htmlspecialchars($entryTitle) ?></h1><?= $content ?></div>
+<div class="wide-layout"><h1><?= $h($entryTitle) ?></h1><?= $content ?></div>
 PHP);
 
         $entryFile = $this->contentDir . '/blog/post.md';
@@ -116,7 +116,7 @@ PHP);
 <?php
 /** @var Closure(string, array): string $t */
 ?>
-<div><?= htmlspecialchars($t('search')) ?></div>
+<div><?= $h($t('search')) ?></div>
 PHP);
 
         $entryFile = $this->contentDir . '/blog/post.md';
@@ -147,7 +147,7 @@ PHP);
         mkdir($this->contentDir . '/templates', 0o755, true);
         file_put_contents($this->contentDir . '/templates/tags.php', <<<'PHP'
 <?php /** @var list<string> $tags */ ?>
-<?php foreach ($tags as $tag): ?><span class="tag"><?= htmlspecialchars($tag) ?></span><?php endforeach; ?>
+<?php foreach ($tags as $tag): ?><span class="tag"><?= $h($tag) ?></span><?php endforeach; ?>
 PHP);
 
         $entryFile = $this->contentDir . '/blog/post.md';
@@ -166,7 +166,7 @@ PHP);
         mkdir($this->contentDir . '/templates', 0o755, true);
         file_put_contents($this->contentDir . '/templates/tags2.php', <<<'PHP'
 <?php /** @var list<string> $tags */ ?>
-<?php foreach ($tags as $tag): ?><span class="tag"><?= htmlspecialchars($tag) ?></span><?php endforeach; ?>
+<?php foreach ($tags as $tag): ?><span class="tag"><?= $h($tag) ?></span><?php endforeach; ?>
 PHP);
 
         $entryFile = $this->contentDir . '/blog/post.md';
@@ -192,7 +192,7 @@ PHP);
 /** @var string $author */
 /** @var string $collection */
 ?>
-<div data-site="<?= htmlspecialchars($siteTitle) ?>" data-date="<?= htmlspecialchars($date) ?>" data-author="<?= htmlspecialchars($author) ?>" data-collection="<?= htmlspecialchars($collection) ?>"><?= $content ?></div>
+<div data-site="<?= $h($siteTitle) ?>" data-date="<?= $h($date) ?>" data-author="<?= $h($author) ?>" data-collection="<?= $h($collection) ?>"><?= $content ?></div>
 PHP);
 
         $entryFile = $this->contentDir . '/blog/post.md';
