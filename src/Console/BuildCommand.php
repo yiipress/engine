@@ -30,6 +30,7 @@ use App\Content\Model\Author;
 use App\Content\Model\Collection;
 use App\Content\Model\Entry;
 use App\Content\Model\SiteConfig;
+use App\Content\I18n\TranslationIndex;
 use App\Content\Parser\ContentParser;
 use App\Content\PermalinkResolver;
 use App\Content\Related\RelatedIndex;
@@ -308,7 +309,7 @@ final class BuildCommand extends Command
                 }
                 $collectionEntries[] = $entry;
                 $relativePath = substr($sourcePath, strlen($contentDir) + 1);
-                $fileToPermalink[$relativePath] = PermalinkResolver::resolve($entry, $collection);
+                $fileToPermalink[$relativePath] = PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n);
             }
             $rawEntriesByCollection[$collectionName] = $collectionEntries;
         }
@@ -322,7 +323,8 @@ final class BuildCommand extends Command
             }
             $standalonePages[] = $page;
             $relativePath = substr($sourcePath, strlen($contentDir) + 1);
-            $fileToPermalink[$relativePath] = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
+            $basePermalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
+            $fileToPermalink[$relativePath] = PermalinkResolver::applyLanguagePrefix($basePermalink, $page->language, $siteConfig->i18n);
         }
 
         $crossRefResolver = new CrossReferenceResolver($fileToPermalink);
@@ -400,19 +402,23 @@ final class BuildCommand extends Command
             $tasksToWrite = $allTasks;
         }
 
-        $relatedIndex = null;
-        if ($siteConfig->related !== null) {
-            $relatedEntries = [];
-            foreach ($entriesByCollection as $entries) {
-                foreach ($entries as $entry) {
-                    $relative = substr($entry->filePath, strlen($contentDir) + 1);
-                    $relatedEntries[] = ['entry' => $entry, 'permalink' => $fileToPermalink[$relative] ?? ''];
-                }
+        $indexedEntries = [];
+        foreach ($entriesByCollection as $entries) {
+            foreach ($entries as $entry) {
+                $relative = substr($entry->filePath, strlen($contentDir) + 1);
+                $indexedEntries[] = ['entry' => $entry, 'permalink' => $fileToPermalink[$relative] ?? ''];
             }
-            $relatedIndex = new RelatedIndex($relatedEntries, $siteConfig->related);
         }
 
-        $writer = new ParallelEntryWriter($this->contentPipeline, $this->templateResolver, $cache, $assetManifest, $relatedIndex);
+        $relatedIndex = $siteConfig->related !== null
+            ? new RelatedIndex($indexedEntries, $siteConfig->related)
+            : null;
+
+        $translationIndex = $siteConfig->i18n !== null
+            ? new TranslationIndex($indexedEntries, $siteConfig->i18n)
+            : null;
+
+        $writer = new ParallelEntryWriter($this->contentPipeline, $this->templateResolver, $cache, $assetManifest, $relatedIndex, $translationIndex);
         $effectiveEntryWorkerCount = $writer->workerCountFor(count($tasksToWrite), $workerCount);
         $entriesWritten = $writer->write($siteConfig, $tasksToWrite, $contentDir, $workerCount, $navigation, $crossRefResolver, $authors);
 
@@ -859,7 +865,7 @@ final class BuildCommand extends Command
                 if (!$includeFuture && $entry->date !== null && $entry->date > $now) {
                     continue;
                 }
-                $permalink = PermalinkResolver::resolve($entry, $collection);
+                $permalink = PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n);
                 $files[] = $outputDir . $permalink . 'index.html';
                 if ($entry->redirectTo === '') {
                     $entries[] = $entry;

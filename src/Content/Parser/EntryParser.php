@@ -92,6 +92,7 @@ final readonly class EntryParser
             bodyOffset: $result['bodyOffset'],
             bodyLength: $result['bodyLength'],
             image: (string) ($fields['image'] ?? ''),
+            translationKey: (string) ($fields['translation_key'] ?? ''),
         );
     }
 

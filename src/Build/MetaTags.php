@@ -6,6 +6,9 @@ namespace App\Build;
 
 final readonly class MetaTags
 {
+    /**
+     * @param array<string, string> $alternateLanguages ISO code (or "x-default") => absolute URL
+     */
     public function __construct(
         public string $title,
         public string $description,
@@ -14,5 +17,6 @@ final readonly class MetaTags
         public string $image,       // absolute URL or empty
         public string $twitterCard, // 'summary_large_image' or 'summary'
         public string $twitterSite, // '@handle' or empty
+        public array $alternateLanguages = [],
     ) {}
 }

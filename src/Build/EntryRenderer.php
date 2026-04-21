@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Build;
 
 use App\Content\CrossReferenceResolver;
+use App\Content\I18n\TranslationIndex;
 use App\Content\Model\Entry;
 use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
@@ -35,6 +36,7 @@ final class EntryRenderer
         private readonly array $authors = [],
         private readonly ?AssetFingerprintManifest $assetManifest = null,
         private readonly ?RelatedIndex $relatedIndex = null,
+        private readonly ?TranslationIndex $translationIndex = null,
     ) {}
 
     public function render(
@@ -44,7 +46,7 @@ final class EntryRenderer
         ?Navigation $navigation = null,
         ?CrossReferenceResolver $crossRefResolver = null,
     ): string {
-        $cacheContext = $this->relatedIndex?->signature() ?? '';
+        $cacheContext = ($this->relatedIndex?->signature() ?? '') . '|' . ($this->translationIndex?->signature() ?? '');
         if ($this->cache !== null) {
             $cached = $this->cache->get($entry->filePath, $cacheContext);
             if ($cached !== null) {
@@ -64,7 +66,8 @@ final class EntryRenderer
         $headAssets = $this->pipeline->collectHeadAssets($content);
         $toc = $siteConfig->toc ? $this->pipeline->collectToc() : [];
         $related = $this->relatedIndex?->forEntry($entry->filePath) ?? [];
-        $html = $this->renderTemplate($siteConfig, $entry, $content, $permalink, $navigation, $headAssets, $toc, $related);
+        $translations = $this->translationIndex?->forEntry($entry->filePath) ?? [];
+        $html = $this->renderTemplate($siteConfig, $entry, $content, $permalink, $navigation, $headAssets, $toc, $related, $translations);
 
         $this->cache?->set($entry->filePath, $html, $cacheContext);
 
@@ -82,8 +85,9 @@ final class EntryRenderer
     /**
      * @param list<array{id: string, text: string, level: int}> $toc
      * @param list<\App\Content\Model\RelatedEntry> $related
+     * @param list<\App\Content\Model\Translation> $translations
      */
-    private function renderTemplate(SiteConfig $siteConfig, Entry $entry, string $content, string $permalink, ?Navigation $navigation, string $headAssets = '', array $toc = [], array $related = []): string
+    private function renderTemplate(SiteConfig $siteConfig, Entry $entry, string $content, string $permalink, ?Navigation $navigation, string $headAssets = '', array $toc = [], array $related = [], array $translations = []): string
     {
         $themeName = $entry->theme !== '' ? $entry->theme : $siteConfig->theme;
         $templateName = $entry->layout !== '' ? $entry->layout : 'entry';
@@ -109,7 +113,10 @@ final class EntryRenderer
 
         $templateContext = $this->templateContexts[$themeName];
         $rootPath = RelativePathHelper::rootPath($permalink);
-        $metaTags = MetaTagsBuilder::forEntry($siteConfig, $entry, $permalink);
+        $metaTags = MetaTagsBuilder::forEntry($siteConfig, $entry, $permalink, $translations);
+        $language = $entry->language !== ''
+            ? $entry->language
+            : ($siteConfig->i18n?->defaultLanguage ?? $siteConfig->language);
         $html = ($this->templateClosures[$templatePath])([
             'siteTitle' => $siteConfig->title,
             'entryTitle' => $entry->title,
@@ -131,6 +138,8 @@ final class EntryRenderer
             'headAssets' => $headAssets,
             'toc' => $toc,
             'related' => $related,
+            'translations' => $translations,
+            'language' => $language,
             'metaTags' => $metaTags,
             'partial' => $this->partialClosures[$themeName],
             'rootPath' => $rootPath,

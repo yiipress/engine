@@ -83,7 +83,7 @@
 ## Priority 8: Advanced features
 
 - [x] Related content suggestions as a plugin
-- [ ] Multilingual / i18n support
+- [x] Multilingual / i18n support
 - [x] Search as a plugin
 - [ ] Hooks / events system (before build, after build, before render, after render) for plugin architecture
 

@@ -16,6 +16,8 @@ declare(strict_types=1);
  * @var string $headAssets
  * @var list<array{id: string, text: string, level: int}> $toc
  * @var list<App\Content\Model\RelatedEntry> $related
+ * @var list<App\Content\Model\Translation> $translations
+ * @var string $language
  * @var ?Navigation $nav
  * @var Closure(string, array): string $partial
  * @var string $rootPath
@@ -23,9 +25,11 @@ declare(strict_types=1);
 
 use App\Content\Model\Navigation;
 
+$language ??= 'en';
+$translations ??= [];
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= htmlspecialchars($language) ?>">
 <head>
 
 <?= $partial('head', ['title' => $entryTitle . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'headAssets' => $headAssets ?? '', 'metaTags' => $metaTags, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10]) ?>
@@ -87,6 +91,16 @@ use App\Content\Model\Navigation;
                     </div>
 <?php endif; ?>
                 </footer>
+<?php endif; ?>
+<?php if (!empty($translations)): ?>
+                <section class="translations" aria-label="Other languages">
+                    <h2>Other languages</h2>
+                    <ul>
+<?php foreach ($translations as $translation): ?>
+                        <li><a hreflang="<?= htmlspecialchars($translation->language) ?>" href="<?= htmlspecialchars($translation->permalink) ?>"><?= htmlspecialchars($translation->language) ?>: <?= htmlspecialchars($translation->title) ?></a></li>
+<?php endforeach; ?>
+                    </ul>
+                </section>
 <?php endif; ?>
 <?php if (!empty($related)): ?>
                 <section class="related" aria-label="Related posts">

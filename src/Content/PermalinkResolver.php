@@ -6,10 +6,11 @@ namespace App\Content;
 
 use App\Content\Model\Collection;
 use App\Content\Model\Entry;
+use App\Content\Model\I18nConfig;
 
 final class PermalinkResolver
 {
-    public static function resolve(Entry $entry, Collection $collection): string
+    public static function resolve(Entry $entry, Collection $collection, ?I18nConfig $i18n = null): string
     {
         if ($entry->permalink !== '') {
             return $entry->permalink;
@@ -28,10 +29,28 @@ final class PermalinkResolver
             $replacements[':day'] = $entry->date->format('d');
         }
 
-        return str_replace(
+        $permalink = str_replace(
             array_keys($replacements),
             array_values($replacements),
             $pattern,
         );
+
+        return self::applyLanguagePrefix($permalink, $entry->language, $i18n);
+    }
+
+    public static function applyLanguagePrefix(string $permalink, string $language, ?I18nConfig $i18n): string
+    {
+        if ($i18n === null || $language === '' || !$i18n->isKnown($language) || $i18n->isDefault($language)) {
+            return $permalink;
+        }
+
+        $prefix = '/' . $language;
+        if ($permalink === '' || $permalink === '/') {
+            return $prefix . '/';
+        }
+        if (str_starts_with($permalink, $prefix . '/')) {
+            return $permalink;
+        }
+        return $prefix . $permalink;
     }
 }

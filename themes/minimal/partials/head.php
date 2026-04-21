@@ -41,6 +41,9 @@ $searchResults ??= 10;
 <?php if ($metaTags->twitterSite !== ''): ?>
     <meta name="twitter:site" content="<?= htmlspecialchars($metaTags->twitterSite) ?>">
 <?php endif; ?>
+<?php foreach ($metaTags->alternateLanguages as $hreflang => $url): ?>
+    <link rel="alternate" hreflang="<?= htmlspecialchars($hreflang) ?>" href="<?= htmlspecialchars($url) ?>">
+<?php endforeach; ?>
 <?php endif; ?>
     <script>
         (function () {

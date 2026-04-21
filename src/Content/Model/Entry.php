@@ -37,6 +37,7 @@ final class Entry
         private int $bodyLength,
         public string $image = '',
         public array $inlineTags = [],
+        public string $translationKey = '',
     ) {}
 
     private ?string $bodyCache = null;

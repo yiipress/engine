@@ -6,6 +6,7 @@ namespace App\Tests\Unit\Content;
 
 use App\Content\Model\Collection;
 use App\Content\Model\Entry;
+use App\Content\Model\I18nConfig;
 use App\Content\PermalinkResolver;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
@@ -83,6 +84,53 @@ final class PermalinkResolverTest extends TestCase
         assertSame('/2025/12/post.html', PermalinkResolver::resolve($entry, $collection));
     }
 
+    public function testNonDefaultLanguageGetsPrefix(): void
+    {
+        $collection = $this->createCollection('/:collection/:slug/');
+        $entry = $this->createEntry(slug: 'hello', language: 'ru');
+        $i18n = new I18nConfig(languages: ['en', 'ru'], defaultLanguage: 'en');
+
+        assertSame('/ru/blog/hello/', PermalinkResolver::resolve($entry, $collection, $i18n));
+    }
+
+    public function testDefaultLanguageIsNotPrefixed(): void
+    {
+        $collection = $this->createCollection('/:collection/:slug/');
+        $entry = $this->createEntry(slug: 'hello', language: 'en');
+        $i18n = new I18nConfig(languages: ['en', 'ru'], defaultLanguage: 'en');
+
+        assertSame('/blog/hello/', PermalinkResolver::resolve($entry, $collection, $i18n));
+    }
+
+    public function testUnknownLanguageIsNotPrefixed(): void
+    {
+        $collection = $this->createCollection('/:collection/:slug/');
+        $entry = $this->createEntry(slug: 'hello', language: 'zh');
+        $i18n = new I18nConfig(languages: ['en', 'ru'], defaultLanguage: 'en');
+
+        assertSame('/blog/hello/', PermalinkResolver::resolve($entry, $collection, $i18n));
+    }
+
+    public function testExplicitPermalinkBypassesLanguagePrefix(): void
+    {
+        $collection = $this->createCollection('/:collection/:slug/');
+        $entry = $this->createEntry(permalink: '/custom/', language: 'ru');
+        $i18n = new I18nConfig(languages: ['en', 'ru'], defaultLanguage: 'en');
+
+        assertSame('/custom/', PermalinkResolver::resolve($entry, $collection, $i18n));
+    }
+
+    public function testApplyLanguagePrefixHelperIsIdempotent(): void
+    {
+        $i18n = new I18nConfig(languages: ['en', 'ru'], defaultLanguage: 'en');
+
+        $once = PermalinkResolver::applyLanguagePrefix('/blog/hello/', 'ru', $i18n);
+        $twice = PermalinkResolver::applyLanguagePrefix($once, 'ru', $i18n);
+
+        assertSame('/ru/blog/hello/', $once);
+        assertSame($once, $twice);
+    }
+
     private function createCollection(string $permalink): Collection
     {
         return new Collection(
@@ -102,6 +150,7 @@ final class PermalinkResolverTest extends TestCase
         string $slug = 'test',
         string $permalink = '',
         ?DateTimeImmutable $date = null,
+        string $language = '',
     ): Entry {
         return new Entry(
             filePath: $this->tempFile,
@@ -118,7 +167,7 @@ final class PermalinkResolverTest extends TestCase
             layout: '',
             theme: '',
             weight: 0,
-            language: '',
+            language: $language,
             redirectTo: '',
             extra: [],
             bodyOffset: 0,

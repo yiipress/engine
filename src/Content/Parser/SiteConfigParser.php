@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Content\Parser;
 
 use App\Content\Model\AssetConfig;
+use App\Content\Model\I18nConfig;
 use App\Content\Model\MarkdownConfig;
 use App\Content\Model\RelatedConfig;
 use App\Content\Model\RobotsTxtConfig;
@@ -57,6 +58,7 @@ final class SiteConfigParser
             search: self::parseSearchConfig($data['search'] ?? null),
             assets: self::parseAssetConfig($data['assets'] ?? null),
             related: self::parseRelatedConfig($data['related'] ?? null),
+            i18n: self::parseI18nConfig($data, (string) ($data['language'] ?? 'en')),
         );
     }
 
@@ -139,6 +141,31 @@ final class SiteConfigParser
             fullText: (bool) ($data['full_text'] ?? false),
             results: (int) ($data['results'] ?? 10),
         );
+    }
+
+    /**
+     * @param array<mixed, mixed> $data
+     */
+    private static function parseI18nConfig(array $data, string $siteLanguage): ?I18nConfig
+    {
+        if (!isset($data['languages'])) {
+            return null;
+        }
+
+        $languages = is_array($data['languages'])
+            ? array_values(array_unique(array_map(strval(...), $data['languages'])))
+            : [];
+
+        if ($languages === []) {
+            return null;
+        }
+
+        $default = (string) ($data['default_language'] ?? $siteLanguage);
+        if (!in_array($default, $languages, true)) {
+            $default = $languages[0];
+        }
+
+        return new I18nConfig(languages: $languages, defaultLanguage: $default);
     }
 
     private static function parseRelatedConfig(mixed $data): ?RelatedConfig

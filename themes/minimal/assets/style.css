@@ -245,6 +245,12 @@ a.tag-link:hover {
     margin-right: .5rem;
 }
 
+/* Translations */
+.translations { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--c-border); }
+.translations h2 { font-size: 1rem; font-weight: 600; margin-bottom: .5rem; }
+.translations ul { list-style: none; display: flex; flex-wrap: wrap; gap: .75rem; }
+.translations li { font-size: .9375rem; }
+
 /* Related posts */
 .related { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--c-border); }
 .related h2 { font-size: 1.125rem; font-weight: 600; margin-bottom: .75rem; }

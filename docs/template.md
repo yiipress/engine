@@ -84,6 +84,8 @@ themes/minimal/
 | `$nav`        | `?Navigation` | Navigation object or `null`                                      |
 | `$toc`        | `list<array>` | Table of contents entries (`{id, text, level}`) or empty list    |
 | `$related`    | `list<RelatedEntry>` | Related entries ordered by relevance or empty list        |
+| `$language`   | `string`      | Effective language code for the current entry                    |
+| `$translations` | `list<Translation>` | Alternate-language versions of the current entry           |
 
 Example:
 

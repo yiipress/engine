@@ -67,6 +67,7 @@ assets:
 - **toc** — generate a table of contents from headings (default: `true`); set to `false` to disable globally. When enabled, heading tags receive `id` attributes and a `$toc` variable is passed to templates
 - **search** — opt-in client-side search (see below)
 - **related** — opt-in related content suggestions (see below)
+- **languages** / **default_language** — opt-in multilingual support (see below)
 - **assets** — asset pipeline settings (see below)
 - **params** — arbitrary key-value pairs for use in templates
 - **markdown** — markdown extensions configuration (see below)
@@ -107,6 +108,41 @@ related:
 
 Templates receive a `$related` variable (list of `App\Content\Model\RelatedEntry`) ordered
 by relevance. See [plugins.md](plugins.md#related-content) for details.
+
+### Multilingual support
+
+Opt-in. Declare the set of enabled ISO language codes and the default language in
+`content/config.yaml`:
+
+```yaml
+languages: [en, ru, de]
+default_language: en
+```
+
+Entries are tagged with the `language` front matter field. Entries whose language
+differs from `default_language` get their permalink prefixed automatically (e.g.,
+`/ru/blog/hello/`); default-language entries keep the plain URL (`/blog/hello/`).
+Explicit `permalink:` overrides in front matter bypass the prefix.
+
+Group translations of the same article using a shared `translation_key`:
+
+```yaml
+---
+title: Hello
+language: ru
+translation_key: hello
+---
+```
+
+When `translation_key` is absent, translations are grouped by slug within the same
+collection. All variants of an entry expose each other as alternates:
+
+- `$translations` — list of `App\Content\Model\Translation` (language, permalink, title)
+  available to templates for rendering a language switcher.
+- `$language` — effective language of the current entry; the bundled theme uses it for
+  `<html lang="…">`.
+- `hreflang` alternate `<link>` tags are emitted in the head automatically, including
+  `x-default` pointing to the default-language version.
 
 ### Syntax highlighting
 
