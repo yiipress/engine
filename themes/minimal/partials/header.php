@@ -1,7 +1,6 @@
 <?php
 
 use App\Content\Model\Navigation;
-use App\I18n\UiText;
 use App\Render\NavigationRenderer;
 
 /**
@@ -12,13 +11,14 @@ use App\Render\NavigationRenderer;
  * @var int $searchResults
  * @var string $uiLanguage
  * @var list<string> $uiLanguages
+ * @var Closure(string, array): string $t
+ * @var Closure(string): string $capitalizeUtf8
+ * @var Closure(string): string $languageName
  */
 $search ??= false;
 $searchResults ??= 10;
 $uiLanguage ??= 'en';
 $uiLanguages ??= [$uiLanguage];
-$ui ??= UiText::for($uiLanguage);
-$t ??= static fn (string $key, array $params = []): string => $ui->get($key, $params);
 $capitalizeUtf8 ??= static function (string $value): string {
     $firstCharacter = mb_substr($value, 0, 1, 'UTF-8');
     if ($firstCharacter === '') {

@@ -11,12 +11,12 @@
  * @var string $uiLanguage
  * @var list<string> $uiLanguages
  * @var array<string, array<string, string>> $uiCatalogs
+ * @var App\I18n\UiText $ui
  */
 
 use App\Build\AssetFingerprintManifest;
 use App\Build\Asset;
 use App\Build\MetaTags;
-use App\I18n\UiText;
 
 $headAssets ??= '';
 $collectionName ??= null;
@@ -26,8 +26,6 @@ $searchResults ??= 10;
 $uiLanguage ??= 'en';
 $uiLanguages ??= [$uiLanguage];
 $uiCatalogs ??= [$uiLanguage => []];
-$ui ??= UiText::for($uiLanguage);
-$t ??= static fn (string $key, array $params = []): string => $ui->get($key, $params);
 ?>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

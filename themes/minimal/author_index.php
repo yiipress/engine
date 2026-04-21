@@ -7,16 +7,21 @@ declare(strict_types=1);
  * @var list<array{title: string, url: string, avatar: string}> $authorList
  * @var ?Navigation $nav
  * @var Closure(string, array): string $partial
+ * @var string $language
  * @var string $rootPath
+ * @var App\Build\MetaTags $metaTags
+ * @var bool $search
+ * @var int $searchResults
+ * @var string $uiLanguage
+ * @var list<string> $uiLanguages
+ * @var array<string, array<string, string>> $uiCatalogs
+ * @var App\I18n\UiText $ui
+ * @var Closure(string, array): string $t
  */
 
 use App\Content\Model\Navigation;
-use App\I18n\UiText;
-
 $language ??= 'en';
 $uiLanguage ??= 'en';
-$ui ??= UiText::for($uiLanguage);
-$t ??= static fn (string $key, array $params = []): string => $ui->get($key, $params);
 ?>
 <!DOCTYPE html>
 <html lang="<?= htmlspecialchars($language) ?>">

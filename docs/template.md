@@ -88,8 +88,8 @@ All built-in page templates receive these additional variables:
 | `$uiLanguage` | `string`              | Server-rendered default UI language for theme chrome           |
 | `$uiLanguages` | `list<string>`       | Available UI languages exposed by the site                    |
 | `$uiCatalogs` | `array<string, array<string, string>>` | Theme UI catalogs for client-side switching |
-| `$ui`       | `App\I18n\UiText`       | Localized UI-text helper for bundled theme labels             |
-| `$t`        | `Closure(string, array): string` | Shortcut for `$ui->get()` in templates               |
+| `$ui`       | `App\I18n\UiText`       | Injected localized UI-text helper for bundled theme labels    |
+| `$t`        | `Closure(string, array): string` | Injected shortcut for `$ui->get()` in templates      |
 
 Example:
 
@@ -99,6 +99,7 @@ Example:
 ```
 
 In the bundled `minimal` theme, `$language` is the content language of the current page, while the remembered UI language can differ and is applied client-side after load.
+Built-in templates and partials expect `$ui` to be passed by the renderer; `PageTemplateRenderer` and `TemplateContext` automatically provide `$t` when `$ui` is present.
 
 ### Entry template (`entry.php`)
 
@@ -353,7 +354,7 @@ All templates receive the following helper functions as local variables:
 | Function   | Signature                                       | Description                                              |
 |------------|-------------------------------------------------|----------------------------------------------------------|
 | `$partial` | `(string $name, array $variables = []): string` | Render a partial template from the `partials/` directory |
-| `$t`       | `(string $key, array $params = []): string`     | Translate a theme UI-text key via the current `$ui`      |
+| `$t`       | `(string $key, array $params = []): string`     | Translate a theme UI-text key via the injected `$ui`     |
 
 Additional helpers available via static methods:
 

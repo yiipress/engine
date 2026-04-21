@@ -109,6 +109,26 @@ PHP);
         assertStringContainsString('Wide content.', $html);
     }
 
+    public function testProvidesTranslationHelperToCustomEntryTemplates(): void
+    {
+        mkdir($this->contentDir . '/templates', 0o755, true);
+        file_put_contents($this->contentDir . '/templates/translated.php', <<<'PHP'
+<?php
+/** @var Closure(string, array): string $t */
+?>
+<div><?= htmlspecialchars($t('search')) ?></div>
+PHP);
+
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Translated Post\nlayout: translated\n---\n\nBody.\n");
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Translated Post', layout: 'translated');
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver($this->contentDir . '/templates'), contentDir: $this->contentDir);
+        $html = $renderer->render($this->createSiteConfig(theme: 'custom'), $entry);
+
+        assertStringContainsString('<div>Search</div>', $html);
+    }
+
     public function testFallsBackToDefaultWhenLayoutFileNotFound(): void
     {
         $entryFile = $this->contentDir . '/blog/post.md';

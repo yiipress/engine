@@ -10,6 +10,7 @@ use App\Content\Model\Entry;
 use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
 use App\Content\Related\RelatedIndex;
+use App\I18n\UiText;
 use App\Processor\ContentProcessorPipeline;
 use Closure;
 use RuntimeException;
@@ -118,7 +119,7 @@ final class EntryRenderer
             ? $entry->language
             : ($siteConfig->i18n?->defaultLanguage ?? $siteConfig->defaultLanguage);
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $themeName);
-        $html = ($this->templateClosures[$templatePath])([
+        $variables = [
             'siteTitle' => $siteConfig->title,
             'entryTitle' => $entry->title,
             'content' => $content,
@@ -147,7 +148,14 @@ final class EntryRenderer
             'assetManifest' => $this->assetManifest,
             'search' => $siteConfig->search !== null,
             'searchResults' => $siteConfig->search?->results ?? 10,
-        ] + $uiViewData->toArray());
+        ] + $uiViewData->toArray();
+
+        if (($variables['ui'] ?? null) instanceof UiText && !isset($variables['t'])) {
+            $ui = $variables['ui'];
+            $variables['t'] = static fn (string $key, array $params = []): string => $ui->get($key, $params);
+        }
+
+        $html = ($this->templateClosures[$templatePath])($variables);
 
         return $templateContext->rewriteHtml($html, $rootPath);
     }

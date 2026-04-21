@@ -27,6 +27,7 @@ final class NewCommandTest extends TestCase
 
         file_put_contents($this->contentDir . '/config.yaml', <<<'YAML'
 title: Test Site
+languages: [en]
 default_author: john-doe
 YAML);
 
@@ -131,7 +132,7 @@ YAML);
 
     public function testStandalonePageWithoutDefaultAuthor(): void
     {
-        file_put_contents($this->contentDir . '/config.yaml', "title: Test Site\n");
+        file_put_contents($this->contentDir . '/config.yaml', "title: Test Site\nlanguages: [en]\n");
 
         $result = $this->runNew('Contact');
 

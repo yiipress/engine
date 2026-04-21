@@ -8,15 +8,20 @@ declare(strict_types=1);
  * @var list<string> $terms
  * @var ?Navigation $nav
  * @var Closure(string, array): string $partial
+ * @var string $language
  * @var string $rootPath
+ * @var App\Build\MetaTags $metaTags
+ * @var bool $search
+ * @var int $searchResults
+ * @var string $uiLanguage
+ * @var list<string> $uiLanguages
+ * @var array<string, array<string, string>> $uiCatalogs
+ * @var App\I18n\UiText $ui
  */
 
 use App\Content\Model\Navigation;
-use App\I18n\UiText;
-
 $language ??= 'en';
 $uiLanguage ??= 'en';
-$ui ??= UiText::for($uiLanguage);
 $taxonomyLabel = $ui->taxonomyLabel($taxonomyName);
 $taxonomyKey = 'taxonomy.' . strtolower($taxonomyName);
 ?>

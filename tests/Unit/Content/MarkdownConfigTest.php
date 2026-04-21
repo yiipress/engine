@@ -61,6 +61,7 @@ final class MarkdownConfigTest extends TestCase
         $tmpFile = tempnam(sys_get_temp_dir(), 'yiipress_test_');
         file_put_contents($tmpFile, <<<YAML
 title: "Test"
+languages: [en]
 markdown:
   tables: false
   strikethrough: false
@@ -97,6 +98,7 @@ YAML);
         $tmpFile = tempnam(sys_get_temp_dir(), 'yiipress_test_');
         file_put_contents($tmpFile, <<<YAML
 title: "Test"
+languages: [en]
 YAML);
 
         try {

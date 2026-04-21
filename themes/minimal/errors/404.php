@@ -6,16 +6,20 @@ declare(strict_types=1);
  * @var string $siteTitle
  * @var Navigation|null $nav
  * @var Closure(string, array): string $partial
+ * @var string $language
  * @var string $rootPath
+ * @var bool $search
+ * @var int $searchResults
+ * @var string $uiLanguage
+ * @var list<string> $uiLanguages
+ * @var array<string, array<string, string>> $uiCatalogs
+ * @var App\I18n\UiText $ui
+ * @var Closure(string, array): string $t
  */
 
 use App\Content\Model\Navigation;
-use App\I18n\UiText;
-
 $language ??= 'en';
 $uiLanguage ??= 'en';
-$ui ??= UiText::for($uiLanguage);
-$t ??= static fn (string $key, array $params = []): string => $ui->get($key, $params);
 ?>
 <!DOCTYPE html>
 <html lang="<?= htmlspecialchars($language) ?>">

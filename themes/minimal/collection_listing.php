@@ -6,20 +6,25 @@ declare(strict_types=1);
  * @var string $siteTitle
  * @var string $collectionTitle
  * @var string $collectionName
- * @var list<array{title: string, url: string, date: string, summary: string}> $entries
+ * @var list<array{title: string, url: string, date: string, dateISO: string, draft: bool, summary: string}> $entries
  * @var array{currentPage: int, totalPages: int, previousUrl: string, nextUrl: string} $pagination
  * @var ?Navigation $nav
  * @var Closure(string, array): string $partial
+ * @var string $language
  * @var string $rootPath
+ * @var App\Build\MetaTags $metaTags
+ * @var bool $search
+ * @var int $searchResults
+ * @var string $uiLanguage
+ * @var list<string> $uiLanguages
+ * @var array<string, array<string, string>> $uiCatalogs
+ * @var App\I18n\UiText $ui
+ * @var Closure(string, array): string $t
  */
 
 use App\Content\Model\Navigation;
-use App\I18n\UiText;
-
 $language ??= 'en';
 $uiLanguage ??= 'en';
-$ui ??= UiText::for($uiLanguage);
-$t ??= static fn (string $key, array $params = []): string => $ui->get($key, $params);
 $pageTitle = $collectionTitle
     . ($pagination['currentPage'] > 1 ? ' — ' . $t('page_number', ['page' => $pagination['currentPage']]) : '')
     . ' — ' . $siteTitle;
