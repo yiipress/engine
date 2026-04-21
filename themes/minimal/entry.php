@@ -15,6 +15,7 @@ declare(strict_types=1);
  * @var string $collection
  * @var string $headAssets
  * @var list<array{id: string, text: string, level: int}> $toc
+ * @var list<App\Content\Model\RelatedEntry> $related
  * @var ?Navigation $nav
  * @var Closure(string, array): string $partial
  * @var string $rootPath
@@ -86,6 +87,21 @@ use App\Content\Model\Navigation;
                     </div>
 <?php endif; ?>
                 </footer>
+<?php endif; ?>
+<?php if (!empty($related)): ?>
+                <section class="related" aria-label="Related posts">
+                    <h2>Related posts</h2>
+                    <ul>
+<?php foreach ($related as $item): ?>
+                        <li>
+                            <a href="<?= htmlspecialchars($item->permalink) ?>"><?= htmlspecialchars($item->title) ?></a>
+<?php if ($item->date !== null): ?>
+                            <time datetime="<?= htmlspecialchars($item->date->format('Y-m-d')) ?>"><?= htmlspecialchars($item->date->format('Y-m-d')) ?></time>
+<?php endif; ?>
+                        </li>
+<?php endforeach; ?>
+                    </ul>
+                </section>
 <?php endif; ?>
             </article>
 <?php if ($hasSidebar): ?>

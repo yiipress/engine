@@ -6,6 +6,7 @@ namespace App\Content\Parser;
 
 use App\Content\Model\AssetConfig;
 use App\Content\Model\MarkdownConfig;
+use App\Content\Model\RelatedConfig;
 use App\Content\Model\RobotsTxtConfig;
 use App\Content\Model\RobotsTxtRule;
 use App\Content\Model\SearchConfig;
@@ -55,6 +56,7 @@ final class SiteConfigParser
             toc: (bool) ($data['toc'] ?? true),
             search: self::parseSearchConfig($data['search'] ?? null),
             assets: self::parseAssetConfig($data['assets'] ?? null),
+            related: self::parseRelatedConfig($data['related'] ?? null),
         );
     }
 
@@ -69,7 +71,7 @@ final class SiteConfigParser
         }
 
         $constructorArgs = [];
-        
+
         if (array_key_exists('tables', $data)) {
             $constructorArgs['tables'] = (bool) $data['tables'];
         }
@@ -136,6 +138,28 @@ final class SiteConfigParser
         return new SearchConfig(
             fullText: (bool) ($data['full_text'] ?? false),
             results: (int) ($data['results'] ?? 10),
+        );
+    }
+
+    private static function parseRelatedConfig(mixed $data): ?RelatedConfig
+    {
+        if ($data === null || $data === false) {
+            return null;
+        }
+
+        if ($data === true) {
+            return new RelatedConfig();
+        }
+
+        if (!is_array($data)) {
+            return new RelatedConfig();
+        }
+
+        return new RelatedConfig(
+            limit: (int) ($data['limit'] ?? 5),
+            tagWeight: (int) ($data['tag_weight'] ?? 2),
+            categoryWeight: (int) ($data['category_weight'] ?? 3),
+            sameCollectionOnly: (bool) ($data['same_collection_only'] ?? true),
         );
     }
 

@@ -32,6 +32,7 @@ use App\Content\Model\Entry;
 use App\Content\Model\SiteConfig;
 use App\Content\Parser\ContentParser;
 use App\Content\PermalinkResolver;
+use App\Content\Related\RelatedIndex;
 use App\Content\TaxonomyCollector;
 use App\Environment;
 use App\Processor\ContentProcessorPipeline;
@@ -399,7 +400,19 @@ final class BuildCommand extends Command
             $tasksToWrite = $allTasks;
         }
 
-        $writer = new ParallelEntryWriter($this->contentPipeline, $this->templateResolver, $cache, $assetManifest);
+        $relatedIndex = null;
+        if ($siteConfig->related !== null) {
+            $relatedEntries = [];
+            foreach ($entriesByCollection as $entries) {
+                foreach ($entries as $entry) {
+                    $relative = substr($entry->filePath, strlen($contentDir) + 1);
+                    $relatedEntries[] = ['entry' => $entry, 'permalink' => $fileToPermalink[$relative] ?? ''];
+                }
+            }
+            $relatedIndex = new RelatedIndex($relatedEntries, $siteConfig->related);
+        }
+
+        $writer = new ParallelEntryWriter($this->contentPipeline, $this->templateResolver, $cache, $assetManifest, $relatedIndex);
         $effectiveEntryWorkerCount = $writer->workerCountFor(count($tasksToWrite), $workerCount);
         $entriesWritten = $writer->write($siteConfig, $tasksToWrite, $contentDir, $workerCount, $navigation, $crossRefResolver, $authors);
 

@@ -31,5 +31,6 @@ final readonly class SiteConfig
         public bool $toc = true,
         public ?SearchConfig $search = null,
         public AssetConfig $assets = new AssetConfig(),
+        public ?RelatedConfig $related = null,
     ) {}
 }

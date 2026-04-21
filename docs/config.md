@@ -66,6 +66,7 @@ assets:
 - **robots_txt** — `robots.txt` generation settings (see below)
 - **toc** — generate a table of contents from headings (default: `true`); set to `false` to disable globally. When enabled, heading tags receive `id` attributes and a `$toc` variable is passed to templates
 - **search** — opt-in client-side search (see below)
+- **related** — opt-in related content suggestions (see below)
 - **assets** — asset pipeline settings (see below)
 - **params** — arbitrary key-value pairs for use in templates
 - **markdown** — markdown extensions configuration (see below)
@@ -85,6 +86,27 @@ When enabled, the build generates a `search-index.json` file in the output direc
 The `full_text` option controls how much content is indexed:
 - `false` — indexes title, summary, and tags (smaller index, faster)
 - `true` — additionally indexes the full body text (larger index, more thorough results)
+
+### Related content
+
+Related content suggestions are opt-in. Enable in `content/config.yaml`:
+
+```yaml
+related: true
+```
+
+Or configure:
+
+```yaml
+related:
+  limit: 5                     # max related entries per page (default: 5)
+  tag_weight: 2                # score per shared tag (default: 2)
+  category_weight: 3           # score per shared category (default: 3)
+  same_collection_only: true   # restrict suggestions to the same collection (default: true)
+```
+
+Templates receive a `$related` variable (list of `App\Content\Model\RelatedEntry`) ordered
+by relevance. See [plugins.md](plugins.md#related-content) for details.
 
 ### Syntax highlighting
 

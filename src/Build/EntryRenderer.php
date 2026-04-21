@@ -8,6 +8,7 @@ use App\Content\CrossReferenceResolver;
 use App\Content\Model\Entry;
 use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
+use App\Content\Related\RelatedIndex;
 use App\Processor\ContentProcessorPipeline;
 use Closure;
 use RuntimeException;
@@ -33,6 +34,7 @@ final class EntryRenderer
         private readonly string $contentDir = '',
         private readonly array $authors = [],
         private readonly ?AssetFingerprintManifest $assetManifest = null,
+        private readonly ?RelatedIndex $relatedIndex = null,
     ) {}
 
     public function render(
@@ -42,8 +44,9 @@ final class EntryRenderer
         ?Navigation $navigation = null,
         ?CrossReferenceResolver $crossRefResolver = null,
     ): string {
+        $cacheContext = $this->relatedIndex?->signature() ?? '';
         if ($this->cache !== null) {
-            $cached = $this->cache->get($entry->filePath);
+            $cached = $this->cache->get($entry->filePath, $cacheContext);
             if ($cached !== null) {
                 return $cached;
             }
@@ -60,9 +63,10 @@ final class EntryRenderer
         $content = $this->pipeline->process($body, $entry);
         $headAssets = $this->pipeline->collectHeadAssets($content);
         $toc = $siteConfig->toc ? $this->pipeline->collectToc() : [];
-        $html = $this->renderTemplate($siteConfig, $entry, $content, $permalink, $navigation, $headAssets, $toc);
+        $related = $this->relatedIndex?->forEntry($entry->filePath) ?? [];
+        $html = $this->renderTemplate($siteConfig, $entry, $content, $permalink, $navigation, $headAssets, $toc, $related);
 
-        $this->cache?->set($entry->filePath, $html);
+        $this->cache?->set($entry->filePath, $html, $cacheContext);
 
         return $html;
     }
@@ -75,7 +79,11 @@ final class EntryRenderer
         return $dir === '.' ? '' : $dir;
     }
 
-    private function renderTemplate(SiteConfig $siteConfig, Entry $entry, string $content, string $permalink, ?Navigation $navigation, string $headAssets = '', array $toc = []): string
+    /**
+     * @param list<array{id: string, text: string, level: int}> $toc
+     * @param list<\App\Content\Model\RelatedEntry> $related
+     */
+    private function renderTemplate(SiteConfig $siteConfig, Entry $entry, string $content, string $permalink, ?Navigation $navigation, string $headAssets = '', array $toc = [], array $related = []): string
     {
         $themeName = $entry->theme !== '' ? $entry->theme : $siteConfig->theme;
         $templateName = $entry->layout !== '' ? $entry->layout : 'entry';
@@ -122,6 +130,7 @@ final class EntryRenderer
             'nav' => $navigation,
             'headAssets' => $headAssets,
             'toc' => $toc,
+            'related' => $related,
             'metaTags' => $metaTags,
             'partial' => $this->partialClosures[$themeName],
             'rootPath' => $rootPath,

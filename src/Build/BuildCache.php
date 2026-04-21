@@ -30,9 +30,9 @@ final class BuildCache
         $this->templateHash = $this->hashTemplateDirs($templateDirs);
     }
 
-    public function get(string $sourceFilePath): ?string
+    public function get(string $sourceFilePath, string $context = ''): ?string
     {
-        $key = $this->buildKey($sourceFilePath);
+        $key = $this->buildKey($sourceFilePath, $context);
         $cachePath = $this->cacheDir . '/' . $key;
 
         if (!is_file($cachePath)) {
@@ -42,9 +42,9 @@ final class BuildCache
         return file_get_contents($cachePath);
     }
 
-    public function set(string $sourceFilePath, string $html): void
+    public function set(string $sourceFilePath, string $html, string $context = ''): void
     {
-        $key = $this->buildKey($sourceFilePath);
+        $key = $this->buildKey($sourceFilePath, $context);
         file_put_contents($this->cacheDir . '/' . $key, $html);
     }
 
@@ -63,10 +63,10 @@ final class BuildCache
         }
     }
 
-    private function buildKey(string $sourceFilePath): string
+    private function buildKey(string $sourceFilePath, string $context = ''): string
     {
         $fileHash = hash_file('xxh128', $sourceFilePath);
-        return hash('xxh128', $fileHash . $this->templateHash);
+        return hash('xxh128', $fileHash . $this->templateHash . $context);
     }
 
     /**

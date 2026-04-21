@@ -245,6 +245,14 @@ a.tag-link:hover {
     margin-right: .5rem;
 }
 
+/* Related posts */
+.related { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--c-border); }
+.related h2 { font-size: 1.125rem; font-weight: 600; margin-bottom: .75rem; }
+.related ul { list-style: none; }
+.related li { padding: .5rem 0; }
+.related a { font-weight: 500; }
+.related time { display: block; color: var(--c-text-muted); font-size: .8125rem; margin-top: .125rem; }
+
 /* Entry list */
 .entry-list { list-style: none; }
 .entry-list li { padding: 1rem 0; border-bottom: 1px solid var(--c-border); }

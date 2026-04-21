@@ -8,6 +8,7 @@ use App\Content\CrossReferenceResolver;
 use App\Content\Model\Entry;
 use App\Content\Model\Navigation;
 use App\Content\Model\SiteConfig;
+use App\Content\Related\RelatedIndex;
 use App\Processor\ContentProcessorPipeline;
 use RuntimeException;
 
@@ -29,6 +30,7 @@ final readonly class ParallelEntryWriter
         private TemplateResolver $templateResolver,
         private ?BuildCache $cache = null,
         private ?AssetFingerprintManifest $assetManifest = null,
+        private ?RelatedIndex $relatedIndex = null,
     ) {}
 
     /**
@@ -74,7 +76,7 @@ final readonly class ParallelEntryWriter
      */
     private function writeEntries(SiteConfig $siteConfig, array $tasks, string $contentDir, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors): void
     {
-        $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors, $this->assetManifest);
+        $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors, $this->assetManifest, $this->relatedIndex);
 
         foreach ($tasks as $task) {
             file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver));
@@ -97,7 +99,7 @@ final readonly class ParallelEntryWriter
             }
 
             if ($pid === 0) {
-                $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors, $this->assetManifest);
+                $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors, $this->assetManifest, $this->relatedIndex);
 
                 foreach ($chunk as $task) {
                     file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver));

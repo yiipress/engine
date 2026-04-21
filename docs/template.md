@@ -82,6 +82,8 @@ themes/minimal/
 | `$author`     | `string`      | Comma-separated author names                                     |
 | `$collection` | `string`      | Collection name the entry belongs to                             |
 | `$nav`        | `?Navigation` | Navigation object or `null`                                      |
+| `$toc`        | `list<array>` | Table of contents entries (`{id, text, level}`) or empty list    |
+| `$related`    | `list<RelatedEntry>` | Related entries ordered by relevance or empty list        |
 
 Example:
 

@@ -242,6 +242,57 @@ Generated HTML uses the same wrappers and classes as the built-in shortcode proc
 For tweet/status embeds, the existing Twitter widget script is injected automatically because the generated
 HTML matches the same marker format as `TweetProcessor`.
 
+### Related content
+
+Suggests other entries that share tags and categories with the current one. When enabled,
+an in-memory `RelatedIndex` is built once per build from all indexed entries and injects a
+`$related` variable into entry templates — a list of `App\Content\Model\RelatedEntry`
+objects ordered by relevance.
+
+Each related entry exposes:
+- `title` — source entry title
+- `permalink` — resolved URL
+- `date` — `DateTimeImmutable|null`
+- `summary` — entry summary (front matter or auto-generated)
+- `score` — relevance score (shared tags × `tag_weight` + shared categories × `category_weight`)
+
+Enable in `content/config.yaml` (disabled by default):
+
+```yaml
+related: true
+```
+
+Or configure:
+
+```yaml
+related:
+  limit: 5                     # maximum number of related entries per page (default: 5)
+  tag_weight: 2                # score per shared tag (default: 2)
+  category_weight: 3           # score per shared category (default: 3)
+  same_collection_only: true   # only suggest entries from the same collection (default: true)
+```
+
+Scoring uses an inverted term → entry index, so building the full related graph runs in
+time proportional to the number of term postings rather than O(N²).
+
+Templates can render it:
+
+```php
+<?php if (!empty($related)): ?>
+<section class="related">
+    <h2>Related posts</h2>
+    <ul>
+        <?php foreach ($related as $item): ?>
+        <li><a href="<?= htmlspecialchars($item->permalink) ?>"><?= htmlspecialchars($item->title) ?></a></li>
+        <?php endforeach; ?>
+    </ul>
+</section>
+<?php endif; ?>
+```
+
+The bundled `minimal` theme renders a "Related posts" section automatically when the
+feature is enabled.
+
 ### TocProcessor
 
 Generates a table of contents from headings in the rendered HTML.
