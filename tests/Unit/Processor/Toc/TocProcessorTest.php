@@ -117,6 +117,14 @@ final class TocProcessorTest extends TestCase
         assertSame('Second', $toc[0]['text']);
     }
 
+    public function testTocResetsWhenNextDocumentHasNoHeadings(): void
+    {
+        $this->processor->process('<h2>First</h2>', $this->entry);
+        $this->processor->process('<p>About page without headings.</p>', $this->entry);
+
+        assertSame([], $this->processor->getToc());
+    }
+
     public function testEmptyContentGivesEmptyToc(): void
     {
         $this->processor->process('<p>No headings here.</p>', $this->entry);

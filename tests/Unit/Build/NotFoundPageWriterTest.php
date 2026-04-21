@@ -45,7 +45,8 @@ final class NotFoundPageWriterTest extends TestCase
         $html = (string) file_get_contents($filePath);
         assertStringContainsString('href="./assets/theme/style.css"', $html);
         assertStringContainsString('src="./assets/theme/dark-mode.js"', $html);
-        assertStringContainsString('href="./">Go to home page</a>', $html);
+        assertStringContainsString('src="./assets/theme/ui-language.js"', $html);
+        assertStringContainsString('href="./" data-ui-key="go_to_home_page">Go to home page</a>', $html);
         assertStringNotContainsString('href="/assets/theme/style.css"', $html);
         assertStringNotContainsString('src="/assets/theme/dark-mode.js"', $html);
     }
@@ -64,7 +65,7 @@ final class NotFoundPageWriterTest extends TestCase
             title: 'Test Site',
             description: '',
             baseUrl: 'https://example.com',
-            language: 'en',
+            defaultLanguage: 'en',
             charset: 'UTF-8',
             defaultAuthor: '',
             dateFormat: 'Y-m-d',

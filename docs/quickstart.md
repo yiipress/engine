@@ -15,7 +15,7 @@ Edit `content/config.yaml`:
 title: My Blog
 description: A personal blog
 base_url: https://example.com
-language: en
+languages: [en]
 
 date_format: "F j, Y"
 entries_per_page: 10

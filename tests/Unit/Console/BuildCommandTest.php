@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Console;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use FilesystemIterator;
+use IntlDateFormatter;
 use PHPUnit\Framework\TestCase;
 
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 
+use function datefmt_create;
 use function PHPUnit\Framework\assertDirectoryExists;
 use function PHPUnit\Framework\assertFalse;
 use function PHPUnit\Framework\assertFileExists;
@@ -20,6 +24,7 @@ use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertMatchesRegularExpression;
 use function PHPUnit\Framework\assertStringContainsString;
 use function PHPUnit\Framework\assertStringNotContainsString;
+use function sprintf;
 
 final class BuildCommandTest extends TestCase
 {
@@ -509,19 +514,40 @@ final class BuildCommandTest extends TestCase
         assertStringContainsString('2024', $yearlyHtml);
         assertStringContainsString('Test Post', $yearlyHtml);
         assertStringContainsString('Second Post', $yearlyHtml);
+        assertStringContainsString('data-ui-month="05"', $yearlyHtml);
+        assertStringContainsString('data-ui-month="03"', $yearlyHtml);
 
         $monthlyPage = $this->outputDir . '/blog/2024/03/index.html';
         assertFileExists($monthlyPage);
         $monthlyHtml = file_get_contents($monthlyPage);
-        assertStringContainsString('March', $monthlyHtml);
+        assertStringContainsString($this->monthName('en', 3), $monthlyHtml);
         assertStringContainsString('2024', $monthlyHtml);
         assertStringContainsString('Test Post', $monthlyHtml);
 
         $monthlyPage2 = $this->outputDir . '/blog/2024/05/index.html';
         assertFileExists($monthlyPage2);
         $monthlyHtml2 = file_get_contents($monthlyPage2);
-        assertStringContainsString('May', $monthlyHtml2);
+        assertStringContainsString($this->monthName('en', 5), $monthlyHtml2);
         assertStringContainsString('Second Post', $monthlyHtml2);
+    }
+
+    private function monthName(string $locale, int $month): string
+    {
+        $formatter = datefmt_create(
+            $locale,
+            IntlDateFormatter::NONE,
+            IntlDateFormatter::NONE,
+            'UTC',
+            IntlDateFormatter::GREGORIAN,
+            'LLLL',
+        );
+        assertNotFalse($formatter);
+
+        $monthDate = new DateTimeImmutable(sprintf('2000-%02d-01', $month), new DateTimeZone('UTC'));
+        $monthName = $formatter->format($monthDate->getTimestamp());
+        assertNotFalse($monthName);
+
+        return mb_strtoupper(mb_substr($monthName, 0, 1)) . mb_substr($monthName, 1);
     }
 
     public function testBuildGeneratesAuthorPages(): void

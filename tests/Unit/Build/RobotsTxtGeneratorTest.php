@@ -129,7 +129,7 @@ final class RobotsTxtGeneratorTest extends TestCase
             title: 'Test Site',
             description: '',
             baseUrl: $baseUrl,
-            language: 'en',
+            defaultLanguage: 'en',
             charset: 'UTF-8',
             defaultAuthor: '',
             dateFormat: 'Y-m-d',

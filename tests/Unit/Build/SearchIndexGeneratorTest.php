@@ -177,7 +177,7 @@ final class SearchIndexGeneratorTest extends TestCase
             title: 'Test Site',
             description: 'A test site',
             baseUrl: 'https://example.com',
-            language: 'en',
+            defaultLanguage: 'en',
             charset: 'UTF-8',
             defaultAuthor: '',
             dateFormat: 'Y-m-d',

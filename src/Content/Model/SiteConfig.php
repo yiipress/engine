@@ -14,7 +14,7 @@ final readonly class SiteConfig
         public string $title,
         public string $description,
         public string $baseUrl,
-        public string $language,
+        public string $defaultLanguage,
         public string $charset,
         public string $defaultAuthor,
         public string $dateFormat,

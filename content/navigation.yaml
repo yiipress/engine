@@ -1,7 +1,13 @@
 main:
-  - title: Blog
+  - title:
+      en: Blog
+      ru: Блог
     url: /blog/
-  - title: About
+  - title:
+      en: About
+      ru: О проекте
     url: /about/
-  - title: Contact
+  - title:
+      en: Contact
+      ru: Контакты
     url: /contact/

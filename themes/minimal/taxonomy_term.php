@@ -13,18 +13,24 @@ declare(strict_types=1);
  */
 
 use App\Content\Model\Navigation;
+use App\I18n\UiText;
 
+$language ??= 'en';
+$uiLanguage ??= 'en';
+$ui ??= UiText::for($uiLanguage);
+$taxonomyLabel = $ui->taxonomyLabel($taxonomyName);
+$taxonomyKey = 'taxonomy.' . strtolower($taxonomyName);
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= htmlspecialchars($language) ?>">
 <head>
-<?= $partial('head', ['title' => $term . ' — ' . ucfirst($taxonomyName) . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'metaTags' => $metaTags, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10]) ?>
+<?= $partial('head', ['title' => $term . ' — ' . $taxonomyLabel . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'metaTags' => $metaTags, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage], 'uiCatalogs' => $uiCatalogs ?? [$uiLanguage => []]]) ?>
 </head>
 <body>
-<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10]) ?>
+<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage]]) ?>
 <main>
     <div class="container">
-        <h1><?= htmlspecialchars(ucfirst($taxonomyName)) ?>: <?= htmlspecialchars($term) ?></h1>
+        <h1><span data-ui-key="<?= htmlspecialchars($taxonomyKey) ?>"><?= htmlspecialchars($taxonomyLabel) ?></span>: <?= htmlspecialchars($term) ?></h1>
         <ul class="entry-list">
 <?php foreach ($entries as $entry): ?>
             <li>
@@ -37,6 +43,6 @@ use App\Content\Model\Navigation;
         </ul>
     </div>
 </main>
-<?= $partial('footer', ['nav' => $nav, 'rootPath' => $rootPath]) ?>
+<?= $partial('footer', ['nav' => $nav, 'rootPath' => $rootPath, 'ui' => $ui, 'uiLanguage' => $uiLanguage]) ?>
 </body>
 </html>

@@ -16,6 +16,14 @@ When resolving a template, the build process checks:
 
 Within a theme, if the requested template file is not found, other registered themes are checked as a fallback.
 
+Theme-localized UI labels live in `translation/<language>.yaml` inside the theme directory. The bundled
+`minimal` theme ships with `translation/en.yaml` and `translation/ru.yaml`.
+`UiText` does not embed any message catalogs; theme translation files are the source of UI labels.
+If a key is missing for the current UI language, built pages first fall back to the site default UI language,
+then to English, and only then to the key name itself; taxonomy labels finally fall back to `ucfirst()`.
+The bundled `minimal` theme renders UI chrome using the site default UI language and lets the browser switch it client-side from a remembered preference, independently from the current entry language. The UI-language selector keeps language names in their native form.
+Month names are not translated in theme files; the bundled `minimal` theme formats archive month labels client-side for the selected UI language.
+
 ### Local theme
 
 If a `templates/` directory exists inside the content directory, it is automatically registered as a theme named `local`. To use it as the site default:
@@ -70,6 +78,28 @@ themes/minimal/
 
 ## Template variables
 
+### Common variables
+
+All built-in page templates receive these additional variables:
+
+| Variable    | Type                    | Description                                                    |
+|-------------|-------------------------|----------------------------------------------------------------|
+| `$language` | `string`                | Effective page language code used for `<html lang="…">`       |
+| `$uiLanguage` | `string`              | Server-rendered default UI language for theme chrome           |
+| `$uiLanguages` | `list<string>`       | Available UI languages exposed by the site                    |
+| `$uiCatalogs` | `array<string, array<string, string>>` | Theme UI catalogs for client-side switching |
+| `$ui`       | `App\I18n\UiText`       | Localized UI-text helper for bundled theme labels             |
+| `$t`        | `Closure(string, array): string` | Shortcut for `$ui->get()` in templates               |
+
+Example:
+
+```php
+<html lang="<?= htmlspecialchars($language) ?>">
+<button aria-label="<?= htmlspecialchars($t('search')) ?>">
+```
+
+In the bundled `minimal` theme, `$language` is the content language of the current page, while the remembered UI language can differ and is applied client-side after load.
+
 ### Entry template (`entry.php`)
 
 | Variable      | Type          | Description                                                      |
@@ -103,6 +133,8 @@ Example:
 ```
 
 **Note:** Use `$dateISO` for the `datetime` attribute (HTML5 compliance) and `$date` for display text (uses configured format).
+The bundled `minimal` theme also uses `$ui` to localize built-in labels such as
+"Related posts", "Other languages", "Search", pagination controls, and the remembered UI-language selector in the header.
 
 ### Collection listing template (`collection_listing.php`)
 
@@ -321,6 +353,7 @@ All templates receive the following helper functions as local variables:
 | Function   | Signature                                       | Description                                              |
 |------------|-------------------------------------------------|----------------------------------------------------------|
 | `$partial` | `(string $name, array $variables = []): string` | Render a partial template from the `partials/` directory |
+| `$t`       | `(string $key, array $params = []): string`     | Translate a theme UI-text key via the current `$ui`      |
 
 Additional helpers available via static methods:
 

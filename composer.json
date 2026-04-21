@@ -36,6 +36,7 @@
         "php": "^8.5",
         "ext-ffi": "*",
         "ext-filter": "*",
+        "ext-intl": "*",
         "ext-md4c": "*",
         "ext-pcntl": "*",
         "ext-mbstring": "*",

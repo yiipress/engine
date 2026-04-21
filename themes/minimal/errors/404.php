@@ -10,24 +10,29 @@ declare(strict_types=1);
  */
 
 use App\Content\Model\Navigation;
+use App\I18n\UiText;
 
+$language ??= 'en';
+$uiLanguage ??= 'en';
+$ui ??= UiText::for($uiLanguage);
+$t ??= static fn (string $key, array $params = []): string => $ui->get($key, $params);
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= htmlspecialchars($language) ?>">
 <head>
-<?= $partial('head', ['title' => 'Page Not Found — ' . $siteTitle, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10]) ?>
+<?= $partial('head', ['title' => $t('page_not_found') . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage], 'uiCatalogs' => $uiCatalogs ?? [$uiLanguage => []]]) ?>
 </head>
 <body>
-<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10]) ?>
+<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage]]) ?>
 <main>
     <div class="container">
         <div class="error-page">
             <h1>404</h1>
-            <p>The page you are looking for does not exist.</p>
-            <p><a href="<?= $rootPath ?>">Go to home page</a></p>
+            <p data-ui-key="page_not_found_description"><?= htmlspecialchars($t('page_not_found_description')) ?></p>
+            <p><a href="<?= $rootPath ?>" data-ui-key="go_to_home_page"><?= htmlspecialchars($t('go_to_home_page')) ?></a></p>
         </div>
     </div>
 </main>
-<?= $partial('footer', ['nav' => $nav, 'rootPath' => $rootPath]) ?>
+<?= $partial('footer', ['nav' => $nav, 'rootPath' => $rootPath, 'ui' => $ui, 'uiLanguage' => $uiLanguage]) ?>
 </body>
 </html>

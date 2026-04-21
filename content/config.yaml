@@ -1,7 +1,8 @@
 title: YiiPress
 description: A site built with YiiPress
 base_url: http://localhost:8087
-language: en
+default_language: en
+languages: [en, ru]
 charset: UTF-8
 
 default_author: john-doe

@@ -280,7 +280,7 @@ Templates can render it:
 ```php
 <?php if (!empty($related)): ?>
 <section class="related">
-    <h2>Related posts</h2>
+    <h2><?= htmlspecialchars($t('related_posts')) ?></h2>
     <ul>
         <?php foreach ($related as $item): ?>
         <li><a href="<?= htmlspecialchars($item->permalink) ?>"><?= htmlspecialchars($item->title) ?></a></li>
@@ -290,7 +290,7 @@ Templates can render it:
 <?php endif; ?>
 ```
 
-The bundled `minimal` theme renders a "Related posts" section automatically when the
+The bundled `minimal` theme renders a localized related-posts section automatically when the
 feature is enabled.
 
 ### TocProcessor

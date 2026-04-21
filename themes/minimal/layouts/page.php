@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="<?= $config['language'] ?>">
+<html lang="<?= $config['languages'][0] ?? 'en' ?>">
 <head>
     <meta charset="<?= $config['charset'] ?>">
     <title><?= $title ?? '' ?> — <?= $config['title'] ?></title>

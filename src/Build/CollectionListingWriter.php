@@ -108,6 +108,8 @@ final readonly class CollectionListingWriter
         string $rootPath,
         string $permalink,
     ): string {
+        $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
+
         $entryData = [];
         foreach ($entries as $entry) {
             $entryData[] = [
@@ -128,10 +130,11 @@ final readonly class CollectionListingWriter
             'pagination' => $pagination,
             'nav' => $navigation,
             'rootPath' => $rootPath,
+            'language' => $siteConfig->defaultLanguage,
             'metaTags' => MetaTagsBuilder::forPage($siteConfig, $collection->title, $collection->description, $permalink),
             'search' => $siteConfig->search !== null,
             'searchResults' => $siteConfig->search?->results ?? 10,
-        ], $rootPath);
+        ] + $uiViewData->toArray(), $rootPath);
     }
 
     private function resolvePageUrl(string $collectionName, int $pageNumber, int $totalPages, string $rootPath): string

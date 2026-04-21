@@ -13,18 +13,23 @@ declare(strict_types=1);
  */
 
 use App\Content\Model\Navigation;
+use App\I18n\UiText;
 
+$language ??= 'en';
+$uiLanguage ??= 'en';
+$ui ??= UiText::for($uiLanguage);
+$t ??= static fn (string $key, array $params = []): string => $ui->get($key, $params);
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= htmlspecialchars($language) ?>">
 <head>
-<?= $partial('head', ['title' => $collectionTitle . ' Archive — ' . $siteTitle, 'rootPath' => $rootPath, 'metaTags' => $metaTags, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10]) ?>
+<?= $partial('head', ['title' => $collectionTitle . ' ' . $t('archive') . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'metaTags' => $metaTags, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage], 'uiCatalogs' => $uiCatalogs ?? [$uiLanguage => []]]) ?>
 </head>
 <body>
-<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10]) ?>
+<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage]]) ?>
 <main>
     <div class="container">
-        <h1><?= htmlspecialchars($collectionTitle) ?> Archive</h1>
+        <h1><?= htmlspecialchars($collectionTitle) ?> <span data-ui-key="archive"><?= htmlspecialchars($t('archive')) ?></span></h1>
         <ul class="archive-years">
 <?php foreach ($years as $year): ?>
             <li><a href="<?= $rootPath . htmlspecialchars($collectionName) . '/' . htmlspecialchars((string)$year) ?>/"><?= htmlspecialchars((string)$year) ?></a></li>
@@ -32,6 +37,6 @@ use App\Content\Model\Navigation;
         </ul>
     </div>
 </main>
-<?= $partial('footer', ['nav' => $nav, 'rootPath' => $rootPath]) ?>
+<?= $partial('footer', ['nav' => $nav, 'rootPath' => $rootPath, 'ui' => $ui, 'uiLanguage' => $uiLanguage]) ?>
 </body>
 </html>

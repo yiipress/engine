@@ -96,7 +96,7 @@ final class SyntaxHighlightProcessorTest extends TestCase
             title: 'Test',
             description: '',
             baseUrl: '',
-            language: 'en',
+            defaultLanguage: 'en',
             charset: 'UTF-8',
             defaultAuthor: '',
             dateFormat: 'Y-m-d',

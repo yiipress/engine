@@ -276,6 +276,27 @@ footer:
 
 You can define any number of menus. Each item has `title` and `url` fields, and supports nested `children` for sub-navigation.
 
+To localize menu labels, make `title` a language map instead of a scalar:
+
+```yaml
+main:
+  - title:
+      en: About
+      ru: О сайте
+    url: /about/
+  - title:
+      en: Docs
+      ru: Документация
+    url: /docs/
+    children:
+      - title:
+          en: Getting Started
+          ru: Быстрый старт
+        url: /docs/getting-started/
+```
+
+YiiPress resolves menu labels using the current UI language. If a menu item does not have a label for that language, it falls back to the site's default language, then to English, and finally to the first title value defined for that item. In the bundled `minimal` theme, changing the remembered UI language also updates rendered menu labels in the header and footer.
+
 ### Using navigation in templates
 
 Templates receive a `$nav` variable (a `Navigation` object). Use `NavigationRenderer::render()` to output any menu anywhere in a template:

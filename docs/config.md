@@ -15,7 +15,7 @@ Users edit `content/config.yaml` to customize their site. Engine config should r
 title: My Site
 description: A site built with YiiPress
 base_url: https://example.com
-language: en
+languages: [en]
 charset: UTF-8
 
 default_author: john-doe
@@ -52,7 +52,7 @@ assets:
 - **title** — site title, used in layouts, feeds, and meta tags
 - **description** — site description for meta tags and feeds
 - **base_url** — full base URL including scheme (used in feeds, sitemaps, canonical URLs)
-- **language** — default language code (e.g., `en`, `ru`)
+- **languages** — site language codes. The first language is the default language (e.g., `[en]`, `[en, ru]`)
 - **charset** — character encoding (default: `UTF-8`)
 - **default_author** — author slug (referencing a file in `content/authors/`), used when entries have no explicit `authors` field
 - **date_format** — PHP date format string for displaying dates in templates (e.g., `Y.m.d` for "2026.03.23", `F j, Y` for "March 23, 2026"). See [PHP date format](https://www.php.net/manual/en/datetime.format.php) for all available format characters
@@ -67,7 +67,6 @@ assets:
 - **toc** — generate a table of contents from headings (default: `true`); set to `false` to disable globally. When enabled, heading tags receive `id` attributes and a `$toc` variable is passed to templates
 - **search** — opt-in client-side search (see below)
 - **related** — opt-in related content suggestions (see below)
-- **languages** / **default_language** — opt-in multilingual support (see below)
 - **assets** — asset pipeline settings (see below)
 - **params** — arbitrary key-value pairs for use in templates
 - **markdown** — markdown extensions configuration (see below)
@@ -111,18 +110,17 @@ by relevance. See [plugins.md](plugins.md#related-content) for details.
 
 ### Multilingual support
 
-Opt-in. Declare the set of enabled ISO language codes and the default language in
-`content/config.yaml`:
+Declare site languages in `content/config.yaml`. The first language is the default:
 
 ```yaml
-languages: [en, ru, de]
-default_language: en
+languages: [en, ru]
 ```
 
 Entries are tagged with the `language` front matter field. Entries whose language
-differs from `default_language` get their permalink prefixed automatically (e.g.,
+differs from the first configured site language get their permalink prefixed automatically (e.g.,
 `/ru/blog/hello/`); default-language entries keep the plain URL (`/blog/hello/`).
-Explicit `permalink:` overrides in front matter bypass the prefix.
+Explicit `permalink:` overrides in front matter bypass the prefix. `languages` is required
+and must contain at least one language code.
 
 Group translations of the same article using a shared `translation_key`:
 
@@ -143,6 +141,15 @@ collection. All variants of an entry expose each other as alternates:
   `<html lang="…">`.
 - `hreflang` alternate `<link>` tags are emitted in the head automatically, including
   `x-default` pointing to the default-language version.
+
+The bundled `minimal` theme localizes its built-in UI labels (search, archive, related
+posts, 404 page, redirects, and similar chrome) from theme translation files in
+`themes/minimal/translation/`, for example `en.yaml` and `ru.yaml`.
+The current entry language does not drive the UI language. The bundled `minimal` theme renders UI chrome from the site's default language and exposes a header selector that remembers the user's choice in `localStorage`, similar to the theme toggle. Language names in that selector stay in their native form instead of being translated into the current UI language.
+If a theme omits a UI key for the current UI language, YiiPress falls back to the site's default language,
+then to English, and only then to the key name itself, so theme translation files should define
+the full UI vocabulary they need.
+Archive month names in the bundled `minimal` theme come from `intl` locale data for the selected UI language rather than theme translation files.
 
 ### Syntax highlighting
 

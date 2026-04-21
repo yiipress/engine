@@ -30,11 +30,12 @@ final class TocProcessor implements ContentProcessorInterface, TocAwareInterface
 
     public function process(string $content, Entry $entry): string
     {
+        $this->toc = [];
+
         if (!str_contains($content, '<h')) {
             return $content;
         }
 
-        $this->toc = [];
         $slugCounts = [];
 
         return (string) preg_replace_callback(

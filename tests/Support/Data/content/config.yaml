@@ -1,7 +1,7 @@
 title: "Test Site"
 description: "A test site"
 base_url: "https://test.example.com"
-language: "en"
+languages: ["en"]
 charset: "UTF-8"
 default_author: "john-doe"
 date_format: "F j, Y"

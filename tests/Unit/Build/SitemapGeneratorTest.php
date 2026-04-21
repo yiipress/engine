@@ -34,7 +34,7 @@ final class SitemapGeneratorTest extends TestCase
             title: 'Test Site',
             description: 'A test site',
             baseUrl: 'https://test.example.com',
-            language: 'en',
+            defaultLanguage: 'en',
             charset: 'UTF-8',
             defaultAuthor: 'john-doe',
             dateFormat: 'F j, Y',

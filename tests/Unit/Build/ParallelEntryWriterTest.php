@@ -139,7 +139,7 @@ PHP);
             title: 'Test Site',
             description: '',
             baseUrl: 'https://example.com',
-            language: 'en',
+            defaultLanguage: 'en',
             charset: 'utf-8',
             defaultAuthor: '',
             dateFormat: 'Y-m-d',

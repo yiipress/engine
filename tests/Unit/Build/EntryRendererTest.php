@@ -10,11 +10,13 @@ use App\Build\Theme;
 use App\Build\ThemeRegistry;
 use App\Build\TemplateResolver;
 use App\Content\Model\Entry;
+use App\Content\Model\I18nConfig;
 use App\Content\Model\SearchConfig;
 use App\Content\Model\SiteConfig;
 use App\Processor\ContentProcessorPipeline;
 use DateTimeImmutable;
 use FilesystemIterator;
+use Locale;
 use PHPUnit\Framework\TestCase;
 
 use RecursiveDirectoryIterator;
@@ -23,6 +25,8 @@ use SplFileInfo;
 
 use function PHPUnit\Framework\assertStringContainsString;
 use function PHPUnit\Framework\assertStringNotContainsString;
+use function mb_strtoupper;
+use function mb_substr;
 
 final class EntryRendererTest extends TestCase
 {
@@ -51,7 +55,35 @@ final class EntryRendererTest extends TestCase
         assertStringContainsString('<h1>Test Post</h1>', $html);
         assertStringContainsString('Hello world.', $html);
         assertStringContainsString("root.setAttribute('data-theme', theme);", $html);
+        assertStringContainsString("root.setAttribute('data-ui-language', uiLanguage);", $html);
+        assertStringContainsString('window.__yiipressApplyLanguageSelector = function (selector)', $html);
+        assertStringContainsString('window.__yiipressApplyMenuTranslations = function (container)', $html);
         assertStringContainsString("root.style.colorScheme = theme;", $html);
+    }
+
+    public function testUiLanguageIsIndependentFromEntryLanguage(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Test Post\nlanguage: ru\n---\n\nHello world.\n");
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Test Post', language: 'ru');
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver(), contentDir: $this->contentDir);
+        $html = $renderer->render(
+            $this->createSiteConfig(
+                search: new SearchConfig(),
+                i18n: new I18nConfig(languages: ['en', 'ru'], defaultLanguage: 'en'),
+            ),
+            $entry,
+            '/ru/blog/test-post/',
+        );
+
+        assertStringContainsString('<html lang="ru">', $html);
+        assertStringContainsString('id="ui-language-selector"', $html);
+        assertStringContainsString('value="en" selected>' . htmlspecialchars($this->capitalizeUtf8(Locale::getDisplayLanguage('en', 'en') ?: 'EN')) . '</option>', $html);
+        assertStringContainsString('value="ru">' . htmlspecialchars($this->capitalizeUtf8(Locale::getDisplayLanguage('ru', 'ru') ?: 'RU')) . '</option>', $html);
+        assertStringContainsString('aria-label="Search"', $html);
+        assertStringContainsString('data-default-language="en"', $html);
+        assertStringContainsString('"ui_language":"Interface language"', $html);
     }
 
     public function testRendersWithCustomLayout(): void
@@ -223,13 +255,13 @@ PHP);
         return new TemplateResolver($registry);
     }
 
-    private function createSiteConfig(string $theme = '', ?SearchConfig $search = null): SiteConfig
+    private function createSiteConfig(string $theme = '', ?SearchConfig $search = null, ?I18nConfig $i18n = null): SiteConfig
     {
         return new SiteConfig(
             title: 'Test Site',
             description: '',
             baseUrl: 'https://example.com',
-            language: 'en',
+            defaultLanguage: 'en',
             charset: 'UTF-8',
             defaultAuthor: '',
             dateFormat: 'Y-m-d',
@@ -239,6 +271,7 @@ PHP);
             params: [],
             theme: $theme,
             search: $search,
+            i18n: $i18n,
         );
     }
 
@@ -253,6 +286,7 @@ PHP);
         string $collection = 'blog',
         array $authors = [],
         array $tags = [],
+        string $language = '',
     ): Entry {
         $content = file_get_contents($filePath);
         $bodyMarker = "---\n\n";
@@ -279,7 +313,7 @@ PHP);
             layout: $layout,
             theme: '',
             weight: 0,
-            language: '',
+            language: $language,
             redirectTo: '',
             extra: [],
             bodyOffset: $bodyOffset,
@@ -307,5 +341,15 @@ PHP);
             }
         }
         rmdir($path);
+    }
+
+    private function capitalizeUtf8(string $value): string
+    {
+        $firstCharacter = mb_substr($value, 0, 1);
+        if ($firstCharacter === '') {
+            return $value;
+        }
+
+        return mb_strtoupper($firstCharacter) . mb_substr($value, 1);
     }
 }

@@ -25,6 +25,13 @@ final readonly class NotFoundPageWriter
         $assetManifest = $this->assetManifest;
         $search = $siteConfig->search !== null;
         $searchResults = $siteConfig->search?->results ?? 10;
+        $language = $siteConfig->defaultLanguage;
+        $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
+        $ui = $uiViewData->ui;
+        $uiLanguage = $uiViewData->language;
+        $uiLanguages = $uiViewData->languages;
+        $uiCatalogs = $uiViewData->catalogs;
+        $t = static fn (string $key, array $params = []): string => $ui->get($key, $params);
 
         ob_start();
         require $this->templateResolver->resolve('errors/404', $siteConfig->theme);

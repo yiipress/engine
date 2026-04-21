@@ -37,6 +37,27 @@ final class NavigationRendererTest extends TestCase
         assertStringContainsString('<a href="./blog/">Blog</a>', $html);
     }
 
+    public function testRenderLocalizedMenu(): void
+    {
+        $navigation = new Navigation(menus: [
+            'main' => [
+                new NavigationItem(
+                    title: 'About',
+                    url: '/about/',
+                    children: [],
+                    titles: ['en' => 'About', 'ru' => 'О сайте'],
+                ),
+            ],
+        ]);
+
+        $html = NavigationRenderer::render($navigation, 'main', './', 'ru', 'en');
+
+        assertStringContainsString(
+            '<a href="./about/" data-ui-menu-title="{&quot;en&quot;:&quot;About&quot;,&quot;ru&quot;:&quot;О сайте&quot;}" data-ui-menu-default="About">О сайте</a>',
+            $html,
+        );
+    }
+
     public function testRenderNestedMenu(): void
     {
         $navigation = new Navigation(menus: [

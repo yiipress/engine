@@ -11,7 +11,6 @@
 
     const maxResults = parseInt(input.dataset.maxResults || '10', 10);
     const root = input.dataset.root || '/';
-
     let index = null;
     let loading = false;
     let debounceTimer;
@@ -127,7 +126,7 @@
         const top = scored.slice(0, maxResults);
 
         if (top.length === 0) {
-            resultsList.innerHTML = '<li class="search-no-results">No results found.</li>';
+            resultsList.innerHTML = '<li class="search-no-results">' + escHtml(resultsList.dataset.noResultsText || 'No results found.') + '</li>';
             return;
         }
 

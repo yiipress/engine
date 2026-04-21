@@ -116,7 +116,8 @@ final class EntryRenderer
         $metaTags = MetaTagsBuilder::forEntry($siteConfig, $entry, $permalink, $translations);
         $language = $entry->language !== ''
             ? $entry->language
-            : ($siteConfig->i18n?->defaultLanguage ?? $siteConfig->language);
+            : ($siteConfig->i18n?->defaultLanguage ?? $siteConfig->defaultLanguage);
+        $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $themeName);
         $html = ($this->templateClosures[$templatePath])([
             'siteTitle' => $siteConfig->title,
             'entryTitle' => $entry->title,
@@ -146,7 +147,7 @@ final class EntryRenderer
             'assetManifest' => $this->assetManifest,
             'search' => $siteConfig->search !== null,
             'searchResults' => $siteConfig->search?->results ?? 10,
-        ]);
+        ] + $uiViewData->toArray());
 
         return $templateContext->rewriteHtml($html, $rootPath);
     }

@@ -36,7 +36,7 @@ final class CollectionListingWriterTest extends TestCase
             title: 'Test Site',
             description: 'A test site',
             baseUrl: 'https://test.example.com',
-            language: 'en',
+            defaultLanguage: 'en',
             charset: 'UTF-8',
             defaultAuthor: 'john-doe',
             dateFormat: 'F j, Y',
@@ -158,6 +158,41 @@ final class CollectionListingWriterTest extends TestCase
 
         $page2 = file_get_contents($this->outputDir . '/blog/page/2/index.html');
         assertStringContainsString('<title>Blog — Page 2 — Test Site</title>', $page2);
+    }
+
+    public function testLocalizesMinimalThemeFromSiteLanguage(): void
+    {
+        $siteConfig = new SiteConfig(
+            title: 'Тестовый сайт',
+            description: 'Тест',
+            baseUrl: 'https://test.example.com',
+            defaultLanguage: 'ru',
+            charset: 'UTF-8',
+            defaultAuthor: 'john-doe',
+            dateFormat: 'F j, Y',
+            entriesPerPage: 10,
+            permalink: '/:collection/:slug/',
+            taxonomies: [],
+            params: [],
+        );
+        $collection = $this->createCollection(entriesPerPage: 2);
+        $entries = [
+            $this->createEntry('post-1', 'Post 1', '2024-03-01'),
+            $this->createEntry('post-2', 'Post 2', '2024-03-02'),
+            $this->createEntry('post-3', 'Post 3', '2024-03-03'),
+        ];
+
+        $writer = new CollectionListingWriter($this->createTemplateResolver());
+        $writer->write($siteConfig, $collection, $entries, $this->outputDir);
+
+        $page1 = file_get_contents($this->outputDir . '/blog/index.html');
+        assertStringContainsString('<html lang="ru">', $page1);
+        assertStringContainsString('aria-label="Архив"', $page1);
+        assertStringContainsString('Страница 1 из 2', $page1);
+
+        $page2 = file_get_contents($this->outputDir . '/blog/page/2/index.html');
+        assertStringContainsString('<title>Blog — Страница 2 — Тестовый сайт</title>', $page2);
+        assertStringContainsString('&larr; <span data-ui-key="previous">Назад</span>', $page2);
     }
 
     private function createTemplateResolver(): TemplateResolver

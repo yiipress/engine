@@ -5,6 +5,7 @@
     --c-link: #2563eb;
     --c-link-hover: #1d4ed8;
     --c-border: #e5e7eb;
+    --c-border-strong: #d1d5db;
     --c-code-bg: #f3f4f6;
     --c-header-bg: #fafafa;
     --c-tag-bg: #f0f0f0;
@@ -22,6 +23,7 @@
     --c-link: #60a5fa;
     --c-link-hover: #93bbfd;
     --c-border: #374151;
+    --c-border-strong: #4b5563;
     --c-code-bg: #1f2937;
     --c-header-bg: #0f172a;
     --c-tag-bg: #1f2937;
@@ -30,7 +32,11 @@
     --c-blockquote-border: #4b5563;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 100%; -webkit-text-size-adjust: 100%; }
+html {
+    font-size: 100%;
+    -webkit-text-size-adjust: 100%;
+    scrollbar-gutter: stable;
+}
 body {
     font-family: var(--font-sans);
     font-size: 1.0625rem;
@@ -49,21 +55,30 @@ a:hover { color: var(--c-link-hover); text-decoration: underline; }
     transition: background .2s, border-color .2s;
 }
 .site-header .container {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: center;
-    justify-content: space-between;
+    gap: 1.5rem;
+    min-height: calc(2.25rem + 1.5rem);
     padding: .75rem 1.5rem;
     max-width: var(--max-width);
     margin: 0 auto;
 }
 .site-header .site-name {
+    justify-self: start;
     font-weight: 700;
     font-size: 1.125rem;
     color: var(--c-text);
     text-decoration: none;
 }
 .site-header .site-name:hover { color: var(--c-link); text-decoration: none; }
-.site-header nav ul { list-style: none; display: flex; gap: 1.25rem; }
+.site-header nav {
+    justify-self: center;
+    min-height: 2.25rem;
+    display: flex;
+    align-items: center;
+}
+.site-header nav ul { list-style: none; display: flex; align-items: center; gap: 1.25rem; flex-wrap: nowrap; }
 .site-header nav a { font-size: .9375rem; }
 .header-actions {
     display: flex;
@@ -125,6 +140,63 @@ a:hover { color: var(--c-link-hover); text-decoration: underline; }
     display: flex;
     align-items: center;
     gap: .5rem;
+    justify-self: end;
+}
+.ui-language-control {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    height: 2.25rem;
+}
+.ui-language-control::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: .9rem;
+    width: .45rem;
+    height: .45rem;
+    border-right: 1.5px solid var(--c-text-muted);
+    border-bottom: 1.5px solid var(--c-text-muted);
+    transform: translateY(-62%) rotate(45deg);
+    pointer-events: none;
+    transition: border-color .2s;
+}
+.ui-language-selector {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border: 1px solid var(--c-border);
+    border-radius: .5rem;
+    background: var(--c-bg);
+    color: var(--c-text-muted);
+    font: inherit;
+    font-size: .875rem;
+    line-height: 1.2;
+    height: 2.25rem;
+    padding: .55rem 2.1rem .55rem .75rem;
+    transition: border-color .2s, color .2s, background-color .2s;
+    cursor: pointer;
+}
+.ui-language-selector:hover,
+.ui-language-selector:focus {
+    border-color: var(--c-border-strong);
+    color: var(--c-text);
+    outline: none;
+}
+.ui-language-control:hover::after,
+.ui-language-control:focus-within::after {
+    border-color: var(--c-text);
+}
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 /* Main content */
@@ -348,6 +420,8 @@ a.tag-link:hover {
     grid-template-columns: 14rem var(--max-width);
     gap: 2.5rem;
     align-items: start;
+    position: relative;
+    left: calc((-14rem - 2.5rem) / 2);
 }
 .toc-sidebar {
     position: sticky;
@@ -389,8 +463,22 @@ a.tag-link:hover {
 
 /* Responsive: hide sidebar on narrow screens */
 @media (max-width: 1024px) {
+    .site-header .container {
+        grid-template-columns: 1fr;
+        gap: .75rem;
+    }
+    .site-header .site-name,
+    .site-header nav,
+    .buttons {
+        justify-self: stretch;
+    }
+    .site-header nav ul,
+    .buttons {
+        justify-content: center;
+    }
     .article-with-sidebar {
         grid-template-columns: 1fr;
+        left: 0;
     }
     .toc-sidebar {
         display: none;

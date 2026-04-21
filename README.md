@@ -98,6 +98,7 @@ Configure `content/config.yaml`:
 ```yaml
 title: My Site
 base_url: https://example.com
+languages: [en]
 permalink: /:collection/:slug/
 taxonomies:
   - tags

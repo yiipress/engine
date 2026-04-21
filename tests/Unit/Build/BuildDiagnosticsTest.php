@@ -216,7 +216,7 @@ final class BuildDiagnosticsTest extends TestCase
             title: 'Test',
             description: '',
             baseUrl: 'https://example.com',
-            language: 'en',
+            defaultLanguage: 'en',
             charset: 'UTF-8',
             defaultAuthor: '',
             dateFormat: 'Y-m-d',

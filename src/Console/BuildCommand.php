@@ -36,6 +36,7 @@ use App\Content\PermalinkResolver;
 use App\Content\Related\RelatedIndex;
 use App\Content\TaxonomyCollector;
 use App\Environment;
+use App\I18n\UiText;
 use App\Processor\ContentProcessorPipeline;
 use DateTimeImmutable;
 use FilesystemIterator;
@@ -433,7 +434,13 @@ final class BuildCommand extends Command
         if ($redirectTasks !== []) {
             $redirectWriter = new RedirectPageWriter();
             foreach ($redirectTasks as $task) {
-                $redirectWriter->write($task['entry'], $task['filePath']);
+                $language = $task['entry']->language !== '' ? $task['entry']->language : $siteConfig->defaultLanguage;
+                $redirectWriter->write(
+                    $task['entry'],
+                    $task['filePath'],
+                    $language,
+                    UiText::forTheme($siteConfig->defaultLanguage, $this->templateResolver, $siteConfig->theme, $siteConfig->defaultLanguage),
+                );
             }
             $output->writeln('  Redirects written: <comment>' . count($redirectTasks) . '</comment>');
         }
@@ -497,7 +504,13 @@ final class BuildCommand extends Command
 
         $redirectWriter ??= new RedirectPageWriter();
         foreach ($standaloneRedirectTasks as $task) {
-            $redirectWriter->write($task['entry'], $task['filePath']);
+            $language = $task['entry']->language !== '' ? $task['entry']->language : $siteConfig->defaultLanguage;
+            $redirectWriter->write(
+                $task['entry'],
+                $task['filePath'],
+                $language,
+                UiText::forTheme($siteConfig->defaultLanguage, $this->templateResolver, $siteConfig->theme, $siteConfig->defaultLanguage),
+            );
         }
         $standalonePagesWritten += count($standaloneRedirectTasks);
 

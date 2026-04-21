@@ -135,6 +135,7 @@ final readonly class DateArchiveWriter
         ?Navigation $navigation,
     ): void {
         $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/archive/');
+        $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
         $html = $renderer->render('archive_index', [
             'siteTitle' => $siteConfig->title,
             'collectionName' => $collection->name,
@@ -142,10 +143,11 @@ final readonly class DateArchiveWriter
             'years' => $years,
             'nav' => $navigation,
             'rootPath' => $rootPath,
-            'metaTags' => MetaTagsBuilder::forPage($siteConfig, $collection->title . ' Archive', $siteConfig->description, '/' . $collection->name . '/archive/'),
+            'language' => $siteConfig->defaultLanguage,
+            'metaTags' => MetaTagsBuilder::forPage($siteConfig, $collection->title . ' ' . $uiViewData->ui->get('archive'), $siteConfig->description, '/' . $collection->name . '/archive/'),
             'search' => $siteConfig->search !== null,
             'searchResults' => $siteConfig->search?->results ?? 10,
-        ], $rootPath);
+        ] + $uiViewData->toArray(), $rootPath);
 
         $dir = $outputDir . '/' . $collection->name . '/archive';
         if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
@@ -170,8 +172,9 @@ final readonly class DateArchiveWriter
         ?Navigation $navigation,
     ): void {
         $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/' . $year . '/');
+        $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
 
-        rsort($months);
+        rsort($months, SORT_STRING);
 
         $entryData = [];
         foreach ($entries as $entry) {
@@ -193,10 +196,11 @@ final readonly class DateArchiveWriter
             'entries' => $entries,
             'nav' => $navigation,
             'rootPath' => $rootPath,
+            'language' => $siteConfig->defaultLanguage,
             'metaTags' => MetaTagsBuilder::forPage($siteConfig, $collection->title . ': ' . $year, $siteConfig->description, '/' . $collection->name . '/' . $year . '/'),
             'search' => $siteConfig->search !== null,
             'searchResults' => $siteConfig->search?->results ?? 10,
-        ], $rootPath);
+        ] + $uiViewData->toArray(), $rootPath);
 
         $dir = $outputDir . '/' . $collection->name . '/' . $year;
         if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
@@ -220,7 +224,8 @@ final readonly class DateArchiveWriter
         ?Navigation $navigation,
     ): void {
         $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/' . $year . '/' . $month . '/');
-        $monthName = date('F', mktime(0, 0, 0, (int) $month, 1));
+        $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
+        $monthName = $uiViewData->ui->monthName((int) $month);
 
         $entryData = [];
         foreach ($entries as $entry) {
@@ -243,10 +248,11 @@ final readonly class DateArchiveWriter
             'entries' => $entries,
             'nav' => $navigation,
             'rootPath' => $rootPath,
+            'language' => $siteConfig->defaultLanguage,
             'metaTags' => MetaTagsBuilder::forPage($siteConfig, $collection->title . ': ' . $monthName . ' ' . $year, $siteConfig->description, '/' . $collection->name . '/' . $year . '/' . $month . '/'),
             'search' => $siteConfig->search !== null,
             'searchResults' => $siteConfig->search?->results ?? 10,
-        ], $rootPath);
+        ] + $uiViewData->toArray(), $rootPath);
 
         $dir = $outputDir . '/' . $collection->name . '/' . $year . '/' . $month;
         if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {

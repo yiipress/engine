@@ -32,11 +32,13 @@ final class SiteConfigParser
             throw new RuntimeException("Invalid YAML in file: $filePath");
         }
 
+        $i18n = self::parseI18nConfig($data);
+
         return new SiteConfig(
             title: (string) ($data['title'] ?? ''),
             description: (string) ($data['description'] ?? ''),
             baseUrl: (string) ($data['base_url'] ?? ''),
-            language: (string) ($data['language'] ?? 'en'),
+            defaultLanguage: $i18n->defaultLanguage,
             charset: (string) ($data['charset'] ?? 'UTF-8'),
             defaultAuthor: (string) ($data['default_author'] ?? ''),
             dateFormat: (string) ($data['date_format'] ?? 'Y-m-d'),
@@ -58,7 +60,7 @@ final class SiteConfigParser
             search: self::parseSearchConfig($data['search'] ?? null),
             assets: self::parseAssetConfig($data['assets'] ?? null),
             related: self::parseRelatedConfig($data['related'] ?? null),
-            i18n: self::parseI18nConfig($data, (string) ($data['language'] ?? 'en')),
+            i18n: $i18n,
         );
     }
 
@@ -146,26 +148,19 @@ final class SiteConfigParser
     /**
      * @param array<mixed, mixed> $data
      */
-    private static function parseI18nConfig(array $data, string $siteLanguage): ?I18nConfig
+    private static function parseI18nConfig(array $data): I18nConfig
     {
-        if (!isset($data['languages'])) {
-            return null;
+        if (!isset($data['languages']) || !is_array($data['languages'])) {
+            throw new RuntimeException('The "languages" option must be a non-empty list.');
         }
 
-        $languages = is_array($data['languages'])
-            ? array_values(array_unique(array_map(strval(...), $data['languages'])))
-            : [];
+        $languages = array_values(array_unique(array_map(strval(...), $data['languages'])));
 
         if ($languages === []) {
-            return null;
+            throw new RuntimeException('The "languages" option must be a non-empty list.');
         }
 
-        $default = (string) ($data['default_language'] ?? $siteLanguage);
-        if (!in_array($default, $languages, true)) {
-            $default = $languages[0];
-        }
-
-        return new I18nConfig(languages: $languages, defaultLanguage: $default);
+        return new I18nConfig(languages: $languages, defaultLanguage: $languages[0]);
     }
 
     private static function parseRelatedConfig(mixed $data): ?RelatedConfig

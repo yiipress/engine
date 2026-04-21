@@ -16,15 +16,20 @@ declare(strict_types=1);
  */
 
 use App\Content\Model\Navigation;
+use App\I18n\UiText;
 
+$language ??= 'en';
+$uiLanguage ??= 'en';
+$ui ??= UiText::for($uiLanguage);
+$t ??= static fn (string $key, array $params = []): string => $ui->get($key, $params);
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= htmlspecialchars($language) ?>">
 <head>
-<?= $partial('head', ['title' => $authorTitle . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'metaTags' => $metaTags, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10]) ?>
+<?= $partial('head', ['title' => $authorTitle . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'metaTags' => $metaTags, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage], 'uiCatalogs' => $uiCatalogs ?? [$uiLanguage => []]]) ?>
 </head>
 <body>
-<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10]) ?>
+<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage]]) ?>
 <main>
     <div class="container">
         <div class="author-profile">
@@ -49,7 +54,7 @@ use App\Content\Model\Navigation;
             </div>
         </div>
 <?php if ($entries !== []): ?>
-        <h2>Posts</h2>
+        <h2 data-ui-key="posts"><?= htmlspecialchars($t('posts')) ?></h2>
         <ul class="entry-list">
 <?php foreach ($entries as $entry): ?>
             <li>
@@ -63,6 +68,6 @@ use App\Content\Model\Navigation;
 <?php endif; ?>
     </div>
 </main>
-<?= $partial('footer', ['nav' => $nav, 'rootPath' => $rootPath]) ?>
+<?= $partial('footer', ['nav' => $nav, 'rootPath' => $rootPath, 'ui' => $ui, 'uiLanguage' => $uiLanguage]) ?>
 </body>
 </html>

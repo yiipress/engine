@@ -24,19 +24,23 @@ declare(strict_types=1);
  */
 
 use App\Content\Model\Navigation;
+use App\I18n\UiText;
 
 $language ??= 'en';
+$uiLanguage ??= 'en';
 $translations ??= [];
+$ui ??= UiText::for($uiLanguage);
+$t ??= static fn (string $key, array $params = []): string => $ui->get($key, $params);
 ?>
 <!DOCTYPE html>
 <html lang="<?= htmlspecialchars($language) ?>">
 <head>
 
-<?= $partial('head', ['title' => $entryTitle . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'headAssets' => $headAssets ?? '', 'metaTags' => $metaTags, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10]) ?>
+<?= $partial('head', ['title' => $entryTitle . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'headAssets' => $headAssets ?? '', 'metaTags' => $metaTags, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage], 'uiCatalogs' => $uiCatalogs ?? [$uiLanguage => []]]) ?>
 
 </head>
 <body>
-<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10]) ?>
+<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage]]) ?>
 <main>
     <div class="container">
 <?php $hasSidebar = $toc !== []; ?>
@@ -44,7 +48,7 @@ $translations ??= [];
         <div class="article-with-sidebar">
 <?php endif; ?>
 <?php if ($hasSidebar): ?>
-            <aside class="toc-sidebar" aria-label="Table of contents">
+            <aside class="toc-sidebar" aria-label="<?= htmlspecialchars($t('table_of_contents')) ?>" data-ui-attr-aria-label="table_of_contents">
                 <nav>
                     <ol>
 <?php foreach ($toc as $item): ?>
@@ -59,10 +63,10 @@ $translations ??= [];
 <?php if ($draft || ($dateISO !== '' && $dateISO > date('Y-m-d')) || $date !== '' || $author !== ''): ?>
             <div class="entry-meta">
 <?php if ($draft): ?>
-                <span class="badge badge-draft">Draft</span>
+                <span class="badge badge-draft" data-ui-key="draft"><?= htmlspecialchars($t('draft')) ?></span>
 <?php endif; ?>
 <?php if ($dateISO !== '' && $dateISO > date('Y-m-d')): ?>
-                <span class="badge badge-future">Scheduled: <?= htmlspecialchars($date) ?></span>
+                <span class="badge badge-future" data-ui-key="scheduled" data-ui-params="<?= htmlspecialchars((string) json_encode(['date' => $date], JSON_THROW_ON_ERROR), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"><?= htmlspecialchars($t('scheduled', ['date' => $date])) ?></span>
 <?php elseif ($date !== ''): ?>
                 <time datetime="<?= htmlspecialchars($dateISO) ?>"><?= htmlspecialchars($date) ?></time>
 <?php endif; ?>
@@ -93,8 +97,8 @@ $translations ??= [];
                 </footer>
 <?php endif; ?>
 <?php if (!empty($translations)): ?>
-                <section class="translations" aria-label="Other languages">
-                    <h2>Other languages</h2>
+                <section class="translations" aria-label="<?= htmlspecialchars($t('other_languages')) ?>" data-ui-attr-aria-label="other_languages">
+                    <h2 data-ui-key="other_languages"><?= htmlspecialchars($t('other_languages')) ?></h2>
                     <ul>
 <?php foreach ($translations as $translation): ?>
                         <li><a hreflang="<?= htmlspecialchars($translation->language) ?>" href="<?= htmlspecialchars($translation->permalink) ?>"><?= htmlspecialchars($translation->language) ?>: <?= htmlspecialchars($translation->title) ?></a></li>
@@ -103,8 +107,8 @@ $translations ??= [];
                 </section>
 <?php endif; ?>
 <?php if (!empty($related)): ?>
-                <section class="related" aria-label="Related posts">
-                    <h2>Related posts</h2>
+                <section class="related" aria-label="<?= htmlspecialchars($t('related_posts')) ?>" data-ui-attr-aria-label="related_posts">
+                    <h2 data-ui-key="related_posts"><?= htmlspecialchars($t('related_posts')) ?></h2>
                     <ul>
 <?php foreach ($related as $item): ?>
                         <li>
@@ -123,6 +127,6 @@ $translations ??= [];
 <?php endif; ?>
     </div>
 </main>
-<?= $partial('footer', ['nav' => $nav, 'rootPath' => $rootPath]) ?>
+<?= $partial('footer', ['nav' => $nav, 'rootPath' => $rootPath, 'ui' => $ui, 'uiLanguage' => $uiLanguage]) ?>
 </body>
 </html>

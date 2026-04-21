@@ -63,16 +63,19 @@ final readonly class TaxonomyPageWriter
         ?Navigation $navigation,
     ): void {
         $rootPath = RelativePathHelper::rootPath('/' . $taxonomyName . '/');
+        $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
+        $taxonomyLabel = $uiViewData->ui->taxonomyLabel($taxonomyName);
         $html = $renderer->render('taxonomy_index', [
             'siteTitle' => $siteConfig->title,
             'taxonomyName' => $taxonomyName,
             'terms' => $terms,
             'nav' => $navigation,
             'rootPath' => $rootPath,
-            'metaTags' => MetaTagsBuilder::forPage($siteConfig, ucfirst($taxonomyName), $siteConfig->description, '/' . $taxonomyName . '/'),
+            'language' => $siteConfig->defaultLanguage,
+            'metaTags' => MetaTagsBuilder::forPage($siteConfig, $taxonomyLabel, $siteConfig->description, '/' . $taxonomyName . '/'),
             'search' => $siteConfig->search !== null,
             'searchResults' => $siteConfig->search?->results ?? 10,
-        ], $rootPath);
+        ] + $uiViewData->toArray(), $rootPath);
 
         $dir = $outputDir . '/' . $taxonomyName;
         if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
@@ -97,6 +100,8 @@ final readonly class TaxonomyPageWriter
         ?Navigation $navigation,
     ): void {
         $rootPath = RelativePathHelper::rootPath('/' . $taxonomyName . '/' . $term . '/');
+        $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
+        $taxonomyLabel = $uiViewData->ui->taxonomyLabel($taxonomyName);
 
         $entryData = [];
         foreach ($entries as $entry) {
@@ -121,10 +126,11 @@ final readonly class TaxonomyPageWriter
             'entries' => $entries,
             'nav' => $navigation,
             'rootPath' => $rootPath,
-            'metaTags' => MetaTagsBuilder::forPage($siteConfig, $term . ' — ' . ucfirst($taxonomyName), $siteConfig->description, '/' . $taxonomyName . '/' . $term . '/'),
+            'language' => $siteConfig->defaultLanguage,
+            'metaTags' => MetaTagsBuilder::forPage($siteConfig, $term . ' — ' . $taxonomyLabel, $siteConfig->description, '/' . $taxonomyName . '/' . $term . '/'),
             'search' => $siteConfig->search !== null,
             'searchResults' => $siteConfig->search?->results ?? 10,
-        ], $rootPath);
+        ] + $uiViewData->toArray(), $rootPath);
 
         $dir = $outputDir . '/' . $taxonomyName . '/' . $term;
         if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {

@@ -150,7 +150,7 @@ final class MetaTagsBuilderTest extends TestCase
             title: 'Test Site',
             description: 'A test site.',
             baseUrl: $baseUrl,
-            language: 'en',
+            defaultLanguage: 'en',
             charset: 'UTF-8',
             defaultAuthor: '',
             dateFormat: 'Y-m-d',

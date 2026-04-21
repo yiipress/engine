@@ -84,6 +84,7 @@
 
 - [x] Related content suggestions as a plugin
 - [x] Multilingual / i18n support
+- [x] UI language selector independent from content language, remembered client-side
 - [x] Search as a plugin
 - [ ] Hooks / events system (before build, after build, before render, after render) for plugin architecture
 

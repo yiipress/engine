@@ -106,6 +106,7 @@ final class AuthorPageWriter
         ?Navigation $navigation,
     ): void {
         $rootPath = RelativePathHelper::rootPath('/authors/');
+        $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
 
         $authorList = [];
         foreach ($authors as $slug => $author) {
@@ -121,10 +122,11 @@ final class AuthorPageWriter
             'authorList' => $authorList,
             'nav' => $navigation,
             'rootPath' => $rootPath,
-            'metaTags' => MetaTagsBuilder::forPage($siteConfig, 'Authors', $siteConfig->description, '/authors/'),
+            'language' => $siteConfig->defaultLanguage,
+            'metaTags' => MetaTagsBuilder::forPage($siteConfig, $uiViewData->ui->get('authors'), $siteConfig->description, '/authors/'),
             'search' => $siteConfig->search !== null,
             'searchResults' => $siteConfig->search?->results ?? 10,
-        ], $rootPath);
+        ] + $uiViewData->toArray(), $rootPath);
 
         $dir = $outputDir . '/authors';
         if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
@@ -148,6 +150,7 @@ final class AuthorPageWriter
         ?Navigation $navigation,
     ): void {
         $rootPath = RelativePathHelper::rootPath('/authors/' . $author->slug . '/');
+        $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
 
         $authorTitle = $author->title;
         $authorEmail = $author->email;
@@ -184,10 +187,11 @@ final class AuthorPageWriter
             'entries' => $entries,
             'nav' => $navigation,
             'rootPath' => $rootPath,
+            'language' => $siteConfig->defaultLanguage,
             'metaTags' => MetaTagsBuilder::forPage($siteConfig, $author->title, $siteConfig->description, '/authors/' . $author->slug . '/'),
             'search' => $siteConfig->search !== null,
             'searchResults' => $siteConfig->search?->results ?? 10,
-        ], $rootPath);
+        ] + $uiViewData->toArray(), $rootPath);
 
         $dir = $outputDir . '/authors/' . $author->slug;
         if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {

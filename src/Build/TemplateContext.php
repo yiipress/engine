@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Build;
 
+use App\I18n\UiText;
 use Closure;
 
 final class TemplateContext
@@ -25,6 +26,10 @@ final class TemplateContext
         $variables['partial'] = $this->partial(...);
         if (!isset($variables['assetManifest'])) {
             $variables['assetManifest'] = $this->assetManifest;
+        }
+        if (($variables['ui'] ?? null) instanceof UiText && !isset($variables['t'])) {
+            $ui = $variables['ui'];
+            $variables['t'] = static fn (string $key, array $params = []): string => $ui->get($key, $params);
         }
 
         if (!isset($this->closureCache[$name])) {

@@ -15,22 +15,27 @@ declare(strict_types=1);
  */
 
 use App\Content\Model\Navigation;
+use App\I18n\UiText;
 
+$language ??= 'en';
+$uiLanguage ??= 'en';
+$ui ??= UiText::for($uiLanguage);
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= htmlspecialchars($language) ?>">
 <head>
-<?= $partial('head', ['title' => $collectionTitle . ': ' . $year . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'metaTags' => $metaTags, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10]) ?>
+<?= $partial('head', ['title' => $collectionTitle . ': ' . $year . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'metaTags' => $metaTags, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage], 'uiCatalogs' => $uiCatalogs ?? [$uiLanguage => []]]) ?>
 </head>
 <body>
-<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10]) ?>
+<?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage]]) ?>
 <main>
     <div class="container">
         <h1><?= htmlspecialchars($collectionTitle) ?>: <?= $year ?></h1>
         <nav class="archive-months">
             <ul>
 <?php foreach ($months as $m): ?>
-                <li><a href="<?= $rootPath . htmlspecialchars($collectionName) ?>/<?= $year ?>/<?= $m ?>/"><?= date('F', mktime(0, 0, 0, (int) $m, 1)) ?></a></li>
+<?php $month = (string) $m; ?>
+                <li><a href="<?= $rootPath . htmlspecialchars($collectionName) ?>/<?= $year ?>/<?= $month ?>/"><span data-ui-month="<?= htmlspecialchars($month) ?>"><?= htmlspecialchars($ui->monthName((int) $month)) ?></span></a></li>
 <?php endforeach; ?>
             </ul>
         </nav>
@@ -46,6 +51,6 @@ use App\Content\Model\Navigation;
         </ul>
     </div>
 </main>
-<?= $partial('footer', ['nav' => $nav, 'rootPath' => $rootPath]) ?>
+<?= $partial('footer', ['nav' => $nav, 'rootPath' => $rootPath, 'ui' => $ui, 'uiLanguage' => $uiLanguage]) ?>
 </body>
 </html>

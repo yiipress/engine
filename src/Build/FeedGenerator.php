@@ -117,7 +117,7 @@ final class FeedGenerator
             $xml->writeElement('updated', $updated->format(DateTimeInterface::ATOM));
         }
 
-        if ($siteConfig->language !== '') {
+        if ($siteConfig->defaultLanguage !== '') {
             $xml->startElement('generator');
             $xml->writeAttribute('uri', 'https://github.com/yiisoft/yiipress');
             $xml->text('YiiPress');
@@ -155,8 +155,8 @@ final class FeedGenerator
         $xml->writeElement('description', $collection->description !== '' ? $collection->description : $siteConfig->description);
         $xml->writeElement('link', $collectionUrl);
 
-        if ($siteConfig->language !== '') {
-            $xml->writeElement('language', $siteConfig->language);
+        if ($siteConfig->defaultLanguage !== '') {
+            $xml->writeElement('language', $siteConfig->defaultLanguage);
         }
 
         $xml->startElement('atom:link');

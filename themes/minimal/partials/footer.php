@@ -9,12 +9,23 @@ use App\Build\Asset;
  * @var ?Navigation $nav
  * @var string $rootPath
  * @var AssetFingerprintManifest|null $assetManifest
+ * @var string $uiLanguage
  */
+$uiLanguage ??= 'en';
 ?>
 <?php if ($nav !== null && $nav->menu('footer') !== []): ?>
 <footer class="site-footer">
     <div class="container">
-        <?= NavigationRenderer::render($nav, 'footer') ?>
+        <?= NavigationRenderer::render($nav, 'footer', $rootPath, $uiLanguage, $uiLanguage) ?>
+        <script>
+            (function () {
+                if (typeof window.__yiipressApplyMenuTranslations !== 'function') {
+                    return;
+                }
+
+                window.__yiipressApplyMenuTranslations(document.currentScript.previousElementSibling);
+            })();
+        </script>
     </div>
 </footer>
 <?php endif; ?>

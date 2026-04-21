@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Build;
 
+use App\Build\TemplateResolver;
+use App\Build\Theme;
+use App\Build\ThemeRegistry;
 use App\Build\RedirectPageWriter;
 use App\Content\Model\Entry;
+use App\I18n\UiText;
 use DateTimeImmutable;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
@@ -100,6 +104,22 @@ final class RedirectPageWriterTest extends TestCase
         // HTML attributes must use &amp;
         assertStringContainsString('href="https://example.com/path?a=1&amp;b=2"', $html);
         assertStringContainsString('url=https://example.com/path?a=1&amp;b=2', $html);
+    }
+
+    public function testLocalizesRedirectPage(): void
+    {
+        $entry = $this->createEntry(redirectTo: 'https://example.com/new-url/');
+        $filePath = $this->outputDir . '/localized/index.html';
+        $registry = new ThemeRegistry();
+        $registry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
+        $ui = UiText::forTheme('ru', new TemplateResolver($registry), 'minimal');
+
+        new RedirectPageWriter()->write($entry, $filePath, 'ru', $ui);
+
+        $html = file_get_contents($filePath);
+        assertStringContainsString('<html lang="ru">', $html);
+        assertStringContainsString('Перенаправление...', $html);
+        assertStringContainsString('Эта страница переехала.', $html);
     }
 
     private function createEntry(string $redirectTo): Entry

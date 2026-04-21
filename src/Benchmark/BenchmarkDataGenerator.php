@@ -154,7 +154,7 @@ final class BenchmarkDataGenerator
 title: "Benchmark Site"
 description: "A site with many entries for benchmarking"
 base_url: "https://example.com"
-language: "en"
+languages: ["en"]
 charset: "utf-8"
 YAML);
 
