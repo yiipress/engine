@@ -256,6 +256,10 @@ PHP);
         $html = $renderer->render($this->createSiteConfig(search: new SearchConfig()), $entry, '/blog/search-post/');
 
         assertStringContainsString('id="search-modal"', $html);
+        assertStringContainsString('aria-controls="search-modal"', $html);
+        assertStringContainsString('id="search-close"', $html);
+        assertStringContainsString('data-ui-attr-aria-label="search_close"', $html);
+        assertStringContainsString('<span class="search-hint" aria-hidden="true">ESC</span>', $html);
         assertStringContainsString('assets/theme/search.css', $html);
         assertStringContainsString('assets/theme/search.js', $html);
     }

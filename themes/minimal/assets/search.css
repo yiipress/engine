@@ -6,12 +6,18 @@
     z-index: 1000;
 }
 
+#search-overlay[hidden],
+#search-modal[hidden] {
+    display: none;
+}
+
 #search-modal {
     position: fixed;
-    top: 10%;
+    top: max(1rem, env(safe-area-inset-top));
     left: 50%;
     transform: translateX(-50%);
-    width: min(600px, 90vw);
+    width: min(600px, calc(100vw - 2rem));
+    max-height: calc(100dvh - max(1rem, env(safe-area-inset-top)) - 1rem);
     background: var(--c-bg);
     color: var(--c-text);
     border: 1px solid var(--c-border);
@@ -19,15 +25,17 @@
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
     z-index: 1001;
     padding: 1rem;
+    display: flex;
+    flex-direction: column;
 }
 
 #search-input-wrapper {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
     border: 1px solid var(--c-border);
     border-radius: 4px;
-    padding: 0.5rem 0.75rem;
+    padding: 0.5rem 0.625rem 0.5rem 0.75rem;
     background: var(--c-code-bg);
 }
 
@@ -39,6 +47,7 @@
     background: transparent;
     color: inherit;
     min-width: 0;
+    min-height: 2.5rem;
 }
 
 .search-hint {
@@ -48,11 +57,36 @@
     flex-shrink: 0;
 }
 
+.search-close {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: none;
+    border-radius: 0.5rem;
+    background: transparent;
+    color: var(--c-text-muted);
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.search-close:hover {
+    background: var(--c-bg);
+    color: var(--c-text);
+}
+
+.search-close svg {
+    width: 1rem;
+    height: 1rem;
+}
+
 #search-results {
     list-style: none;
-    margin: 0.5rem 0 0;
+    margin: 0.75rem 0 0;
     padding: 0;
-    max-height: 400px;
+    max-height: min(400px, calc(100dvh - 10rem));
     overflow-y: auto;
 }
 
@@ -95,4 +129,21 @@
 .search-no-results {
     padding: 0.5rem 0.75rem;
     color: var(--c-text-muted);
+}
+
+@media (max-width: 640px) {
+    #search-modal {
+        top: max(0.75rem, env(safe-area-inset-top));
+        width: calc(100vw - 1rem);
+        padding: 0.75rem;
+        border-radius: 0.75rem;
+    }
+
+    .search-hint {
+        display: none;
+    }
+
+    .search-close {
+        display: inline-flex;
+    }
 }

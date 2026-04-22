@@ -5,9 +5,10 @@
     const input = document.getElementById('search-input');
     const resultsList = document.getElementById('search-results');
     const button = document.getElementById('search-button');
+    const closeButton = document.getElementById('search-close');
     const overlay = document.getElementById('search-overlay');
 
-    if (!modal || !input || !resultsList || !button || !overlay) return;
+    if (!modal || !input || !resultsList || !button || !closeButton || !overlay) return;
 
     const maxResults = parseInt(input.dataset.maxResults || '10', 10);
     const root = input.dataset.root || '/';
@@ -18,14 +19,17 @@
     function open() {
         modal.removeAttribute('hidden');
         overlay.removeAttribute('hidden');
-        input.focus();
+        button.setAttribute('aria-expanded', 'true');
+        input.focus({ preventScroll: true });
     }
 
     function close() {
         modal.setAttribute('hidden', '');
         overlay.setAttribute('hidden', '');
+        button.setAttribute('aria-expanded', 'false');
         input.value = '';
         resultsList.innerHTML = '';
+        button.focus({ preventScroll: true });
     }
 
     button.addEventListener('click', function () {
@@ -34,6 +38,7 @@
     });
 
     overlay.addEventListener('click', close);
+    closeButton.addEventListener('click', close);
 
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && !modal.hasAttribute('hidden')) {

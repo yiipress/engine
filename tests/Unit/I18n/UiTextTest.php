@@ -24,6 +24,7 @@ final class UiTextTest extends TestCase
         $ui = UiText::forTheme('ru', $this->createTemplateResolver(), 'minimal');
 
         assertSame('Поиск', $ui->get('search'));
+        assertSame('Закрыть поиск', $ui->get('search_close'));
         assertSame('Страница 2 из 5', $ui->get('page_of', ['current' => 2, 'total' => 5]));
         assertSame('Март', $ui->monthName(3));
     }

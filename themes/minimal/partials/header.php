@@ -67,7 +67,7 @@ $languageName ??= static fn (string $language): string => $capitalizeUtf8(\Local
                 </label>
             <?php endif; ?>
             <?php if ($search): ?>
-                <button id="search-button" class="icon-btn" type="button" aria-label="<?= $h($t('search')) ?>" data-ui-attr-aria-label="search" title="<?= $h($t('search_button_title')) ?>" data-ui-attr-title="search_button_title">
+                <button id="search-button" class="icon-btn" type="button" aria-controls="search-modal" aria-expanded="false" aria-label="<?= $h($t('search')) ?>" data-ui-attr-aria-label="search" title="<?= $h($t('search_button_title')) ?>" data-ui-attr-title="search_button_title">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 </button>
             <?php endif; ?>
@@ -83,7 +83,10 @@ $languageName ??= static fn (string $language): string => $capitalizeUtf8(\Local
         <input type="search" id="search-input" placeholder="<?= $h($t('search_placeholder')) ?>" data-ui-attr-placeholder="search_placeholder" autocomplete="off"
                data-root="<?= $h($rootPath) ?>"
                data-max-results="<?= $searchResults ?>">
-        <span class="search-hint">ESC</span>
+        <span class="search-hint" aria-hidden="true">ESC</span>
+        <button id="search-close" class="search-close" type="button" aria-label="<?= $h($t('search_close')) ?>" data-ui-attr-aria-label="search_close">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
     </div>
     <ul id="search-results" role="listbox" aria-label="<?= $h($t('search_results')) ?>" data-ui-attr-aria-label="search_results" data-no-results-text="<?= $h($t('search_no_results')) ?>" data-ui-attr-data-no-results-text="search_no_results"></ul>
 </div>
