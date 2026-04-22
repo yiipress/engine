@@ -6,8 +6,7 @@ use App\Console;
 
 return [
     'build' => Console\BuildCommand::class,
-    'clean' => Console\CleanCommand::class,
-    'clear' => Console\CleanCommand::class,
+    'clean|clear' => Console\CleanCommand::class,
     'import' => Console\ImportCommand::class,
     'new' => Console\NewCommand::class,
 ];
