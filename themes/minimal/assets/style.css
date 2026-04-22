@@ -244,6 +244,10 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
 .entry-meta { color: var(--c-text-muted); font-size: .9375rem; margin-bottom: 2rem; display: flex; gap: .75rem; flex-wrap: wrap; }
 .entry-meta time, .entry-meta .author { display: inline; }
 .content { font-size: 1.0625rem; line-height: 1.8; }
+.content a {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
 .content h2 { font-size: 1.5rem; font-weight: 600; margin: 2rem 0 .75rem; }
 .content h3 { font-size: 1.25rem; font-weight: 600; margin: 1.75rem 0 .5rem; }
 .content h4 { font-size: 1.0625rem; font-weight: 600; margin: 1.5rem 0 .5rem; }
@@ -277,8 +281,18 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
     transition: background .2s;
 }
 .content img { max-width: 100%; height: auto; border-radius: .5rem; margin: 1.25rem 0; }
+.entry-footer {
+    margin-top: 2rem;
+}
+.entry-tags,
+.entry-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
 a.tag-link {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     background: var(--c-tag-bg);
     color: var(--c-tag-text);
     padding: .125rem .5rem;
@@ -286,6 +300,9 @@ a.tag-link {
     font-size: .9em;
     text-decoration: none;
     transition: background .2s, color .2s;
+}
+.content a.tag-link {
+    margin: 0 .25rem .5rem 0;
 }
 a.tag-link:hover {
     background: var(--c-link);

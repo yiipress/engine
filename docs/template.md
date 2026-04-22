@@ -24,6 +24,7 @@ then to English, and only then to the key name itself; taxonomy labels finally f
 The bundled `minimal` theme renders UI chrome using the site default UI language and lets the browser switch it client-side from a remembered preference, independently from the current entry language. The UI-language selector keeps language names in their native form.
 Month names are not translated in theme files; the bundled `minimal` theme formats archive month labels client-side for the selected UI language.
 The bundled `minimal` theme header stays responsive on narrow screens: navigation wraps onto its own row, controls keep touch-friendly hit areas, and the search dialog exposes a dedicated close button on mobile while preserving the keyboard `ESC` hint on larger screens.
+The bundled `minimal` theme also wraps long inline links inside entry content and lays out tag/category chips with flex gaps so dense metadata stays readable on narrow screens.
 
 ### Local theme
 
