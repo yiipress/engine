@@ -65,4 +65,38 @@ final class BuildCacheTest extends TestCase
 
         assertNull($cache->get($sourceFile));
     }
+
+    public function testTemplateHashIncludesNestedPartials(): void
+    {
+        $templateDir = dirname(__DIR__, 2) . '/Support/Data/cache-templates';
+        mkdir($templateDir . '/partials', 0o755, true);
+
+        try {
+            file_put_contents($templateDir . '/entry.php', 'entry');
+            file_put_contents($templateDir . '/partials/head.php', 'old');
+
+            $sourceFile = $this->fixtureDir . '/2024-03-15-test-post.md';
+            $cache = new BuildCache($this->cacheDir, [$templateDir]);
+            $cache->set($sourceFile, '<html>cached</html>');
+
+            file_put_contents($templateDir . '/partials/head.php', 'new');
+
+            $cache = new BuildCache($this->cacheDir, [$templateDir]);
+
+            assertNull($cache->get($sourceFile));
+        } finally {
+            if (is_file($templateDir . '/partials/head.php')) {
+                unlink($templateDir . '/partials/head.php');
+            }
+            if (is_file($templateDir . '/entry.php')) {
+                unlink($templateDir . '/entry.php');
+            }
+            if (is_dir($templateDir . '/partials')) {
+                rmdir($templateDir . '/partials');
+            }
+            if (is_dir($templateDir)) {
+                rmdir($templateDir);
+            }
+        }
+    }
 }

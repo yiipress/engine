@@ -107,7 +107,7 @@ final readonly class TaxonomyPageWriter
         foreach ($entries as $entry) {
             $collection = $collections[$entry->collection] ?? null;
             $url = $collection !== null
-                ? RelativePathHelper::relativize(PermalinkResolver::resolve($entry, $collection), $rootPath)
+                ? RelativePathHelper::relativize(PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n), $rootPath)
                 : '#';
 
             $entryData[] = [

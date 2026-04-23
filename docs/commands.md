@@ -54,7 +54,7 @@ The command:
 9. Generates `sitemap.xml` containing all entry URLs, standalone page URLs, collection listing URLs, and the home page.
 10. Generates taxonomy pages for each taxonomy defined in `config.yaml` (e.g., `/tags/`, `/tags/php/`, `/categories/`).
 
-With `--workers=N` (N > 1), entry rendering and writing is parallelized across N forked processes. With `--workers=auto`, YiiPress uses up to the detected worker count and lets the page writers clamp back to sequential mode for smaller workloads. Feeds and sitemap are generated after entry writing in the parent process.
+With `--workers=N` (N > 1), entry rendering and writing is parallelized across N forked processes. With `--workers=auto`, YiiPress uses up to the detected worker count and lets page writers clamp back to sequential mode for smaller workloads. Feeds are generated after entry writing and can be split per collection across workers. Sitemap generation remains serial.
 
 ## `yii serve`
 

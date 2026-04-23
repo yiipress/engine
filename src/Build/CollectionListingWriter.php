@@ -114,7 +114,7 @@ final readonly class CollectionListingWriter
         foreach ($entries as $entry) {
             $entryData[] = [
                 'title' => $entry->title,
-                'url' => RelativePathHelper::relativize(PermalinkResolver::resolve($entry, $collection), $rootPath),
+                'url' => RelativePathHelper::relativize(PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n), $rootPath),
                 'date' => $entry->date?->format($siteConfig->dateFormat) ?? '',
                 'dateISO' => $entry->date?->format('Y-m-d') ?? '',
                 'draft' => $entry->draft,

@@ -19,6 +19,7 @@ use App\Build\SearchIndexGenerator;
 use App\Build\ThemeAssetCopier;
 use App\Build\FeedGenerator;
 use App\Build\ParallelEntryWriter;
+use App\Build\ParallelTaskRunner;
 use App\Build\SitemapGenerator;
 use App\Build\TemplateResolver;
 use App\Build\TaxonomyPageWriter;
@@ -214,12 +215,19 @@ final class BuildCommand extends Command
             }
 
             $configChanged = array_any($configFiles, fn($configFile) => $manifest->isChanged($configFile));
+            $fullRebuildReason = 'config changed';
 
             if (!$configChanged) {
                 $changedSourceFiles = array_values(array_unique([
                     ...$manifest->changedFiles($allSourceFiles),
                     ...$manifest->missingOutputFiles($allSourceFiles),
                 ]));
+
+                $assetSourceFileSet = array_fill_keys(array_keys($allAssetMappings), true);
+                if (array_any($changedSourceFiles, static fn (string $sourceFile): bool => isset($assetSourceFileSet[$sourceFile]))) {
+                    $changedSourceFiles = null;
+                    $fullRebuildReason = 'assets changed';
+                }
             }
 
             $staleOutputs = $manifest->removedOutputs($allSourceFiles);
@@ -246,7 +254,7 @@ final class BuildCommand extends Command
                 $output->writeln(
                     '<info>Full rebuild'
                     . $this->workerMessageSuffix($workerCount, false)
-                    . ' (config changed)...</info>',
+                    . ' (' . $fullRebuildReason . ')...</info>',
                 );
             }
 
@@ -472,7 +480,8 @@ final class BuildCommand extends Command
         $standaloneRedirectTasks = [];
         foreach ($standalonePages as $page) {
             $sourcePath = $page->filePath;
-            $permalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
+            $basePermalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
+            $permalink = PermalinkResolver::applyLanguagePrefix($basePermalink, $page->language, $siteConfig->i18n);
             $filePath = $outputDir . $permalink . 'index.html';
 
             if ($changedSet !== null && !isset($changedSet[$sourcePath])) {
@@ -556,33 +565,53 @@ final class BuildCommand extends Command
             $output->writeln('  Asset fingerprints generated: <comment>' . count($assetManifest->all()) . '</comment>');
         }
 
-        $feedCount = 0;
+        /** @var list<array{collectionName: string, collection: Collection, entries: list<Entry>}> $feedTasks */
+        $feedTasks = [];
         foreach ($collections as $collectionName => $collection) {
             if (!$collection->feed) {
                 continue;
             }
 
-            $feedGenerator = new FeedGenerator($this->feedPipeline, $authors);
-
-            $feedDir = $outputDir . '/' . $collectionName;
-            if (!is_dir($feedDir) && !mkdir($feedDir, 0o755, true) && !is_dir($feedDir)) {
-                throw new RuntimeException(sprintf('Directory "%s" was not created', $feedDir));
-            }
-
-            $feedGenerator->writeAtomFile(
-                $feedDir . '/feed.xml',
-                $siteConfig,
-                $collection,
-                $entriesByCollection[$collectionName],
-            );
-            $feedGenerator->writeRssFile(
-                $feedDir . '/rss.xml',
-                $siteConfig,
-                $collection,
-                $entriesByCollection[$collectionName],
-            );
-            $feedCount++;
+            $feedTasks[] = [
+                'collectionName' => $collectionName,
+                'collection' => $collection,
+                'entries' => $entriesByCollection[$collectionName] ?? [],
+            ];
         }
+
+        $feedCount = (new ParallelTaskRunner())->run(
+            $feedTasks,
+            $workerCount,
+            function (array $feedTask) use ($siteConfig, $outputDir, $authors): int {
+                /** @var Collection $collection */
+                $collection = $feedTask['collection'];
+                /** @var list<Entry> $entries */
+                $entries = $feedTask['entries'];
+                $collectionName = $feedTask['collectionName'];
+
+                $feedGenerator = new FeedGenerator($this->feedPipeline, $authors);
+
+                $feedDir = $outputDir . '/' . $collectionName;
+                if (!is_dir($feedDir) && !mkdir($feedDir, 0o755, true) && !is_dir($feedDir)) {
+                    throw new RuntimeException(sprintf('Directory "%s" was not created', $feedDir));
+                }
+
+                $feedGenerator->writeAtomFile(
+                    $feedDir . '/feed.xml',
+                    $siteConfig,
+                    $collection,
+                    $entries,
+                );
+                $feedGenerator->writeRssFile(
+                    $feedDir . '/rss.xml',
+                    $siteConfig,
+                    $collection,
+                    $entries,
+                );
+                return 1;
+            },
+            minTasksPerWorker: 1,
+        );
 
         if ($feedCount > 0) {
             $output->writeln("  Feeds generated: <comment>$feedCount</comment> (Atom + RSS)");

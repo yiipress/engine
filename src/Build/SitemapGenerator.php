@@ -31,6 +31,8 @@ final class SitemapGenerator
         $baseUrl = rtrim($siteConfig->baseUrl, '/');
 
         $sitemap = new Sitemap($sitemapPath);
+        $sitemap->setBufferSize(1000);
+        $sitemap->setUseIndent(false);
 
         $sitemap->addItem($baseUrl . '/');
 
@@ -41,7 +43,7 @@ final class SitemapGenerator
 
             $entries = $entriesByCollection[$collectionName] ?? [];
             foreach ($entries as $entry) {
-                $permalink = PermalinkResolver::resolve($entry, $collection);
+                $permalink = PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n);
                 $lastmod = $entry->date?->getTimestamp();
 
                 $sitemap->addItem(
@@ -52,7 +54,8 @@ final class SitemapGenerator
         }
 
         foreach ($standalonePages as $page) {
-            $permalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
+            $basePermalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
+            $permalink = PermalinkResolver::applyLanguagePrefix($basePermalink, $page->language, $siteConfig->i18n);
             $lastmod = $page->date?->getTimestamp();
             $sitemap->addItem($baseUrl . $permalink, $lastmod ?? null);
         }

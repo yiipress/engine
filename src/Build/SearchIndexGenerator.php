@@ -32,7 +32,7 @@ final class SearchIndexGenerator
 
         foreach ($collections as $collectionName => $collection) {
             foreach ($entriesByCollection[$collectionName] ?? [] as $entry) {
-                $permalink = PermalinkResolver::resolve($entry, $collection);
+                $permalink = PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n);
                 $item = [
                     'title' => $entry->title,
                     'url' => ltrim($permalink, '/'),
@@ -47,7 +47,8 @@ final class SearchIndexGenerator
         }
 
         foreach ($standalonePages as $page) {
-            $permalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
+            $basePermalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
+            $permalink = PermalinkResolver::applyLanguagePrefix($basePermalink, $page->language, $siteConfig->i18n);
             $item = [
                 'title' => $page->title,
                 'url' => ltrim($permalink, '/'),

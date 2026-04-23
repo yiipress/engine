@@ -96,15 +96,16 @@ pages = entryPages + standalonePages
 N workers
 each worker processes a contiguous chunk of pages
 parent waits for all workers
-continue with collection index pages (serial, fast)
+continue with secondary outputs
 ```
 
 This approach requires no shared memory or synchronization — each worker writes to a different file path.
-The parent process handles collection listing pages, taxonomy pages, feeds, and sitemap serially
-(these are few and fast).
+The parent process coordinates secondary output after entry workers finish.
 
 Secondary page generation is also batched where the page count is high enough to amortize process startup cost.
 Writers such as collection listings and archives parallelize only when there is enough page volume; small page sets stay sequential.
+Feed generation parallelizes per collection when `--workers` is greater than one because feeds can render every entry body again.
+Sitemap and robots output remain serial.
 
 ### Principle 4: Leverage PHP runtime optimizations
 
@@ -211,7 +212,8 @@ Outputs rendered pages to their destination.
 
 - **StaticWriter** — writes `Page` objects as files to `output/` directory, creating directory structure from permalinks.
   In parallel mode, each forked worker writes its own subset of entry and standalone pages via `file_put_contents()`.
-  Collection index pages, feeds, sitemap, taxonomy pages, and redirect pages are written by the parent process after workers finish
+  Collection index pages, feeds, sitemap, taxonomy pages, and redirect pages are coordinated after entry workers finish.
+  Feed collections may be split across forked workers when `--workers` is greater than one.
 - **AssetCopier** — copies `content/assets/`, `content/<collection>/assets/`, and processed build assets to `output/`
 - **HttpResponder** — in serve mode, returns the rendered page as an HTTP response instead of writing to disk
 

@@ -256,7 +256,7 @@ final class FeedGenerator
 
     private function resolveEntryUrl(SiteConfig $siteConfig, Collection $collection, Entry $entry): string
     {
-        return rtrim($siteConfig->baseUrl, '/') . PermalinkResolver::resolve($entry, $collection);
+        return rtrim($siteConfig->baseUrl, '/') . PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n);
     }
 
     /**

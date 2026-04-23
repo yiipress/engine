@@ -30,13 +30,13 @@ final class ParallelTaskRunner
      * @param list<T> $tasks
      * @param callable(T): int $taskRunner
      */
-    public function run(array $tasks, int $workerCount, callable $taskRunner): int
+    public function run(array $tasks, int $workerCount, callable $taskRunner, int $minTasksPerWorker = self::MIN_TASKS_PER_WORKER): int
     {
         if ($tasks === []) {
             return 0;
         }
 
-        $effectiveWorkerCount = $this->effectiveWorkerCount(count($tasks), $workerCount);
+        $effectiveWorkerCount = $this->effectiveWorkerCount(count($tasks), $workerCount, $minTasksPerWorker);
         if ($effectiveWorkerCount <= 1) {
             return $this->runSequential($tasks, $taskRunner);
         }
@@ -98,13 +98,13 @@ final class ParallelTaskRunner
         }
     }
 
-    private function effectiveWorkerCount(int $taskCount, int $requestedWorkerCount): int
+    private function effectiveWorkerCount(int $taskCount, int $requestedWorkerCount, int $minTasksPerWorker): int
     {
         if ($requestedWorkerCount <= 1) {
             return 1;
         }
 
-        $maxWorkersByTaskVolume = max(1, intdiv($taskCount, self::MIN_TASKS_PER_WORKER));
+        $maxWorkersByTaskVolume = max(1, intdiv($taskCount, max(1, $minTasksPerWorker)));
 
         return min($requestedWorkerCount, $maxWorkersByTaskVolume);
     }

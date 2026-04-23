@@ -15,6 +15,7 @@ use Closure;
 use RuntimeException;
 
 use function dirname;
+use function hash;
 use function strlen;
 
 final class EntryRenderer
@@ -46,8 +47,9 @@ final class EntryRenderer
         ?Navigation $navigation = null,
         ?CrossReferenceResolver $crossRefResolver = null,
     ): string {
-        $cacheContext = ($this->relatedIndex?->signature() ?? '') . '|' . ($this->translationIndex?->signature() ?? '');
+        $cacheContext = '';
         if ($this->cache !== null) {
+            $cacheContext = $this->cacheContext($siteConfig, $navigation, $crossRefResolver);
             $cached = $this->cache->get($entry->filePath, $cacheContext);
             if ($cached !== null) {
                 return $cached;
@@ -69,11 +71,27 @@ final class EntryRenderer
         $translations = $this->translationIndex?->forEntry($entry->filePath) ?? [];
         $html = $this->renderTemplate($siteConfig, $entry, $content, $permalink, $navigation, $headAssets, $toc, $related, $translations);
 
-        $this->cache?->set($entry->filePath, $html, $cacheContext);
+        if ($this->cache !== null) {
+            $this->cache->set($entry->filePath, $html, $cacheContext);
+        }
 
         return $html;
     }
 
+    private function cacheContext(
+        SiteConfig $siteConfig,
+        ?Navigation $navigation,
+        ?CrossReferenceResolver $crossRefResolver,
+    ): string {
+        return hash('xxh128', serialize([
+            'siteConfig' => $siteConfig,
+            'navigation' => $navigation,
+            'assets' => $this->assetManifest?->signature() ?? '',
+            'crossReferences' => $crossRefResolver?->signature() ?? '',
+            'related' => $this->relatedIndex?->signature() ?? '',
+            'translations' => $this->translationIndex?->signature() ?? '',
+        ]));
+    }
 
     private function resolveContentDir(Entry $entry): string
     {

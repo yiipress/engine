@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Build;
 
 use DirectoryIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 
 use RuntimeException;
 
@@ -21,8 +24,7 @@ final class BuildCache
     public function __construct(
         private readonly string $cacheDir,
         array $templateDirs
-    )
-    {
+    ) {
         if (!is_dir($this->cacheDir) && !mkdir($this->cacheDir, 0o755, true) && !is_dir($this->cacheDir)) {
             throw new RuntimeException(sprintf('Directory "%s" was not created', $this->cacheDir));
         }
@@ -39,7 +41,12 @@ final class BuildCache
             return null;
         }
 
-        return file_get_contents($cachePath);
+        $contents = file_get_contents($cachePath);
+        if ($contents === false) {
+            throw new RuntimeException(sprintf('Unable to read cache file "%s".', $cachePath));
+        }
+
+        return $contents;
     }
 
     public function set(string $sourceFilePath, string $html, string $context = ''): void
@@ -65,7 +72,7 @@ final class BuildCache
 
     private function buildKey(string $sourceFilePath, string $context = ''): string
     {
-        $fileHash = hash_file('xxh128', $sourceFilePath);
+        $fileHash = $this->hashFile($sourceFilePath);
         return hash('xxh128', $fileHash . $this->templateHash . $context);
     }
 
@@ -79,13 +86,35 @@ final class BuildCache
             if (!is_dir($dir)) {
                 continue;
             }
-            $files = glob($dir . '/*.php');
+            $files = [];
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS),
+            );
+
+            foreach ($iterator as $file) {
+                /** @var SplFileInfo $file */
+                if (!$file->isFile() || $file->getExtension() !== 'php') {
+                    continue;
+                }
+                $files[] = $file->getPathname();
+            }
+
             sort($files);
             foreach ($files as $file) {
-                $hashes .= hash_file('xxh128', $file);
+                $hashes .= $file . ':' . $this->hashFile($file);
             }
         }
 
         return hash('xxh128', $hashes);
+    }
+
+    private function hashFile(string $path): string
+    {
+        $hash = hash_file('xxh128', $path);
+        if ($hash === false) {
+            throw new RuntimeException(sprintf('Unable to hash file "%s".', $path));
+        }
+
+        return $hash;
     }
 }

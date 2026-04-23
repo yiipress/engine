@@ -29,6 +29,8 @@ use function sprintf;
 final class BuildCommandTest extends TestCase
 {
     private string $outputDir;
+    /** @var list<string> */
+    private array $tempContentDirs = [];
 
     protected function setUp(): void
     {
@@ -51,6 +53,10 @@ final class BuildCommandTest extends TestCase
                 }
             }
             rmdir($this->outputDir);
+        }
+
+        foreach ($this->tempContentDirs as $tempContentDir) {
+            $this->removeDir($tempContentDir);
         }
 
         $manifestPath = $this->manifestPath();
@@ -835,6 +841,102 @@ final class BuildCommandTest extends TestCase
         }
     }
 
+    public function testConfigChangeInvalidatesCachedEntryHtml(): void
+    {
+        $contentDir = $this->copyContentFixture();
+        file_put_contents(
+            $contentDir . '/templates/entry.php',
+            <<<'PHP'
+<?php
+declare(strict_types=1);
+?>
+<html><head><title><?= $h($entryTitle) ?> — <?= $h($siteTitle) ?></title></head><body><?= $content ?></body></html>
+PHP,
+        );
+
+        $this->runBuild($contentDir);
+        $html = file_get_contents($this->outputDir . '/blog/test-post/index.html');
+        assertNotFalse($html);
+        assertStringContainsString('Test Post — Test Site', $html);
+
+        $config = file_get_contents($contentDir . '/config.yaml');
+        assertNotFalse($config);
+        file_put_contents($contentDir . '/config.yaml', str_replace('title: "Test Site"', 'title: "Changed Site"', $config));
+
+        $this->runBuild($contentDir);
+        $html = file_get_contents($this->outputDir . '/blog/test-post/index.html');
+        assertNotFalse($html);
+        assertStringContainsString('Test Post — Changed Site', $html);
+        assertStringNotContainsString('Test Post — Test Site', $html);
+    }
+
+    public function testAssetChangeRewritesFingerprintedEntryHtml(): void
+    {
+        $contentDir = $this->copyContentFixture();
+        mkdir($contentDir . '/assets', 0o755, true);
+        file_put_contents($contentDir . '/assets/site.css', 'body{color:red}');
+        file_put_contents(
+            $contentDir . '/templates/entry.php',
+            <<<'PHP'
+<?php
+declare(strict_types=1);
+?>
+<html><head><link rel="stylesheet" href="/assets/site.css"></head><body><?= $content ?></body></html>
+PHP,
+        );
+
+        $this->runBuild($contentDir);
+        $html = file_get_contents($this->outputDir . '/blog/test-post/index.html');
+        assertNotFalse($html);
+        assertMatchesRegularExpression('~/assets/site\.[a-f0-9]{12}\.css~', $html);
+        preg_match('~/assets/site\.([a-f0-9]{12})\.css~', $html, $firstMatches);
+        $firstHash = $firstMatches[1] ?? '';
+        assertNotFalse($firstHash !== '');
+
+        file_put_contents($contentDir . '/assets/site.css', 'body{color:blue}');
+
+        $this->runBuild($contentDir);
+        $html = file_get_contents($this->outputDir . '/blog/test-post/index.html');
+        assertNotFalse($html);
+        preg_match('~/assets/site\.([a-f0-9]{12})\.css~', $html, $secondMatches);
+        $secondHash = $secondMatches[1] ?? '';
+
+        assertNotFalse($secondHash !== '');
+        assertStringNotContainsString('/assets/site.' . $firstHash . '.css', $html);
+        assertFileExists($this->outputDir . '/assets/site.' . $secondHash . '.css');
+        assertFalse(is_file($this->outputDir . '/assets/site.' . $firstHash . '.css'));
+    }
+
+    public function testI18nEntryPermalinksAreConsistentAcrossGeneratedIndexes(): void
+    {
+        $contentDir = $this->copyContentFixture();
+        $config = file_get_contents($contentDir . '/config.yaml');
+        assertNotFalse($config);
+        $config = str_replace('languages: ["en"]', 'languages: ["en", "ru"]', $config);
+        $config .= "\ni18n:\n  languages: [\"en\", \"ru\"]\n  default_language: \"en\"\n";
+        file_put_contents($contentDir . '/config.yaml', $config);
+
+        $entryPath = $contentDir . '/blog/2024-03-15-test-post.md';
+        $entry = file_get_contents($entryPath);
+        assertNotFalse($entry);
+        file_put_contents($entryPath, str_replace("title: \"Test Post\"\n", "title: \"Test Post\"\nlanguage: \"ru\"\n", $entry));
+
+        $this->runBuild($contentDir, '--no-cache');
+
+        assertFileExists($this->outputDir . '/ru/blog/test-post/index.html');
+        $listing = file_get_contents($this->outputDir . '/blog/index.html');
+        assertNotFalse($listing);
+        assertStringContainsString('../ru/blog/test-post/', $listing);
+
+        $atom = file_get_contents($this->outputDir . '/blog/feed.xml');
+        assertNotFalse($atom);
+        assertStringContainsString('https://test.example.com/ru/blog/test-post/', $atom);
+
+        $sitemap = file_get_contents($this->outputDir . '/sitemap.xml');
+        assertNotFalse($sitemap);
+        assertStringContainsString('https://test.example.com/ru/blog/test-post/', $sitemap);
+    }
+
     public function testBuildUsesCustomLayoutFromFrontMatter(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';
@@ -918,5 +1020,71 @@ final class BuildCommandTest extends TestCase
     private function manifestPath(): string
     {
         return dirname(__DIR__, 3) . '/runtime/cache/build-manifest-' . hash('xxh128', $this->outputDir) . '.json';
+    }
+
+    private function runBuild(string $contentDir, string $extraOptions = ''): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ($extraOptions !== '' ? ' ' . $extraOptions : '')
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        assertSame(0, $exitCode, 'Build failed: ' . implode("\n", $output));
+    }
+
+    private function copyContentFixture(): string
+    {
+        $sourceDir = dirname(__DIR__, 2) . '/Support/Data/content';
+        $targetDir = sys_get_temp_dir() . '/yiipress-content-test-' . uniqid();
+        $this->copyDir($sourceDir, $targetDir);
+        $this->tempContentDirs[] = $targetDir;
+
+        return $targetDir;
+    }
+
+    private function copyDir(string $sourceDir, string $targetDir): void
+    {
+        mkdir($targetDir, 0o755, true);
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($sourceDir, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST,
+        );
+
+        foreach ($iterator as $item) {
+            /** @var SplFileInfo $item */
+            $targetPath = $targetDir . '/' . $iterator->getSubPathName();
+            if ($item->isDir()) {
+                mkdir($targetPath, 0o755, true);
+                continue;
+            }
+            copy($item->getPathname(), $targetPath);
+        }
+    }
+
+    private function removeDir(string $path): void
+    {
+        if (!is_dir($path)) {
+            return;
+        }
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
+        );
+        foreach ($iterator as $item) {
+            /** @var SplFileInfo $item */
+            if ($item->isDir()) {
+                rmdir($item->getPathname());
+            } else {
+                unlink($item->getPathname());
+            }
+        }
+        rmdir($path);
     }
 }
