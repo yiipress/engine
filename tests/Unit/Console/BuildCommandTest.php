@@ -165,6 +165,33 @@ final class BuildCommandTest extends TestCase
         assertFileExists($this->outputDir . '/blog/test-post/index.html');
     }
 
+    public function testBuildProfilePrintsPhaseTimings(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' --workers=1'
+            . ' --no-cache'
+            . ' --profile'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        $outputText = implode("\n", $output);
+
+        assertSame(0, $exitCode, "Profiled build failed: $outputText");
+        assertStringContainsString('Build profile:', $outputText);
+        assertMatchesRegularExpression('/prepare: .*\\(\\d+(?:\\.\\d+)?%\\)/', $outputText);
+        assertMatchesRegularExpression('/parse content: .*\\(\\d+(?:\\.\\d+)?%\\)/', $outputText);
+        assertMatchesRegularExpression('/write entries: .*\\(\\d+(?:\\.\\d+)?%\\)/', $outputText);
+        assertMatchesRegularExpression('/Build complete in \\d+(?:\\.\\d+)?(?:ms|s)\\. Peak memory: \\d+(?:\\.\\d+)? MiB\\./', $outputText);
+    }
+
     public function testBuildGeneratesFeedsForCollectionsWithFeedEnabled(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';

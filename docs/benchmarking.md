@@ -44,12 +44,21 @@ Profile the public build command with Xdebug:
 make profile-build CLI_ARGS='build --content-dir=benchmarks/data/content --output-dir=runtime/profile-output --workers=1 --no-cache'
 ```
 
+Print build phase timings without Xdebug:
+
+```bash
+make yii CLI_ARGS='build --content-dir=benchmarks/data/content --output-dir=runtime/profile-output --workers=4 --no-cache --profile'
+```
+
+Use `--profile` for quick before/after checks while optimizing. Use `make profile-build` when call-level attribution is needed.
+
 ## Benchmark classes
 
 - **`ContentParserBench`** — measures parsing speed for site config, navigation, collections, authors, and entries (with and without body loading)
 - **`MarkdownRendererBench`** — measures MD4C markdown-to-HTML rendering for short and long documents
 - **`SyntaxHighlighterBench`** — measures the PHP FFI syntax highlighter path for plain HTML, a single highlighted block, and a page with many highlighted blocks
 - **`AssetFingerprintingBench`** — measures fingerprint lookup and HTML asset URL rewriting
+- **`BuildProfileBench`** — measures overhead of disabled and enabled build phase timers
 - **`OEmbedProcessorBench`** — measures standalone URL-to-embed expansion across pluggable oEmbed providers
 - **`SmallSiteBuildBench`** — measures the public `yii build` command end to end on 10k small entries, including full rebuilds and incremental rebuilds
 - **`LargeContentBuildBench`** — measures the public `yii build` command end to end on 1k realistic entries (~27KB each), including full rebuilds and incremental rebuilds

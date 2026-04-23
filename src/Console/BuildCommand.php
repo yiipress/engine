@@ -9,6 +9,7 @@ use App\Build\AssetFingerprintManifest;
 use App\Build\BuildCache;
 use App\Build\BuildManifest;
 use App\Build\BuildDiagnostics;
+use App\Build\BuildProfile;
 use App\Build\CollectionListingWriter;
 use App\Build\ContentAssetCopier;
 use App\Build\DateArchiveWriter;
@@ -147,6 +148,12 @@ final class BuildCommand extends Command
             InputOption::VALUE_NONE,
             'Show what would be generated without writing files',
         );
+        $this->addOption(
+            'profile',
+            null,
+            InputOption::VALUE_NONE,
+            'Print phase timings for build optimization work',
+        );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -170,6 +177,8 @@ final class BuildCommand extends Command
         $includeDrafts = $input->getOption('drafts') !== false ? (bool) $input->getOption('drafts') : Environment::isDev();
         $includeFuture = $input->getOption('future') !== false ? (bool) $input->getOption('future') : Environment::isDev();
         $dryRun = (bool) $input->getOption('dry-run');
+        $profile = new BuildProfile((bool) $input->getOption('profile'));
+        $profile->start('prepare');
 
         if (!is_dir($contentDir)) {
             $output->writeln("<error>Content directory not found: $contentDir</error>");
@@ -240,6 +249,7 @@ final class BuildCommand extends Command
 
             if ($changedSourceFiles === [] && $staleOutputs === []) {
                 $output->writeln('<info>No changes detected, nothing to build.</info>');
+                $this->writeProfile($output, $profile);
                 return ExitCode::OK;
             }
 
@@ -276,6 +286,7 @@ final class BuildCommand extends Command
         }
 
         $output->writeln('<info>Parsing content...</info>');
+        $profile->switchTo('parse content');
 
         $parser = new ContentParser();
         $siteConfig = $parser->parseSiteConfig($contentDir);
@@ -301,7 +312,9 @@ final class BuildCommand extends Command
         $output->writeln('  Menus: <comment>' . count($navigation->menuNames()) . '</comment>');
 
         if ($dryRun) {
-            return $this->dryRun($output, $parser, $siteConfig, $collections, $authors, $contentDir, $outputDir, $includeDrafts, $includeFuture);
+            $exitCode = $this->dryRun($output, $parser, $siteConfig, $collections, $authors, $contentDir, $outputDir, $includeDrafts, $includeFuture);
+            $this->writeProfile($output, $profile);
+            return $exitCode;
         }
 
         /** @var array<string, list<Entry>> $rawEntriesByCollection */
@@ -338,6 +351,7 @@ final class BuildCommand extends Command
 
         $crossRefResolver = new CrossReferenceResolver($fileToPermalink);
 
+        $profile->switchTo('diagnostics');
         $changedSet = $changedSourceFiles !== null ? array_flip($changedSourceFiles) : null;
         $diagnostics = new BuildDiagnostics($contentDir, $fileToPermalink, $siteConfig, $authors);
         foreach ($rawEntriesByCollection as $entries) {
@@ -362,6 +376,7 @@ final class BuildCommand extends Command
 
         $now = new DateTimeImmutable();
 
+        $profile->switchTo('prepare entry tasks');
         $allTasks = [];
         $redirectTasks = [];
         $entriesByCollection = [];
@@ -429,6 +444,7 @@ final class BuildCommand extends Command
 
         $writer = new ParallelEntryWriter($this->contentPipeline, $this->templateResolver, $cache, $assetManifest, $relatedIndex, $translationIndex);
         $effectiveEntryWorkerCount = $writer->workerCountFor(count($tasksToWrite), $workerCount);
+        $profile->switchTo('write entries');
         $entriesWritten = $writer->write($siteConfig, $tasksToWrite, $contentDir, $workerCount, $navigation, $crossRefResolver, $authors);
 
         $output->writeln(
@@ -439,6 +455,7 @@ final class BuildCommand extends Command
             . ($autoWorkers ? ' (auto)' : ''),
         );
 
+        $profile->switchTo('write redirects');
         if ($redirectTasks !== []) {
             $redirectWriter = new RedirectPageWriter();
             foreach ($redirectTasks as $task) {
@@ -476,6 +493,7 @@ final class BuildCommand extends Command
         if (!$includeFuture) {
             $standalonePages = array_values(array_filter($standalonePages, static fn ($e) => $e->date === null || $e->date <= $now));
         }
+        $profile->switchTo('write standalone pages');
         $standaloneTasks = [];
         $standaloneRedirectTasks = [];
         foreach ($standalonePages as $page) {
@@ -536,6 +554,7 @@ final class BuildCommand extends Command
             $output->writeln("  Standalone pages: <comment>$standalonePagesWritten</comment>" . ($incremental ? ' (of ' . count($standalonePages) . ' total)' : ''));
         }
 
+        $profile->switchTo('copy assets');
         $assetsCopied = $contentAssetCopier->copy($contentDir, $outputDir, $assetManifest);
         $assetsCopied += $themeAssetCopier->copy($this->themeRegistry, $outputDir, $assetManifest);
 
@@ -566,6 +585,7 @@ final class BuildCommand extends Command
         }
 
         /** @var list<array{collectionName: string, collection: Collection, entries: list<Entry>}> $feedTasks */
+        $profile->switchTo('write feeds');
         $feedTasks = [];
         foreach ($collections as $collectionName => $collection) {
             if (!$collection->feed) {
@@ -617,6 +637,7 @@ final class BuildCommand extends Command
             $output->writeln("  Feeds generated: <comment>$feedCount</comment> (Atom + RSS)");
         }
 
+        $profile->switchTo('write listings');
         $listingWriter = new CollectionListingWriter($this->templateResolver, $assetManifest);
         $listingPageCount = 0;
         foreach ($collections as $collectionName => $collection) {
@@ -636,6 +657,7 @@ final class BuildCommand extends Command
             $output->writeln("  Listing pages: <comment>$listingPageCount</comment>");
         }
 
+        $profile->switchTo('write archives');
         $archiveWriter = new DateArchiveWriter($this->templateResolver, $assetManifest);
         $archivePageCount = 0;
         foreach ($collections as $collectionName => $collection) {
@@ -655,10 +677,12 @@ final class BuildCommand extends Command
             $output->writeln("  Archive pages: <comment>$archivePageCount</comment>");
         }
 
+        $profile->switchTo('write sitemap');
         $sitemapGenerator = new SitemapGenerator();
         $sitemapGenerator->generate($siteConfig, $collections, $entriesByCollection, $outputDir, $standalonePages, $authors);
         $output->writeln('  Sitemap generated.');
 
+        $profile->switchTo('write support files');
         $robotsGenerator = new RobotsTxtGenerator();
         $robots = $robotsGenerator->generate($siteConfig);
         if ($robots !== '') {
@@ -677,6 +701,7 @@ final class BuildCommand extends Command
         }
 
         if ($siteConfig->taxonomies !== []) {
+            $profile->switchTo('write taxonomy pages');
             $allEntries = array_merge(...array_values($entriesByCollection));
             $taxonomyData = TaxonomyCollector::collect($siteConfig->taxonomies, $allEntries);
             $taxonomyWriter = new TaxonomyPageWriter($this->templateResolver, $assetManifest);
@@ -685,6 +710,7 @@ final class BuildCommand extends Command
         }
 
         if ($authors !== []) {
+            $profile->switchTo('write author pages');
             $allEntries ??= array_merge(...array_values($entriesByCollection));
             $entriesByAuthor = [];
             foreach ($allEntries as $entry) {
@@ -697,6 +723,7 @@ final class BuildCommand extends Command
             $output->writeln("  Author pages: <comment>$authorPageCount</comment>");
         }
 
+        $profile->switchTo('save manifest');
         if ($manifest !== null) {
             $manifest->setConfigFiles($configFiles);
             $manifest->setTrackedDirectories($trackedDirectories);
@@ -706,6 +733,8 @@ final class BuildCommand extends Command
             $manifest->save();
         }
 
+        $profile->stop();
+        $this->writeProfile($output, $profile);
         $output->writeln(
             '<info>Build complete in '
             . $this->formatElapsedTime((hrtime(true) - $startedAt) / 1_000_000_000)
@@ -729,6 +758,31 @@ final class BuildCommand extends Command
         }
 
         return sprintf('%.1fms', round($milliseconds, 1));
+    }
+
+    private function writeProfile(OutputInterface $output, BuildProfile $profile): void
+    {
+        if (!$profile->enabled()) {
+            return;
+        }
+
+        $profile->stop();
+        $phases = $profile->phases();
+        if ($phases === []) {
+            return;
+        }
+
+        $totalSeconds = $profile->totalSeconds();
+        $output->writeln('<info>Build profile:</info>');
+        foreach ($phases as $phase => $seconds) {
+            $percent = $totalSeconds > 0 ? ($seconds / $totalSeconds) * 100 : 0;
+            $output->writeln(sprintf(
+                '  %s: <comment>%s</comment> (%s%%)',
+                $phase,
+                $this->formatElapsedTime($seconds),
+                number_format($percent, 1),
+            ));
+        }
     }
 
     private function formatMemory(int $bytes): string

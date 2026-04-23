@@ -7,7 +7,7 @@ All commands are run via the `yii` CLI entry point (or `composer serve` for the 
 Generates static HTML content from source files.
 
 ```
-yii build [--content-dir=content] [--output-dir=output] [--workers=auto] [--no-cache] [--drafts] [--future] [--dry-run]
+yii build [--content-dir=content] [--output-dir=output] [--workers=auto] [--no-cache] [--drafts] [--future] [--dry-run] [--profile]
 ```
 
 **Options:**
@@ -19,6 +19,7 @@ yii build [--content-dir=content] [--output-dir=output] [--workers=auto] [--no-c
 - `--drafts` — include draft entries in the build. By default, entries with `draft: true` in front matter are excluded from HTML output, feeds, and sitemap.
 - `--future` — include future-dated entries in the build. By default, entries with a date in the future are excluded from HTML output, feeds, and sitemap.
 - `--dry-run` — list all files that would be generated without writing anything. The output directory is not created or modified.
+- `--profile` — print phase timings for the real build path. Use this before and after optimization work to see which build phases moved.
 
 ### Incremental builds
 
