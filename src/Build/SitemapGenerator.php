@@ -11,6 +11,8 @@ use App\Content\Model\SiteConfig;
 use App\Content\PermalinkResolver;
 use samdark\sitemap\Sitemap;
 
+use function sys_get_temp_dir;
+
 final class SitemapGenerator
 {
     /**
@@ -26,8 +28,9 @@ final class SitemapGenerator
         string $outputDir,
         array $standalonePages = [],
         array $authors = [],
+        bool $noWrite = false,
     ): void {
-        $sitemapPath = $outputDir . '/sitemap.xml';
+        $sitemapPath = ($noWrite ? sys_get_temp_dir() : $outputDir) . '/sitemap.xml';
         $baseUrl = rtrim($siteConfig->baseUrl, '/');
 
         $sitemap = new Sitemap($sitemapPath);
@@ -67,6 +70,8 @@ final class SitemapGenerator
             }
         }
 
-        $sitemap->write();
+        if (!$noWrite) {
+            $sitemap->write();
+        }
     }
 }

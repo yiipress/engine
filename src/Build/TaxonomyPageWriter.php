@@ -28,6 +28,7 @@ final readonly class TaxonomyPageWriter
         array $collections,
         string $outputDir,
         ?Navigation $navigation = null,
+        bool $noWrite = false,
     ): int {
         $renderer = new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest);
         $pageCount = 0;
@@ -39,11 +40,11 @@ final readonly class TaxonomyPageWriter
 
             // PHP converts numeric string keys to integers - cast back to strings
             $termNames = array_map(strval(...), array_keys($terms));
-            $this->writeIndexPage($renderer, $siteConfig, $taxonomyName, $termNames, $outputDir, $navigation);
+            $this->writeIndexPage($renderer, $siteConfig, $taxonomyName, $termNames, $outputDir, $navigation, $noWrite);
             $pageCount++;
 
             foreach ($terms as $term => $entries) {
-                $this->writeTermPage($renderer, $siteConfig, $taxonomyName, (string) $term, $entries, $collections, $outputDir, $navigation);
+                $this->writeTermPage($renderer, $siteConfig, $taxonomyName, (string) $term, $entries, $collections, $outputDir, $navigation, $noWrite);
                 $pageCount++;
             }
         }
@@ -61,6 +62,7 @@ final readonly class TaxonomyPageWriter
         array $terms,
         string $outputDir,
         ?Navigation $navigation,
+        bool $noWrite,
     ): void {
         $rootPath = RelativePathHelper::rootPath('/' . $taxonomyName . '/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
@@ -77,12 +79,14 @@ final readonly class TaxonomyPageWriter
             'searchResults' => $siteConfig->search?->results ?? 10,
         ] + $uiViewData->toArray(), $rootPath);
 
-        $dir = $outputDir . '/' . $taxonomyName;
-        if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
-            throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
-        }
+        if (!$noWrite) {
+            $dir = $outputDir . '/' . $taxonomyName;
+            if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
+            }
 
-        file_put_contents($dir . '/index.html', $html);
+            file_put_contents($dir . '/index.html', $html);
+        }
     }
 
     /**
@@ -98,6 +102,7 @@ final readonly class TaxonomyPageWriter
         array $collections,
         string $outputDir,
         ?Navigation $navigation,
+        bool $noWrite,
     ): void {
         $rootPath = RelativePathHelper::rootPath('/' . $taxonomyName . '/' . $term . '/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
@@ -132,11 +137,13 @@ final readonly class TaxonomyPageWriter
             'searchResults' => $siteConfig->search?->results ?? 10,
         ] + $uiViewData->toArray(), $rootPath);
 
-        $dir = $outputDir . '/' . $taxonomyName . '/' . $term;
-        if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
-            throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
-        }
+        if (!$noWrite) {
+            $dir = $outputDir . '/' . $taxonomyName . '/' . $term;
+            if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
+            }
 
-        file_put_contents($dir . '/index.html', $html);
+            file_put_contents($dir . '/index.html', $html);
+        }
     }
 }

@@ -47,6 +47,7 @@ final readonly class ParallelEntryWriter
         ?Navigation $navigation = null,
         ?CrossReferenceResolver $crossRefResolver = null,
         array $authors = [],
+        bool $noWrite = false,
     ): int {
         if ($tasks === []) {
             return 0;
@@ -54,20 +55,22 @@ final readonly class ParallelEntryWriter
 
         $effectiveWorkerCount = $this->workerCountFor(count($tasks), $workerCount);
 
-        $dirs = [];
-        foreach ($tasks as $task) {
-            $dirs[dirname($task['filePath'])] = true;
-        }
-        foreach ($dirs as $dirPath => $_) {
-            if (!is_dir($dirPath) && !mkdir($dirPath, 0o755, true) && !is_dir($dirPath)) {
-                throw new RuntimeException(sprintf('Directory "%s" was not created', $dirPath));
+        if (!$noWrite) {
+            $dirs = [];
+            foreach ($tasks as $task) {
+                $dirs[dirname($task['filePath'])] = true;
+            }
+            foreach ($dirs as $dirPath => $_) {
+                if (!is_dir($dirPath) && !mkdir($dirPath, 0o755, true) && !is_dir($dirPath)) {
+                    throw new RuntimeException(sprintf('Directory "%s" was not created', $dirPath));
+                }
             }
         }
 
         if ($effectiveWorkerCount <= 1) {
-            $this->writeEntries($siteConfig, $tasks, $contentDir, $navigation, $crossRefResolver, $authors);
+            $this->writeEntries($siteConfig, $tasks, $contentDir, $navigation, $crossRefResolver, $authors, $noWrite);
         } else {
-            $this->writeParallel($siteConfig, $tasks, $contentDir, $effectiveWorkerCount, $navigation, $crossRefResolver, $authors);
+            $this->writeParallel($siteConfig, $tasks, $contentDir, $effectiveWorkerCount, $navigation, $crossRefResolver, $authors, $noWrite);
         }
 
         return count($tasks);
@@ -76,19 +79,22 @@ final readonly class ParallelEntryWriter
     /**
      * @param list<array{entry: Entry, filePath: string, permalink: string}> $tasks
      */
-    private function writeEntries(SiteConfig $siteConfig, array $tasks, string $contentDir, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors): void
+    private function writeEntries(SiteConfig $siteConfig, array $tasks, string $contentDir, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors, bool $noWrite): void
     {
         $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors, $this->assetManifest, $this->relatedIndex, $this->translationIndex);
 
         foreach ($tasks as $task) {
-            file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver));
+            $html = $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver);
+            if (!$noWrite) {
+                file_put_contents($task['filePath'], $html);
+            }
         }
     }
 
     /**
      * @param list<array{entry: Entry, filePath: string, permalink: string}> $tasks
      */
-    private function writeParallel(SiteConfig $siteConfig, array $tasks, string $contentDir, int $workerCount, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors): void
+    private function writeParallel(SiteConfig $siteConfig, array $tasks, string $contentDir, int $workerCount, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors, bool $noWrite): void
     {
         $taskChunks = $this->partitionTasks($tasks, $workerCount);
         $pids = [];
@@ -104,7 +110,10 @@ final readonly class ParallelEntryWriter
                 $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors, $this->assetManifest, $this->relatedIndex, $this->translationIndex);
 
                 foreach ($chunk as $task) {
-                    file_put_contents($task['filePath'], $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver));
+                    $html = $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver);
+                    if (!$noWrite) {
+                        file_put_contents($task['filePath'], $html);
+                    }
                 }
 
                 exit(0);

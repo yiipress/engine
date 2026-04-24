@@ -34,6 +34,7 @@ final class AuthorPageWriter
         array $collections,
         string $outputDir,
         ?Navigation $navigation = null,
+        bool $noWrite = false,
     ): int {
         if ($authors === []) {
             return 0;
@@ -41,12 +42,12 @@ final class AuthorPageWriter
 
         $renderer = new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest);
 
-        $this->writeIndex($siteConfig, $authors, $outputDir, $navigation);
+        $this->writeIndex($siteConfig, $authors, $outputDir, $navigation, $noWrite);
         $pageCount = 1;
 
         foreach ($authors as $slug => $author) {
             $entries = $entriesByAuthor[$slug] ?? [];
-            $this->writeAuthor($siteConfig, $author, $entries, $collections, $outputDir, $navigation, $renderer);
+            $this->writeAuthor($siteConfig, $author, $entries, $collections, $outputDir, $navigation, $renderer, $noWrite);
             $pageCount++;
         }
 
@@ -61,6 +62,7 @@ final class AuthorPageWriter
         array $authors,
         string $outputDir,
         ?Navigation $navigation = null,
+        bool $noWrite = false,
     ): void {
         $this->writeIndexPage(
             new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest),
@@ -68,6 +70,7 @@ final class AuthorPageWriter
             $authors,
             $outputDir,
             $navigation,
+            $noWrite,
         );
     }
 
@@ -83,6 +86,7 @@ final class AuthorPageWriter
         string $outputDir,
         ?Navigation $navigation = null,
         ?PageTemplateRenderer $renderer = null,
+        bool $noWrite = false,
     ): void {
         $this->writeAuthorPage(
             $renderer ?? new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest),
@@ -92,6 +96,7 @@ final class AuthorPageWriter
             $collections,
             $outputDir,
             $navigation,
+            $noWrite,
         );
     }
 
@@ -104,6 +109,7 @@ final class AuthorPageWriter
         array $authors,
         string $outputDir,
         ?Navigation $navigation,
+        bool $noWrite,
     ): void {
         $rootPath = RelativePathHelper::rootPath('/authors/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
@@ -128,12 +134,14 @@ final class AuthorPageWriter
             'searchResults' => $siteConfig->search?->results ?? 10,
         ] + $uiViewData->toArray(), $rootPath);
 
-        $dir = $outputDir . '/authors';
-        if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
-            throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
-        }
+        if (!$noWrite) {
+            $dir = $outputDir . '/authors';
+            if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
+            }
 
-        file_put_contents($dir . '/index.html', $html);
+            file_put_contents($dir . '/index.html', $html);
+        }
     }
 
     /**
@@ -148,6 +156,7 @@ final class AuthorPageWriter
         array $collections,
         string $outputDir,
         ?Navigation $navigation,
+        bool $noWrite,
     ): void {
         $rootPath = RelativePathHelper::rootPath('/authors/' . $author->slug . '/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
@@ -193,11 +202,13 @@ final class AuthorPageWriter
             'searchResults' => $siteConfig->search?->results ?? 10,
         ] + $uiViewData->toArray(), $rootPath);
 
-        $dir = $outputDir . '/authors/' . $author->slug;
-        if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
-            throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
-        }
+        if (!$noWrite) {
+            $dir = $outputDir . '/authors/' . $author->slug;
+            if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
+            }
 
-        file_put_contents($dir . '/index.html', $html);
+            file_put_contents($dir . '/index.html', $html);
+        }
     }
 }

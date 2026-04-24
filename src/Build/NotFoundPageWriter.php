@@ -15,7 +15,7 @@ final readonly class NotFoundPageWriter
         private ?AssetFingerprintManifest $assetManifest = null,
     ) {}
 
-    public function write(SiteConfig $siteConfig, string $outputDir, ?Navigation $navigation = null): void
+    public function write(SiteConfig $siteConfig, string $outputDir, ?Navigation $navigation = null, bool $noWrite = false): void
     {
         $siteTitle = $siteConfig->title;
         $nav = $navigation;
@@ -37,6 +37,10 @@ final readonly class NotFoundPageWriter
         ob_start();
         require $this->templateResolver->resolve('errors/404', $siteConfig->theme);
         $html = $templateContext->rewriteHtml((string) ob_get_clean(), $rootPath);
+
+        if ($noWrite) {
+            return;
+        }
 
         if (!is_dir($outputDir) && !mkdir($outputDir, 0o755, true) && !is_dir($outputDir)) {
             throw new RuntimeException(sprintf('Directory "%s" was not created', $outputDir));

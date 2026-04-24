@@ -50,6 +50,7 @@
 - [x] Build diagnostics (warn on broken internal links, missing images, invalid front matter)
 - [x] `yiipress clean` command — clear build output and caches
 - [x] Dry run mode for build — show what would be generated without writing files
+- [x] No-write build mode for render-vs-filesystem performance diagnostics
 
 ## Priority 4: Templates and theming
 

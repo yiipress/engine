@@ -22,6 +22,7 @@ final class SearchIndexGenerator
         array $entriesByCollection,
         string $outputDir,
         array $standalonePages = [],
+        bool $noWrite = false,
     ): void {
         if ($siteConfig->search === null) {
             return;
@@ -61,9 +62,9 @@ final class SearchIndexGenerator
             $items[] = $item;
         }
 
-        file_put_contents(
-            $outputDir . '/search-index.json',
-            json_encode($items, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-        );
+        $json = json_encode($items, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (!$noWrite) {
+            file_put_contents($outputDir . '/search-index.json', $json);
+        }
     }
 }

@@ -14,7 +14,7 @@ use function json_encode;
 
 final class RedirectPageWriter
 {
-    public function write(Entry $entry, string $filePath, string $language = 'en', ?UiText $ui = null): void
+    public function write(Entry $entry, string $filePath, string $language = 'en', ?UiText $ui = null, bool $noWrite = false): void
     {
         $htmlLanguage = $language !== '' ? $language : 'en';
         $target = $entry->redirectTo;
@@ -39,6 +39,10 @@ final class RedirectPageWriter
             </body>
             </html>
             HTML;
+
+        if ($noWrite) {
+            return;
+        }
 
         $dirPath = dirname($filePath);
         if (!is_dir($dirPath) && !mkdir($dirPath, 0o755, true) && !is_dir($dirPath)) {

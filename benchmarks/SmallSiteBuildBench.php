@@ -91,6 +91,22 @@ final class SmallSiteBuildBench
     #[Revs(1)]
     #[Iterations(3)]
     #[Warmup(1)]
+    public function benchFullRenderNoWriteSequential(): void
+    {
+        $this->runBuild('--workers=1 --no-cache --no-write');
+    }
+
+    #[Revs(1)]
+    #[Iterations(3)]
+    #[Warmup(1)]
+    public function benchFullRenderNoWrite4Workers(): void
+    {
+        $this->runBuild('--workers=4 --no-cache --no-write');
+    }
+
+    #[Revs(1)]
+    #[Iterations(3)]
+    #[Warmup(1)]
     #[BeforeMethods('prepareIncrementalNoChanges')]
     public function benchIncrementalNoChangesSequential(): void
     {

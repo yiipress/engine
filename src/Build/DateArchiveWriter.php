@@ -28,6 +28,7 @@ final readonly class DateArchiveWriter
         string $outputDir,
         ?Navigation $navigation = null,
         int $workerCount = 1,
+        bool $noWrite = false,
     ): int {
         $renderer = new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest);
         $byYear = [];
@@ -79,7 +80,7 @@ final readonly class DateArchiveWriter
 
         $taskRunner = new ParallelTaskRunner();
 
-        return $taskRunner->run($tasks, $workerCount, function (array $task) use ($renderer, $siteConfig, $collection, $outputDir, $navigation): int {
+        return $taskRunner->run($tasks, $workerCount, function (array $task) use ($renderer, $siteConfig, $collection, $outputDir, $navigation, $noWrite): int {
             if ($task['type'] === 'index') {
                 $this->writeArchiveIndexPage(
                     $renderer,
@@ -88,6 +89,7 @@ final readonly class DateArchiveWriter
                     $task['years'],
                     $outputDir,
                     $navigation,
+                    $noWrite,
                 );
 
                 return 1;
@@ -103,6 +105,7 @@ final readonly class DateArchiveWriter
                     $task['months'],
                     $outputDir,
                     $navigation,
+                    $noWrite,
                 );
 
                 return 1;
@@ -117,6 +120,7 @@ final readonly class DateArchiveWriter
                 $task['entries'],
                 $outputDir,
                 $navigation,
+                $noWrite,
             );
 
             return 1;
@@ -133,6 +137,7 @@ final readonly class DateArchiveWriter
         array $years,
         string $outputDir,
         ?Navigation $navigation,
+        bool $noWrite,
     ): void {
         $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/archive/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
@@ -149,12 +154,14 @@ final readonly class DateArchiveWriter
             'searchResults' => $siteConfig->search?->results ?? 10,
         ] + $uiViewData->toArray(), $rootPath);
 
-        $dir = $outputDir . '/' . $collection->name . '/archive';
-        if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
-            throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
-        }
+        if (!$noWrite) {
+            $dir = $outputDir . '/' . $collection->name . '/archive';
+            if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
+            }
 
-        file_put_contents($dir . '/index.html', $html);
+            file_put_contents($dir . '/index.html', $html);
+        }
     }
 
     /**
@@ -170,6 +177,7 @@ final readonly class DateArchiveWriter
         array $months,
         string $outputDir,
         ?Navigation $navigation,
+        bool $noWrite,
     ): void {
         $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/' . $year . '/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
@@ -202,12 +210,14 @@ final readonly class DateArchiveWriter
             'searchResults' => $siteConfig->search?->results ?? 10,
         ] + $uiViewData->toArray(), $rootPath);
 
-        $dir = $outputDir . '/' . $collection->name . '/' . $year;
-        if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
-            throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
-        }
+        if (!$noWrite) {
+            $dir = $outputDir . '/' . $collection->name . '/' . $year;
+            if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
+            }
 
-        file_put_contents($dir . '/index.html', $html);
+            file_put_contents($dir . '/index.html', $html);
+        }
     }
 
     /**
@@ -222,6 +232,7 @@ final readonly class DateArchiveWriter
         array $entries,
         string $outputDir,
         ?Navigation $navigation,
+        bool $noWrite,
     ): void {
         $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/' . $year . '/' . $month . '/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
@@ -254,11 +265,13 @@ final readonly class DateArchiveWriter
             'searchResults' => $siteConfig->search?->results ?? 10,
         ] + $uiViewData->toArray(), $rootPath);
 
-        $dir = $outputDir . '/' . $collection->name . '/' . $year . '/' . $month;
-        if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
-            throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
-        }
+        if (!$noWrite) {
+            $dir = $outputDir . '/' . $collection->name . '/' . $year . '/' . $month;
+            if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
+            }
 
-        file_put_contents($dir . '/index.html', $html);
+            file_put_contents($dir . '/index.html', $html);
+        }
     }
 }

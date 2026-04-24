@@ -165,6 +165,33 @@ final class BuildCommandTest extends TestCase
         assertFileExists($this->outputDir . '/blog/test-post/index.html');
     }
 
+    public function testBuildNoWriteRendersWithoutCreatingOutputDirectory(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' --workers=1'
+            . ' --no-cache'
+            . ' --no-write'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        $outputText = implode("\n", $output);
+
+        assertSame(0, $exitCode, "No-write build failed: $outputText");
+        assertStringContainsString('Rendering without writing output', $outputText);
+        assertStringContainsString('Entries rendered:', $outputText);
+        assertStringContainsString('Feeds generated:', $outputText);
+        assertStringContainsString('Sitemap generated.', $outputText);
+        assertFalse(is_dir($this->outputDir), 'No-write build must not create the output directory.');
+    }
+
     public function testBuildProfilePrintsPhaseTimings(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';

@@ -50,7 +50,14 @@ Print build phase timings without Xdebug:
 make yii CLI_ARGS='build --content-dir=benchmarks/data/content --output-dir=runtime/profile-output --workers=4 --no-cache --profile'
 ```
 
+Render the full build path without writing site output files:
+
+```bash
+make yii CLI_ARGS='build --content-dir=benchmarks/data/content --output-dir=runtime/profile-output --workers=4 --no-cache --no-write --profile'
+```
+
 Use `--profile` for quick before/after checks while optimizing. Use `make profile-build` when call-level attribution is needed.
+Use `--no-write` to separate render/template/processor cost from output directory and file writing cost.
 
 ## Benchmark classes
 
@@ -60,8 +67,8 @@ Use `--profile` for quick before/after checks while optimizing. Use `make profil
 - **`AssetFingerprintingBench`** — measures fingerprint lookup and HTML asset URL rewriting
 - **`BuildProfileBench`** — measures overhead of disabled and enabled build phase timers
 - **`OEmbedProcessorBench`** — measures standalone URL-to-embed expansion across pluggable oEmbed providers
-- **`SmallSiteBuildBench`** — measures the public `yii build` command end to end on 10k small entries, including full rebuilds and incremental rebuilds
-- **`LargeContentBuildBench`** — measures the public `yii build` command end to end on 1k realistic entries (~27KB each), including full rebuilds and incremental rebuilds
+- **`SmallSiteBuildBench`** — measures the public `yii build` command end to end on 10k small entries, including full rebuilds, no-write renders, and incremental rebuilds
+- **`LargeContentBuildBench`** — measures the public `yii build` command end to end on 1k realistic entries (~27KB each), including full rebuilds, no-write renders, and incremental rebuilds
 
 ## Baseline results
 

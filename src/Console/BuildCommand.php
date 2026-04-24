@@ -149,6 +149,12 @@ final class BuildCommand extends Command
             'Show what would be generated without writing files',
         );
         $this->addOption(
+            'no-write',
+            null,
+            InputOption::VALUE_NONE,
+            'Render the build without writing output files',
+        );
+        $this->addOption(
             'profile',
             null,
             InputOption::VALUE_NONE,
@@ -177,6 +183,7 @@ final class BuildCommand extends Command
         $includeDrafts = $input->getOption('drafts') !== false ? (bool) $input->getOption('drafts') : Environment::isDev();
         $includeFuture = $input->getOption('future') !== false ? (bool) $input->getOption('future') : Environment::isDev();
         $dryRun = (bool) $input->getOption('dry-run');
+        $noWrite = (bool) $input->getOption('no-write');
         $profile = new BuildProfile((bool) $input->getOption('profile'));
         $profile->start('prepare');
 
@@ -203,7 +210,7 @@ final class BuildCommand extends Command
         $configFiles = [];
         $allSourceFiles = [];
 
-        if (!$dryRun && !$noCache) {
+        if (!$dryRun && !$noWrite && !$noCache) {
             $trackedDirectories = $this->collectTrackedDirectories($contentDir);
             foreach ($this->themeRegistry->all() as $theme) {
                 $trackedDirectories += $this->collectTrackedDirectories($theme->path);
@@ -272,11 +279,14 @@ final class BuildCommand extends Command
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $outputDir));
             }
         } elseif (!$dryRun) {
-            $output->writeln(
-                '<info>Rendering and writing output' . $this->workerMessageSuffix($workerCount, false) . '...</info>',
+            $output->writeln($noWrite
+                ? '<info>Rendering without writing output' . $this->workerMessageSuffix($workerCount, false) . '...</info>'
+                : '<info>Rendering and writing output' . $this->workerMessageSuffix($workerCount, false) . '...</info>',
             );
 
-            $this->prepareOutputDir($outputDir);
+            if (!$noWrite) {
+                $this->prepareOutputDir($outputDir);
+            }
         }
 
         if ($manifest !== null && $allSourceFiles === []) {
@@ -412,7 +422,7 @@ final class BuildCommand extends Command
         }
 
         $cache = null;
-        if (!$noCache) {
+        if (!$noCache && !$noWrite) {
             $cacheDir = $rootPath . '/runtime/cache/build';
             $cache = new BuildCache($cacheDir, $this->templateResolver->templateDirs());
         }
@@ -445,10 +455,10 @@ final class BuildCommand extends Command
         $writer = new ParallelEntryWriter($this->contentPipeline, $this->templateResolver, $cache, $assetManifest, $relatedIndex, $translationIndex);
         $effectiveEntryWorkerCount = $writer->workerCountFor(count($tasksToWrite), $workerCount);
         $profile->switchTo('write entries');
-        $entriesWritten = $writer->write($siteConfig, $tasksToWrite, $contentDir, $workerCount, $navigation, $crossRefResolver, $authors);
+        $entriesWritten = $writer->write($siteConfig, $tasksToWrite, $contentDir, $workerCount, $navigation, $crossRefResolver, $authors, $noWrite);
 
         $output->writeln(
-            "  Entries written: <comment>$entriesWritten</comment>"
+            '  Entries ' . ($noWrite ? 'rendered' : 'written') . ": <comment>$entriesWritten</comment>"
             . ($incremental ? ' (of ' . count($allTasks) . ' total)' : '')
             . ' using <comment>' . $effectiveEntryWorkerCount . '</comment> '
             . ($effectiveEntryWorkerCount === 1 ? 'worker' : 'workers')
@@ -465,9 +475,10 @@ final class BuildCommand extends Command
                     $task['filePath'],
                     $language,
                     UiText::forTheme($siteConfig->defaultLanguage, $this->templateResolver, $siteConfig->theme, $siteConfig->defaultLanguage),
+                    $noWrite,
                 );
             }
-            $output->writeln('  Redirects written: <comment>' . count($redirectTasks) . '</comment>');
+            $output->writeln('  Redirects ' . ($noWrite ? 'rendered' : 'written') . ': <comment>' . count($redirectTasks) . '</comment>');
         }
 
         if ($manifest !== null) {
@@ -527,6 +538,7 @@ final class BuildCommand extends Command
             $navigation,
             $crossRefResolver,
             $authors,
+            $noWrite,
         );
 
         $redirectWriter ??= new RedirectPageWriter();
@@ -537,6 +549,7 @@ final class BuildCommand extends Command
                 $task['filePath'],
                 $language,
                 UiText::forTheme($siteConfig->defaultLanguage, $this->templateResolver, $siteConfig->theme, $siteConfig->defaultLanguage),
+                $noWrite,
             );
         }
         $standalonePagesWritten += count($standaloneRedirectTasks);
@@ -555,11 +568,15 @@ final class BuildCommand extends Command
         }
 
         $profile->switchTo('copy assets');
-        $assetsCopied = $contentAssetCopier->copy($contentDir, $outputDir, $assetManifest);
-        $assetsCopied += $themeAssetCopier->copy($this->themeRegistry, $outputDir, $assetManifest);
+        $assetsCopied = $contentAssetCopier->copy($contentDir, $outputDir, $assetManifest, $noWrite);
+        $assetsCopied += $themeAssetCopier->copy($this->themeRegistry, $outputDir, $assetManifest, $noWrite);
 
         foreach ($pipelineAssetMappings as $source => $target) {
             $resolvedTarget = $assetManifest?->resolve($target) ?? $target;
+            if ($noWrite) {
+                $assetsCopied++;
+                continue;
+            }
             $targetPath = $outputDir . '/' . $resolvedTarget;
             $targetDir = dirname($targetPath);
             if (!is_dir($targetDir) && !mkdir($targetDir, 0o755, true) && !is_dir($targetDir)) {
@@ -577,7 +594,7 @@ final class BuildCommand extends Command
         }
 
         if ($assetsCopied > 0) {
-            $output->writeln("  Assets copied: <comment>$assetsCopied</comment>");
+            $output->writeln('  Assets ' . ($noWrite ? 'processed' : 'copied') . ": <comment>$assetsCopied</comment>");
         }
 
         if ($assetManifest !== null && !$assetManifest->isEmpty()) {
@@ -602,7 +619,7 @@ final class BuildCommand extends Command
         $feedCount = (new ParallelTaskRunner())->run(
             $feedTasks,
             $workerCount,
-            function (array $feedTask) use ($siteConfig, $outputDir, $authors): int {
+            function (array $feedTask) use ($siteConfig, $outputDir, $authors, $noWrite): int {
                 /** @var Collection $collection */
                 $collection = $feedTask['collection'];
                 /** @var list<Entry> $entries */
@@ -611,23 +628,28 @@ final class BuildCommand extends Command
 
                 $feedGenerator = new FeedGenerator($this->feedPipeline, $authors);
 
-                $feedDir = $outputDir . '/' . $collectionName;
-                if (!is_dir($feedDir) && !mkdir($feedDir, 0o755, true) && !is_dir($feedDir)) {
-                    throw new RuntimeException(sprintf('Directory "%s" was not created', $feedDir));
-                }
+                if ($noWrite) {
+                    $feedGenerator->generateAtom($siteConfig, $collection, $entries);
+                    $feedGenerator->generateRss($siteConfig, $collection, $entries);
+                } else {
+                    $feedDir = $outputDir . '/' . $collectionName;
+                    if (!is_dir($feedDir) && !mkdir($feedDir, 0o755, true) && !is_dir($feedDir)) {
+                        throw new RuntimeException(sprintf('Directory "%s" was not created', $feedDir));
+                    }
 
-                $feedGenerator->writeAtomFile(
-                    $feedDir . '/feed.xml',
-                    $siteConfig,
-                    $collection,
-                    $entries,
-                );
-                $feedGenerator->writeRssFile(
-                    $feedDir . '/rss.xml',
-                    $siteConfig,
-                    $collection,
-                    $entries,
-                );
+                    $feedGenerator->writeAtomFile(
+                        $feedDir . '/feed.xml',
+                        $siteConfig,
+                        $collection,
+                        $entries,
+                    );
+                    $feedGenerator->writeRssFile(
+                        $feedDir . '/rss.xml',
+                        $siteConfig,
+                        $collection,
+                        $entries,
+                    );
+                }
                 return 1;
             },
             minTasksPerWorker: 1,
@@ -651,6 +673,7 @@ final class BuildCommand extends Command
                 $outputDir,
                 $navigation,
                 $workerCount,
+                $noWrite,
             );
         }
         if ($listingPageCount > 0) {
@@ -671,6 +694,7 @@ final class BuildCommand extends Command
                 $outputDir,
                 $navigation,
                 $workerCount,
+                $noWrite,
             );
         }
         if ($archivePageCount > 0) {
@@ -679,24 +703,26 @@ final class BuildCommand extends Command
 
         $profile->switchTo('write sitemap');
         $sitemapGenerator = new SitemapGenerator();
-        $sitemapGenerator->generate($siteConfig, $collections, $entriesByCollection, $outputDir, $standalonePages, $authors);
+        $sitemapGenerator->generate($siteConfig, $collections, $entriesByCollection, $outputDir, $standalonePages, $authors, $noWrite);
         $output->writeln('  Sitemap generated.');
 
         $profile->switchTo('write support files');
         $robotsGenerator = new RobotsTxtGenerator();
         $robots = $robotsGenerator->generate($siteConfig);
         if ($robots !== '') {
-            file_put_contents($outputDir . '/robots.txt', $robots);
+            if (!$noWrite) {
+                file_put_contents($outputDir . '/robots.txt', $robots);
+            }
             $output->writeln('  robots.txt generated.');
         }
 
         $notFoundWriter = new NotFoundPageWriter($this->templateResolver, $assetManifest);
-        $notFoundWriter->write($siteConfig, $outputDir, $navigation);
+        $notFoundWriter->write($siteConfig, $outputDir, $navigation, $noWrite);
         $output->writeln('  404 page generated.');
 
         if ($siteConfig->search !== null) {
             $searchGenerator = new SearchIndexGenerator();
-            $searchGenerator->generate($siteConfig, $collections, $entriesByCollection, $outputDir, $standalonePages);
+            $searchGenerator->generate($siteConfig, $collections, $entriesByCollection, $outputDir, $standalonePages, $noWrite);
             $output->writeln('  Search index generated.');
         }
 
@@ -705,7 +731,7 @@ final class BuildCommand extends Command
             $allEntries = array_merge(...array_values($entriesByCollection));
             $taxonomyData = TaxonomyCollector::collect($siteConfig->taxonomies, $allEntries);
             $taxonomyWriter = new TaxonomyPageWriter($this->templateResolver, $assetManifest);
-            $taxonomyPageCount = $taxonomyWriter->write($siteConfig, $taxonomyData, $collections, $outputDir, $navigation);
+            $taxonomyPageCount = $taxonomyWriter->write($siteConfig, $taxonomyData, $collections, $outputDir, $navigation, $noWrite);
             $output->writeln("  Taxonomy pages: <comment>$taxonomyPageCount</comment>");
         }
 
@@ -719,7 +745,7 @@ final class BuildCommand extends Command
                 }
             }
             $authorWriter = new AuthorPageWriter($this->templateResolver, $assetManifest);
-            $authorPageCount = $authorWriter->write($siteConfig, $authors, $entriesByAuthor, $collections, $outputDir, $navigation);
+            $authorPageCount = $authorWriter->write($siteConfig, $authors, $entriesByAuthor, $collections, $outputDir, $navigation, $noWrite);
             $output->writeln("  Author pages: <comment>$authorPageCount</comment>");
         }
 

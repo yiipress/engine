@@ -18,12 +18,17 @@ final class ThemeAssetCopier
     /**
      * @return int number of assets copied
      */
-    public function copy(ThemeRegistry $themeRegistry, string $outputDir, ?AssetFingerprintManifest $assetManifest = null): int
+    public function copy(ThemeRegistry $themeRegistry, string $outputDir, ?AssetFingerprintManifest $assetManifest = null, bool $noWrite = false): int
     {
         $copied = 0;
 
         foreach ($this->mappings($themeRegistry) as $sourcePath => $targetRelativePath) {
             $resolvedTarget = $assetManifest?->resolve($targetRelativePath) ?? $targetRelativePath;
+            if ($noWrite) {
+                $copied++;
+                continue;
+            }
+
             $targetPath = $outputDir . '/' . $resolvedTarget;
             $targetDir = dirname($targetPath);
 

@@ -31,6 +31,7 @@ final readonly class CollectionListingWriter
         string $outputDir,
         ?Navigation $navigation = null,
         int $workerCount = 1,
+        bool $noWrite = false,
     ): int {
         $renderer = new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest);
         $perPage = $collection->entriesPerPage;
@@ -72,7 +73,7 @@ final readonly class CollectionListingWriter
 
         $taskRunner = new ParallelTaskRunner();
 
-        return $taskRunner->run($tasks, $workerCount, function (array $task) use ($renderer, $siteConfig, $collection, $navigation): int {
+        return $taskRunner->run($tasks, $workerCount, function (array $task) use ($renderer, $siteConfig, $collection, $navigation, $noWrite): int {
             $html = $this->renderPage(
                 $renderer,
                 $siteConfig,
@@ -84,11 +85,13 @@ final readonly class CollectionListingWriter
                 $task['permalink'],
             );
 
-            if (!is_dir($task['dir']) && !mkdir($task['dir'], 0o755, true) && !is_dir($task['dir'])) {
-                throw new RuntimeException(sprintf('Directory "%s" was not created', $task['dir']));
-            }
+            if (!$noWrite) {
+                if (!is_dir($task['dir']) && !mkdir($task['dir'], 0o755, true) && !is_dir($task['dir'])) {
+                    throw new RuntimeException(sprintf('Directory "%s" was not created', $task['dir']));
+                }
 
-            file_put_contents($task['dir'] . '/index.html', $html);
+                file_put_contents($task['dir'] . '/index.html', $html);
+            }
 
             return 1;
         });
