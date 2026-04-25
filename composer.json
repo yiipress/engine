@@ -50,7 +50,7 @@
         "psr/http-server-handler": "^1.0.2",
         "psr/http-server-middleware": "^1.0.2",
         "psr/log": "^3.0.2",
-        "samdark/sitemap": "^2.5.0",
+        "samdark/sitemap": "^3.0.1",
         "symfony/console": "^7.4.8",
         "yiisoft/config": "^1.6.2",
         "yiisoft/definitions": "^3.4.1",
@@ -67,10 +67,10 @@
         "yiisoft/yii-runner-http": "^3.2.1"
     },
     "require-dev": {
-        "friendsofphp/php-cs-fixer": "^3.94.2",
+        "friendsofphp/php-cs-fixer": "^3.95.1",
         "phpbench/phpbench": "^1.6.1",
-        "phpunit/phpunit": "^12.5.17",
-        "rector/rector": "^2.4.1",
+        "phpunit/phpunit": "^12.5.23",
+        "rector/rector": "^2.4.2",
         "roave/infection-static-analysis-plugin": "^1.43",
         "shipmonk/composer-dependency-analyser": "^1.8.4",
         "vimeo/psalm": "^6.16.1"
