@@ -21,7 +21,7 @@ use function PHPUnit\Framework\assertStringContainsString;
 
 final class StaticFileActionTest extends TestCase
 {
-    private string $tempDir;
+    private string $tempDir = '';
 
     protected function setUp(): void
     {

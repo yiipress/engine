@@ -18,7 +18,7 @@ use function PHPUnit\Framework\assertStringContainsString;
 
 final class HomePageTest extends TestCase
 {
-    private string $outputDir;
+    private string $outputDir = '';
 
     protected function setUp(): void
     {

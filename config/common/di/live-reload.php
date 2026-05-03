@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Web\LiveReload\FileWatcher;
 use App\Web\LiveReload\LiveReloadMiddleware;
 use App\Web\LiveReload\SiteBuildRunner;
 use App\Web\StaticFile\StaticFileAction;
@@ -21,12 +20,6 @@ if (str_starts_with(__FILE__, 'phar://')) {
 }
 
 return [
-    FileWatcher::class => static function () use ($root): FileWatcher {
-        return new FileWatcher([
-            $root . '/content',
-            $root . '/themes',
-        ]);
-    },
     SiteBuildRunner::class => static function () use ($root, $yiiBinary): SiteBuildRunner {
         return new SiteBuildRunner(
             yiiBinary: $yiiBinary,

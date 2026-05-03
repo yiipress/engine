@@ -25,20 +25,20 @@ use function sys_get_temp_dir;
 final class ServeCommandTest extends TestCase
 {
     #[Test]
-    public function packagedServeTestModeDoesNotRequireLocalPublicDirectory(): void
+    public function serveTestModeDoesNotRequireLocalPublicDirectory(): void
     {
-        $tester = new CommandTester(new ServeCommand(packaged: true));
+        $tester = new CommandTester(new ServeCommand());
 
         $exitCode = $tester->execute(['--env' => 'test']);
 
         self::assertSame(ExitCode::OK, $exitCode);
-        self::assertStringContainsString('embedded PHAR application', $tester->getDisplay());
+        self::assertStringContainsString('ReactPHP preview server', $tester->getDisplay());
     }
 
     #[Test]
-    public function packagedServeShowsConfiguredWorkers(): void
+    public function serveShowsConfiguredWorkers(): void
     {
-        $tester = new CommandTester(new ServeCommand(packaged: true));
+        $tester = new CommandTester(new ServeCommand());
 
         $exitCode = $tester->execute(['--env' => 'test', '--workers' => '4']);
 
@@ -48,9 +48,9 @@ final class ServeCommandTest extends TestCase
     }
 
     #[Test]
-    public function packagedServeCreatesFreshHttpRunnerPerRequest(): void
+    public function serveCreatesFreshHttpRunnerPerRequest(): void
     {
-        $command = new ServeCommand(packaged: true);
+        $command = new ServeCommand();
         $method = new ReflectionMethod($command, 'createHttpRunner');
 
         $firstRunner = $method->invoke($command);
@@ -62,9 +62,9 @@ final class ServeCommandTest extends TestCase
     }
 
     #[Test]
-    public function packagedServeCreatesEmptyRequestBodyWithoutOpeningAFile(): void
+    public function serveCreatesEmptyRequestBodyWithoutOpeningAFile(): void
     {
-        $command = new ServeCommand(packaged: true);
+        $command = new ServeCommand();
         $method = new ReflectionMethod($command, 'createRequest');
 
         $request = $method->invoke($command, "HEAD / HTTP/1.1\r\nHost: example.test\r\n\r\n", 'example.test:8080');
@@ -74,10 +74,10 @@ final class ServeCommandTest extends TestCase
     }
 
     #[Test]
-    public function packagedServeDetectsLiveReloadRequestBeforeYiiDispatch(): void
+    public function serveDetectsLiveReloadRequestBeforeYiiDispatch(): void
     {
-        $command = new ServeCommand(packaged: true);
-        $method = new ReflectionMethod($command, 'isPackagedLiveReloadRequest');
+        $command = new ServeCommand();
+        $method = new ReflectionMethod($command, 'isLiveReloadRequest');
 
         self::assertTrue($method->invoke($command, "GET /_live-reload HTTP/1.1\r\nHost: example.test\r\n\r\n"));
         self::assertTrue($method->invoke($command, "GET /_live-reload?since=1 HTTP/1.1\r\nHost: example.test\r\n\r\n"));
@@ -86,20 +86,20 @@ final class ServeCommandTest extends TestCase
     }
 
     #[Test]
-    public function packagedServeCreatesStaticResponseWithoutYiiDispatch(): void
+    public function serveCreatesStaticResponseWithoutYiiDispatch(): void
     {
         $previousDirectory = getcwd();
         self::assertIsString($previousDirectory);
 
-        $root = sys_get_temp_dir() . '/yiipress-packaged-static-' . uniqid();
+        $root = sys_get_temp_dir() . '/yiipress-serve-static-' . uniqid();
         mkdir($root . '/output/blog', 0o755, true);
         file_put_contents($root . '/output/blog/index.html', '<html><body><h1>Blog</h1></body></html>');
 
         try {
             chdir($root);
 
-            $command = new ServeCommand(packaged: true);
-            $method = new ReflectionMethod($command, 'createPackagedStaticResponse');
+            $command = new ServeCommand();
+            $method = new ReflectionMethod($command, 'createStaticResponse');
 
             $response = $method->invoke($command, "GET /blog/ HTTP/1.1\r\nHost: example.test\r\n\r\n");
         } finally {
@@ -122,20 +122,20 @@ final class ServeCommandTest extends TestCase
     }
 
     #[Test]
-    public function packagedServeStreamsNonHtmlStaticResponse(): void
+    public function serveStreamsNonHtmlStaticResponse(): void
     {
         $previousDirectory = getcwd();
         self::assertIsString($previousDirectory);
 
-        $root = sys_get_temp_dir() . '/yiipress-packaged-static-' . uniqid();
+        $root = sys_get_temp_dir() . '/yiipress-serve-static-' . uniqid();
         mkdir($root . '/output/assets', 0o755, true);
         file_put_contents($root . '/output/assets/image.jpg', 'image-bytes');
 
         try {
             chdir($root);
 
-            $command = new ServeCommand(packaged: true);
-            $method = new ReflectionMethod($command, 'createPackagedStaticResponse');
+            $command = new ServeCommand();
+            $method = new ReflectionMethod($command, 'createStaticResponse');
 
             $response = $method->invoke($command, "GET /assets/image.jpg HTTP/1.1\r\nHost: example.test\r\n\r\n");
         } finally {
@@ -156,20 +156,20 @@ final class ServeCommandTest extends TestCase
     }
 
     #[Test]
-    public function packagedServePreventsStaticPathTraversal(): void
+    public function servePreventsStaticPathTraversal(): void
     {
         $previousDirectory = getcwd();
         self::assertIsString($previousDirectory);
 
-        $root = sys_get_temp_dir() . '/yiipress-packaged-static-' . uniqid();
+        $root = sys_get_temp_dir() . '/yiipress-serve-static-' . uniqid();
         mkdir($root . '/output', 0o755, true);
         file_put_contents($root . '/secret.txt', 'secret');
 
         try {
             chdir($root);
 
-            $command = new ServeCommand(packaged: true);
-            $method = new ReflectionMethod($command, 'createPackagedStaticResponse');
+            $command = new ServeCommand();
+            $method = new ReflectionMethod($command, 'createStaticResponse');
 
             $response = $method->invoke($command, "GET /../secret.txt HTTP/1.1\r\nHost: example.test\r\n\r\n");
         } finally {
@@ -184,13 +184,13 @@ final class ServeCommandTest extends TestCase
     }
 
     #[Test]
-    public function packagedServeKeepsOneLiveReloadWatcherForMultipleClients(): void
+    public function serveKeepsOneLiveReloadWatcherForMultipleClients(): void
     {
-        $command = new ServeCommand(packaged: true);
+        $command = new ServeCommand();
         $writeMethod = new ReflectionMethod($command, 'writeLiveReloadResponse');
-        $closeMethod = new ReflectionMethod($command, 'closePackagedLiveReloadWatcher');
-        $streamProperty = new ReflectionProperty($command, 'packagedLiveReloadStream');
-        $clientsProperty = new ReflectionProperty($command, 'packagedLiveReloadClients');
+        $closeMethod = new ReflectionMethod($command, 'closeLiveReloadWatcher');
+        $streamProperty = new ReflectionProperty($command, 'liveReloadStream');
+        $clientsProperty = new ReflectionProperty($command, 'liveReloadClients');
 
         $firstConnection = new FakeConnection();
         $secondConnection = new FakeConnection();
@@ -214,9 +214,9 @@ final class ServeCommandTest extends TestCase
     }
 
     #[Test]
-    public function packagedServeWaitsForCompleteRequestBody(): void
+    public function serveWaitsForCompleteRequestBody(): void
     {
-        $command = new ServeCommand(packaged: true);
+        $command = new ServeCommand();
         $method = new ReflectionMethod($command, 'requestLength');
 
         self::assertNull($method->invoke($command, "POST / HTTP/1.1\r\nHost: example.test\r\nContent-Length: 4"));
