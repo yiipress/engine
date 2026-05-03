@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Benchmark\BenchmarkDataGenerator;
+use YiiPress\Benchmark\BenchmarkDataGenerator;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 

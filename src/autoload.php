@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Environment;
+use YiiPress\Environment;
 
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 

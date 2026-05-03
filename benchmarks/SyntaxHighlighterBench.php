@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Benchmarks;
+namespace YiiPress\Benchmarks;
 
-use App\Highlighter\SyntaxHighlighter;
+use YiiPress\Highlighter\SyntaxHighlighter;
 use PhpBench\Attributes\BeforeMethods;
 use PhpBench\Attributes\Iterations;
 use PhpBench\Attributes\Revs;

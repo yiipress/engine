@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Processor\Toc;
+namespace YiiPress\Tests\Unit\Processor\Toc;
 
-use App\Content\Model\Entry;
-use App\Processor\Toc\TocProcessor;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Processor\Toc\TocProcessor;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 

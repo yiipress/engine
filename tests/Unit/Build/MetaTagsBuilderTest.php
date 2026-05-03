@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Build;
+namespace YiiPress\Tests\Unit\Build;
 
-use App\Build\MetaTagsBuilder;
-use App\Content\Model\Entry;
-use App\Content\Model\MarkdownConfig;
-use App\Content\Model\SiteConfig;
+use YiiPress\Build\MetaTagsBuilder;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\MarkdownConfig;
+use YiiPress\Content\Model\SiteConfig;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 

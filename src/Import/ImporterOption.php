@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Import;
+namespace YiiPress\Import;
 
 /**
  * Declares an option that a content importer accepts.

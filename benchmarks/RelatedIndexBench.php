@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Benchmarks;
+namespace YiiPress\Benchmarks;
 
-use App\Content\Model\Entry;
-use App\Content\Model\RelatedConfig;
-use App\Content\Related\RelatedIndex;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\RelatedConfig;
+use YiiPress\Content\Related\RelatedIndex;
 use DateTimeImmutable;
 use PhpBench\Attributes\BeforeMethods;
 use PhpBench\Attributes\Iterations;

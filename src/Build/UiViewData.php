@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Build;
+namespace YiiPress\Build;
 
-use App\Content\Model\SiteConfig;
-use App\I18n\UiText;
+use YiiPress\Content\Model\SiteConfig;
+use YiiPress\I18n\UiText;
 
 use function array_map;
 use function array_unique;

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Processor;
+namespace YiiPress\Processor;
 
-use App\Content\Model\Entry;
+use YiiPress\Content\Model\Entry;
 
 use function str_contains;
 

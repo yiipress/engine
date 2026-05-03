@@ -105,7 +105,7 @@ related:
   same_collection_only: true   # restrict suggestions to the same collection (default: true)
 ```
 
-Templates receive a `$related` variable (list of `App\Content\Model\RelatedEntry`) ordered
+Templates receive a `$related` variable (list of `YiiPress\Content\Model\RelatedEntry`) ordered
 by relevance. See [plugins.md](plugins.md#related-content) for details.
 
 ### Multilingual support
@@ -135,7 +135,7 @@ translation_key: hello
 When `translation_key` is absent, translations are grouped by slug within the same
 collection. All variants of an entry expose each other as alternates:
 
-- `$translations` — list of `App\Content\Model\Translation` (language, permalink, title)
+- `$translations` — list of `YiiPress\Content\Model\Translation` (language, permalink, title)
   available to templates for rendering a language switcher.
 - `$language` — effective language of the current entry; the bundled theme uses it for
   `<html lang="…">`.

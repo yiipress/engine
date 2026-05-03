@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Content;
+namespace YiiPress\Tests\Unit\Content;
 
-use App\Content\EntrySorter;
-use App\Content\Model\Collection;
-use App\Content\Model\Entry;
+use YiiPress\Content\EntrySorter;
+use YiiPress\Content\Model\Collection;
+use YiiPress\Content\Model\Entry;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 

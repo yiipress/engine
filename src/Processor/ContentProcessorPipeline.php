@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Processor;
+namespace YiiPress\Processor;
 
-use App\Content\Model\Entry;
-use App\Content\Model\SiteConfig;
-use App\Processor\Toc\TocAwareInterface;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\SiteConfig;
+use YiiPress\Processor\Toc\TocAwareInterface;
 
 final class ContentProcessorPipeline
 {

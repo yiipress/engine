@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Highlighter;
+namespace YiiPress\Tests\Unit\Highlighter;
 
-use App\Highlighter\SyntaxHighlighter;
+use YiiPress\Highlighter\SyntaxHighlighter;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;

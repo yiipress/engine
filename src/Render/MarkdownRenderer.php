@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Render;
+namespace YiiPress\Render;
 
-use App\Content\Model\MarkdownConfig;
+use YiiPress\Content\Model\MarkdownConfig;
 
 use function md4c_toHtml;
 

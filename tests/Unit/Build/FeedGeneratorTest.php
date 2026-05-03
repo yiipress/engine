@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Build;
+namespace YiiPress\Tests\Unit\Build;
 
-use App\Build\FeedGenerator;
-use App\Content\Model\Collection;
-use App\Content\Model\Entry;
-use App\Content\Model\SiteConfig;
-use App\Processor\ContentProcessorInterface;
-use App\Processor\ContentProcessorPipeline;
-use App\Processor\MarkdownProcessor;
-use App\Render\MarkdownRenderer;
+use YiiPress\Build\FeedGenerator;
+use YiiPress\Content\Model\Collection;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\SiteConfig;
+use YiiPress\Processor\ContentProcessorInterface;
+use YiiPress\Processor\ContentProcessorPipeline;
+use YiiPress\Processor\MarkdownProcessor;
+use YiiPress\Render\MarkdownRenderer;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 

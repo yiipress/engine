@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Content\I18n;
+namespace YiiPress\Tests\Unit\Content\I18n;
 
-use App\Content\I18n\TranslationIndex;
-use App\Content\Model\Entry;
-use App\Content\Model\I18nConfig;
+use YiiPress\Content\I18n\TranslationIndex;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\I18nConfig;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 

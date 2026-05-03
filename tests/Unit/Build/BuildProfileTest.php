@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Build;
+namespace YiiPress\Tests\Unit\Build;
 
-use App\Build\BuildProfile;
+use YiiPress\Build\BuildProfile;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertArrayHasKey;

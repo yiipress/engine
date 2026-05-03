@@ -4,7 +4,7 @@ Content processors transform entry content through a pipeline. Each processor re
 
 ## Processor interface
 
-A processor implements `App\Processor\ContentProcessorInterface`:
+A processor implements `YiiPress\Processor\ContentProcessorInterface`:
 
 ```php
 interface ContentProcessorInterface
@@ -193,7 +193,7 @@ Generated HTML includes:
 
 Expands standalone provider URLs into embed HTML before markdown processing.
 
-Providers are pluggable. Each provider implements `App\Processor\OEmbed\OEmbedInterface` and owns both:
+Providers are pluggable. Each provider implements `YiiPress\Processor\OEmbed\OEmbedInterface` and owns both:
 - URL matching logic
 - the generated embed HTML
 
@@ -252,7 +252,7 @@ HTML matches the same marker format as `TweetProcessor`.
 
 Suggests other entries that share tags and categories with the current one. When enabled,
 an in-memory `RelatedIndex` is built once per build from all indexed entries and injects a
-`$related` variable into entry templates — a list of `App\Content\Model\RelatedEntry`
+`$related` variable into entry templates — a list of `YiiPress\Content\Model\RelatedEntry`
 objects ordered by relevance.
 
 Each related entry exposes:
@@ -371,7 +371,7 @@ Content importers convert data from external sources (Telegram, WordPress, Jekyl
 
 ## Importer interface
 
-An importer implements `App\Import\ContentImporterInterface`:
+An importer implements `YiiPress\Import\ContentImporterInterface`:
 
 ```php
 interface ContentImporterInterface
@@ -480,9 +480,9 @@ Post content in markdown...
 To register the importer, add it to the `importers` array in `config/common/di/importer.php`:
 
 ```php
-use App\Console\ImportCommand;
-use App\Import\Telegram\TelegramContentImporter;
-use App\Import\RestApiContentImporter;
+use YiiPress\Console\ImportCommand;
+use YiiPress\Import\Telegram\TelegramContentImporter;
+use YiiPress\Import\RestApiContentImporter;
 
 return [
     ImportCommand::class => [

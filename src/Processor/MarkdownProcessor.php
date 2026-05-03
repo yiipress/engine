@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Processor;
+namespace YiiPress\Processor;
 
-use App\Content\Model\Entry;
-use App\Render\MarkdownRenderer;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Render\MarkdownRenderer;
 
 final readonly class MarkdownProcessor implements ContentProcessorInterface
 {

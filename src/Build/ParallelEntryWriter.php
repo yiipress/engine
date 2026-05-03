@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Build;
+namespace YiiPress\Build;
 
-use App\Content\CrossReferenceResolver;
-use App\Content\I18n\TranslationIndex;
-use App\Content\Model\Entry;
-use App\Content\Model\Navigation;
-use App\Content\Model\SiteConfig;
-use App\Content\Related\RelatedIndex;
-use App\Processor\ContentProcessorPipeline;
+use YiiPress\Content\CrossReferenceResolver;
+use YiiPress\Content\I18n\TranslationIndex;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\Navigation;
+use YiiPress\Content\Model\SiteConfig;
+use YiiPress\Content\Related\RelatedIndex;
+use YiiPress\Processor\ContentProcessorPipeline;
 use RuntimeException;
 
 use function array_slice;

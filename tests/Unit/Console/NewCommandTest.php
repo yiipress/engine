@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Console;
+namespace YiiPress\Tests\Unit\Console;
 
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;

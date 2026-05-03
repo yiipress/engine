@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Content\Parser;
+namespace YiiPress\Tests\Unit\Content\Parser;
 
-use App\Content\Parser\AuthorParser;
-use App\Content\Parser\FrontMatterParser;
+use YiiPress\Content\Parser\AuthorParser;
+use YiiPress\Content\Parser\FrontMatterParser;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;

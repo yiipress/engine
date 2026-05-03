@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Content\Parser;
+namespace YiiPress\Content\Parser;
 
-use App\Content\Model\Collection;
+use YiiPress\Content\Model\Collection;
 use RuntimeException;
 
 use function file_get_contents;

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Build;
+namespace YiiPress\Tests\Unit\Build;
 
-use App\Build\PageTemplateRenderer;
-use App\Build\TemplateResolver;
-use App\Build\Theme;
-use App\Build\ThemeRegistry;
-use App\I18n\UiText;
+use YiiPress\Build\PageTemplateRenderer;
+use YiiPress\Build\TemplateResolver;
+use YiiPress\Build\Theme;
+use YiiPress\Build\ThemeRegistry;
+use YiiPress\I18n\UiText;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;

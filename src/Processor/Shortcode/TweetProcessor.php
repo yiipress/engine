@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Processor\Shortcode;
+namespace YiiPress\Processor\Shortcode;
 
-use App\Content\Model\Entry;
-use App\Processor\AssetProcessorInterface;
-use App\Processor\ContentProcessorInterface;
-use App\Processor\OEmbed\OEmbedInterface;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Processor\AssetProcessorInterface;
+use YiiPress\Processor\ContentProcessorInterface;
+use YiiPress\Processor\OEmbed\OEmbedInterface;
 
 use function htmlspecialchars;
 use function parse_url;

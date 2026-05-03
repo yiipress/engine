@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Build;
+namespace YiiPress\Build;
 
-use App\Content\CrossReferenceResolver;
-use App\Content\I18n\TranslationIndex;
-use App\Content\Model\Entry;
-use App\Content\Model\Navigation;
-use App\Content\Model\SiteConfig;
-use App\Content\Related\RelatedIndex;
-use App\Processor\ContentProcessorPipeline;
+use YiiPress\Content\CrossReferenceResolver;
+use YiiPress\Content\I18n\TranslationIndex;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\Navigation;
+use YiiPress\Content\Model\SiteConfig;
+use YiiPress\Content\Related\RelatedIndex;
+use YiiPress\Processor\ContentProcessorPipeline;
 use Closure;
 use RuntimeException;
 
@@ -102,8 +102,8 @@ final class EntryRenderer
 
     /**
      * @param list<array{id: string, text: string, level: int}> $toc
-     * @param list<\App\Content\Model\RelatedEntry> $related
-     * @param list<\App\Content\Model\Translation> $translations
+     * @param list<\YiiPress\Content\Model\RelatedEntry> $related
+     * @param list<\YiiPress\Content\Model\Translation> $translations
      */
     private function renderTemplate(SiteConfig $siteConfig, Entry $entry, string $content, string $permalink, ?Navigation $navigation, string $headAssets = '', array $toc = [], array $related = [], array $translations = []): string
     {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Processor\OEmbed;
+namespace YiiPress\Processor\OEmbed;
 
 /**
  * Interface for oEmbed processors that convert URLs to embedded content.

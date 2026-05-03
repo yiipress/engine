@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Console;
+namespace YiiPress\Console;
 
-use App\Content\Parser\CollectionConfigParser;
-use App\Content\Parser\SiteConfigParser;
+use YiiPress\Content\Parser\CollectionConfigParser;
+use YiiPress\Content\Parser\SiteConfigParser;
 use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;

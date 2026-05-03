@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Import\Telegram;
+namespace YiiPress\Tests\Unit\Import\Telegram;
 
-use App\Import\Telegram\TelegramContentImporter;
+use YiiPress\Import\Telegram\TelegramContentImporter;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;

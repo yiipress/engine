@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Packaging;
+namespace YiiPress\Tests\Unit\Packaging;
 
-use App\Console\BuildCommand;
-use App\Console\CleanCommand;
-use App\Console\ImportCommand;
-use App\Console\NewCommand;
-use App\Console\ServeCommand;
+use YiiPress\Console\BuildCommand;
+use YiiPress\Console\CleanCommand;
+use YiiPress\Console\ImportCommand;
+use YiiPress\Console\NewCommand;
+use YiiPress\Console\ServeCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Web\LiveReload;
+namespace YiiPress\Tests\Unit\Web\LiveReload;
 
-use App\Web\LiveReload\LiveReloadMiddleware;
+use YiiPress\Web\LiveReload\LiveReloadMiddleware;
 use HttpSoft\Message\Response;
 use HttpSoft\Message\ServerRequest;
 use HttpSoft\Message\StreamFactory;

@@ -82,12 +82,12 @@
     },
     "autoload": {
         "psr-4": {
-            "App\\": "src"
+            "YiiPress\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "App\\Tests\\": "tests"
+            "YiiPress\\Tests\\": "tests"
         }
     },
     "extra": {

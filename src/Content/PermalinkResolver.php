@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Content;
+namespace YiiPress\Content;
 
-use App\Content\Model\Collection;
-use App\Content\Model\Entry;
-use App\Content\Model\I18nConfig;
+use YiiPress\Content\Model\Collection;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\I18nConfig;
 
 final class PermalinkResolver
 {

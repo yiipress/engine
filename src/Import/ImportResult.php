@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Import;
+namespace YiiPress\Import;
 
 final readonly class ImportResult
 {

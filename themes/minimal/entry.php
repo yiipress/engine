@@ -15,24 +15,24 @@ declare(strict_types=1);
  * @var string $collection
  * @var string $headAssets
  * @var list<array{id: string, text: string, level: int}> $toc
- * @var list<App\Content\Model\RelatedEntry> $related
- * @var list<App\Content\Model\Translation> $translations
+ * @var list<YiiPress\Content\Model\RelatedEntry> $related
+ * @var list<YiiPress\Content\Model\Translation> $translations
  * @var string $language
  * @var ?Navigation $nav
  * @var Closure(string, array): string $partial
  * @var string $rootPath
- * @var App\Build\MetaTags $metaTags
+ * @var YiiPress\Build\MetaTags $metaTags
  * @var bool $search
  * @var int $searchResults
  * @var string $uiLanguage
  * @var list<string> $uiLanguages
  * @var array<string, array<string, string>> $uiCatalogs
- * @var App\I18n\UiText $ui
+ * @var YiiPress\I18n\UiText $ui
  * @var Closure(string, int, ?string, bool): string $h
  * @var Closure(string, array): string $t
  */
 
-use App\Content\Model\Navigation;
+use YiiPress\Content\Model\Navigation;
 $language ??= 'en';
 $uiLanguage ??= 'en';
 $translations ??= [];

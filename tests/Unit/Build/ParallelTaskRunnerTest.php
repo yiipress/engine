@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Build;
+namespace YiiPress\Tests\Unit\Build;
 
-use App\Build\ParallelTaskRunner;
+use YiiPress\Build\ParallelTaskRunner;
 use PHPUnit\Framework\TestCase;
 
 use function array_unique;

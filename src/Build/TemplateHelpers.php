@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Build;
+namespace YiiPress\Build;
 
-use App\I18n\UiText;
+use YiiPress\I18n\UiText;
 
 use function htmlspecialchars;
 

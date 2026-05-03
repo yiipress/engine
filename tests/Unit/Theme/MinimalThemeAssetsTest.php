@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Theme;
+namespace YiiPress\Tests\Unit\Theme;
 
 use PHPUnit\Framework\TestCase;
 

@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Build;
+namespace YiiPress\Tests\Unit\Build;
 
-use App\Build\CollectionListingWriter;
-use App\Build\Theme;
-use App\Build\ThemeRegistry;
-use App\Build\TemplateResolver;
-use App\Content\Model\Collection;
-use App\Content\Model\Entry;
-use App\Content\Model\SiteConfig;
+use YiiPress\Build\CollectionListingWriter;
+use YiiPress\Build\Theme;
+use YiiPress\Build\ThemeRegistry;
+use YiiPress\Build\TemplateResolver;
+use YiiPress\Content\Model\Collection;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\SiteConfig;
 use DateTimeImmutable;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;

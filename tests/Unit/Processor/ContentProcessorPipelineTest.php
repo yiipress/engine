@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Processor;
+namespace YiiPress\Tests\Unit\Processor;
 
-use App\Content\Model\Entry;
-use App\Content\Model\SiteConfig;
-use App\Processor\AssetProcessorInterface;
-use App\Processor\ContentProcessorInterface;
-use App\Processor\ContentProcessorPipeline;
-use App\Processor\SiteConfigAwareProcessorInterface;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\SiteConfig;
+use YiiPress\Processor\AssetProcessorInterface;
+use YiiPress\Processor\ContentProcessorInterface;
+use YiiPress\Processor\ContentProcessorPipeline;
+use YiiPress\Processor\SiteConfigAwareProcessorInterface;
 use Closure;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Import;
+namespace YiiPress\Import;
 
 /**
  * Converts content from an external source into YiiPress Markdown files with front matter.

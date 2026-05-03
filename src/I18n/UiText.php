@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\I18n;
+namespace YiiPress\I18n;
 
-use App\Build\TemplateResolver;
+use YiiPress\Build\TemplateResolver;
 use RuntimeException;
 
 use function array_filter;

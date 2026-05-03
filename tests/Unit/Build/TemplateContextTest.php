@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Build;
+namespace YiiPress\Tests\Unit\Build;
 
-use App\Build\AssetFingerprintManifest;
-use App\Build\Asset;
-use App\Build\TemplateContext;
-use App\Build\TemplateResolver;
-use App\Build\Theme;
-use App\Build\ThemeRegistry;
+use YiiPress\Build\AssetFingerprintManifest;
+use YiiPress\Build\Asset;
+use YiiPress\Build\TemplateContext;
+use YiiPress\Build\TemplateResolver;
+use YiiPress\Build\Theme;
+use YiiPress\Build\ThemeRegistry;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 

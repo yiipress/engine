@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Build;
+namespace YiiPress\Tests\Unit\Build;
 
-use App\Build\BuildCache;
+use YiiPress\Build\BuildCache;
 use DirectoryIterator;
 use PHPUnit\Framework\TestCase;
 

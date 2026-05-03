@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Content\Parser;
+namespace YiiPress\Content\Parser;
 
-use App\Content\Model\AssetConfig;
-use App\Content\Model\I18nConfig;
-use App\Content\Model\MarkdownConfig;
-use App\Content\Model\RelatedConfig;
-use App\Content\Model\RobotsTxtConfig;
-use App\Content\Model\RobotsTxtRule;
-use App\Content\Model\SearchConfig;
-use App\Content\Model\SiteConfig;
+use YiiPress\Content\Model\AssetConfig;
+use YiiPress\Content\Model\I18nConfig;
+use YiiPress\Content\Model\MarkdownConfig;
+use YiiPress\Content\Model\RelatedConfig;
+use YiiPress\Content\Model\RobotsTxtConfig;
+use YiiPress\Content\Model\RobotsTxtRule;
+use YiiPress\Content\Model\SearchConfig;
+use YiiPress\Content\Model\SiteConfig;
 use RuntimeException;
 
 use function file_get_contents;

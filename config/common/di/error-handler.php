@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Environment;
+use YiiPress\Environment;
 use Yiisoft\ErrorHandler\Renderer\HtmlRenderer;
 
 /**

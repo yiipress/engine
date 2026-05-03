@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Processor;
+namespace YiiPress\Tests\Unit\Processor;
 
-use App\Content\Model\Entry;
-use App\Content\Model\SiteConfig;
-use App\Highlighter\SyntaxHighlighter;
-use App\Processor\SyntaxHighlightProcessor;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\SiteConfig;
+use YiiPress\Highlighter\SyntaxHighlighter;
+use YiiPress\Processor\SyntaxHighlightProcessor;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 

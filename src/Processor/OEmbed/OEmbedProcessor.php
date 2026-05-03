@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Processor\OEmbed;
+namespace YiiPress\Processor\OEmbed;
 
-use App\Content\Model\Entry;
-use App\Processor\ContentProcessorInterface;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Processor\ContentProcessorInterface;
 
 use function preg_replace_callback;
 use function str_contains;

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Content\Parser;
+namespace YiiPress\Tests\Unit\Content\Parser;
 
-use App\Content\Parser\NavigationParser;
+use YiiPress\Content\Parser\NavigationParser;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertCount;

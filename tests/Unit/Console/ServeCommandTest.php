@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Console;
+namespace YiiPress\Tests\Unit\Console;
 
-use App\Console\ServeCommand;
+use YiiPress\Console\ServeCommand;
 use Evenement\EventEmitter;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

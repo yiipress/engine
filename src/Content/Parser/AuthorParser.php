@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Content\Parser;
+namespace YiiPress\Content\Parser;
 
-use App\Content\Model\Author;
+use YiiPress\Content\Model\Author;
 
 final readonly class AuthorParser
 {

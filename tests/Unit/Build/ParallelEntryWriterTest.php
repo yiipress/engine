@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Build;
+namespace YiiPress\Tests\Unit\Build;
 
-use App\Build\ParallelEntryWriter;
-use App\Build\TemplateResolver;
-use App\Build\Theme;
-use App\Build\ThemeRegistry;
-use App\Content\Model\Entry;
-use App\Content\Model\SiteConfig;
-use App\Processor\ContentProcessorInterface;
-use App\Processor\ContentProcessorPipeline;
+use YiiPress\Build\ParallelEntryWriter;
+use YiiPress\Build\TemplateResolver;
+use YiiPress\Build\Theme;
+use YiiPress\Build\ThemeRegistry;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\SiteConfig;
+use YiiPress\Processor\ContentProcessorInterface;
+use YiiPress\Processor\ContentProcessorPipeline;
 use DateTimeImmutable;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;

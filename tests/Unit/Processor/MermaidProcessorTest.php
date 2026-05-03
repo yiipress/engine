@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Processor;
+namespace YiiPress\Tests\Unit\Processor;
 
-use App\Content\Model\Entry;
-use App\Processor\Mermaid\MermaidProcessor;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Processor\Mermaid\MermaidProcessor;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 

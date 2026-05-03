@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Environment;
+use YiiPress\Environment;
 
 // NOTE: After making changes in this file, run `composer yii-config-rebuild` to update the merge plan.
 return [

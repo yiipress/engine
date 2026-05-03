@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit;
+namespace YiiPress\Tests\Unit;
 
-use App\Environment;
+use YiiPress\Environment;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;

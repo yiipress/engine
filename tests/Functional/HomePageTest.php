@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Functional;
+namespace YiiPress\Tests\Functional;
 
-use App\Environment;
+use YiiPress\Environment;
 use FilesystemIterator;
 use HttpSoft\Message\ServerRequest;
 use PHPUnit\Framework\TestCase;

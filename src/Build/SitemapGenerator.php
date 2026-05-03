@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Build;
+namespace YiiPress\Build;
 
-use App\Content\Model\Author;
-use App\Content\Model\Collection;
-use App\Content\Model\Entry;
-use App\Content\Model\SiteConfig;
-use App\Content\PermalinkResolver;
+use YiiPress\Content\Model\Author;
+use YiiPress\Content\Model\Collection;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\SiteConfig;
+use YiiPress\Content\PermalinkResolver;
 use samdark\sitemap\Sitemap;
 
 use function sys_get_temp_dir;

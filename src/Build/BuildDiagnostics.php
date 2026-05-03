@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Build;
+namespace YiiPress\Build;
 
-use App\Content\Model\Author;
-use App\Content\Model\Entry;
-use App\Content\Model\SiteConfig;
+use YiiPress\Content\Model\Author;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\SiteConfig;
 
 use function dirname;
 use function str_contains;

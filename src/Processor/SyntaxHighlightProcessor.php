@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Processor;
+namespace YiiPress\Processor;
 
-use App\Content\Model\Entry;
-use App\Content\Model\SiteConfig;
-use App\Highlighter\SyntaxHighlighter;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\SiteConfig;
+use YiiPress\Highlighter\SyntaxHighlighter;
 use RuntimeException;
 
 use function str_contains;

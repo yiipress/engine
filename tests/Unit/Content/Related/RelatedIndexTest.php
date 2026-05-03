@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Content\Related;
+namespace YiiPress\Tests\Unit\Content\Related;
 
-use App\Content\Model\Entry;
-use App\Content\Model\RelatedConfig;
-use App\Content\Related\RelatedIndex;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\RelatedConfig;
+use YiiPress\Content\Related\RelatedIndex;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 

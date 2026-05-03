@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Content;
+namespace YiiPress\Tests\Unit\Content;
 
-use App\Content\CrossReferenceResolver;
+use YiiPress\Content\CrossReferenceResolver;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;

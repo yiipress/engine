@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-use App\Build\TemplateResolver;
-use App\Build\ThemeRegistry;
-use App\Console\BuildCommand;
-use App\Console\CleanCommand;
-use App\Console\NewCommand;
-use App\Processor\ContentProcessorPipeline;
-use App\Processor\Mermaid\MermaidProcessor;
-use App\Processor\OEmbed\OEmbedProcessor;
-use App\Processor\Shortcode\TweetProcessor;
-use App\Processor\Shortcode\VimeoProcessor;
-use App\Processor\Shortcode\YouTubeProcessor;
-use App\Processor\MarkdownProcessor;
-use App\Processor\SyntaxHighlightProcessor;
-use App\Processor\TagLinkProcessor;
-use App\Processor\Toc\TocProcessor;
+use YiiPress\Build\TemplateResolver;
+use YiiPress\Build\ThemeRegistry;
+use YiiPress\Console\BuildCommand;
+use YiiPress\Console\CleanCommand;
+use YiiPress\Console\NewCommand;
+use YiiPress\Processor\ContentProcessorPipeline;
+use YiiPress\Processor\Mermaid\MermaidProcessor;
+use YiiPress\Processor\OEmbed\OEmbedProcessor;
+use YiiPress\Processor\Shortcode\TweetProcessor;
+use YiiPress\Processor\Shortcode\VimeoProcessor;
+use YiiPress\Processor\Shortcode\YouTubeProcessor;
+use YiiPress\Processor\MarkdownProcessor;
+use YiiPress\Processor\SyntaxHighlightProcessor;
+use YiiPress\Processor\TagLinkProcessor;
+use YiiPress\Processor\Toc\TocProcessor;
 use Yiisoft\Definitions\Reference;
 
 $workingDirectory = getcwd() ?: dirname(__DIR__, 3);

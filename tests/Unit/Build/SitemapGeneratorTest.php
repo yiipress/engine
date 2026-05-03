@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Build;
+namespace YiiPress\Tests\Unit\Build;
 
-use App\Build\SitemapGenerator;
-use App\Content\Model\Collection;
-use App\Content\Model\Entry;
-use App\Content\Model\SiteConfig;
+use YiiPress\Build\SitemapGenerator;
+use YiiPress\Content\Model\Collection;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\SiteConfig;
 use DateTimeImmutable;
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\DataProvider;

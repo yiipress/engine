@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Build;
+namespace YiiPress\Build;
 
 use function preg_replace_callback;
 use function str_contains;

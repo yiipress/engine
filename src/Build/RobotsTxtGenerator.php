@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Build;
+namespace YiiPress\Build;
 
-use App\Content\Model\RobotsTxtRule;
-use App\Content\Model\SiteConfig;
+use YiiPress\Content\Model\RobotsTxtRule;
+use YiiPress\Content\Model\SiteConfig;
 
 use function rtrim;
 

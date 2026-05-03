@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Console;
+namespace YiiPress\Tests\Console;
 
 use PHPUnit\Framework\TestCase;
 

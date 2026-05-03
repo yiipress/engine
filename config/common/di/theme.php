@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Build\Theme;
-use App\Build\ThemeRegistry;
-use App\Build\TemplateResolver;
+use YiiPress\Build\Theme;
+use YiiPress\Build\ThemeRegistry;
+use YiiPress\Build\TemplateResolver;
 use Yiisoft\Definitions\DynamicReference;
 
 return [

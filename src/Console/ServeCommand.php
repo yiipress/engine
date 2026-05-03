@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Console;
+namespace YiiPress\Console;
 
-use App\Environment;
-use App\Web\LiveReload\LiveReloadMiddleware;
-use App\Web\LiveReload\SiteBuildRunner;
+use YiiPress\Environment;
+use YiiPress\Web\LiveReload\LiveReloadMiddleware;
+use YiiPress\Web\LiveReload\SiteBuildRunner;
 use FilesystemIterator;
 use HttpSoft\Message\ServerRequest;
 use HttpSoft\Message\Stream;

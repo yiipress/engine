@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Build;
+namespace YiiPress\Tests\Unit\Build;
 
-use App\Build\RobotsTxtGenerator;
-use App\Content\Model\MarkdownConfig;
-use App\Content\Model\RobotsTxtConfig;
-use App\Content\Model\RobotsTxtRule;
-use App\Content\Model\SiteConfig;
+use YiiPress\Build\RobotsTxtGenerator;
+use YiiPress\Content\Model\MarkdownConfig;
+use YiiPress\Content\Model\RobotsTxtConfig;
+use YiiPress\Content\Model\RobotsTxtRule;
+use YiiPress\Content\Model\SiteConfig;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;

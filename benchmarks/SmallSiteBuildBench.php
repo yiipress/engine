@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Benchmarks;
+namespace YiiPress\Benchmarks;
 
 use FilesystemIterator;
 use PhpBench\Attributes\AfterMethods;

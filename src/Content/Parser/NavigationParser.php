@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Content\Parser;
+namespace YiiPress\Content\Parser;
 
-use App\Content\Model\Navigation;
-use App\Content\Model\NavigationItem;
+use YiiPress\Content\Model\Navigation;
+use YiiPress\Content\Model\NavigationItem;
 use RuntimeException;
 
 use function array_filter;
