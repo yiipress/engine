@@ -146,7 +146,7 @@ The command writes artifacts to `dist/`:
 - `yiipress.phar` — PHP archive for environments that already have PHP 8.5 and required extensions.
 - `yiipress` — static Linux executable built with static-php-cli micro SAPI and the YiiPress PHAR embedded.
 
-The static executable includes `ext-yiipress_highlighter`, so syntax highlighting does not need FFI or an external shared library.
+The static executable includes `ext-yiipress_highlighter`, so syntax highlighting does not need FFI or an external shared library. Packaged `serve` uses ReactPHP stream sockets and does not require PHP's native `sockets` extension.
 Relative `content-dir`, `output-dir`, `new`, `clean`, and `import` paths are resolved from the directory where you run `yiipress`, not from the packaged executable location.
 
 GitHub Actions builds the same artifacts in the `Package Static Binary` workflow and uploads them as a workflow artifact.

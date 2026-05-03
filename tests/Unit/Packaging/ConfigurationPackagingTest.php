@@ -64,7 +64,22 @@ final class ConfigurationPackagingTest extends TestCase
     {
         $commands = require dirname(__DIR__, 3) . '/config/console/commands.php';
 
+        /** @psalm-suppress RedundantCondition */
         assertSame(ServeCommand::class, $commands['serve']);
+    }
+
+    #[Test]
+    public function staticBinaryBuildDoesNotRequireNativeSocketsExtension(): void
+    {
+        $root = dirname(__DIR__, 3);
+        $dockerfile = file_get_contents($root . '/docker/Dockerfile');
+        $registrationPatch = file_get_contents($root . '/build/static-php/register-yiipress-highlighter.php');
+
+        self::assertIsString($dockerfile);
+        self::assertIsString($registrationPatch);
+        self::assertStringNotContainsString('sockets', $dockerfile);
+        self::assertStringNotContainsString('php_sockets', $registrationPatch);
+        self::assertStringNotContainsString('sockets_module_entry', $registrationPatch);
     }
 
     /**

@@ -23,8 +23,7 @@ RUN install-php-extensions \
     simplexml \
     yaml \
     md4c \
-    pcntl \
-    sockets
+    pcntl
 
 FROM base AS highlighter-extension-builder
 ENV CARGO_HOME=/root/.cargo \
@@ -115,7 +114,7 @@ FROM app-base AS static-package
 ARG PHP_VERSION=8.5
 ARG MD4C_VERSION=1.1
 ARG STATIC_PHP_CLI_REF=5b5861c366a0d94bc84002db7b3f46144b388fbb
-ARG STATIC_PHP_EXTENSIONS=ctype,dom,filter,inotify,mbstring,md4c,opcache,pcntl,phar,sockets,xml,xmlwriter,yaml,yiipress_highlighter
+ARG STATIC_PHP_EXTENSIONS=ctype,dom,filter,inotify,mbstring,md4c,opcache,pcntl,phar,xml,xmlwriter,yaml,yiipress_highlighter
 ARG TARGETARCH
 ENV CARGO_HOME=/root/.cargo \
     RUSTUP_HOME=/usr/local/rustup \

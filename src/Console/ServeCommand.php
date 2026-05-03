@@ -6,9 +6,13 @@ namespace App\Console;
 
 use App\Environment;
 use HttpSoft\Message\ServerRequest;
+use HttpSoft\Message\Stream;
+use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
+use React\EventLoop\Loop;
+use React\Socket\ConnectionInterface;
+use React\Socket\SocketServer;
 use RuntimeException;
-use Socket;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Completion\CompletionInput;
@@ -25,18 +29,19 @@ use Yiisoft\Yii\Runner\Http\HttpApplicationRunner;
 use function getcwd;
 use function parse_url;
 use function preg_split;
-use function restore_error_handler;
-use function set_error_handler;
 use function sprintf;
 use function strlen;
 use function str_starts_with;
 use function strtolower;
 use function substr;
+use function strpos;
 use function trim;
 
 #[AsCommand('serve', 'Runs PHP built-in web server')]
 final class ServeCommand extends Command
 {
+    private const int MAX_REQUEST_SIZE = 10_485_760;
+
     private string $defaultAddress;
     private string $defaultPort;
     private string $defaultDocroot;
@@ -144,89 +149,61 @@ final class ServeCommand extends Command
             return ExitCode::OK;
         }
 
-        $server = $this->createServerSocket($address);
-        if (!$server instanceof Socket) {
-            $errorCode = socket_last_error();
-            $io->error(sprintf(
-                'Unable to listen on http://%s: [%d] %s',
-                $address,
-                $errorCode,
-                socket_strerror($errorCode),
-            ));
+        try {
+            $server = new SocketServer($address);
+        } catch (InvalidArgumentException | RuntimeException $e) {
+            $io->error(sprintf('Unable to listen on http://%s: %s', $address, $e->getMessage()));
             return Serve::EXIT_CODE_ADDRESS_TAKEN_BY_ANOTHER_PROCESS;
         }
 
-        $running = true;
-        if (function_exists('pcntl_async_signals')) {
-            pcntl_async_signals(true);
-            pcntl_signal(SIGINT, static function () use (&$running): void {
-                $running = false;
-            });
-            pcntl_signal(SIGTERM, static function () use (&$running): void {
-                $running = false;
-            });
-        }
-
-        socket_set_nonblock($server);
-
-        while ($running) {
-            $connection = @socket_accept($server);
-            if (!$connection instanceof Socket) {
-                usleep(100000);
-                continue;
-            }
-
+        $server->on('connection', function (ConnectionInterface $connection) use ($address): void {
             $this->handleConnection($connection, $address);
-            socket_close($connection);
-        }
+        });
+        $server->on('error', static function (): void {});
 
-        socket_close($server);
+        $loop = Loop::get();
+        $stop = static function () use ($server, $loop): void {
+            $server->close();
+            $loop->stop();
+        };
+        $loop->addSignal(SIGINT, $stop);
+        $loop->addSignal(SIGTERM, $stop);
+        $loop->run();
+
         return ExitCode::OK;
     }
 
-    private function createServerSocket(string $address): ?Socket
+    private function handleConnection(ConnectionInterface $connection, string $address): void
     {
-        $addressParts = explode(':', $address, 2);
-        if (count($addressParts) !== 2) {
-            return null;
-        }
+        $buffer = '';
+        $handled = false;
 
-        [$host, $port] = $addressParts;
-
-        $socket = @socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-        if (!$socket instanceof Socket) {
-            return null;
-        }
-
-        socket_set_option($socket, SOL_SOCKET, SO_REUSEADDR, 1);
-
-        if (@socket_bind($socket, $host, (int) $port) === false || @socket_listen($socket) === false) {
-            socket_close($socket);
-            return null;
-        }
-
-        return $socket;
-    }
-
-    private function handleConnection(Socket $connection, string $address): void
-    {
-        $rawRequest = '';
-        while (!str_contains($rawRequest, "\r\n\r\n") && strlen($rawRequest) < 65536) {
-            $chunk = @socket_read($connection, 2048, PHP_BINARY_READ);
-            if ($chunk === false || $chunk === '') {
-                break;
+        $connection->on('data', function (string $chunk) use ($connection, $address, &$buffer, &$handled): void {
+            if ($handled) {
+                return;
             }
 
-            $rawRequest .= $chunk;
-        }
+            $buffer .= $chunk;
+            $requestLength = $this->requestLength($buffer);
+            if ($requestLength === null && strlen($buffer) <= self::MAX_REQUEST_SIZE) {
+                return;
+            }
 
-        $request = $this->createRequest($rawRequest, $address);
-        if ($request === null) {
-            $this->writeSocket($connection, "HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
-            return;
-        }
+            $handled = true;
+            if ($requestLength === null || $requestLength > self::MAX_REQUEST_SIZE) {
+                $this->writeBadRequest($connection);
+                return;
+            }
 
-        $this->writeResponse($connection, $this->createHttpRunner()->runAndGetResponse($request));
+            $request = $this->createRequest(substr($buffer, 0, $requestLength), $address);
+            if ($request === null) {
+                $this->writeBadRequest($connection);
+                return;
+            }
+
+            $this->writeResponse($connection, $this->createHttpRunner()->runAndGetResponse($request));
+        });
+        $connection->on('error', static function (): void {});
     }
 
     private function createHttpRunner(): HttpApplicationRunner
@@ -243,6 +220,7 @@ final class ServeCommand extends Command
     {
         $parts = explode("\r\n\r\n", $rawRequest, 2);
         $head = $parts[0] ?? '';
+        $body = $parts[1] ?? '';
         $lines = explode("\r\n", $head);
         if (!isset($lines[0]) || $lines[0] === '') {
             return null;
@@ -274,10 +252,18 @@ final class ServeCommand extends Command
             ? $target
             : 'http://' . $host . $target;
 
+        $bodyStream = null;
+        if ($body !== '') {
+            $bodyStream = new Stream();
+            $bodyStream->write($body);
+            $bodyStream->rewind();
+        }
+
         return new ServerRequest(
             method: $method,
             uri: $uri,
             headers: $headers,
+            body: $bodyStream,
             serverParams: [
                 'REQUEST_METHOD' => $method,
                 'REQUEST_URI' => $target,
@@ -288,7 +274,42 @@ final class ServeCommand extends Command
         );
     }
 
-    private function writeResponse(Socket $connection, ResponseInterface $response): void
+    private function requestLength(string $buffer): ?int
+    {
+        $headerEnd = strpos($buffer, "\r\n\r\n");
+        if ($headerEnd === false) {
+            return null;
+        }
+
+        $contentLength = 0;
+        foreach (explode("\r\n", substr($buffer, 0, $headerEnd)) as $line) {
+            if (!str_contains($line, ':')) {
+                continue;
+            }
+
+            $headerParts = explode(':', $line, 2);
+            if (count($headerParts) !== 2) {
+                continue;
+            }
+
+            [$name, $value] = $headerParts;
+            if (strtolower(trim($name)) === 'content-length') {
+                $contentLength = (int) trim($value);
+                break;
+            }
+        }
+
+        $requestLength = $headerEnd + 4 + $contentLength;
+
+        return strlen($buffer) >= $requestLength ? $requestLength : null;
+    }
+
+    private function writeBadRequest(ConnectionInterface $connection): void
+    {
+        $connection->end("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+    }
+
+    private function writeResponse(ConnectionInterface $connection, ResponseInterface $response): void
     {
         $body = $response->getBody();
         if ($body->isSeekable()) {
@@ -297,16 +318,11 @@ final class ServeCommand extends Command
 
         $contents = $body->getContents();
 
-        if (!$this->writeSocket(
-            $connection,
-            sprintf(
-                "HTTP/1.1 %d %s\r\n",
-                $response->getStatusCode(),
-                $response->getReasonPhrase(),
-            ),
-        )) {
-            return;
-        }
+        $responseText = sprintf(
+            "HTTP/1.1 %d %s\r\n",
+            $response->getStatusCode(),
+            $response->getReasonPhrase(),
+        );
 
         $hasContentLength = false;
         foreach ($response->getHeaders() as $name => $values) {
@@ -316,50 +332,15 @@ final class ServeCommand extends Command
             }
 
             foreach ($values as $value) {
-                if (!$this->writeSocket($connection, $name . ': ' . $value . "\r\n")) {
-                    return;
-                }
+                $responseText .= $name . ': ' . $value . "\r\n";
             }
         }
 
-        if (!$hasContentLength && !$this->writeSocket($connection, 'Content-Length: ' . strlen($contents) . "\r\n")) {
-            return;
+        if (!$hasContentLength) {
+            $responseText .= 'Content-Length: ' . strlen($contents) . "\r\n";
         }
 
-        if (!$this->writeSocket($connection, "Connection: close\r\n\r\n")) {
-            return;
-        }
-
-        $this->writeSocket($connection, $contents);
-    }
-
-    private function writeSocket(Socket $connection, string $contents): bool
-    {
-        $remaining = strlen($contents);
-        $offset = 0;
-
-        while ($remaining > 0) {
-            $written = $this->socketWrite($connection, substr($contents, $offset));
-            if ($written === false || $written === 0) {
-                return false;
-            }
-
-            $offset += $written;
-            $remaining -= $written;
-        }
-
-        return true;
-    }
-
-    private function socketWrite(Socket $connection, string $contents): int|false
-    {
-        set_error_handler(static fn(): bool => true);
-
-        try {
-            return socket_write($connection, $contents);
-        } finally {
-            restore_error_handler();
-        }
+        $connection->end($responseText . "Connection: close\r\n\r\n" . $contents);
     }
 
     private function isPackaged(): bool

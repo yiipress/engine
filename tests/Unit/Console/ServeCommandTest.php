@@ -7,8 +7,8 @@ namespace App\Tests\Unit\Console;
 use App\Console\ServeCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ServerRequestInterface;
 use ReflectionMethod;
-use Socket;
 use Symfony\Component\Console\Tester\CommandTester;
 use Yiisoft\Yii\Console\ExitCode;
 use Yiisoft\Yii\Runner\Http\HttpApplicationRunner;
@@ -41,37 +41,28 @@ final class ServeCommandTest extends TestCase
     }
 
     #[Test]
-    public function packagedServeIgnoresDisconnectedClientSocketWrites(): void
+    public function packagedServeCreatesEmptyRequestBodyWithoutOpeningAFile(): void
     {
-        $sockets = [];
-        self::assertTrue(socket_create_pair(AF_UNIX, SOCK_STREAM, 0, $sockets));
-        self::assertCount(2, $sockets);
-
-        $serverSocket = $sockets[0];
-        $clientSocket = $sockets[1];
-        self::assertInstanceOf(Socket::class, $serverSocket);
-        self::assertInstanceOf(Socket::class, $clientSocket);
-
-        socket_close($clientSocket);
-
         $command = new ServeCommand(packaged: true);
-        $method = new ReflectionMethod($command, 'writeSocket');
+        $method = new ReflectionMethod($command, 'createRequest');
 
-        $warnings = [];
-        set_error_handler(
-            static function (int $severity, string $message) use (&$warnings): bool {
-                $warnings[] = [$severity, $message];
+        $request = $method->invoke($command, "HEAD / HTTP/1.1\r\nHost: example.test\r\n\r\n", 'example.test:8080');
 
-                return true;
-            },
+        self::assertInstanceOf(ServerRequestInterface::class, $request);
+        self::assertSame('', $request->getBody()->getContents());
+    }
+
+    #[Test]
+    public function packagedServeWaitsForCompleteRequestBody(): void
+    {
+        $command = new ServeCommand(packaged: true);
+        $method = new ReflectionMethod($command, 'requestLength');
+
+        self::assertNull($method->invoke($command, "POST / HTTP/1.1\r\nHost: example.test\r\nContent-Length: 4"));
+        self::assertNull($method->invoke($command, "POST / HTTP/1.1\r\nHost: example.test\r\nContent-Length: 4\r\n\r\nabc"));
+        self::assertSame(
+            62,
+            $method->invoke($command, "POST / HTTP/1.1\r\nHost: example.test\r\nContent-Length: 4\r\n\r\nabcd"),
         );
-
-        try {
-            self::assertFalse($method->invoke($command, $serverSocket, "HTTP/1.1 200 OK\r\n\r\n"));
-            self::assertSame([], $warnings);
-        } finally {
-            restore_error_handler();
-            socket_close($serverSocket);
-        }
     }
 }
