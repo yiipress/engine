@@ -1,6 +1,6 @@
 # Web application
 
-The web application serves the built site for local development. It runs on FrankenPHP via `make up` or on PHP's built-in server via `yii serve`. Live reload requires PHP `ext-inotify`; the Docker images install it by default.
+The web application serves the built site for local development. It runs on PHP's built-in server through Yii's `yii serve` command. `make up` starts the Docker development container with `yii serve 0.0.0.0 --port=8080`. Live reload requires PHP `ext-inotify`; the Docker images install it by default.
 
 ## Static file serving
 

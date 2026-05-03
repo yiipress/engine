@@ -22,6 +22,8 @@ export COMPOSE_PROJECT_NAME=${STACK_NAME}
 DOCKER_COMPOSE_DEV := docker compose -f docker/compose.yml -f docker/dev/compose.yml
 DOCKER_COMPOSE_TEST := docker compose -f docker/compose.yml -f docker/test/compose.yml
 
+.PHONY: build up open down stop clear shell yii composer rector cs-fix test test-coverage psalm composer-dependency-analyser bench-generate bench-generate-realistic bench bench-baseline bench-compare bench-profile profile-build php build-docs package prod-build prod-push prod-deploy help
+
 #
 # Development
 #
@@ -35,7 +37,7 @@ ifeq ($(PRIMARY_GOAL),up)
 up: ## Up the dev environment
 	@set -eu; \
 	if $(DOCKER_COMPOSE_DEV) up -d --wait --wait-timeout 60 --remove-orphans; then \
-		port="$$( $(DOCKER_COMPOSE_DEV) port app 80 )"; \
+		port="$$( $(DOCKER_COMPOSE_DEV) port app 8080 )"; \
 		host_port="$${port##*:}"; \
 		url="http://localhost$$( [ "$$host_port" = '80' ] || printf ':%s' "$$host_port" )"; \
 		printf '🚀 Started server at %s\n' "$$url"; \
@@ -61,7 +63,7 @@ endif
 ifeq ($(PRIMARY_GOAL),open)
 open: ## Open the running app in the default browser
 	@set -eu; \
-	if ! port="$$( $(DOCKER_COMPOSE_DEV) port app 80 2>/dev/null )" || [ -z "$$port" ]; then \
+	if ! port="$$( $(DOCKER_COMPOSE_DEV) port app 8080 2>/dev/null )" || [ -z "$$port" ]; then \
 		echo 'Start server with `make up` first.' >&2; \
 		exit 0; \
 	fi; \
@@ -185,6 +187,11 @@ endif
 ifeq ($(PRIMARY_GOAL),build-docs)
 build-docs: ## Build documentation site from docs/ directory
 	$(DOCKER_COMPOSE_DEV) run --rm app ./yii build --content-dir=docs --output-dir=docs-output --no-cache
+endif
+
+ifeq ($(PRIMARY_GOAL),package)
+package: ## Build PHAR and static PHP artifacts into dist/
+	docker build --file docker/Dockerfile --target package-artifacts --output type=local,dest=dist .
 endif
 
 #
