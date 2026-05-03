@@ -2,11 +2,11 @@
 
 The web application serves the built site for local development. In the Docker development container, it runs on PHP's built-in server through Yii's `yii serve` command. `make up` starts the Docker development container with `yii serve 0.0.0.0 --port=8080`. Live reload requires PHP `ext-inotify`; the Docker images install it by default.
 
-The packaged PHAR and static binary keep the same `serve` command, but they do not require a `public/` directory beside the binary. They route requests through the embedded web application and resolve `content/` and `output/` from the current working directory. The static binary uses ReactPHP stream sockets with preforked worker processes for packaged serving and handles the live reload SSE endpoint in the server loop, so idle live reload connections do not occupy Yii request workers. It does not require PHP's native `sockets` extension.
+The packaged PHAR and static binary keep the same `serve` command, but they do not require a `public/` directory beside the binary. They resolve `content/` and `output/` from the current working directory. The packaged server uses ReactPHP stream sockets with preforked worker processes, serves built files from `output/` directly in the server loop, and handles the live reload SSE endpoint there too. Idle live reload connections and static file responses do not occupy Yii request workers. It does not require PHP's native `sockets` extension.
 
 ## Static file serving
 
-The web application serves files from the `output/` directory. Requests for `/foo/` serve `output/foo/index.html`, requests for `/style.css` serve `output/style.css`, etc.
+The web application serves files from the `output/` directory. Requests for `/foo/` serve `output/foo/index.html`, requests for `/style.css` serve `output/style.css`, etc. Packaged `serve` follows the same resolution rules in its ReactPHP server loop and injects the live reload script into served HTML directly.
 
 If the output directory is missing or empty, a build runs automatically on the first request. The served directory is configured in `config/common/di/live-reload.php`.
 
