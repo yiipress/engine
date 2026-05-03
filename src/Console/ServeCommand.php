@@ -29,7 +29,6 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Style\SymfonyStyle;
 use Yiisoft\Yii\Console\ExitCode;
 use Yiisoft\Yii\Runner\Http\HttpApplicationRunner;
 
@@ -65,6 +64,9 @@ use function trim;
 #[AsCommand('serve', 'Serves content preview with live reload')]
 final class ServeCommand extends Command
 {
+    private const string DEFAULT_ADDRESS = '127.0.0.1';
+    private const string DEFAULT_PORT = '8080';
+    private const int DEFAULT_WORKERS = 2;
     private const int MAX_REQUEST_SIZE = 10_485_760;
     private const string LIVE_RELOAD_PATH = '/_live-reload';
     private const int LIVE_RELOAD_RETRY_MILLISECONDS = 1_000;
@@ -89,9 +91,6 @@ final class ServeCommand extends Command
         'txt' => 'text/plain; charset=utf-8',
     ];
 
-    private string $defaultAddress;
-    private string $defaultPort;
-    private int $defaultWorkers;
     private float $lastLiveReloadBuildTime = 0.0;
     private bool $outputBuildAttempted = false;
     /** @var resource|null */
@@ -101,39 +100,21 @@ final class ServeCommand extends Command
     private int $nextLiveReloadClientId = 1;
     private ?TimerInterface $liveReloadPingTimer = null;
 
-    /**
-     * @psalm-param array{
-     *     address?:non-empty-string,
-     *     port?:non-empty-string,
-     *     workers?:int|string
-     * } $options
-     */
-    public function __construct(
-        private readonly ?array $options = [],
-    ) {
-        $this->defaultAddress = $options['address'] ?? '127.0.0.1';
-        $this->defaultPort = $options['port'] ?? '8080';
-        $this->defaultWorkers = (int) ($options['workers'] ?? 2);
-
-        parent::__construct();
-    }
-
     public function configure(): void
     {
         $this
             ->setHelp(
                 'In order to access server from remote machines use 0.0.0.0:8000. That is especially useful when running server in a virtual machine.'
             )
-            ->addArgument('address', InputArgument::OPTIONAL, 'Host to serve at', $this->defaultAddress)
-            ->addOption('port', 'p', InputOption::VALUE_OPTIONAL, 'Port to serve at', $this->defaultPort)
+            ->addArgument('address', InputArgument::OPTIONAL, 'Host to serve at', self::DEFAULT_ADDRESS)
+            ->addOption('port', 'p', InputOption::VALUE_OPTIONAL, 'Port to serve at', self::DEFAULT_PORT)
             ->addOption(
                 'workers',
                 'w',
                 InputOption::VALUE_OPTIONAL,
                 'Workers number the server will start with',
-                $this->defaultWorkers
-            )
-            ->addOption('env', 'e', InputOption::VALUE_OPTIONAL, 'It is only used for testing.');
+                self::DEFAULT_WORKERS
+            );
     }
 
     public function complete(CompletionInput $input, CompletionSuggestions $suggestions): void
@@ -150,10 +131,6 @@ final class ServeCommand extends Command
 
     private function executeReactServer(InputInterface $input, OutputInterface $output): int
     {
-        $io = new SymfonyStyle($input, $output);
-        $io->title('Yii3 Development Server');
-        $io->writeln('https://yiiframework.com' . "\n");
-
         /** @var string $address */
         $address = $input->getArgument('address');
 
@@ -164,32 +141,21 @@ final class ServeCommand extends Command
             $address .= ':' . $port;
         }
 
-        /** @var string $env */
-        $env = $input->getOption('env');
         $workers = (int) $input->getOption('workers');
         if ($workers < 1) {
             $workers = 1;
         }
 
-        $outputTable = [
-            ['PHP', PHP_VERSION],
-            ['Workers', $workers, '--workers, -w'],
-            ['Address', $address],
-            ['Document root', $this->workingDirectory()],
-            ['Routing file', 'ReactPHP preview server'],
-        ];
+        $output->writeln(sprintf('Serving http://%s', $address));
 
-        $io->table(['Configuration', null, 'Options'], $outputTable);
-        $io->success('Quit the server with CTRL-C or COMMAND-C.');
-
-        if ($env === 'test') {
+        if (Environment::appEnv() === Environment::TEST) {
             return ExitCode::OK;
         }
 
         try {
             $server = new SocketServer($address);
         } catch (InvalidArgumentException | RuntimeException $e) {
-            $io->error(sprintf('Unable to listen on http://%s: %s', $address, $e->getMessage()));
+            $output->writeln(sprintf('<error>Unable to listen on http://%s: %s</error>', $address, $e->getMessage()));
             return ExitCode::UNSPECIFIED_ERROR;
         }
 

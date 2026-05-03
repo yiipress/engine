@@ -29,22 +29,30 @@ final class ServeCommandTest extends TestCase
     {
         $tester = new CommandTester(new ServeCommand());
 
-        $exitCode = $tester->execute(['--env' => 'test']);
+        $exitCode = $tester->execute([]);
 
         self::assertSame(ExitCode::OK, $exitCode);
-        self::assertStringContainsString('ReactPHP preview server', $tester->getDisplay());
+        self::assertSame("Serving http://127.0.0.1:8080\n", $tester->getDisplay());
+        self::assertStringNotContainsString('Yii', $tester->getDisplay());
     }
 
     #[Test]
-    public function serveShowsConfiguredWorkers(): void
+    public function serveDoesNotExposeTestEnvironmentOption(): void
+    {
+        $command = new ServeCommand();
+
+        self::assertFalse($command->getDefinition()->hasOption('env'));
+    }
+
+    #[Test]
+    public function serveKeepsWorkerOptionQuiet(): void
     {
         $tester = new CommandTester(new ServeCommand());
 
-        $exitCode = $tester->execute(['--env' => 'test', '--workers' => '4']);
+        $exitCode = $tester->execute(['--workers' => '4']);
 
         self::assertSame(ExitCode::OK, $exitCode);
-        self::assertStringContainsString('Workers', $tester->getDisplay());
-        self::assertStringContainsString('4', $tester->getDisplay());
+        self::assertSame("Serving http://127.0.0.1:8080\n", $tester->getDisplay());
     }
 
     #[Test]
