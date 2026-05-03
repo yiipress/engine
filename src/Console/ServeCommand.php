@@ -30,7 +30,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use Yiisoft\Yii\Console\Command\Serve;
 use Yiisoft\Yii\Console\ExitCode;
 use Yiisoft\Yii\Runner\Http\HttpApplicationRunner;
 
@@ -63,7 +62,7 @@ use function substr;
 use function strpos;
 use function trim;
 
-#[AsCommand('serve', 'Runs PHP built-in web server')]
+#[AsCommand('serve', 'Serves content preview with live reload')]
 final class ServeCommand extends Command
 {
     private const int MAX_REQUEST_SIZE = 10_485_760;
@@ -92,36 +91,28 @@ final class ServeCommand extends Command
 
     private string $defaultAddress;
     private string $defaultPort;
-    private string $defaultDocroot;
-    private string $defaultRouter;
     private int $defaultWorkers;
-    private float $lastPackagedLiveReloadBuildTime = 0.0;
-    private bool $packagedOutputBuildAttempted = false;
+    private float $lastLiveReloadBuildTime = 0.0;
+    private bool $outputBuildAttempted = false;
     /** @var resource|null */
-    private mixed $packagedLiveReloadStream = null;
+    private mixed $liveReloadStream = null;
     /** @var array<int, ConnectionInterface> */
-    private array $packagedLiveReloadClients = [];
-    private int $nextPackagedLiveReloadClientId = 1;
-    private ?TimerInterface $packagedLiveReloadPingTimer = null;
+    private array $liveReloadClients = [];
+    private int $nextLiveReloadClientId = 1;
+    private ?TimerInterface $liveReloadPingTimer = null;
 
     /**
      * @psalm-param array{
      *     address?:non-empty-string,
      *     port?:non-empty-string,
-     *     docroot?:string,
-     *     router?:string,
      *     workers?:int|string
      * } $options
      */
     public function __construct(
-        private readonly ?string $appRootPath = null,
         private readonly ?array $options = [],
-        private readonly ?bool $packaged = null,
     ) {
         $this->defaultAddress = $options['address'] ?? '127.0.0.1';
         $this->defaultPort = $options['port'] ?? '8080';
-        $this->defaultDocroot = $options['docroot'] ?? 'public';
-        $this->defaultRouter = $options['router'] ?? 'public/index.php';
         $this->defaultWorkers = (int) ($options['workers'] ?? 2);
 
         parent::__construct();
@@ -136,23 +127,13 @@ final class ServeCommand extends Command
             ->addArgument('address', InputArgument::OPTIONAL, 'Host to serve at', $this->defaultAddress)
             ->addOption('port', 'p', InputOption::VALUE_OPTIONAL, 'Port to serve at', $this->defaultPort)
             ->addOption(
-                'docroot',
-                't',
-                InputOption::VALUE_OPTIONAL,
-                'Document root to serve from',
-                $this->defaultDocroot
-            )
-            ->addOption('router', 'r', InputOption::VALUE_OPTIONAL, 'Path to router script', $this->defaultRouter)
-            ->addOption(
                 'workers',
                 'w',
                 InputOption::VALUE_OPTIONAL,
                 'Workers number the server will start with',
                 $this->defaultWorkers
             )
-            ->addOption('env', 'e', InputOption::VALUE_OPTIONAL, 'It is only used for testing.')
-            ->addOption('open', 'o', InputOption::VALUE_OPTIONAL, 'Opens the serving server in the default browser.', false)
-            ->addOption('xdebug', 'x', InputOption::VALUE_OPTIONAL, 'Enables XDEBUG session.', false);
+            ->addOption('env', 'e', InputOption::VALUE_OPTIONAL, 'It is only used for testing.');
     }
 
     public function complete(CompletionInput $input, CompletionSuggestions $suggestions): void
@@ -164,14 +145,10 @@ final class ServeCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        if (!$this->isPackaged()) {
-            return (new Serve($this->appRootPath, $this->options))->run($input, $output);
-        }
-
-        return $this->executePackaged($input, $output);
+        return $this->executeReactServer($input, $output);
     }
 
-    private function executePackaged(InputInterface $input, OutputInterface $output): int
+    private function executeReactServer(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
         $io->title('Yii3 Development Server');
@@ -199,7 +176,7 @@ final class ServeCommand extends Command
             ['Workers', $workers, '--workers, -w'],
             ['Address', $address],
             ['Document root', $this->workingDirectory()],
-            ['Routing file', 'embedded PHAR application'],
+            ['Routing file', 'ReactPHP preview server'],
         ];
 
         $io->table(['Configuration', null, 'Options'], $outputTable);
@@ -213,17 +190,17 @@ final class ServeCommand extends Command
             $server = new SocketServer($address);
         } catch (InvalidArgumentException | RuntimeException $e) {
             $io->error(sprintf('Unable to listen on http://%s: %s', $address, $e->getMessage()));
-            return Serve::EXIT_CODE_ADDRESS_TAKEN_BY_ANOTHER_PROCESS;
+            return ExitCode::UNSPECIFIED_ERROR;
         }
 
         if ($workers > 1 && function_exists('pcntl_fork')) {
-            return $this->runPackagedWorkerPool($server, $address, $workers);
+            return $this->runWorkerPool($server, $address, $workers);
         }
 
-        return $this->runPackagedServer($server, $address);
+        return $this->runServer($server, $address);
     }
 
-    private function runPackagedWorkerPool(SocketServer $server, string $address, int $workers): int
+    private function runWorkerPool(SocketServer $server, string $address, int $workers): int
     {
         $children = [];
 
@@ -233,11 +210,11 @@ final class ServeCommand extends Command
                 $this->terminateWorkers($children);
                 $server->close();
 
-                return Serve::EXIT_CODE_ADDRESS_TAKEN_BY_ANOTHER_PROCESS;
+                return ExitCode::UNSPECIFIED_ERROR;
             }
 
             if ($pid === 0) {
-                return $this->runPackagedServer($server, $address);
+                return $this->runServer($server, $address);
             }
 
             $children[] = $pid;
@@ -292,7 +269,7 @@ final class ServeCommand extends Command
         }
     }
 
-    private function runPackagedServer(SocketServer $server, string $address): int
+    private function runServer(SocketServer $server, string $address): int
     {
         $server->on('connection', function (ConnectionInterface $connection) use ($address): void {
             $this->handleConnection($connection, $address);
@@ -301,7 +278,7 @@ final class ServeCommand extends Command
 
         $loop = Loop::get();
         $stop = function () use ($server, $loop): void {
-            $this->closePackagedLiveReloadWatcher();
+            $this->closeLiveReloadWatcher();
             $server->close();
             $loop->stop();
         };
@@ -335,14 +312,14 @@ final class ServeCommand extends Command
             }
 
             $rawRequest = substr($buffer, 0, $requestLength);
-            if ($this->isPackagedLiveReloadRequest($rawRequest)) {
+            if ($this->isLiveReloadRequest($rawRequest)) {
                 $this->writeLiveReloadResponse($connection);
                 return;
             }
 
-            $staticResponse = $this->createPackagedStaticResponse($rawRequest);
+            $staticResponse = $this->createStaticResponse($rawRequest);
             if ($staticResponse !== null) {
-                $this->writePackagedStaticResponse($connection, $staticResponse);
+                $this->writeStaticResponse($connection, $staticResponse);
                 return;
             }
 
@@ -367,7 +344,7 @@ final class ServeCommand extends Command
         );
     }
 
-    private function isPackagedLiveReloadRequest(string $rawRequest): bool
+    private function isLiveReloadRequest(string $rawRequest): bool
     {
         $requestLine = $this->parseRequestLine($rawRequest);
         if ($requestLine === null) {
@@ -391,27 +368,27 @@ final class ServeCommand extends Command
             . 'retry: ' . self::LIVE_RELOAD_RETRY_MILLISECONDS . "\n",
         );
 
-        $this->ensurePackagedLiveReloadWatcher();
+        $this->ensureLiveReloadWatcher();
 
-        $clientId = $this->nextPackagedLiveReloadClientId++;
-        $this->packagedLiveReloadClients[$clientId] = $connection;
+        $clientId = $this->nextLiveReloadClientId++;
+        $this->liveReloadClients[$clientId] = $connection;
         $connection->once('close', function () use ($clientId): void {
-            unset($this->packagedLiveReloadClients[$clientId]);
+            unset($this->liveReloadClients[$clientId]);
         });
     }
 
-    private function ensurePackagedLiveReloadWatcher(): void
+    private function ensureLiveReloadWatcher(): void
     {
-        if ($this->packagedLiveReloadPingTimer === null) {
-            $this->packagedLiveReloadPingTimer = Loop::addPeriodicTimer(
+        if ($this->liveReloadPingTimer === null) {
+            $this->liveReloadPingTimer = Loop::addPeriodicTimer(
                 self::LIVE_RELOAD_PING_SECONDS,
                 function (): void {
-                    $this->broadcastPackagedLiveReloadEvent('ping', 'ok', false);
+                    $this->broadcastLiveReloadEvent('ping', 'ok', false);
                 },
             );
         }
 
-        if ($this->packagedLiveReloadStream !== null) {
+        if ($this->liveReloadStream !== null) {
             return;
         }
 
@@ -426,7 +403,7 @@ final class ServeCommand extends Command
             @inotify_add_watch($stream, $directory, $this->liveReloadNativeWatchMask());
         }
 
-        $this->packagedLiveReloadStream = $stream;
+        $this->liveReloadStream = $stream;
 
         Loop::addReadStream($stream, function () use ($stream): void {
             $events = inotify_read($stream);
@@ -434,22 +411,22 @@ final class ServeCommand extends Command
                 return;
             }
 
-            $this->buildPackagedLiveReloadSite();
-            $this->broadcastPackagedLiveReloadEvent('reload', 'changed', true);
+            $this->buildLiveReloadSite();
+            $this->broadcastLiveReloadEvent('reload', 'changed', true);
         });
     }
 
-    private function broadcastPackagedLiveReloadEvent(string $event, string $data, bool $close): void
+    private function broadcastLiveReloadEvent(string $event, string $data, bool $close): void
     {
-        foreach ($this->packagedLiveReloadClients as $clientId => $client) {
+        foreach ($this->liveReloadClients as $clientId => $client) {
             if (!$client->isWritable()) {
-                unset($this->packagedLiveReloadClients[$clientId]);
+                unset($this->liveReloadClients[$clientId]);
                 continue;
             }
 
             if ($close) {
                 $this->finishLiveReloadResponse($client, $event, $data);
-                unset($this->packagedLiveReloadClients[$clientId]);
+                unset($this->liveReloadClients[$clientId]);
             } else {
                 $client->write("event: {$event}\ndata: {$data}\n\n");
             }
@@ -465,33 +442,33 @@ final class ServeCommand extends Command
         fclose($stream);
     }
 
-    private function closePackagedLiveReloadWatcher(): void
+    private function closeLiveReloadWatcher(): void
     {
-        if ($this->packagedLiveReloadPingTimer !== null) {
-            Loop::cancelTimer($this->packagedLiveReloadPingTimer);
-            $this->packagedLiveReloadPingTimer = null;
+        if ($this->liveReloadPingTimer !== null) {
+            Loop::cancelTimer($this->liveReloadPingTimer);
+            $this->liveReloadPingTimer = null;
         }
 
-        if ($this->packagedLiveReloadStream !== null) {
-            $this->closeLiveReloadStream($this->packagedLiveReloadStream);
-            $this->packagedLiveReloadStream = null;
+        if ($this->liveReloadStream !== null) {
+            $this->closeLiveReloadStream($this->liveReloadStream);
+            $this->liveReloadStream = null;
         }
 
-        foreach ($this->packagedLiveReloadClients as $client) {
+        foreach ($this->liveReloadClients as $client) {
             $client->close();
         }
-        $this->packagedLiveReloadClients = [];
+        $this->liveReloadClients = [];
     }
 
-    private function buildPackagedLiveReloadSite(): void
+    private function buildLiveReloadSite(): void
     {
         $now = microtime(true);
-        if ($now - $this->lastPackagedLiveReloadBuildTime < 1.0) {
+        if ($now - $this->lastLiveReloadBuildTime < 1.0) {
             return;
         }
 
-        $this->lastPackagedLiveReloadBuildTime = $now;
-        $this->createPackagedLiveReloadBuildRunner()->build();
+        $this->lastLiveReloadBuildTime = $now;
+        $this->createLiveReloadBuildRunner()->build();
     }
 
     private function finishLiveReloadResponse(ConnectionInterface $connection, string $event, string $data): void
@@ -499,7 +476,7 @@ final class ServeCommand extends Command
         $connection->end("event: {$event}\ndata: {$data}\n\n");
     }
 
-    private function createPackagedLiveReloadBuildRunner(): SiteBuildRunner
+    private function createLiveReloadBuildRunner(): SiteBuildRunner
     {
         $root = $this->workingDirectory();
         $yiiBinary = $_SERVER['argv'][0] ?? PHP_BINARY;
@@ -660,7 +637,7 @@ final class ServeCommand extends Command
     /**
      * @return array{status:int,reason:string,headers:array<string,string>,body:string|null,file:string|null,head:bool}|null
      */
-    private function createPackagedStaticResponse(string $rawRequest): ?array
+    private function createStaticResponse(string $rawRequest): ?array
     {
         $requestLine = $this->parseRequestLine($rawRequest);
         if ($requestLine === null) {
@@ -673,11 +650,11 @@ final class ServeCommand extends Command
             return null;
         }
 
-        $this->ensurePackagedOutputBuilt();
+        $this->ensureOutputBuilt();
 
-        $filePath = $this->resolvePackagedStaticFilePath(parse_url($target, PHP_URL_PATH) ?: '/');
+        $filePath = $this->resolveStaticFilePath(parse_url($target, PHP_URL_PATH) ?: '/');
         if ($filePath === null) {
-            return $this->createPackagedNotFoundResponse($method === 'HEAD');
+            return $this->createNotFoundResponse($method === 'HEAD');
         }
 
         $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
@@ -687,7 +664,7 @@ final class ServeCommand extends Command
         if (str_contains($contentType, 'text/html')) {
             $body = file_get_contents($filePath);
             if ($body === false) {
-                return $this->createPackagedNotFoundResponse($method === 'HEAD');
+                return $this->createNotFoundResponse($method === 'HEAD');
             }
 
             $body = LiveReloadMiddleware::injectScript($body);
@@ -703,41 +680,41 @@ final class ServeCommand extends Command
         ];
     }
 
-    private function ensurePackagedOutputBuilt(): void
+    private function ensureOutputBuilt(): void
     {
-        if ($this->packagedOutputBuildAttempted) {
+        if ($this->outputBuildAttempted) {
             return;
         }
 
-        $this->packagedOutputBuildAttempted = true;
+        $this->outputBuildAttempted = true;
 
         $output = $this->workingDirectory() . '/output';
         if (!is_dir($output) || $this->isEmptyDirectory($output)) {
-            $this->createPackagedLiveReloadBuildRunner()->build();
+            $this->createLiveReloadBuildRunner()->build();
         }
     }
 
-    private function resolvePackagedStaticFilePath(string $path): ?string
+    private function resolveStaticFilePath(string $path): ?string
     {
         $path = '/' . trim(urldecode($path), '/');
         $root = $this->workingDirectory() . '/output';
 
         $candidate = $root . $path;
         if (is_file($candidate)) {
-            return $this->securePackagedStaticPath($candidate, $root);
+            return $this->secureStaticPath($candidate, $root);
         }
 
         if (is_dir($candidate)) {
             $index = rtrim($candidate, '/') . '/index.html';
             if (is_file($index)) {
-                return $this->securePackagedStaticPath($index, $root);
+                return $this->secureStaticPath($index, $root);
             }
         }
 
         return null;
     }
 
-    private function securePackagedStaticPath(string $filePath, string $root): ?string
+    private function secureStaticPath(string $filePath, string $root): ?string
     {
         $realPath = realpath($filePath);
         $realRoot = realpath($root);
@@ -756,7 +733,7 @@ final class ServeCommand extends Command
     /**
      * @return array{status:int,reason:string,headers:array<string,string>,body:string|null,file:string|null,head:bool}
      */
-    private function createPackagedNotFoundResponse(bool $head): array
+    private function createNotFoundResponse(bool $head): array
     {
         $body = '<!DOCTYPE html><html lang="en"><body><h1>404 Not Found</h1></body></html>';
         $file = $this->workingDirectory() . '/output/404.html';
@@ -798,7 +775,7 @@ final class ServeCommand extends Command
     /**
      * @param array{status:int,reason:string,headers:array<string,string>,body:string|null,file:string|null,head:bool} $response
      */
-    private function writePackagedStaticResponse(ConnectionInterface $connection, array $response): void
+    private function writeStaticResponse(ConnectionInterface $connection, array $response): void
     {
         $body = $response['body'];
         $file = $response['file'];
@@ -886,11 +863,6 @@ final class ServeCommand extends Command
         }
 
         $connection->end($responseText . "Connection: close\r\n\r\n" . $contents);
-    }
-
-    private function isPackaged(): bool
-    {
-        return $this->packaged ?? str_starts_with(__FILE__, 'phar://');
     }
 
     private function packageRoot(): string

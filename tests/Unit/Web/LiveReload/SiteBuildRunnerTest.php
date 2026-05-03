@@ -27,7 +27,7 @@ use function uniqid;
 
 final class SiteBuildRunnerTest extends TestCase
 {
-    private string $tempDir;
+    private string $tempDir = '';
 
     protected function setUp(): void
     {

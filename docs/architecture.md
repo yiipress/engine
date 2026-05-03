@@ -1,7 +1,7 @@
 # Architecture
 
 YiiPress operates in two modes: **build** (static site generation) and **serve** (near realtime development preview).
-Both modes share the same content pipeline but differ in output target.
+Both modes use the same static build pipeline; serve mode rebuilds into `output/` and serves those files.
 
 ## High-level flow
 
@@ -11,14 +11,13 @@ content/          ┌──────────┐    ┌──────�
   *.yaml          └──────────┘    └──────────┘    └──────────┘    └──────────┘
 themes/                                                 │           output/
 plugins/                                           (templates)      (build)
-                                                                  or HTTP response
-                                                                    (serve)
+                                                                    and serve
 ```
 
 1. **Parse** — read content files, extract front matter and markdown body
 2. **Index** — organize entries into collections, taxonomies, archives; resolve permalinks
 3. **Render** — apply plugins, convert markdown to HTML, render templates
-4. **Write** — emit static files to `output/` (build) or return HTTP response (serve)
+4. **Write** — emit static files to `output/`
 
 ## Core concepts
 
@@ -116,9 +115,9 @@ Sitemap and robots output remain serial.
 
 ### Principle 5: Build and serve must produce identical output
 
-The same content pipeline (parse → index → render) must be used in both modes.
-The only difference is the output target: filesystem vs. HTTP response.
-This prevents the class of bugs where static build and dynamic serve produce different HTML.
+The same content pipeline (parse → index → render → write) must be used in both modes.
+Serve mode reads from the generated `output/` directory instead of rendering pages through a separate HTTP path.
+This prevents the class of bugs where build and preview produce different HTML.
 
 ## Build pipeline
 
@@ -215,7 +214,6 @@ Outputs rendered pages to their destination.
   Collection index pages, feeds, sitemap, taxonomy pages, and redirect pages are coordinated after entry workers finish.
   Feed collections may be split across forked workers when `--workers` is greater than one.
 - **AssetCopier** — copies `content/assets/`, `content/<collection>/assets/`, and processed build assets to `output/`
-- **HttpResponder** — in serve mode, returns the rendered page as an HTTP response instead of writing to disk
 
 ## Content processor pipeline
 
@@ -246,13 +244,12 @@ Two separate pipelines are configured via Yii3 DI container in `config/common/di
 
 ## Serve mode
 
-In serve mode, YiiPress runs as a Yii3 web application. Instead of writing static files, it renders pages on the fly.
+In serve mode, YiiPress runs a ReactPHP preview server over the built `output/` directory.
 
-- Routes are dynamically registered from the site index (one route per known permalink).
-- A catch-all route handles 404s.
-- File watching and live reload trigger re-parse and re-index on content changes.
-- The existing Yii3 web infrastructure (router, middleware, view renderer) is reused.
-- Packaged PHAR/static-binary serve mode uses ReactPHP stream sockets with preforked worker processes because the micro SAPI static binary cannot delegate to PHP's CLI built-in server. Static file serving and live reload SSE are handled in the server loop, so normal page and asset responses avoid Yii HTTP runner overhead. Each worker owns one shared live reload inotify watcher and attaches all SSE clients in that worker to it.
+- The first request triggers a build if `output/` is missing or empty.
+- Static file serving and live reload SSE are handled in the server loop, so normal page and asset responses avoid Yii HTTP runner overhead.
+- Non-HTML assets are streamed with backpressure instead of being buffered into memory.
+- Each worker owns one shared live reload inotify watcher and attaches all SSE clients in that worker to it.
 
 ## Caching
 
@@ -319,10 +316,8 @@ src/
 │   ├── ThemeAssetCopier.php      # Copies theme assets/ to output directory
 │   ├── ThemeRegistry.php         # Named theme registry, configured via DI
 │   ├── TemplateResolver.php      # Resolves template names via ThemeRegistry
-├── Web/                          # Yii3 web actions for serve mode
+├── Web/                          # HTTP helpers and direct web entry actions
 │   ├── LiveReload/
-│   │   ├── FileWatcher.php       # Watches directories via inotify events
-│   │   ├── LiveReloadAction.php  # Yii web SSE endpoint streaming reload events
 │   │   ├── LiveReloadMiddleware.php # Injects live-reload JS into HTML
 │   │   └── SiteBuildRunner.php   # Triggers yii build on file changes
 │   ├── StaticFile/
@@ -348,7 +343,7 @@ Console Commands
       │                     │
       │               PluginRegistry
       ▼
-  StaticWriter / HttpResponder
+  StaticWriter
 ```
 
 Dependencies point inward: output depends on render, render depends on index, index depends on parsing. The model layer has no dependencies on any other layer.
@@ -359,7 +354,7 @@ Dependencies point inward: output depends on render, render depends on index, in
 - **Composition over inheritance** — plugins, parsers, and renderers are composed, not subclassed.
 - **Late markdown parsing** — markdown body is stored raw and converted to HTML only during render. This keeps memory usage low during parse and index stages.
 - **File-based caching** — no external cache dependencies. Cache invalidation uses file modification time and content hashing.
-- **Yii3 for web, minimal for build** — serve mode leverages Yii3 routing, DI, and view rendering. Build mode uses Yii3 DI for wiring but bypasses HTTP infrastructure.
+- **ReactPHP for preview serving, Yii3 DI for wiring** — serve mode uses a focused ReactPHP server over generated static output. Build mode uses Yii3 DI for wiring but bypasses HTTP infrastructure.
 - **Plugin simplicity** — plugins are string-in, string-out transformers. No complex lifecycle or dependency graph between plugins.
 - **C for hot paths** — markdown-to-HTML (MD4C) and YAML parsing (`yaml_parse()`) are delegated to C libraries. PHP orchestrates; C does the byte-level work.
 - **Fork-based parallelism** — `pcntl_fork()` for parallel entry rendering. No shared memory, no threads, no synchronization. Each worker is a full copy of the indexed site that writes to its own file paths.
