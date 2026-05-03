@@ -16,6 +16,7 @@ use React\EventLoop\Loop;
 use React\EventLoop\TimerInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\SocketServer;
+use React\Stream\ReadableResourceStream;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
@@ -35,9 +36,12 @@ use Yiisoft\Yii\Runner\Http\HttpApplicationRunner;
 
 use function fclose;
 use function file_get_contents;
+use function filesize;
+use function fopen;
 use function getcwd;
 use function is_dir;
 use function is_file;
+use function is_resource;
 use function microtime;
 use function pcntl_async_signals;
 use function pcntl_fork;
@@ -678,7 +682,7 @@ final class ServeCommand extends Command
     }
 
     /**
-     * @return array{status:int,reason:string,headers:array<string,string>,body:string,head:bool}|null
+     * @return array{status:int,reason:string,headers:array<string,string>,body:string|null,file:string|null,head:bool}|null
      */
     private function createPackagedStaticResponse(string $rawRequest): ?array
     {
@@ -700,14 +704,16 @@ final class ServeCommand extends Command
             return $this->createPackagedNotFoundResponse($method === 'HEAD');
         }
 
-        $body = file_get_contents($filePath);
-        if ($body === false) {
-            return $this->createPackagedNotFoundResponse($method === 'HEAD');
-        }
-
         $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
         $contentType = self::MIME_TYPES[$extension] ?? 'application/octet-stream';
+
+        $body = null;
         if (str_contains($contentType, 'text/html')) {
+            $body = file_get_contents($filePath);
+            if ($body === false) {
+                return $this->createPackagedNotFoundResponse($method === 'HEAD');
+            }
+
             $body = LiveReloadMiddleware::injectScript($body);
         }
 
@@ -716,6 +722,7 @@ final class ServeCommand extends Command
             'reason' => 'OK',
             'headers' => ['Content-Type' => $contentType],
             'body' => $body,
+            'file' => $body === null ? $filePath : null,
             'head' => $method === 'HEAD',
         ];
     }
@@ -771,7 +778,7 @@ final class ServeCommand extends Command
     }
 
     /**
-     * @return array{status:int,reason:string,headers:array<string,string>,body:string,head:bool}
+     * @return array{status:int,reason:string,headers:array<string,string>,body:string|null,file:string|null,head:bool}
      */
     private function createPackagedNotFoundResponse(bool $head): array
     {
@@ -789,6 +796,7 @@ final class ServeCommand extends Command
             'reason' => 'Not Found',
             'headers' => ['Content-Type' => 'text/html; charset=utf-8'],
             'body' => $body,
+            'file' => null,
             'head' => $head,
         ];
     }
@@ -812,19 +820,57 @@ final class ServeCommand extends Command
     }
 
     /**
-     * @param array{status:int,reason:string,headers:array<string,string>,body:string,head:bool} $response
+     * @param array{status:int,reason:string,headers:array<string,string>,body:string|null,file:string|null,head:bool} $response
      */
     private function writePackagedStaticResponse(ConnectionInterface $connection, array $response): void
     {
-        $body = $response['head'] ? '' : $response['body'];
+        $body = $response['body'];
+        $file = $response['file'];
+        $contentLength = $body === null && $file !== null ? filesize($file) : strlen($body ?? '');
+        if ($contentLength === false) {
+            $this->writeBadRequest($connection);
+            return;
+        }
 
         $responseText = sprintf("HTTP/1.1 %d %s\r\n", $response['status'], $response['reason']);
         foreach ($response['headers'] as $name => $value) {
             $responseText .= $name . ': ' . $value . "\r\n";
         }
 
-        $responseText .= 'Content-Length: ' . strlen($response['body']) . "\r\n";
-        $connection->end($responseText . "Connection: close\r\n\r\n" . $body);
+        $responseText .= 'Content-Length: ' . $contentLength . "\r\n";
+        $responseText .= "Connection: close\r\n\r\n";
+
+        if ($response['head']) {
+            $connection->end($responseText);
+            return;
+        }
+
+        if ($body !== null) {
+            $connection->end($responseText . $body);
+            return;
+        }
+
+        if ($file === null) {
+            $connection->end($responseText);
+            return;
+        }
+
+        $resource = fopen($file, 'rb');
+        if (!is_resource($resource)) {
+            $this->writeBadRequest($connection);
+            return;
+        }
+
+        $connection->write($responseText);
+
+        $stream = new ReadableResourceStream($resource, Loop::get(), 65_536);
+        $stream->on('error', static function () use ($connection): void {
+            $connection->close();
+        });
+        $connection->on('close', static function () use ($stream): void {
+            $stream->close();
+        });
+        $stream->pipe($connection);
     }
 
     private function writeBadRequest(ConnectionInterface $connection): void

@@ -6,7 +6,7 @@ The packaged PHAR and static binary keep the same `serve` command, but they do n
 
 ## Static file serving
 
-The web application serves files from the `output/` directory. Requests for `/foo/` serve `output/foo/index.html`, requests for `/style.css` serve `output/style.css`, etc. Packaged `serve` follows the same resolution rules in its ReactPHP server loop and injects the live reload script into served HTML directly.
+The web application serves files from the `output/` directory. Requests for `/foo/` serve `output/foo/index.html`, requests for `/style.css` serve `output/style.css`, etc. Packaged `serve` follows the same resolution rules in its ReactPHP server loop, injects the live reload script into served HTML directly, and streams non-HTML files so large images, fonts, and media do not have to be buffered into memory before being sent.
 
 If the output directory is missing or empty, a build runs automatically on the first request. The served directory is configured in `config/common/di/live-reload.php`.
 
