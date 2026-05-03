@@ -1,6 +1,7 @@
 # YiiPress Highlighter Extension
 
-Native PHP extension for YiiPress syntax highlighting. It exposes `yiipress_highlight_html()` and links the Rust `syntect` highlighter statically into the PHP module.
+Native PHP extension and PHP wrapper for server-side syntax highlighting. The public PHP API is
+`YiiPress\Highlighter`; the raw extension function is an implementation detail.
 
 ## Install With PIE
 
@@ -26,3 +27,23 @@ Then enable the extension in PHP:
 ```ini
 extension=yiipress_highlighter
 ```
+
+## PHP API
+
+```php
+use YiiPress\Highlighter;
+
+$highlighter = new Highlighter();
+$html = $highlighter->highlight(
+    '<pre><code class="language-php">&lt;?php echo "Hello";</code></pre>',
+);
+```
+
+Pass a syntect theme name as the second argument:
+
+```php
+$html = $highlighter->highlight($html, 'Solarized (dark)');
+```
+
+`YiiPress\Highlighter::isAvailable()` returns whether `ext-yiipress_highlighter`
+is loaded in the current PHP process.

@@ -239,7 +239,7 @@ Two separate pipelines are configured via Yii3 DI container in `config/common/di
 
 - **MarkdownProcessor** — converts markdown to HTML using md4c. Accepts `MarkdownConfig` for feature toggles
 - **OEmbedProcessor** — expands standalone provider URLs into embed HTML before markdown via pluggable `OEmbedInterface` implementations
-- **SyntaxHighlightProcessor** — server-rendered code block highlighting via `ext-yiipress_highlighter`. Uses syntect + rayon compiled as a Rust static library and linked into a native PHP extension, with explicit string lengths passed across the C boundary to reduce per-call overhead
+- **SyntaxHighlightProcessor** — server-rendered code block highlighting via the reusable `YiiPress\Highlighter` API from `yiipress/highligher`. Uses syntect + rayon compiled as a Rust static library and linked into `ext-yiipress_highlighter`, with explicit string lengths passed across the C boundary to reduce per-call overhead
 
 
 ## Serve mode
@@ -294,8 +294,6 @@ src/
 │   ├── ImporterOption.php            # Value object declaring an importer CLI option
 │   ├── ImportResult.php              # Value object for import results
 │   └── TelegramContentImporter.php   # Telegram channel export importer
-├── Highlighter/
-│   └── SyntaxHighlighter.php     # PHP wrapper around ext-yiipress_highlighter
 ├── Processor/
 │   ├── ContentProcessorInterface.php  # Processor interface
 │   ├── ContentProcessorPipeline.php   # Chains processors in order

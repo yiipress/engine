@@ -6,19 +6,20 @@ namespace YiiPress\Tests\Unit\Processor;
 
 use YiiPress\Content\Model\Entry;
 use YiiPress\Content\Model\SiteConfig;
-use YiiPress\Highlighter\SyntaxHighlighter;
+use YiiPress\Highlighter;
 use YiiPress\Processor\SyntaxHighlightProcessor;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertNotSame;
+use function PHPUnit\Framework\assertNotFalse;
 
 final class SyntaxHighlightProcessorTest extends TestCase
 {
     public function testSkipsHighlightingWhenRenderedHtmlHasNoLanguageCodeBlock(): void
     {
-        $processor = new SyntaxHighlightProcessor(new SyntaxHighlighter());
+        $processor = new SyntaxHighlightProcessor(new Highlighter());
         $content = '<p>Regular rendered HTML without code blocks.</p>';
 
         assertSame($content, $processor->process($content, $this->createEntry()));
@@ -28,10 +29,10 @@ final class SyntaxHighlightProcessorTest extends TestCase
     {
         $html = '<pre><code class="language-php">&lt;?php echo 1;</code></pre>';
 
-        $defaultProcessor = new SyntaxHighlightProcessor(new SyntaxHighlighter());
+        $defaultProcessor = new SyntaxHighlightProcessor(new Highlighter());
         $defaultResult = $defaultProcessor->process($html, $this->createEntry());
 
-        $configuredProcessor = new SyntaxHighlightProcessor(new SyntaxHighlighter());
+        $configuredProcessor = new SyntaxHighlightProcessor(new Highlighter());
         $configuredProcessor->applySiteConfig($this->createSiteConfig('Solarized (dark)'));
         $configuredResult = $configuredProcessor->process($html, $this->createEntry());
 
@@ -41,6 +42,8 @@ final class SyntaxHighlightProcessorTest extends TestCase
     private function createEntry(): Entry
     {
         $tmp = tempnam(sys_get_temp_dir(), 'yiipress_syntax_processor_test_');
+        assertNotFalse($tmp);
+
         file_put_contents($tmp, "---\ntitle: Test\n---\nBody.");
         $this->tempFiles[] = $tmp;
 

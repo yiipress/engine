@@ -4,31 +4,29 @@ declare(strict_types=1);
 
 namespace YiiPress\Tests\Unit\Highlighter;
 
-use YiiPress\Highlighter\SyntaxHighlighter;
+use YiiPress\Highlighter;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
 use function PHPUnit\Framework\assertStringNotContainsString;
 
-final class SyntaxHighlighterTest extends TestCase
+final class HighlighterTest extends TestCase
 {
-    private SyntaxHighlighter $highlighter;
+    private ?Highlighter $highlighter = null;
 
     protected function setUp(): void
     {
         if (!extension_loaded('yiipress_highlighter')) {
             $this->markTestSkipped('ext-yiipress_highlighter is not available.');
         }
-
-        $this->highlighter = new SyntaxHighlighter();
     }
 
     public function testHighlightsPhpCodeBlock(): void
     {
         $html = '<pre><code class="language-php">&lt;?php echo &quot;hello&quot;;</code></pre>';
 
-        $result = $this->highlighter->highlight($html);
+        $result = $this->highlighter()->highlight($html);
 
         assertStringContainsString('style=', $result);
         assertStringNotContainsString('language-php', $result);
@@ -38,7 +36,7 @@ final class SyntaxHighlighterTest extends TestCase
     {
         $html = '<p>No code blocks here.</p>';
 
-        $result = $this->highlighter->highlight($html);
+        $result = $this->highlighter()->highlight($html);
 
         assertSame($html, $result);
     }
@@ -47,7 +45,7 @@ final class SyntaxHighlighterTest extends TestCase
     {
         $html = '<pre><code>plain code</code></pre>';
 
-        $result = $this->highlighter->highlight($html);
+        $result = $this->highlighter()->highlight($html);
 
         assertSame($html, $result);
     }
@@ -60,7 +58,7 @@ final class SyntaxHighlighterTest extends TestCase
             . '<pre><code class="language-yaml">title: Hello</code></pre>'
             . '<p>End</p>';
 
-        $result = $this->highlighter->highlight($html);
+        $result = $this->highlighter()->highlight($html);
 
         assertStringContainsString('<p>Text</p>', $result);
         assertStringContainsString('<p>Middle</p>', $result);
@@ -74,7 +72,7 @@ final class SyntaxHighlighterTest extends TestCase
         $html = $plainBlock
             . '<pre><code class="language-php">&lt;?php echo 1;</code></pre>';
 
-        $result = $this->highlighter->highlight($html);
+        $result = $this->highlighter()->highlight($html);
 
         assertStringContainsString($plainBlock, $result);
         assertStringContainsString('style=', $result);
@@ -82,7 +80,7 @@ final class SyntaxHighlighterTest extends TestCase
 
     public function testHandlesEmptyString(): void
     {
-        $result = $this->highlighter->highlight('');
+        $result = $this->highlighter()->highlight('');
 
         assertSame('', $result);
     }
@@ -91,7 +89,7 @@ final class SyntaxHighlighterTest extends TestCase
     {
         $html = '<pre><code class="language-nonexistentlang">some code</code></pre>';
 
-        $result = $this->highlighter->highlight($html);
+        $result = $this->highlighter()->highlight($html);
 
         assertStringContainsString('some code', $result);
     }
@@ -100,7 +98,7 @@ final class SyntaxHighlighterTest extends TestCase
     {
         $html = '<pre><code class="language-php" data-line="1">&lt;?php echo 1;</code></pre>';
 
-        $result = $this->highlighter->highlight($html);
+        $result = $this->highlighter()->highlight($html);
 
         assertStringContainsString('style=', $result);
         assertStringNotContainsString('data-line="1"', $result);
@@ -110,8 +108,8 @@ final class SyntaxHighlighterTest extends TestCase
     {
         $html = '<pre><code class="language-php">&lt;?php echo 1;</code></pre>';
 
-        $defaultResult = $this->highlighter->highlight($html);
-        $solarizedResult = $this->highlighter->highlight($html, 'Solarized (dark)');
+        $defaultResult = $this->highlighter()->highlight($html);
+        $solarizedResult = $this->highlighter()->highlight($html, 'Solarized (dark)');
 
         self::assertNotSame($defaultResult, $solarizedResult);
     }
@@ -121,9 +119,14 @@ final class SyntaxHighlighterTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Unknown highlight theme');
 
-        $this->highlighter->highlight(
+        $this->highlighter()->highlight(
             '<pre><code class="language-php">&lt;?php echo 1;</code></pre>',
             'unknown-theme',
         );
+    }
+
+    private function highlighter(): Highlighter
+    {
+        return $this->highlighter ??= new Highlighter();
     }
 }
