@@ -65,6 +65,22 @@ final class LiveReloadMiddlewareTest extends TestCase
         assertStringNotContainsString('es.addEventListener("ping", function() { es.close(); connect(); });', $body);
     }
 
+    public function testClosesEventSourceWhenPageIsLeaving(): void
+    {
+        $middleware = new LiveReloadMiddleware(new StreamFactory());
+        $html = '<html><body><p>Hello</p></body></html>';
+
+        $response = $middleware->process(
+            new ServerRequest(),
+            $this->createHandler($html, 'text/html'),
+        );
+
+        $body = (string) $response->getBody();
+        assertStringContainsString('window.addEventListener("pagehide", close);', $body);
+        assertStringContainsString('window.addEventListener("beforeunload", close);', $body);
+        assertStringContainsString('if (!leaving)', $body);
+    }
+
     public function testSkipsNonHtmlResponses(): void
     {
         $middleware = new LiveReloadMiddleware(new StreamFactory());

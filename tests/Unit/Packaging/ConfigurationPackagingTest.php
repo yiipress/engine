@@ -83,6 +83,82 @@ final class ConfigurationPackagingTest extends TestCase
     }
 
     #[Test]
+    public function staticBinaryBuildTrimsUnusedServerSource(): void
+    {
+        $root = dirname(__DIR__, 3);
+        $workingDirectory = sys_get_temp_dir() . '/yiipress-source-config-' . uniqid();
+        mkdir($workingDirectory);
+
+        $unusedServerSource = 'fr' . 'an' . 'ken' . 'php';
+        $sourceConfig = $workingDirectory . '/source.json';
+        $libraryConfig = $workingDirectory . '/lib.json';
+
+        try {
+            file_put_contents(
+                $sourceConfig,
+                json_encode(
+                    [
+                        $unusedServerSource => ['type' => 'url'],
+                        'curl' => ['repo' => 'curl/curl', 'match' => '^curl-(.*)$', 'prefer-stable' => true, 'alt' => []],
+                        'icu' => ['repo' => 'unicode-org/icu', 'match' => '^release-(.*)$', 'prefer-stable' => true, 'alt' => []],
+                        'libyaml' => ['repo' => 'yaml/libyaml', 'match' => '^(.*)$', 'prefer-stable' => true, 'alt' => []],
+                        'openssl' => ['repo' => 'openssl/openssl', 'match' => '^openssl-(.*)$', 'prefer-stable' => true, 'alt' => []],
+                        'zlib' => ['repo' => 'madler/zlib', 'match' => '^(.*)$', 'prefer-stable' => true, 'alt' => []],
+                    ],
+                    JSON_THROW_ON_ERROR,
+                ),
+            );
+            file_put_contents(
+                $libraryConfig,
+                json_encode(
+                    [
+                        'php' => [
+                            'lib-depends' => ['lib-base', 'micro', $unusedServerSource],
+                            'lib-depends-macos' => ['lib-base', 'micro', 'libxml2', $unusedServerSource],
+                        ],
+                        'micro' => ['type' => 'target'],
+                        $unusedServerSource => ['source' => $unusedServerSource, 'type' => 'target'],
+                    ],
+                    JSON_THROW_ON_ERROR,
+                ),
+            );
+
+            /** @var list<string> $output */
+            $output = [];
+            $exitCode = 1;
+            exec(
+                escapeshellarg(PHP_BINARY) . ' '
+                . escapeshellarg($root . '/build/static-php/patch-source-config.php') . ' '
+                . escapeshellarg($sourceConfig) . ' '
+                . escapeshellarg($libraryConfig),
+                $output,
+                $exitCode,
+            );
+            $sources = json_decode((string) file_get_contents($sourceConfig), true, flags: JSON_THROW_ON_ERROR);
+            $libraries = json_decode((string) file_get_contents($libraryConfig), true, flags: JSON_THROW_ON_ERROR);
+            self::assertIsArray($sources);
+            self::assertIsArray($libraries);
+            self::assertIsArray($libraries['php']);
+            self::assertIsArray($libraries['php']['lib-depends']);
+            self::assertIsArray($libraries['php']['lib-depends-macos']);
+
+            self::assertSame(0, $exitCode);
+            self::assertArrayNotHasKey($unusedServerSource, $sources);
+            self::assertArrayNotHasKey($unusedServerSource, $libraries);
+            self::assertNotContains($unusedServerSource, $libraries['php']['lib-depends']);
+            self::assertNotContains($unusedServerSource, $libraries['php']['lib-depends-macos']);
+        } finally {
+            if (is_file($sourceConfig)) {
+                unlink($sourceConfig);
+            }
+            if (is_file($libraryConfig)) {
+                unlink($libraryConfig);
+            }
+            rmdir($workingDirectory);
+        }
+    }
+
+    #[Test]
     public function pharBuilderCopiesOnlyRuntimeInputs(): void
     {
         $dockerfile = file_get_contents(dirname(__DIR__, 3) . '/docker/Dockerfile');

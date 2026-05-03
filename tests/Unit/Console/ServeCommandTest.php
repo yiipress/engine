@@ -157,6 +157,7 @@ final class ServeCommandTest extends TestCase
         $closeMethod = new ReflectionMethod($command, 'closePackagedLiveReloadWatcher');
         $streamProperty = new ReflectionProperty($command, 'packagedLiveReloadStream');
         $clientsProperty = new ReflectionProperty($command, 'packagedLiveReloadClients');
+        $timersProperty = new ReflectionProperty($command, 'packagedLiveReloadClientTimers');
 
         $firstConnection = new FakeConnection();
         $secondConnection = new FakeConnection();
@@ -168,10 +169,13 @@ final class ServeCommandTest extends TestCase
             $writeMethod->invoke($command, $secondConnection);
             $secondStream = $streamProperty->getValue($command);
             $clients = $clientsProperty->getValue($command);
+            $timers = $timersProperty->getValue($command);
 
             self::assertSame($firstStream, $secondStream);
             self::assertIsArray($clients);
             self::assertCount(2, $clients);
+            self::assertIsArray($timers);
+            self::assertCount(2, $timers);
             self::assertStringContainsString('Content-Type: text/event-stream', $firstConnection->written);
             self::assertStringContainsString('retry: 1000', $secondConnection->written);
         } finally {
