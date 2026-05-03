@@ -63,7 +63,7 @@ Use `--no-write` to separate render/template/processor cost from output director
 
 - **`ContentParserBench`** — measures parsing speed for site config, navigation, collections, authors, and entries (with and without body loading)
 - **`MarkdownRendererBench`** — measures MD4C markdown-to-HTML rendering for short and long documents
-- **`SyntaxHighlighterBench`** — measures the PHP FFI syntax highlighter path for plain HTML, a single highlighted block, and a page with many highlighted blocks
+- **`SyntaxHighlighterBench`** — measures the native PHP syntax highlighter extension path for plain HTML, a single highlighted block, and a page with many highlighted blocks
 - **`AssetFingerprintingBench`** — measures fingerprint lookup and HTML asset URL rewriting
 - **`BuildProfileBench`** — measures overhead of disabled and enabled build phase timers
 - **`OEmbedProcessorBench`** — measures standalone URL-to-embed expansion across pluggable oEmbed providers

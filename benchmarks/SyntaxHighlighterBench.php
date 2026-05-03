@@ -12,7 +12,6 @@ use PhpBench\Attributes\Warmup;
 use RuntimeException;
 
 use function extension_loaded;
-use function file_exists;
 
 #[BeforeMethods('setUp')]
 final class SyntaxHighlighterBench
@@ -24,12 +23,8 @@ final class SyntaxHighlighterBench
 
     public function setUp(): void
     {
-        if (!extension_loaded('ffi')) {
-            throw new RuntimeException('ext-ffi is required for SyntaxHighlighterBench.');
-        }
-
-        if (!file_exists('/usr/local/lib/libyiipress_highlighter.so')) {
-            throw new RuntimeException('libyiipress_highlighter.so is required for SyntaxHighlighterBench.');
+        if (!extension_loaded('yiipress_highlighter')) {
+            throw new RuntimeException('ext-yiipress_highlighter is required for SyntaxHighlighterBench.');
         }
 
         $this->highlighter = new SyntaxHighlighter();

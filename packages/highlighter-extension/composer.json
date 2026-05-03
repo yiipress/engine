@@ -1,0 +1,35 @@
+{
+    "name": "yiipress/highligher",
+    "type": "php-ext",
+    "description": "Native syntect syntax highlighter extension for YiiPress.",
+    "license": "BSD-3-Clause",
+    "keywords": [
+        "php-extension",
+        "pie",
+        "rust",
+        "syntect",
+        "syntax-highlighting",
+        "yiipress"
+    ],
+    "support": {
+        "issues": "https://github.com/yiipress/highligher/issues",
+        "source": "https://github.com/yiipress/highligher"
+    },
+    "require": {
+        "php": "^8.5"
+    },
+    "replace": {
+        "ext-yiipress_highlighter": "*"
+    },
+    "php-ext": {
+        "extension-name": "yiipress_highlighter",
+        "configure-options": [
+            {
+                "name": "enable-yiipress-highlighter",
+                "description": "Build YiiPress highlighter support",
+                "needs-value": false
+            }
+        ],
+        "support-zts": true
+    }
+}
