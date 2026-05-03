@@ -65,7 +65,7 @@ final class ServeCommand extends Command
     private const int MAX_REQUEST_SIZE = 10_485_760;
     private const string LIVE_RELOAD_PATH = '/_live-reload';
     private const int LIVE_RELOAD_RETRY_MILLISECONDS = 1_000;
-    private const float LIVE_RELOAD_TIMEOUT_SECONDS = 20.0;
+    private const float LIVE_RELOAD_PING_SECONDS = 10.0;
     private const array MIME_TYPES = [
         'html' => 'text/html; charset=utf-8',
         'htm' => 'text/html; charset=utf-8',
@@ -93,6 +93,12 @@ final class ServeCommand extends Command
     private int $defaultWorkers;
     private float $lastPackagedLiveReloadBuildTime = 0.0;
     private bool $packagedOutputBuildAttempted = false;
+    /** @var resource|null */
+    private mixed $packagedLiveReloadStream = null;
+    /** @var array<int, ConnectionInterface> */
+    private array $packagedLiveReloadClients = [];
+    private int $nextPackagedLiveReloadClientId = 1;
+    private ?TimerInterface $packagedLiveReloadPingTimer = null;
 
     /**
      * @psalm-param array{
@@ -290,7 +296,8 @@ final class ServeCommand extends Command
         $server->on('error', static function (): void {});
 
         $loop = Loop::get();
-        $stop = static function () use ($server, $loop): void {
+        $stop = function () use ($server, $loop): void {
+            $this->closePackagedLiveReloadWatcher();
             $server->close();
             $loop->stop();
         };
@@ -374,15 +381,38 @@ final class ServeCommand extends Command
             "HTTP/1.1 200 OK\r\n"
             . "Content-Type: text/event-stream\r\n"
             . "Cache-Control: no-cache\r\n"
-            . "Connection: close\r\n"
+            . "Connection: keep-alive\r\n"
             . "X-Accel-Buffering: no\r\n"
             . "\r\n"
             . 'retry: ' . self::LIVE_RELOAD_RETRY_MILLISECONDS . "\n",
         );
 
+        $this->ensurePackagedLiveReloadWatcher();
+
+        $clientId = $this->nextPackagedLiveReloadClientId++;
+        $this->packagedLiveReloadClients[$clientId] = $connection;
+        $connection->once('close', function () use ($clientId): void {
+            unset($this->packagedLiveReloadClients[$clientId]);
+        });
+    }
+
+    private function ensurePackagedLiveReloadWatcher(): void
+    {
+        if ($this->packagedLiveReloadPingTimer === null) {
+            $this->packagedLiveReloadPingTimer = Loop::addPeriodicTimer(
+                self::LIVE_RELOAD_PING_SECONDS,
+                function (): void {
+                    $this->broadcastPackagedLiveReloadEvent('ping', 'ok', false);
+                },
+            );
+        }
+
+        if ($this->packagedLiveReloadStream !== null) {
+            return;
+        }
+
         $stream = function_exists('inotify_init') ? inotify_init() : false;
         if ($stream === false) {
-            $this->finishLiveReloadResponse($connection, 'ping', 'ok');
             return;
         }
 
@@ -392,48 +422,34 @@ final class ServeCommand extends Command
             @inotify_add_watch($stream, $directory, $this->liveReloadNativeWatchMask());
         }
 
-        $closed = false;
-        $timer = null;
-        $finish = function (string $event, string $data) use ($connection, $stream, &$closed, &$timer): void {
-            if ($closed) {
-                return;
-            }
+        $this->packagedLiveReloadStream = $stream;
 
-            $closed = true;
-            if ($timer instanceof TimerInterface) {
-                Loop::cancelTimer($timer);
-            }
-
-            $this->closeLiveReloadStream($stream);
-            $this->finishLiveReloadResponse($connection, $event, $data);
-        };
-
-        $connection->once('close', function () use ($stream, &$closed, &$timer): void {
-            if ($closed) {
-                return;
-            }
-
-            $closed = true;
-            if ($timer instanceof TimerInterface) {
-                Loop::cancelTimer($timer);
-            }
-
-            $this->closeLiveReloadStream($stream);
-        });
-
-        Loop::addReadStream($stream, function () use ($stream, $finish): void {
+        Loop::addReadStream($stream, function () use ($stream): void {
             $events = inotify_read($stream);
             if (!is_array($events) || $events === []) {
                 return;
             }
 
             $this->buildPackagedLiveReloadSite();
-            $finish('reload', 'changed');
+            $this->broadcastPackagedLiveReloadEvent('reload', 'changed', true);
         });
+    }
 
-        $timer = Loop::addTimer(self::LIVE_RELOAD_TIMEOUT_SECONDS, static function () use ($finish): void {
-            $finish('ping', 'ok');
-        });
+    private function broadcastPackagedLiveReloadEvent(string $event, string $data, bool $close): void
+    {
+        foreach ($this->packagedLiveReloadClients as $clientId => $client) {
+            if (!$client->isWritable()) {
+                unset($this->packagedLiveReloadClients[$clientId]);
+                continue;
+            }
+
+            if ($close) {
+                $this->finishLiveReloadResponse($client, $event, $data);
+                unset($this->packagedLiveReloadClients[$clientId]);
+            } else {
+                $client->write("event: {$event}\ndata: {$data}\n\n");
+            }
+        }
     }
 
     /**
@@ -443,6 +459,24 @@ final class ServeCommand extends Command
     {
         Loop::removeReadStream($stream);
         fclose($stream);
+    }
+
+    private function closePackagedLiveReloadWatcher(): void
+    {
+        if ($this->packagedLiveReloadPingTimer !== null) {
+            Loop::cancelTimer($this->packagedLiveReloadPingTimer);
+            $this->packagedLiveReloadPingTimer = null;
+        }
+
+        if ($this->packagedLiveReloadStream !== null) {
+            $this->closeLiveReloadStream($this->packagedLiveReloadStream);
+            $this->packagedLiveReloadStream = null;
+        }
+
+        foreach ($this->packagedLiveReloadClients as $client) {
+            $client->close();
+        }
+        $this->packagedLiveReloadClients = [];
     }
 
     private function buildPackagedLiveReloadSite(): void

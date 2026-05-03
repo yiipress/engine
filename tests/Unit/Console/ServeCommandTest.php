@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Console;
 
 use App\Console\ServeCommand;
+use Evenement\EventEmitter;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
+use React\Socket\ConnectionInterface;
+use React\Stream\WritableStreamInterface;
 use ReflectionMethod;
+use ReflectionProperty;
 use Symfony\Component\Console\Tester\CommandTester;
 use Yiisoft\Yii\Console\ExitCode;
 use Yiisoft\Yii\Runner\Http\HttpApplicationRunner;
@@ -146,6 +150,36 @@ final class ServeCommandTest extends TestCase
     }
 
     #[Test]
+    public function packagedServeKeepsOneLiveReloadWatcherForMultipleClients(): void
+    {
+        $command = new ServeCommand(packaged: true);
+        $writeMethod = new ReflectionMethod($command, 'writeLiveReloadResponse');
+        $closeMethod = new ReflectionMethod($command, 'closePackagedLiveReloadWatcher');
+        $streamProperty = new ReflectionProperty($command, 'packagedLiveReloadStream');
+        $clientsProperty = new ReflectionProperty($command, 'packagedLiveReloadClients');
+
+        $firstConnection = new FakeConnection();
+        $secondConnection = new FakeConnection();
+
+        try {
+            $writeMethod->invoke($command, $firstConnection);
+            $firstStream = $streamProperty->getValue($command);
+
+            $writeMethod->invoke($command, $secondConnection);
+            $secondStream = $streamProperty->getValue($command);
+            $clients = $clientsProperty->getValue($command);
+
+            self::assertSame($firstStream, $secondStream);
+            self::assertIsArray($clients);
+            self::assertCount(2, $clients);
+            self::assertStringContainsString('Content-Type: text/event-stream', $firstConnection->written);
+            self::assertStringContainsString('retry: 1000', $secondConnection->written);
+        } finally {
+            $closeMethod->invoke($command);
+        }
+    }
+
+    #[Test]
     public function packagedServeWaitsForCompleteRequestBody(): void
     {
         $command = new ServeCommand(packaged: true);
@@ -157,5 +191,74 @@ final class ServeCommandTest extends TestCase
             62,
             $method->invoke($command, "POST / HTTP/1.1\r\nHost: example.test\r\nContent-Length: 4\r\n\r\nabcd"),
         );
+    }
+}
+
+final class FakeConnection extends EventEmitter implements ConnectionInterface
+{
+    public string $written = '';
+    private bool $closed = false;
+
+    public function getRemoteAddress(): ?string
+    {
+        return 'tcp://127.0.0.1:12345';
+    }
+
+    public function getLocalAddress(): ?string
+    {
+        return 'tcp://127.0.0.1:8080';
+    }
+
+    public function isReadable(): bool
+    {
+        return !$this->closed;
+    }
+
+    public function pause(): void
+    {
+    }
+
+    public function resume(): void
+    {
+    }
+
+    public function pipe(WritableStreamInterface $dest, array $options = []): WritableStreamInterface
+    {
+        return $dest;
+    }
+
+    public function close(): void
+    {
+        if ($this->closed) {
+            return;
+        }
+
+        $this->closed = true;
+        $this->emit('close');
+    }
+
+    public function isWritable(): bool
+    {
+        return !$this->closed;
+    }
+
+    public function write($data): bool
+    {
+        if ($this->closed) {
+            return false;
+        }
+
+        $this->written .= (string) $data;
+
+        return true;
+    }
+
+    public function end($data = null): void
+    {
+        if ($data !== null) {
+            $this->write($data);
+        }
+
+        $this->close();
     }
 }
