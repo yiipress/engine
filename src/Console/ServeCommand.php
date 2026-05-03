@@ -152,13 +152,6 @@ final class ServeCommand extends Command
             return Serve::EXIT_CODE_ADDRESS_TAKEN_BY_ANOTHER_PROCESS;
         }
 
-        $runner = new HttpApplicationRunner(
-            rootPath: $this->packageRoot(),
-            debug: Environment::appDebug(),
-            checkEvents: Environment::appDebug(),
-            environment: Environment::appEnv(),
-        );
-
         $running = true;
         if (function_exists('pcntl_async_signals')) {
             pcntl_async_signals(true);
@@ -179,7 +172,7 @@ final class ServeCommand extends Command
                 continue;
             }
 
-            $this->handleConnection($connection, $runner, $address);
+            $this->handleConnection($connection, $address);
             socket_close($connection);
         }
 
@@ -211,7 +204,7 @@ final class ServeCommand extends Command
         return $socket;
     }
 
-    private function handleConnection(Socket $connection, HttpApplicationRunner $runner, string $address): void
+    private function handleConnection(Socket $connection, string $address): void
     {
         $rawRequest = '';
         while (!str_contains($rawRequest, "\r\n\r\n") && strlen($rawRequest) < 65536) {
@@ -229,7 +222,17 @@ final class ServeCommand extends Command
             return;
         }
 
-        $this->writeResponse($connection, $runner->runAndGetResponse($request));
+        $this->writeResponse($connection, $this->createHttpRunner()->runAndGetResponse($request));
+    }
+
+    private function createHttpRunner(): HttpApplicationRunner
+    {
+        return new HttpApplicationRunner(
+            rootPath: $this->packageRoot(),
+            debug: Environment::appDebug(),
+            checkEvents: Environment::appDebug(),
+            environment: Environment::appEnv(),
+        );
     }
 
     private function createRequest(string $rawRequest, string $address): ?ServerRequest
