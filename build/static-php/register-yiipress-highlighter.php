@@ -25,7 +25,6 @@ if (patch_point() === 'before-php-make') {
 #include "ext/phar/php_phar.h"
 #include "ext/random/php_random.h"
 #include "ext/reflection/php_reflection.h"
-#include "ext/sockets/php_sockets.h"
 #include "ext/uri/php_uri.h"
 #include "ext/xml/php_xml.h"
 #include "ext/xmlwriter/php_xmlwriter.h"
@@ -38,11 +37,6 @@ extern zend_module_entry md4c_module_entry;
 extern zend_module_entry yaml_module_entry;
 #ifndef phpext_yaml_ptr
 # define phpext_yaml_ptr &yaml_module_entry
-#endif
-
-extern zend_module_entry sockets_module_entry;
-#ifndef phpext_sockets_ptr
-# define phpext_sockets_ptr &sockets_module_entry
 #endif
 
 extern zend_module_entry yiipress_highlighter_module_entry;
