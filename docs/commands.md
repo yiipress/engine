@@ -82,6 +82,25 @@ Before starting the server, `serve` verifies that the content directory exists a
 
 See [Web application](web-app.md) for details on static file serving and live reload.
 
+## `yii init`
+
+Initializes a content directory with the minimal YiiPress structure:
+
+- `config.yaml`
+- `navigation.yaml`
+- `page/_collection.yaml`
+- `blog/_collection.yaml`
+
+```
+yii init [--content-dir=content]
+```
+
+**Options:**
+
+- `--content-dir`, `-c` — path to the content directory to create (default: `content`). Absolute or relative to project root.
+
+The command creates parent directories as needed and fails if any scaffolded file already exists.
+
 ## `yii new`
 
 Scaffolds a new content entry or standalone page.

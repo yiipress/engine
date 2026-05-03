@@ -58,6 +58,7 @@ Write Markdown, run one command, get a fully static site — blogs, docs, portfo
 ### Developer Experience
 
 - Live-reload dev server (`make up`)
+- `yiipress init` — create the initial content directory, site config, collections, and navigation
 - `yiipress new` — scaffold entries from archetypes
 - `yiipress clean` / `yiipress clear` — wipe output and caches
 - PHP template engine with partials — no new templating language to learn
