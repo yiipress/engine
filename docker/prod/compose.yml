@@ -27,7 +27,7 @@ services:
         window: 120s
       labels:
         caddy: ${PROD_HOST:-app.example.com}
-        caddy.reverse_proxy: "{{upstreams 8080}}"
+        caddy.reverse_proxy: "{{upstreams 19777}}"
 
 volumes:
   runtime:

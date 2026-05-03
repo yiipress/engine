@@ -73,7 +73,7 @@ RUN \
     useradd --gid ${GROUP_ID} --uid ${USER_ID} ${GROUP_NAME}
 USER ${USER_NAME}
 WORKDIR /app
-CMD ["./yii", "serve", "0.0.0.0", "--port=8080", "--workers=1"]
+CMD ["./yii", "serve", "0.0.0.0", "--port=19777", "--workers=1"]
 
 #
 # Production
@@ -96,7 +96,7 @@ COPY docker/php-prod.ini $PHP_INI_DIR/conf.d/99-yiipress-prod.ini
 COPY --from=prod-builder --chown=www-data:www-data /app /app
 USER www-data
 WORKDIR /app
-CMD ["./yii", "serve", "0.0.0.0", "--port=8080", "--workers=1"]
+CMD ["./yii", "serve", "0.0.0.0", "--port=19777", "--workers=1"]
 
 #
 # Packaging

@@ -65,7 +65,7 @@ use function trim;
 final class ServeCommand extends Command
 {
     private const string DEFAULT_ADDRESS = '127.0.0.1';
-    private const string DEFAULT_PORT = '8080';
+    private const string DEFAULT_PORT = '19777';
     private const int DEFAULT_WORKERS = 2;
     private const int MAX_REQUEST_SIZE = 10_485_760;
     private const string LIVE_RELOAD_PATH = '/_live-reload';
