@@ -5,8 +5,6 @@ services:
       - caddy_public
     volumes:
       - runtime:/app/runtime
-      - caddy_data:/data
-      - caddy_config:/config
     env_file:
       - path: ./prod/.env
       - path: ./prod/override.env
@@ -29,7 +27,7 @@ services:
         window: 120s
       labels:
         caddy: ${PROD_HOST:-app.example.com}
-        caddy.reverse_proxy: "{{upstreams 80}}"
+        caddy.reverse_proxy: "{{upstreams 8080}}"
 
 volumes:
   runtime:

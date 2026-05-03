@@ -63,10 +63,10 @@ With `--workers=N` (N > 1), entry rendering and writing is parallelized across N
 Starts PHP built-in web server for local development.
 
 ```
-yii serve [--port=8080]
+yii serve [address] [--port=8080] [--docroot=public] [--router=public/index.php] [--workers=2]
 ```
 
-Alternatively, use `composer serve` which disables the process timeout.
+The Docker development server uses `yii serve 0.0.0.0 --port=8080`, exposed to the host port configured by `DEV_PORT` in `docker/.env`. Alternatively, use `composer serve` which disables the process timeout.
 
 See [Web application](web-app.md) for details on static file serving and live reload.
 

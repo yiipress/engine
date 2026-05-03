@@ -1,15 +1,11 @@
-FROM rust:bookworm AS rust-builder
-WORKDIR /build
-COPY src/Highlighter/ .
-RUN cargo build --release
-
 FROM composer/composer:2-bin AS composer
+FROM mlocati/php-extension-installer:latest AS php-extension-installer
 
-FROM dunglas/frankenphp:1-php8.5-bookworm AS base
+FROM php:8.5-cli-bookworm AS base
 
-COPY --from=rust-builder /build/target/release/libyiipress_highlighter.so /usr/local/lib/libyiipress_highlighter.so
+COPY --from=php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
-RUN ldconfig && apt-get update && apt-get -y install unzip --no-install-recommends
+RUN apt-get update && apt-get -y install unzip --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
 COPY docker/php.ini $PHP_INI_DIR/conf.d/98-yiipress.ini
 
@@ -28,24 +24,40 @@ RUN install-php-extensions \
     simplexml \
     yaml \
     md4c \
-    pcntl \
-    ffi
+    pcntl
 
-    LABEL org.opencontainers.image.licenses="BSD-3-Clause" \
-        org.opencontainers.image.title="YiiPress" \
-        org.opencontainers.image.description="Static website builder" \
-        org.opencontainers.image.source="https://github.com/yiipress/engine" \
-        org.opencontainers.image.url="https://github.com/yiipress/engine" \
-        org.opencontainers.image.vendor="Alexander Makarov" \
-        org.opencontainers.image.created="" \
-        org.opencontainers.image.revision="" \
-        org.opencontainers.image.version=""
+FROM base AS highlighter-extension-builder
+ENV CARGO_HOME=/root/.cargo \
+    RUSTUP_HOME=/usr/local/rustup \
+    PATH="/root/.cargo/bin:${PATH}"
+COPY --from=rust:bookworm /usr/local/cargo /root/.cargo
+COPY --from=rust:bookworm /usr/local/rustup /usr/local/rustup
+COPY packages/highlighter-extension/ /build/highlighter-extension/
+RUN cd /build/highlighter-extension \
+    && phpize \
+    && ./configure --enable-yiipress-highlighter \
+    && make -j"$(nproc)" \
+    && make install
+
+FROM base AS app-base
+COPY --from=highlighter-extension-builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
+RUN docker-php-ext-enable yiipress_highlighter
+
+LABEL org.opencontainers.image.licenses="BSD-3-Clause" \
+    org.opencontainers.image.title="YiiPress" \
+    org.opencontainers.image.description="Static website builder" \
+    org.opencontainers.image.source="https://github.com/yiipress/engine" \
+    org.opencontainers.image.url="https://github.com/yiipress/engine" \
+    org.opencontainers.image.vendor="Alexander Makarov" \
+    org.opencontainers.image.created="" \
+    org.opencontainers.image.revision="" \
+    org.opencontainers.image.version=""
 
 #
 # Development
 #
 
-FROM base AS dev
+FROM app-base AS dev
 ARG USER_ID=10001
 ARG GROUP_ID=10001
 ARG USER_NAME=appuser
@@ -56,21 +68,18 @@ RUN install-php-extensions \
 
 COPY --from=composer /composer /usr/bin/composer
 
-# Based on https://frankenphp.dev/docs/docker/#running-as-a-non-root-user
 RUN \
 	groupadd --gid ${GROUP_ID} ${GROUP_NAME}; \
-    useradd --gid ${GROUP_ID} --uid ${USER_ID} ${GROUP_NAME}; \
-	# Add additional capability to bind to port 80 and 443 \
-	setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/frankenphp; \
-	# Give write access to /data/caddy and /config/caddy \
-	chown -R ${USER_NAME}:${GROUP_NAME} /data/caddy && chown -R ${USER_NAME}:${GROUP_NAME} /config/caddy
+    useradd --gid ${GROUP_ID} --uid ${USER_ID} ${GROUP_NAME}
 USER ${USER_NAME}
+WORKDIR /app
+CMD ["./yii", "serve", "0.0.0.0", "--port=8080", "--workers=1"]
 
 #
 # Production
 #
 
-FROM base AS prod-builder
+FROM app-base AS prod-builder
 COPY --from=composer /composer /usr/bin/composer
 COPY config /app/config
 COPY public /app/public
@@ -81,8 +90,88 @@ RUN --mount=type=cache,target=/tmp/cache \
     composer install --no-dev --no-progress --no-interaction --classmap-authoritative && \
     rm composer.lock composer.json
 
-FROM base AS prod
+FROM app-base AS prod
 ENV APP_ENV=prod
 COPY docker/php-prod.ini $PHP_INI_DIR/conf.d/99-yiipress-prod.ini
 COPY --from=prod-builder --chown=www-data:www-data /app /app
 USER www-data
+WORKDIR /app
+CMD ["./yii", "serve", "0.0.0.0", "--port=8080", "--workers=1"]
+
+#
+# Packaging
+#
+
+FROM app-base AS phar-builder
+ENV APP_ENV=prod
+COPY --from=composer /composer /usr/bin/composer
+WORKDIR /app
+COPY . /app
+RUN --mount=type=cache,target=/tmp/cache \
+    composer install --no-dev --no-progress --no-interaction --classmap-authoritative && \
+    php -d phar.readonly=0 build/package-phar.php dist/yiipress.phar
+
+FROM app-base AS static-package
+ARG PHP_VERSION=8.5
+ARG MD4C_VERSION=1.1
+ARG STATIC_PHP_CLI_REF=5b5861c366a0d94bc84002db7b3f46144b388fbb
+ARG STATIC_PHP_EXTENSIONS=ctype,curl,dom,filter,inotify,intl,mbstring,md4c,opcache,openssl,pcntl,phar,simplexml,xml,xmlwriter,yaml,yiipress_highlighter
+ARG TARGETARCH
+ENV CARGO_HOME=/root/.cargo \
+    RUSTUP_HOME=/usr/local/rustup \
+    PATH="/usr/local/musl/bin:/root/.cargo/bin:${PATH}" \
+    CARGO_BUILD_TARGET=x86_64-unknown-linux-musl \
+    YIIPRESS_HIGHLIGHTER_SOURCE=/opt/yiipress-highligher \
+    YIIPRESS_MD4C_SOURCE=/opt/md4c-extension
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        autoconf \
+        automake \
+        bison \
+        build-essential \
+        ca-certificates \
+        cmake \
+        curl \
+        file \
+        autopoint \
+        flex \
+        git \
+        gzip \
+        libtool \
+        musl-tools \
+        patch \
+        pkgconf \
+        pkg-config \
+        re2c \
+        tar \
+        unzip \
+        xz-utils \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=composer /composer /usr/bin/composer
+COPY --from=rust:bookworm /usr/local/cargo /root/.cargo
+COPY --from=rust:bookworm /usr/local/rustup /usr/local/rustup
+RUN rustup target add x86_64-unknown-linux-musl
+WORKDIR /static-php
+RUN curl -fsSL "https://github.com/crazywhalecc/static-php-cli/archive/${STATIC_PHP_CLI_REF}.tar.gz" \
+    | tar -xz --strip-components=1 -C /static-php \
+    && composer install --no-dev --no-progress --no-interaction --classmap-authoritative
+RUN mkdir -p /opt/md4c-extension \
+    && curl -fsSL "https://pecl.php.net/get/md4c-${MD4C_VERSION}.tgz" \
+    | tar -xz --strip-components=1 -C /opt/md4c-extension
+COPY packages/highlighter-extension/ /opt/yiipress-highligher/
+COPY build/static-php/patch-extension-config.php /opt/patch-extension-config.php
+COPY build/static-php/patch-source-config.php /opt/patch-source-config.php
+COPY build/static-php/register-yiipress-highlighter.php /opt/register-yiipress-highlighter.php
+COPY --from=phar-builder /app/dist/yiipress.phar /artifacts/yiipress.phar
+RUN php /opt/patch-extension-config.php /static-php/config/ext.json \
+    && php /opt/patch-source-config.php /static-php/config/source.json \
+    && bin/spc download --for-extensions="${STATIC_PHP_EXTENSIONS}" --with-php="${PHP_VERSION}" --without-suggestions \
+    && mkdir -p buildroot/bin \
+    && ln -sf /usr/bin/pkg-config buildroot/bin/pkg-config \
+    && SPC_TOOLCHAIN='SPC\toolchain\MuslToolchain' SPC_TARGET=x86_64-linux-musl bin/spc doctor --auto-fix \
+    && bin/spc build "${STATIC_PHP_EXTENSIONS}" --build-micro --with-micro-fake-cli -P /opt/register-yiipress-highlighter.php \
+    && bin/spc micro:combine /artifacts/yiipress.phar -O /artifacts/yiipress \
+    && chmod +x /artifacts/yiipress
+
+FROM scratch AS package-artifacts
+COPY --from=static-package /artifacts/ /
