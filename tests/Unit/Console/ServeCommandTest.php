@@ -65,6 +65,18 @@ final class ServeCommandTest extends TestCase
     }
 
     #[Test]
+    public function packagedServeDetectsLiveReloadRequestBeforeYiiDispatch(): void
+    {
+        $command = new ServeCommand(packaged: true);
+        $method = new ReflectionMethod($command, 'isPackagedLiveReloadRequest');
+
+        self::assertTrue($method->invoke($command, "GET /_live-reload HTTP/1.1\r\nHost: example.test\r\n\r\n"));
+        self::assertTrue($method->invoke($command, "GET /_live-reload?since=1 HTTP/1.1\r\nHost: example.test\r\n\r\n"));
+        self::assertFalse($method->invoke($command, "POST /_live-reload HTTP/1.1\r\nHost: example.test\r\n\r\n"));
+        self::assertFalse($method->invoke($command, "GET /blog/ HTTP/1.1\r\nHost: example.test\r\n\r\n"));
+    }
+
+    #[Test]
     public function packagedServeWaitsForCompleteRequestBody(): void
     {
         $command = new ServeCommand(packaged: true);
