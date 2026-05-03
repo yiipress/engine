@@ -20,6 +20,7 @@ if (patch_point() === 'before-php-make') {
 /* YIIPRESS_STATIC_PATCHED_INTERNAL_FUNCTIONS */
 #include "ext/opcache/zend_accelerator_module.h"
 #include "ext/pcntl/php_pcntl.h"
+#include "ext/posix/php_posix.h"
 #include "ext/standard/php_standard.h"
 #include "ext/spl/php_spl.h"
 #include "ext/phar/php_phar.h"

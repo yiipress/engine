@@ -252,7 +252,7 @@ In serve mode, YiiPress runs as a Yii3 web application. Instead of writing stati
 - A catch-all route handles 404s.
 - File watching and live reload trigger re-parse and re-index on content changes.
 - The existing Yii3 web infrastructure (router, middleware, view renderer) is reused.
-- Packaged PHAR/static-binary serve mode uses ReactPHP stream sockets because the micro SAPI static binary cannot delegate to PHP's CLI built-in server.
+- Packaged PHAR/static-binary serve mode uses ReactPHP stream sockets with preforked worker processes because the micro SAPI static binary cannot delegate to PHP's CLI built-in server.
 
 ## Caching
 

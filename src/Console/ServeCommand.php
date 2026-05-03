@@ -27,7 +27,15 @@ use Yiisoft\Yii\Console\ExitCode;
 use Yiisoft\Yii\Runner\Http\HttpApplicationRunner;
 
 use function getcwd;
+use function pcntl_async_signals;
+use function pcntl_fork;
+use function pcntl_signal;
+use function pcntl_wait;
+use function pcntl_wexitstatus;
+use function pcntl_wifexited;
+use function pcntl_wifsignaled;
 use function parse_url;
+use function posix_kill;
 use function preg_split;
 use function sprintf;
 use function strlen;
@@ -133,10 +141,14 @@ final class ServeCommand extends Command
 
         /** @var string $env */
         $env = $input->getOption('env');
+        $workers = (int) $input->getOption('workers');
+        if ($workers < 1) {
+            $workers = 1;
+        }
 
         $outputTable = [
             ['PHP', PHP_VERSION],
-            ['Workers', 'Not supported by packaged server', '--workers, -w'],
+            ['Workers', $workers, '--workers, -w'],
             ['Address', $address],
             ['Document root', $this->workingDirectory()],
             ['Routing file', 'embedded PHAR application'],
@@ -156,6 +168,84 @@ final class ServeCommand extends Command
             return Serve::EXIT_CODE_ADDRESS_TAKEN_BY_ANOTHER_PROCESS;
         }
 
+        if ($workers > 1 && function_exists('pcntl_fork')) {
+            return $this->runPackagedWorkerPool($server, $address, $workers);
+        }
+
+        return $this->runPackagedServer($server, $address);
+    }
+
+    private function runPackagedWorkerPool(SocketServer $server, string $address, int $workers): int
+    {
+        $children = [];
+
+        for ($worker = 0; $worker < $workers; $worker++) {
+            $pid = pcntl_fork();
+            if ($pid === -1) {
+                $this->terminateWorkers($children);
+                $server->close();
+
+                return Serve::EXIT_CODE_ADDRESS_TAKEN_BY_ANOTHER_PROCESS;
+            }
+
+            if ($pid === 0) {
+                return $this->runPackagedServer($server, $address);
+            }
+
+            $children[] = $pid;
+        }
+
+        $server->close();
+        Loop::get()->stop();
+
+        $stopping = false;
+        pcntl_async_signals(true);
+        $stop = function () use (&$children, &$stopping): void {
+            $stopping = true;
+            $this->terminateWorkers($children);
+        };
+        pcntl_signal(SIGINT, $stop);
+        pcntl_signal(SIGTERM, $stop);
+
+        $exitCode = ExitCode::OK;
+        while ($children !== []) {
+            $status = 0;
+            $pid = pcntl_wait($status);
+            if ($pid <= 0) {
+                break;
+            }
+
+            $children = array_values(array_filter($children, static fn(int $child): bool => $child !== $pid));
+
+            if ($stopping || pcntl_wifsignaled($status)) {
+                continue;
+            }
+
+            if (pcntl_wifexited($status)) {
+                $childExitCode = pcntl_wexitstatus($status);
+                if ($childExitCode !== ExitCode::OK) {
+                    $exitCode = $childExitCode;
+                    $stopping = true;
+                    $this->terminateWorkers($children);
+                }
+            }
+        }
+
+        return $exitCode;
+    }
+
+    /**
+     * @param list<int> $children
+     */
+    private function terminateWorkers(array $children): void
+    {
+        foreach ($children as $pid) {
+            posix_kill($pid, SIGTERM);
+        }
+    }
+
+    private function runPackagedServer(SocketServer $server, string $address): int
+    {
         $server->on('connection', function (ConnectionInterface $connection) use ($address): void {
             $this->handleConnection($connection, $address);
         });

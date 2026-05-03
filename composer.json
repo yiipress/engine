@@ -40,6 +40,7 @@
         "ext-mbstring": "*",
         "ext-md4c": "*",
         "ext-pcntl": "*",
+        "ext-posix": "*",
         "ext-xmlwriter": "*",
         "ext-yaml": "*",
         "ext-yiipress_highlighter": "*",
