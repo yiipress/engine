@@ -11,13 +11,14 @@ use function PHPUnit\Framework\assertStringContainsString;
 
 final class ConsoleRunnerTest extends TestCase
 {
-    public function testYiiConsoleRuns(): void
+    public function testConsoleRunsWithApplicationNameAndVersion(): void
     {
         $yii = dirname(__DIR__, 2) . '/yii';
 
         exec($yii . ' 2>&1', $output, $exitCode);
 
         assertSame(0, $exitCode);
-        assertStringContainsString('Yii Console', implode("\n", $output));
+        assertStringContainsString('YiiPress 1.0.0', implode("\n", $output));
+        self::assertStringNotContainsString('Yii Console', implode("\n", $output));
     }
 }
