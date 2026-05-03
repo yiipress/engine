@@ -8,6 +8,7 @@ use App\Console\BuildCommand;
 use App\Console\CleanCommand;
 use App\Console\ImportCommand;
 use App\Console\NewCommand;
+use App\Console\ServeCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -56,6 +57,14 @@ final class ConfigurationPackagingTest extends TestCase
             chdir($previousDirectory);
             rmdir($workingDirectory);
         }
+    }
+
+    #[Test]
+    public function serveCommandIsPackageAware(): void
+    {
+        $commands = require dirname(__DIR__, 3) . '/config/console/commands.php';
+
+        assertSame(ServeCommand::class, $commands['serve']);
     }
 
     /**

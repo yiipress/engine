@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Environment;
 use App\Web\LiveReload\FileWatcher;
 use App\Web\LiveReload\LiveReloadMiddleware;
 use App\Web\LiveReload\SiteBuildRunner;
@@ -10,7 +9,16 @@ use App\Web\StaticFile\StaticFileAction;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 
-$root = dirname(__DIR__, 3);
+$packageRoot = dirname(__DIR__, 3);
+$root = getcwd() ?: $packageRoot;
+$yiiBinary = $packageRoot . '/yii';
+
+if (str_starts_with(__FILE__, 'phar://')) {
+    $yiiBinary = $_SERVER['argv'][0] ?? PHP_BINARY;
+    if (!str_starts_with($yiiBinary, '/')) {
+        $yiiBinary = $root . '/' . $yiiBinary;
+    }
+}
 
 return [
     FileWatcher::class => static function () use ($root): FileWatcher {
@@ -19,9 +27,9 @@ return [
             $root . '/themes',
         ]);
     },
-    SiteBuildRunner::class => static function () use ($root): SiteBuildRunner {
+    SiteBuildRunner::class => static function () use ($root, $yiiBinary): SiteBuildRunner {
         return new SiteBuildRunner(
-            yiiBinary: $root . '/yii',
+            yiiBinary: $yiiBinary,
             contentDir: $root . '/content',
             outputDir: $root . '/output',
         );
