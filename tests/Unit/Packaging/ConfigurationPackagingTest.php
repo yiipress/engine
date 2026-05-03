@@ -187,6 +187,25 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('COPY yii composer.json composer.lock /app/', $stage);
     }
 
+    #[Test]
+    public function highlighterExtensionComposerManifestUsesPieMetadata(): void
+    {
+        $contents = file_get_contents(dirname(__DIR__, 3) . '/packages/highlighter-extension/composer.json');
+        self::assertIsString($contents);
+
+        $manifest = json_decode($contents, true, flags: JSON_THROW_ON_ERROR);
+        self::assertIsArray($manifest);
+
+        self::assertSame('php-ext', $manifest['type'] ?? null);
+        self::assertArrayNotHasKey('replace', $manifest);
+        self::assertSame(['php' => '^8.5'], $manifest['require'] ?? null);
+        self::assertIsArray($manifest['php-ext'] ?? null);
+        /** @var array<string, mixed> $extensionMetadata */
+        $extensionMetadata = $manifest['php-ext'];
+        self::assertSame('yiipress_highlighter', $extensionMetadata['extension-name'] ?? null);
+        self::assertArrayNotHasKey('support-zts', $extensionMetadata);
+    }
+
     /**
      * @return string[]
      */
