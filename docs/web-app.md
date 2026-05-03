@@ -1,6 +1,6 @@
 # Web application
 
-The web application serves the built site for local development. In the Docker development container, `make up` starts the ReactPHP preview server with `yii serve 0.0.0.0 --port=8080`. Live reload requires PHP `ext-inotify`; the Docker images install it by default.
+The web application serves the built site for local development. In the Docker development container, `make up` starts the ReactPHP preview server with `yii serve 0.0.0.0 --port=19777`. Live reload requires PHP `ext-inotify`; the Docker images install it by default.
 
 Source, PHAR, and static binary execution all use the same `serve` command. They resolve `content/` and `output/` from the current working directory. The server uses ReactPHP stream sockets with preforked worker processes, serves built files from `output/` directly in the server loop, and handles the live reload SSE endpoint there too. Each worker keeps one shared inotify watcher for all live reload clients, so fast navigation does not repeat recursive watch setup. Idle live reload connections and static file responses do not occupy Yii request workers. EventSource clients close during page navigation, so stale browser connections are cleaned up without periodically dropping active live reload listeners. It does not require PHP's native `sockets` extension.
 

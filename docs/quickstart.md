@@ -127,7 +127,7 @@ Start the dev server:
 make up
 ```
 
-Open `http://localhost:8087` in your browser (port is configured in `docker/.env`).
+Open `http://localhost:19777` in your browser (port is configured in `docker/.env`).
 
 ## Build options
 

@@ -132,7 +132,7 @@ Build and preview:
 
 ```bash
 make yii build
-make up          # dev server at http://localhost:8087
+make up          # dev server at http://localhost:19777
 make package     # PHAR and static Linux binary artifacts in dist/
 ```
 

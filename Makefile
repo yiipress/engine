@@ -37,7 +37,7 @@ ifeq ($(PRIMARY_GOAL),up)
 up: ## Up the dev environment
 	@set -eu; \
 	if $(DOCKER_COMPOSE_DEV) up -d --wait --wait-timeout 60 --remove-orphans; then \
-		port="$$( $(DOCKER_COMPOSE_DEV) port app 8080 )"; \
+		port="$$( $(DOCKER_COMPOSE_DEV) port app 19777 )"; \
 		host_port="$${port##*:}"; \
 		url="http://localhost$$( [ "$$host_port" = '80' ] || printf ':%s' "$$host_port" )"; \
 		printf '🚀 Started server at %s\n' "$$url"; \
@@ -63,7 +63,7 @@ endif
 ifeq ($(PRIMARY_GOAL),open)
 open: ## Open the running app in the default browser
 	@set -eu; \
-	if ! port="$$( $(DOCKER_COMPOSE_DEV) port app 8080 2>/dev/null )" || [ -z "$$port" ]; then \
+	if ! port="$$( $(DOCKER_COMPOSE_DEV) port app 19777 2>/dev/null )" || [ -z "$$port" ]; then \
 		echo 'Start server with `make up` first.' >&2; \
 		exit 0; \
 	fi; \

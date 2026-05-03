@@ -32,7 +32,7 @@ final class ServeCommandTest extends TestCase
         $exitCode = $tester->execute([]);
 
         self::assertSame(ExitCode::OK, $exitCode);
-        self::assertSame("Serving http://127.0.0.1:8080\n", $tester->getDisplay());
+        self::assertSame("Serving http://127.0.0.1:19777\n", $tester->getDisplay());
         self::assertStringNotContainsString('Yii', $tester->getDisplay());
     }
 
@@ -52,7 +52,7 @@ final class ServeCommandTest extends TestCase
         $exitCode = $tester->execute(['--workers' => '4']);
 
         self::assertSame(ExitCode::OK, $exitCode);
-        self::assertSame("Serving http://127.0.0.1:8080\n", $tester->getDisplay());
+        self::assertSame("Serving http://127.0.0.1:19777\n", $tester->getDisplay());
     }
 
     #[Test]
@@ -75,7 +75,7 @@ final class ServeCommandTest extends TestCase
         $command = new ServeCommand();
         $method = new ReflectionMethod($command, 'createRequest');
 
-        $request = $method->invoke($command, "HEAD / HTTP/1.1\r\nHost: example.test\r\n\r\n", 'example.test:8080');
+        $request = $method->invoke($command, "HEAD / HTTP/1.1\r\nHost: example.test\r\n\r\n", 'example.test:19777');
 
         self::assertInstanceOf(ServerRequestInterface::class, $request);
         self::assertSame('', $request->getBody()->getContents());
@@ -248,7 +248,7 @@ final class FakeConnection extends EventEmitter implements ConnectionInterface
 
     public function getLocalAddress(): ?string
     {
-        return 'tcp://127.0.0.1:8080';
+        return 'tcp://127.0.0.1:19777';
     }
 
     public function isReadable(): bool

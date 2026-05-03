@@ -12,7 +12,7 @@ services:
       - path: ./dev/override.env
         required: false
     ports:
-      - "${DEV_PORT:-8087}:8080"
+      - "${DEV_PORT:-19777}:19777"
     volumes:
       - ../:/app
       - ../runtime:/app/runtime
