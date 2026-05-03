@@ -1,7 +1,7 @@
 {
     "name": "yiipress/highligher",
     "type": "php-ext",
-    "description": "Native syntect syntax highlighter extension for YiiPress.",
+    "description": "Reusable PHP API and native syntect syntax highlighter extension.",
     "license": "BSD-3-Clause",
     "keywords": [
         "php-extension",
@@ -17,6 +17,11 @@
     },
     "require": {
         "php": "^8.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "YiiPress\\": "php"
+        }
     },
     "replace": {
         "ext-yiipress_highlighter": "*"

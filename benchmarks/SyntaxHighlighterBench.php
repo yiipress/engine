@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiPress\Benchmarks;
 
-use YiiPress\Highlighter\SyntaxHighlighter;
+use YiiPress\Highlighter;
 use PhpBench\Attributes\BeforeMethods;
 use PhpBench\Attributes\Iterations;
 use PhpBench\Attributes\Revs;
@@ -16,10 +16,10 @@ use function extension_loaded;
 #[BeforeMethods('setUp')]
 final class SyntaxHighlighterBench
 {
-    private SyntaxHighlighter $highlighter;
-    private string $plainHtml;
-    private string $singleBlockHtml;
-    private string $multiBlockHtml;
+    private ?Highlighter $highlighter = null;
+    private string $plainHtml = '';
+    private string $singleBlockHtml = '';
+    private string $multiBlockHtml = '';
 
     public function setUp(): void
     {
@@ -27,7 +27,7 @@ final class SyntaxHighlighterBench
             throw new RuntimeException('ext-yiipress_highlighter is required for SyntaxHighlighterBench.');
         }
 
-        $this->highlighter = new SyntaxHighlighter();
+        $this->highlighter = new Highlighter();
         $this->plainHtml = '<p>Regular paragraph.</p>';
         $this->singleBlockHtml = '<pre><code class="language-php">&lt;?php echo &quot;hello&quot;;</code></pre>';
         $this->multiBlockHtml = '<p>Intro</p>'
@@ -46,7 +46,7 @@ final class SyntaxHighlighterBench
     #[Warmup(1)]
     public function benchSkipPlainHtml(): void
     {
-        $this->highlighter->highlight($this->plainHtml);
+        $this->highlighter()->highlight($this->plainHtml);
     }
 
     #[Revs(2000)]
@@ -54,7 +54,7 @@ final class SyntaxHighlighterBench
     #[Warmup(1)]
     public function benchHighlightSingleBlock(): void
     {
-        $this->highlighter->highlight($this->singleBlockHtml);
+        $this->highlighter()->highlight($this->singleBlockHtml);
     }
 
     #[Revs(500)]
@@ -62,6 +62,11 @@ final class SyntaxHighlighterBench
     #[Warmup(1)]
     public function benchHighlightMultipleBlocks(): void
     {
-        $this->highlighter->highlight($this->multiBlockHtml);
+        $this->highlighter()->highlight($this->multiBlockHtml);
+    }
+
+    private function highlighter(): Highlighter
+    {
+        return $this->highlighter ??= new Highlighter();
     }
 }

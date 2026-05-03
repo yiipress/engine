@@ -6,7 +6,7 @@ namespace YiiPress\Processor;
 
 use YiiPress\Content\Model\Entry;
 use YiiPress\Content\Model\SiteConfig;
-use YiiPress\Highlighter\SyntaxHighlighter;
+use YiiPress\Highlighter;
 use RuntimeException;
 
 use function str_contains;
@@ -16,7 +16,7 @@ final class SyntaxHighlightProcessor implements ContentProcessorInterface, SiteC
     private string $theme = '';
 
     public function __construct(
-        private SyntaxHighlighter $highlighter,
+        private Highlighter $highlighter,
     ) {}
 
     public function applySiteConfig(SiteConfig $siteConfig): void
