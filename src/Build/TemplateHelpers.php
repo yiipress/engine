@@ -20,9 +20,13 @@ final class TemplateHelpers
             $variables['h'] = self::escape(...);
         }
 
-        if (($variables['ui'] ?? null) instanceof UiText && !isset($variables['t'])) {
-            $ui = $variables['ui'];
+        $ui = $variables['ui'] ?? null;
+        if ($ui instanceof UiText && !isset($variables['t'])) {
             $variables['t'] = static fn (string $key, array $params = []): string => $ui->get($key, $params);
+        }
+
+        if ($ui instanceof UiText && !isset($variables['languageName'])) {
+            $variables['languageName'] = static fn (string $language): string => $ui->languageName($language);
         }
 
         return $variables;

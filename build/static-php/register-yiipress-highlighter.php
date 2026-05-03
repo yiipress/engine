@@ -25,7 +25,6 @@ if (patch_point() === 'before-php-make') {
 #include "ext/phar/php_phar.h"
 #include "ext/random/php_random.h"
 #include "ext/reflection/php_reflection.h"
-#include "ext/simplexml/php_simplexml.h"
 #include "ext/uri/php_uri.h"
 #include "ext/xml/php_xml.h"
 #include "ext/xmlwriter/php_xmlwriter.h"

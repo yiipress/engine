@@ -13,7 +13,6 @@ RUN install-php-extensions \
     opcache \
     mbstring \
     inotify \
-    intl \
     dom \
     ctype \
     curl \
@@ -115,7 +114,7 @@ FROM app-base AS static-package
 ARG PHP_VERSION=8.5
 ARG MD4C_VERSION=1.1
 ARG STATIC_PHP_CLI_REF=5b5861c366a0d94bc84002db7b3f46144b388fbb
-ARG STATIC_PHP_EXTENSIONS=ctype,curl,dom,filter,inotify,intl,mbstring,md4c,opcache,openssl,pcntl,phar,simplexml,xml,xmlwriter,yaml,yiipress_highlighter
+ARG STATIC_PHP_EXTENSIONS=ctype,dom,filter,inotify,mbstring,md4c,opcache,pcntl,phar,xml,xmlwriter,yaml,yiipress_highlighter
 ARG TARGETARCH
 ENV CARGO_HOME=/root/.cargo \
     RUSTUP_HOME=/usr/local/rustup \
@@ -162,6 +161,7 @@ COPY packages/highlighter-extension/ /opt/yiipress-highligher/
 COPY build/static-php/patch-extension-config.php /opt/patch-extension-config.php
 COPY build/static-php/patch-source-config.php /opt/patch-source-config.php
 COPY build/static-php/register-yiipress-highlighter.php /opt/register-yiipress-highlighter.php
+RUN mkdir -p /artifacts
 COPY --from=phar-builder /app/dist/yiipress.phar /artifacts/yiipress.phar
 RUN php /opt/patch-extension-config.php /static-php/config/ext.json \
     && php /opt/patch-source-config.php /static-php/config/source.json \
@@ -174,4 +174,5 @@ RUN php /opt/patch-extension-config.php /static-php/config/ext.json \
     && chmod +x /artifacts/yiipress
 
 FROM scratch AS package-artifacts
-COPY --from=static-package /artifacts/ /
+COPY --from=static-package /artifacts/yiipress /yiipress
+COPY --from=static-package /artifacts/yiipress.phar /yiipress.phar

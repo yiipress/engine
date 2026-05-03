@@ -6,4 +6,4 @@ use App\Environment;
 
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
-Environment::prepare();
+Environment::prepare(str_starts_with(__FILE__, 'phar://') ? Environment::PROD : null);

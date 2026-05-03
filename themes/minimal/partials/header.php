@@ -13,22 +13,13 @@ use App\Render\NavigationRenderer;
  * @var list<string> $uiLanguages
  * @var Closure(string, int, ?string, bool): string $h
  * @var Closure(string, array): string $t
- * @var Closure(string): string $capitalizeUtf8
  * @var Closure(string): string $languageName
  */
 $search ??= false;
 $searchResults ??= 10;
 $uiLanguage ??= 'en';
 $uiLanguages ??= [$uiLanguage];
-$capitalizeUtf8 ??= static function (string $value): string {
-    $firstCharacter = mb_substr($value, 0, 1, 'UTF-8');
-    if ($firstCharacter === '') {
-        return $value;
-    }
-
-    return mb_strtoupper($firstCharacter, 'UTF-8') . mb_substr($value, 1, null, 'UTF-8');
-};
-$languageName ??= static fn (string $language): string => $capitalizeUtf8(\Locale::getDisplayLanguage($language, $language) ?: strtoupper($language));
+$languageName ??= static fn (string $language): string => strtoupper($language);
 ?>
 <header class="site-header">
     <div class="container">

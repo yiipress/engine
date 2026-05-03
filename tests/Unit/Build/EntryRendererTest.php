@@ -16,7 +16,6 @@ use App\Content\Model\SiteConfig;
 use App\Processor\ContentProcessorPipeline;
 use DateTimeImmutable;
 use FilesystemIterator;
-use Locale;
 use PHPUnit\Framework\TestCase;
 
 use RecursiveDirectoryIterator;
@@ -25,8 +24,6 @@ use SplFileInfo;
 
 use function PHPUnit\Framework\assertStringContainsString;
 use function PHPUnit\Framework\assertStringNotContainsString;
-use function mb_strtoupper;
-use function mb_substr;
 
 final class EntryRendererTest extends TestCase
 {
@@ -79,8 +76,8 @@ final class EntryRendererTest extends TestCase
 
         assertStringContainsString('<html lang="ru">', $html);
         assertStringContainsString('id="ui-language-selector"', $html);
-        assertStringContainsString('value="en" selected>' . htmlspecialchars($this->capitalizeUtf8(Locale::getDisplayLanguage('en', 'en') ?: 'EN')) . '</option>', $html);
-        assertStringContainsString('value="ru">' . htmlspecialchars($this->capitalizeUtf8(Locale::getDisplayLanguage('ru', 'ru') ?: 'RU')) . '</option>', $html);
+        assertStringContainsString('value="en" selected>English</option>', $html);
+        assertStringContainsString('value="ru">Русский</option>', $html);
         assertStringContainsString('aria-label="Search"', $html);
         assertStringContainsString('data-default-language="en"', $html);
         assertStringContainsString('"ui_language":"Interface language"', $html);
@@ -367,13 +364,4 @@ PHP);
         rmdir($path);
     }
 
-    private function capitalizeUtf8(string $value): string
-    {
-        $firstCharacter = mb_substr($value, 0, 1);
-        if ($firstCharacter === '') {
-            return $value;
-        }
-
-        return mb_strtoupper($firstCharacter) . mb_substr($value, 1);
-    }
 }

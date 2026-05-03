@@ -149,7 +149,7 @@ The current entry language does not drive the UI language. The bundled `minimal`
 If a theme omits a UI key for the current UI language, YiiPress falls back to the site's default language,
 then to English, and only then to the key name itself, so theme translation files should define
 the full UI vocabulary they need.
-Archive month names in the bundled `minimal` theme come from `intl` locale data for the selected UI language rather than theme translation files.
+Archive month names in the bundled `minimal` theme come from theme translation keys `month.01` through `month.12`, with built-in English and Russian fallbacks. Language selector labels use `language.<code>` translation keys when present and otherwise fall back to built-in names or the uppercased language code. YiiPress does not require the PHP `intl` extension for this UI text.
 
 ### Syntax highlighting
 
