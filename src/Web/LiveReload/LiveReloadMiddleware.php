@@ -12,7 +12,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 final readonly class LiveReloadMiddleware implements MiddlewareInterface
 {
-    private const string SCRIPT = <<<'JS'
+    public const string SCRIPT = <<<'JS'
 <script>
 (function(){
     function connect() {
@@ -39,15 +39,19 @@ JS;
             return $response;
         }
 
-        $body = (string) $response->getBody();
+        $modified = self::injectScript((string) $response->getBody());
+
+        return $response->withBody($this->streamFactory->createStream($modified));
+    }
+
+    public static function injectScript(string $body): string
+    {
         $position = strripos($body, '</body>');
 
         if ($position === false) {
-            return $response;
+            return $body;
         }
 
-        $modified = substr($body, 0, $position) . self::SCRIPT . "\n" . substr($body, $position);
-
-        return $response->withBody($this->streamFactory->createStream($modified));
+        return substr($body, 0, $position) . self::SCRIPT . "\n" . substr($body, $position);
     }
 }

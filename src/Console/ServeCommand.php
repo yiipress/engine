@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console;
 
 use App\Environment;
+use App\Web\LiveReload\LiveReloadMiddleware;
 use App\Web\LiveReload\SiteBuildRunner;
 use FilesystemIterator;
 use HttpSoft\Message\ServerRequest;
@@ -33,8 +34,10 @@ use Yiisoft\Yii\Console\ExitCode;
 use Yiisoft\Yii\Runner\Http\HttpApplicationRunner;
 
 use function fclose;
+use function file_get_contents;
 use function getcwd;
 use function is_dir;
+use function is_file;
 use function microtime;
 use function pcntl_async_signals;
 use function pcntl_fork;
@@ -44,8 +47,10 @@ use function pcntl_wexitstatus;
 use function pcntl_wifexited;
 use function pcntl_wifsignaled;
 use function parse_url;
+use function pathinfo;
 use function posix_kill;
 use function preg_split;
+use function realpath;
 use function sprintf;
 use function strlen;
 use function str_starts_with;
@@ -61,6 +66,25 @@ final class ServeCommand extends Command
     private const string LIVE_RELOAD_PATH = '/_live-reload';
     private const int LIVE_RELOAD_RETRY_MILLISECONDS = 1_000;
     private const float LIVE_RELOAD_TIMEOUT_SECONDS = 20.0;
+    private const array MIME_TYPES = [
+        'html' => 'text/html; charset=utf-8',
+        'htm' => 'text/html; charset=utf-8',
+        'css' => 'text/css; charset=utf-8',
+        'js' => 'application/javascript; charset=utf-8',
+        'json' => 'application/json',
+        'xml' => 'application/xml; charset=utf-8',
+        'svg' => 'image/svg+xml',
+        'png' => 'image/png',
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'gif' => 'image/gif',
+        'webp' => 'image/webp',
+        'ico' => 'image/x-icon',
+        'woff' => 'font/woff',
+        'woff2' => 'font/woff2',
+        'ttf' => 'font/ttf',
+        'txt' => 'text/plain; charset=utf-8',
+    ];
 
     private string $defaultAddress;
     private string $defaultPort;
@@ -68,6 +92,7 @@ final class ServeCommand extends Command
     private string $defaultRouter;
     private int $defaultWorkers;
     private float $lastPackagedLiveReloadBuildTime = 0.0;
+    private bool $packagedOutputBuildAttempted = false;
 
     /**
      * @psalm-param array{
@@ -301,6 +326,12 @@ final class ServeCommand extends Command
             $rawRequest = substr($buffer, 0, $requestLength);
             if ($this->isPackagedLiveReloadRequest($rawRequest)) {
                 $this->writeLiveReloadResponse($connection);
+                return;
+            }
+
+            $staticResponse = $this->createPackagedStaticResponse($rawRequest);
+            if ($staticResponse !== null) {
+                $this->writePackagedStaticResponse($connection, $staticResponse);
                 return;
             }
 
@@ -586,6 +617,156 @@ final class ServeCommand extends Command
         $requestLength = $headerEnd + 4 + $contentLength;
 
         return strlen($buffer) >= $requestLength ? $requestLength : null;
+    }
+
+    /**
+     * @return array{status:int,reason:string,headers:array<string,string>,body:string,head:bool}|null
+     */
+    private function createPackagedStaticResponse(string $rawRequest): ?array
+    {
+        $requestLine = $this->parseRequestLine($rawRequest);
+        if ($requestLine === null) {
+            return null;
+        }
+
+        [$method, $target] = $requestLine;
+        $method = strtoupper($method);
+        if ($method !== 'GET' && $method !== 'HEAD') {
+            return null;
+        }
+
+        $this->ensurePackagedOutputBuilt();
+
+        $filePath = $this->resolvePackagedStaticFilePath(parse_url($target, PHP_URL_PATH) ?: '/');
+        if ($filePath === null) {
+            return $this->createPackagedNotFoundResponse($method === 'HEAD');
+        }
+
+        $body = file_get_contents($filePath);
+        if ($body === false) {
+            return $this->createPackagedNotFoundResponse($method === 'HEAD');
+        }
+
+        $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+        $contentType = self::MIME_TYPES[$extension] ?? 'application/octet-stream';
+        if (str_contains($contentType, 'text/html')) {
+            $body = LiveReloadMiddleware::injectScript($body);
+        }
+
+        return [
+            'status' => 200,
+            'reason' => 'OK',
+            'headers' => ['Content-Type' => $contentType],
+            'body' => $body,
+            'head' => $method === 'HEAD',
+        ];
+    }
+
+    private function ensurePackagedOutputBuilt(): void
+    {
+        if ($this->packagedOutputBuildAttempted) {
+            return;
+        }
+
+        $this->packagedOutputBuildAttempted = true;
+
+        $output = $this->workingDirectory() . '/output';
+        if (!is_dir($output) || $this->isEmptyDirectory($output)) {
+            $this->createPackagedLiveReloadBuildRunner()->build();
+        }
+    }
+
+    private function resolvePackagedStaticFilePath(string $path): ?string
+    {
+        $path = '/' . trim(urldecode($path), '/');
+        $root = $this->workingDirectory() . '/output';
+
+        $candidate = $root . $path;
+        if (is_file($candidate)) {
+            return $this->securePackagedStaticPath($candidate, $root);
+        }
+
+        if (is_dir($candidate)) {
+            $index = rtrim($candidate, '/') . '/index.html';
+            if (is_file($index)) {
+                return $this->securePackagedStaticPath($index, $root);
+            }
+        }
+
+        return null;
+    }
+
+    private function securePackagedStaticPath(string $filePath, string $root): ?string
+    {
+        $realPath = realpath($filePath);
+        $realRoot = realpath($root);
+
+        if ($realPath === false || $realRoot === false) {
+            return null;
+        }
+
+        if ($realPath !== $realRoot && !str_starts_with($realPath, $realRoot . '/')) {
+            return null;
+        }
+
+        return $realPath;
+    }
+
+    /**
+     * @return array{status:int,reason:string,headers:array<string,string>,body:string,head:bool}
+     */
+    private function createPackagedNotFoundResponse(bool $head): array
+    {
+        $body = '<!DOCTYPE html><html lang="en"><body><h1>404 Not Found</h1></body></html>';
+        $file = $this->workingDirectory() . '/output/404.html';
+        if (is_file($file)) {
+            $content = file_get_contents($file);
+            if ($content !== false) {
+                $body = LiveReloadMiddleware::injectScript($content);
+            }
+        }
+
+        return [
+            'status' => 404,
+            'reason' => 'Not Found',
+            'headers' => ['Content-Type' => 'text/html; charset=utf-8'],
+            'body' => $body,
+            'head' => $head,
+        ];
+    }
+
+    private function isEmptyDirectory(string $path): bool
+    {
+        $handle = opendir($path);
+        if ($handle === false) {
+            return true;
+        }
+
+        while (($entry = readdir($handle)) !== false) {
+            if ($entry !== '.' && $entry !== '..') {
+                closedir($handle);
+                return false;
+            }
+        }
+
+        closedir($handle);
+        return true;
+    }
+
+    /**
+     * @param array{status:int,reason:string,headers:array<string,string>,body:string,head:bool} $response
+     */
+    private function writePackagedStaticResponse(ConnectionInterface $connection, array $response): void
+    {
+        $body = $response['head'] ? '' : $response['body'];
+
+        $responseText = sprintf("HTTP/1.1 %d %s\r\n", $response['status'], $response['reason']);
+        foreach ($response['headers'] as $name => $value) {
+            $responseText .= $name . ': ' . $value . "\r\n";
+        }
+
+        $responseText .= 'Content-Length: ' . strlen($response['body']) . "\r\n";
+        $connection->end($responseText . "Connection: close\r\n\r\n" . $body);
     }
 
     private function writeBadRequest(ConnectionInterface $connection): void

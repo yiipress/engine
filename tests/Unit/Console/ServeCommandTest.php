@@ -13,6 +13,11 @@ use Symfony\Component\Console\Tester\CommandTester;
 use Yiisoft\Yii\Console\ExitCode;
 use Yiisoft\Yii\Runner\Http\HttpApplicationRunner;
 
+use function chdir;
+use function getcwd;
+use function mkdir;
+use function sys_get_temp_dir;
+
 final class ServeCommandTest extends TestCase
 {
     #[Test]
@@ -74,6 +79,70 @@ final class ServeCommandTest extends TestCase
         self::assertTrue($method->invoke($command, "GET /_live-reload?since=1 HTTP/1.1\r\nHost: example.test\r\n\r\n"));
         self::assertFalse($method->invoke($command, "POST /_live-reload HTTP/1.1\r\nHost: example.test\r\n\r\n"));
         self::assertFalse($method->invoke($command, "GET /blog/ HTTP/1.1\r\nHost: example.test\r\n\r\n"));
+    }
+
+    #[Test]
+    public function packagedServeCreatesStaticResponseWithoutYiiDispatch(): void
+    {
+        $previousDirectory = getcwd();
+        self::assertIsString($previousDirectory);
+
+        $root = sys_get_temp_dir() . '/yiipress-packaged-static-' . uniqid();
+        mkdir($root . '/output/blog', 0o755, true);
+        file_put_contents($root . '/output/blog/index.html', '<html><body><h1>Blog</h1></body></html>');
+
+        try {
+            chdir($root);
+
+            $command = new ServeCommand(packaged: true);
+            $method = new ReflectionMethod($command, 'createPackagedStaticResponse');
+
+            $response = $method->invoke($command, "GET /blog/ HTTP/1.1\r\nHost: example.test\r\n\r\n");
+        } finally {
+            chdir($previousDirectory);
+            unlink($root . '/output/blog/index.html');
+            rmdir($root . '/output/blog');
+            rmdir($root . '/output');
+            rmdir($root);
+        }
+
+        self::assertIsArray($response);
+        self::assertSame(200, $response['status']);
+        self::assertIsArray($response['headers']);
+        self::assertArrayHasKey('Content-Type', $response['headers']);
+        self::assertIsString($response['headers']['Content-Type']);
+        self::assertIsString($response['body']);
+        self::assertSame('text/html; charset=utf-8', $response['headers']['Content-Type']);
+        self::assertStringContainsString('<h1>Blog</h1>', $response['body']);
+        self::assertStringContainsString('EventSource("/_live-reload")', $response['body']);
+    }
+
+    #[Test]
+    public function packagedServePreventsStaticPathTraversal(): void
+    {
+        $previousDirectory = getcwd();
+        self::assertIsString($previousDirectory);
+
+        $root = sys_get_temp_dir() . '/yiipress-packaged-static-' . uniqid();
+        mkdir($root . '/output', 0o755, true);
+        file_put_contents($root . '/secret.txt', 'secret');
+
+        try {
+            chdir($root);
+
+            $command = new ServeCommand(packaged: true);
+            $method = new ReflectionMethod($command, 'createPackagedStaticResponse');
+
+            $response = $method->invoke($command, "GET /../secret.txt HTTP/1.1\r\nHost: example.test\r\n\r\n");
+        } finally {
+            chdir($previousDirectory);
+            unlink($root . '/secret.txt');
+            rmdir($root . '/output');
+            rmdir($root);
+        }
+
+        self::assertIsArray($response);
+        self::assertSame(404, $response['status']);
     }
 
     #[Test]
