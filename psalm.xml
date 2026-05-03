@@ -19,7 +19,7 @@
         </ignoreFiles>
     </projectFiles>
     <stubs>
-        <file name="packages/highlighter-extension/yiipress_highlighter.stub.php" />
+        <file name="stubs/highlighter.stub.php" />
     </stubs>
     <issueHandlers>
         <MixedAssignment errorLevel="suppress" />

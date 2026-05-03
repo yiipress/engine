@@ -30,18 +30,19 @@ FROM base AS highlighter-extension-builder
 ENV CARGO_HOME=/root/.cargo \
     RUSTUP_HOME=/usr/local/rustup \
     PATH="/root/.cargo/bin:${PATH}"
+COPY --from=composer /composer /usr/bin/composer
 COPY --from=rust:bookworm /usr/local/cargo /root/.cargo
 COPY --from=rust:bookworm /usr/local/rustup /usr/local/rustup
-COPY packages/highlighter-extension/ /build/highlighter-extension/
+RUN composer create-project --no-dev --no-progress --no-interaction yiipress/highlighter /build/highlighter-extension dev-master
 RUN cd /build/highlighter-extension \
     && phpize \
-    && ./configure --enable-yiipress-highlighter \
+    && ./configure \
     && make -j"$(nproc)" \
     && make install
 
 FROM base AS app-base
 COPY --from=highlighter-extension-builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
-RUN docker-php-ext-enable yiipress_highlighter
+RUN docker-php-ext-enable highlighter
 
 LABEL org.opencontainers.image.licenses="BSD-3-Clause" \
     org.opencontainers.image.title="YiiPress" \
@@ -120,13 +121,13 @@ FROM app-base AS static-package
 ARG PHP_VERSION=8.5
 ARG MD4C_VERSION=1.1
 ARG STATIC_PHP_CLI_REF=5b5861c366a0d94bc84002db7b3f46144b388fbb
-ARG STATIC_PHP_EXTENSIONS=ctype,dom,filter,inotify,mbstring,md4c,opcache,pcntl,phar,posix,xml,xmlwriter,yaml,yiipress_highlighter
+ARG STATIC_PHP_EXTENSIONS=ctype,dom,filter,highlighter,inotify,mbstring,md4c,opcache,pcntl,phar,posix,xml,xmlwriter,yaml
 ARG TARGETARCH
 ENV CARGO_HOME=/root/.cargo \
     RUSTUP_HOME=/usr/local/rustup \
     PATH="/usr/local/musl/bin:/root/.cargo/bin:${PATH}" \
     CARGO_BUILD_TARGET=x86_64-unknown-linux-musl \
-    YIIPRESS_HIGHLIGHTER_SOURCE=/opt/yiipress-highligher \
+    HIGHLIGHTER_SOURCE=/opt/yiipress-highlighter \
     YIIPRESS_MD4C_SOURCE=/opt/md4c-extension
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -163,7 +164,7 @@ RUN curl -fsSL "https://github.com/crazywhalecc/static-php-cli/archive/${STATIC_
 RUN mkdir -p /opt/md4c-extension \
     && curl -fsSL "https://pecl.php.net/get/md4c-${MD4C_VERSION}.tgz" \
     | tar -xz --strip-components=1 -C /opt/md4c-extension
-COPY packages/highlighter-extension/ /opt/yiipress-highligher/
+RUN composer create-project --no-dev --no-progress --no-interaction yiipress/highlighter /opt/yiipress-highlighter dev-master
 COPY build/static-php/patch-extension-config.php /opt/patch-extension-config.php
 COPY build/static-php/patch-source-config.php /opt/patch-source-config.php
 COPY build/static-php/register-yiipress-highlighter.php /opt/register-yiipress-highlighter.php

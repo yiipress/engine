@@ -24,8 +24,8 @@ final class SyntaxHighlighterBench
 
     public function setUp(): void
     {
-        if (!extension_loaded('yiipress_highlighter')) {
-            throw new RuntimeException('ext-yiipress_highlighter is required for SyntaxHighlighterBench.');
+        if (!extension_loaded('highlighter')) {
+            throw new RuntimeException('ext-highlighter is required for SyntaxHighlighterBench.');
         }
 
         $this->highlighter = new Highlighter();

@@ -43,7 +43,7 @@
         "ext-posix": "*",
         "ext-xmlwriter": "*",
         "ext-yaml": "*",
-        "ext-yiipress_highlighter": "*",
+        "ext-highlighter": "*",
         "httpsoft/http-message": "^1.1.6",
         "psr/container": "^2.0.2",
         "psr/http-factory": "^1.1",
@@ -78,7 +78,7 @@
         "vimeo/psalm": "^6.16.1"
     },
     "suggest": {
-        "yiipress/highligher": "Installs ext-yiipress_highlighter, which provides YiiPress\\Highlighter for native syntax highlighting."
+        "yiipress/highlighter": "Installs ext-highlighter, which provides YiiPress\\Highlighter for native syntax highlighting."
     },
     "autoload": {
         "psr-4": {

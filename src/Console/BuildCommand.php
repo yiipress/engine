@@ -103,6 +103,7 @@ final class BuildCommand extends Command
 
     protected function configure(): void
     {
+        $this->addUsage('--content-dir=content --output-dir=output');
         $this->addOption(
             'content-dir',
             'c',

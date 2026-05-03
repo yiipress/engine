@@ -40,9 +40,9 @@ extern zend_module_entry yaml_module_entry;
 # define phpext_yaml_ptr &yaml_module_entry
 #endif
 
-extern zend_module_entry yiipress_highlighter_module_entry;
-#ifndef phpext_yiipress_highlighter_ptr
-# define phpext_yiipress_highlighter_ptr &yiipress_highlighter_module_entry
+extern zend_module_entry highlighter_module_entry;
+#ifndef phpext_highlighter_ptr
+# define phpext_highlighter_ptr &highlighter_module_entry
 #endif
 C;
 
@@ -55,8 +55,8 @@ C;
     }
 
     $target = getenv('CARGO_BUILD_TARGET') ?: 'x86_64-unknown-linux-musl';
-    $highlighterSource = getenv('YIIPRESS_HIGHLIGHTER_SOURCE') ?: SOURCE_PATH . '/php-src/ext/yiipress_highlighter';
-    $rustLibrary = "{$highlighterSource}/target/{$target}/release/libyiipress_highlighter.a";
+    $highlighterSource = getenv('HIGHLIGHTER_SOURCE') ?: SOURCE_PATH . '/php-src/ext/highlighter';
+    $rustLibrary = "{$highlighterSource}/target/{$target}/release/libhighlighter.a";
     if (!file_exists($rustLibrary)) {
         throw new RuntimeException("Rust highlighter library was not built at {$rustLibrary}.");
     }
@@ -89,12 +89,32 @@ if (patch_point() !== 'before-php-buildconf') {
     return;
 }
 
-$source = getenv('YIIPRESS_HIGHLIGHTER_SOURCE');
+$source = getenv('HIGHLIGHTER_SOURCE');
 if ($source === false || $source === '') {
-    throw new RuntimeException('YIIPRESS_HIGHLIGHTER_SOURCE is required.');
+    throw new RuntimeException('HIGHLIGHTER_SOURCE is required.');
 }
 
-FileSystem::copyDir($source, SOURCE_PATH . '/php-src/ext/yiipress_highlighter');
+FileSystem::copyDir($source, SOURCE_PATH . '/php-src/ext/highlighter');
+
+$highlighterConfig = SOURCE_PATH . '/php-src/ext/highlighter/config.m4';
+$highlighterConfigContents = file_get_contents($highlighterConfig);
+if ($highlighterConfigContents === false) {
+    throw new RuntimeException('Unable to read highlighter config.m4.');
+}
+
+$highlighterConfigContents = str_replace(
+    [
+        "\next_shared=yes\n",
+        'PHP_NEW_EXTENSION([highlighter], [highlighter.c], [yes])',
+    ],
+    [
+        "\n",
+        'PHP_NEW_EXTENSION([highlighter], [highlighter.c], [$ext_shared])',
+    ],
+    $highlighterConfigContents,
+);
+
+file_put_contents($highlighterConfig, $highlighterConfigContents);
 
 $md4cSource = getenv('YIIPRESS_MD4C_SOURCE');
 if ($md4cSource === false || $md4cSource === '') {

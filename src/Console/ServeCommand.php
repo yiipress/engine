@@ -93,6 +93,8 @@ final class ServeCommand extends Command
 
     private float $lastLiveReloadBuildTime = 0.0;
     private bool $outputBuildAttempted = false;
+    private ?string $contentDir = null;
+    private ?string $outputDir = null;
     /** @var resource|null */
     private mixed $liveReloadStream = null;
     /** @var array<int, ConnectionInterface> */
@@ -106,7 +108,22 @@ final class ServeCommand extends Command
             ->setHelp(
                 'In order to access server from remote machines use 0.0.0.0:8000. That is especially useful when running server in a virtual machine.'
             )
+            ->addUsage('--content-dir=content --output-dir=output')
             ->addArgument('address', InputArgument::OPTIONAL, 'Host to serve at', self::DEFAULT_ADDRESS)
+            ->addOption(
+                'content-dir',
+                'c',
+                InputOption::VALUE_REQUIRED,
+                'Path to the content directory',
+                'content',
+            )
+            ->addOption(
+                'output-dir',
+                'o',
+                InputOption::VALUE_REQUIRED,
+                'Path to the output directory',
+                'output',
+            )
             ->addOption('port', 'p', InputOption::VALUE_OPTIONAL, 'Port to serve at', self::DEFAULT_PORT)
             ->addOption(
                 'workers',
@@ -136,6 +153,15 @@ final class ServeCommand extends Command
 
         /** @var string $port */
         $port = $input->getOption('port');
+
+        $root = $this->workingDirectory();
+        /** @var string $contentDirOption */
+        $contentDirOption = $input->getOption('content-dir');
+        $this->contentDir = $this->resolvePath($contentDirOption, $root);
+
+        /** @var string $outputDirOption */
+        $outputDirOption = $input->getOption('output-dir');
+        $this->outputDir = $this->resolvePath($outputDirOption, $root);
 
         if (!str_contains($address, ':')) {
             $address .= ':' . $port;
@@ -452,8 +478,8 @@ final class ServeCommand extends Command
 
         return new SiteBuildRunner(
             yiiBinary: $yiiBinary,
-            contentDir: $root . '/content',
-            outputDir: $root . '/output',
+            contentDir: $this->contentDir(),
+            outputDir: $this->outputDir(),
         );
     }
 
@@ -464,7 +490,7 @@ final class ServeCommand extends Command
     {
         $directories = [];
 
-        foreach ([$this->workingDirectory() . '/content', $this->workingDirectory() . '/themes'] as $directory) {
+        foreach ([$this->contentDir(), $this->workingDirectory() . '/themes'] as $directory) {
             if (!is_dir($directory)) {
                 continue;
             }
@@ -654,7 +680,7 @@ final class ServeCommand extends Command
 
         $this->outputBuildAttempted = true;
 
-        $output = $this->workingDirectory() . '/output';
+        $output = $this->outputDir();
         if (!is_dir($output) || $this->isEmptyDirectory($output)) {
             $this->createLiveReloadBuildRunner()->build();
         }
@@ -663,7 +689,7 @@ final class ServeCommand extends Command
     private function resolveStaticFilePath(string $path): ?string
     {
         $path = '/' . trim(urldecode($path), '/');
-        $root = $this->workingDirectory() . '/output';
+        $root = $this->outputDir();
 
         $candidate = $root . $path;
         if (is_file($candidate)) {
@@ -702,7 +728,7 @@ final class ServeCommand extends Command
     private function createNotFoundResponse(bool $head): array
     {
         $body = '<!DOCTYPE html><html lang="en"><body><h1>404 Not Found</h1></body></html>';
-        $file = $this->workingDirectory() . '/output/404.html';
+        $file = $this->outputDir() . '/404.html';
         if (is_file($file)) {
             $content = file_get_contents($file);
             if ($content !== false) {
@@ -844,5 +870,24 @@ final class ServeCommand extends Command
         }
 
         return $directory;
+    }
+
+    private function contentDir(): string
+    {
+        return $this->contentDir ?? $this->workingDirectory() . '/content';
+    }
+
+    private function outputDir(): string
+    {
+        return $this->outputDir ?? $this->workingDirectory() . '/output';
+    }
+
+    private function resolvePath(string $path, string $rootPath): string
+    {
+        if (str_starts_with($path, '/')) {
+            return $path;
+        }
+
+        return $rootPath . '/' . $path;
     }
 }

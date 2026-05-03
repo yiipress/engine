@@ -31,7 +31,7 @@ final class SyntaxHighlightProcessor implements ContentProcessorInterface, SiteC
         }
 
         try {
-            return $this->highlighter->highlightHtml($content, $this->theme);
+            return $this->highlighter->highlightHtml($content, $this->theme === '' ? null : $this->theme);
         } catch (RuntimeException $e) {
             throw new RuntimeException("Failed to highlight code in entry \"{$entry->title}\".", 0, $e);
         }

@@ -63,13 +63,20 @@ With `--workers=N` (N > 1), entry rendering and writing is parallelized across N
 Starts the ReactPHP preview server for local development.
 
 ```
-yii serve [address] [--port=19777] [--workers=2]
+yii serve [address] [--content-dir=content] [--output-dir=output] [--port=19777] [--workers=2]
 ```
+
+**Options:**
+
+- `--content-dir`, `-c` — path to the content directory (default: `content`). Absolute or relative to project root.
+- `--output-dir`, `-o` — path to the output directory served by the preview server (default: `output`). Absolute or relative to project root.
+- `--port`, `-p` — port to serve at when the address argument does not include a port (default: `19777`).
+- `--workers`, `-w` — number of preforked server workers (default: `2`).
 
 The Docker development server uses `yii serve 0.0.0.0 --port=19777`, exposed to the host port configured by `DEV_PORT` in `docker/.env`. Alternatively, use `composer serve` which disables the process timeout.
 On startup, `serve` only prints the URL it is listening on. Build progress is printed by rebuilds triggered after file changes.
 
-`serve` does not look for `public/index.php`. It runs on ReactPHP streams with preforked worker processes and serves built files from `output/` directly in the server loop. It streams non-HTML static files, so large images, fonts, and media are sent with backpressure instead of being buffered as full response bodies. It also handles the live reload SSE endpoint directly there with one shared inotify watcher per worker, so fast navigation does not recreate filesystem watches for every EventSource connection. Idle live reload connections and static file responses do not block Yii request workers, and browser EventSource connections are closed on page navigation. It does not require PHP's built-in server or native `sockets` extension. Content and output paths resolve from the current working directory, so run the binary from the site directory that contains `content/` and `output/`.
+`serve` does not look for `public/index.php`. It runs on ReactPHP streams with preforked worker processes and serves built files from the configured output directory directly in the server loop. It streams non-HTML static files, so large images, fonts, and media are sent with backpressure instead of being buffered as full response bodies. It also handles the live reload SSE endpoint directly there with one shared inotify watcher per worker, so fast navigation does not recreate filesystem watches for every EventSource connection. Idle live reload connections and static file responses do not block Yii request workers, and browser EventSource connections are closed on page navigation. It does not require PHP's built-in server or native `sockets` extension. Content and output paths resolve from the current working directory, so run the binary from the site directory or pass explicit `--content-dir` and `--output-dir` paths.
 
 See [Web application](web-app.md) for details on static file serving and live reload.
 

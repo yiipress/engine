@@ -10,8 +10,8 @@ if ($configPath === null) {
 
 $json = json_decode(file_get_contents($configPath) ?: '', true, flags: JSON_THROW_ON_ERROR);
 $externalExtensions = [
+    'highlighter',
     'md4c',
-    'yiipress_highlighter',
 ];
 
 foreach ($externalExtensions as $extension) {
