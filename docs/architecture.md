@@ -239,14 +239,15 @@ Two separate pipelines are configured via Yii3 DI container in `config/common/di
 
 - **MarkdownProcessor** — converts markdown to HTML using md4c. Accepts `MarkdownConfig` for feature toggles
 - **OEmbedProcessor** — expands standalone provider URLs into embed HTML before markdown via pluggable `OEmbedInterface` implementations
-- **SyntaxHighlightProcessor** — server-rendered code block highlighting via `YiiPress\Highlighter::highlightHtml()` from `ext-yiipress_highlighter`. The reusable native highlighter also exposes `highlight()` for raw code strings without an HTML wrapper. Uses syntect + rayon compiled as a Rust static library and linked into the PHP extension, with explicit string lengths passed across the C boundary to reduce per-call overhead
+- **SyntaxHighlightProcessor** — server-rendered code block highlighting via `YiiPress\Highlighter::highlightHtml()` from `ext-highlighter`. The reusable native highlighter package, `yiipress/highlighter`, also exposes `highlight()` for raw code strings without an HTML wrapper. Uses syntect + rayon compiled as a Rust static library and linked into the PHP extension, with explicit string lengths passed across the C boundary to reduce per-call overhead
 
 
 ## Serve mode
 
-In serve mode, YiiPress runs a ReactPHP preview server over the built `output/` directory.
+In serve mode, YiiPress runs a ReactPHP preview server over the built output directory, `output/` by default.
 
-- The first request triggers a build if `output/` is missing or empty.
+- The first request triggers a build if the configured output directory is missing or empty.
+- `--content-dir` and `--output-dir` are passed through to live reload rebuilds and static file serving.
 - Static file serving and live reload SSE are handled in the server loop, so normal page and asset responses avoid Yii HTTP runner overhead.
 - Non-HTML assets are streamed with backpressure instead of being buffered into memory.
 - Each worker owns one shared live reload inotify watcher and attaches all SSE clients in that worker to it.

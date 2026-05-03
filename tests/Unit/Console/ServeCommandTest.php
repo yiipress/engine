@@ -56,6 +56,84 @@ final class ServeCommandTest extends TestCase
     }
 
     #[Test]
+    public function serveExposesContentAndOutputDirectoryOptions(): void
+    {
+        $command = new ServeCommand();
+
+        self::assertTrue($command->getDefinition()->hasOption('content-dir'));
+        self::assertTrue($command->getDefinition()->hasOption('output-dir'));
+        self::assertSame('c', $command->getDefinition()->getOption('content-dir')->getShortcut());
+        self::assertSame('o', $command->getDefinition()->getOption('output-dir')->getShortcut());
+        self::assertSame('content', $command->getDefinition()->getOption('content-dir')->getDefault());
+        self::assertSame('output', $command->getDefinition()->getOption('output-dir')->getDefault());
+    }
+
+    #[Test]
+    public function serveUsesConfiguredOutputDirectoryForStaticResponses(): void
+    {
+        $previousDirectory = getcwd();
+        self::assertIsString($previousDirectory);
+
+        $root = sys_get_temp_dir() . '/yiipress-serve-custom-output-' . uniqid();
+        mkdir($root . '/site-output/blog', 0o755, true);
+        file_put_contents($root . '/site-output/blog/index.html', '<html><body><h1>Custom Blog</h1></body></html>');
+
+        try {
+            chdir($root);
+
+            $command = new ServeCommand();
+            $tester = new CommandTester($command);
+            $tester->execute(['--output-dir' => 'site-output']);
+
+            $method = new ReflectionMethod($command, 'createStaticResponse');
+            $response = $method->invoke($command, "GET /blog/ HTTP/1.1\r\nHost: example.test\r\n\r\n");
+        } finally {
+            chdir($previousDirectory);
+            unlink($root . '/site-output/blog/index.html');
+            rmdir($root . '/site-output/blog');
+            rmdir($root . '/site-output');
+            rmdir($root);
+        }
+
+        self::assertIsArray($response);
+        self::assertSame(200, $response['status']);
+        self::assertIsString($response['body']);
+        self::assertStringContainsString('<h1>Custom Blog</h1>', $response['body']);
+    }
+
+    #[Test]
+    public function servePassesConfiguredDirectoriesToLiveReloadBuilds(): void
+    {
+        $previousDirectory = getcwd();
+        self::assertIsString($previousDirectory);
+
+        $root = sys_get_temp_dir() . '/yiipress-serve-custom-build-' . uniqid();
+        mkdir($root);
+
+        try {
+            chdir($root);
+
+            $command = new ServeCommand();
+            $tester = new CommandTester($command);
+            $tester->execute([
+                '--content-dir' => 'site-content',
+                '--output-dir' => 'site-output',
+            ]);
+
+            $method = new ReflectionMethod($command, 'createLiveReloadBuildRunner');
+            $runner = $method->invoke($command);
+            $contentDir = new ReflectionProperty($runner, 'contentDir');
+            $outputDir = new ReflectionProperty($runner, 'outputDir');
+        } finally {
+            chdir($previousDirectory);
+            rmdir($root);
+        }
+
+        self::assertSame($root . '/site-content', $contentDir->getValue($runner));
+        self::assertSame($root . '/site-output', $outputDir->getValue($runner));
+    }
+
+    #[Test]
     public function serveCreatesFreshHttpRunnerPerRequest(): void
     {
         $command = new ServeCommand();

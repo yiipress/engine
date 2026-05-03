@@ -188,22 +188,16 @@ final class ConfigurationPackagingTest extends TestCase
     }
 
     #[Test]
-    public function highlighterExtensionComposerManifestUsesPieMetadata(): void
+    public function dockerBuildsHighlighterExtensionFromPackagistPackage(): void
     {
-        $contents = file_get_contents(dirname(__DIR__, 3) . '/packages/highlighter-extension/composer.json');
-        self::assertIsString($contents);
+        $dockerfile = file_get_contents(dirname(__DIR__, 3) . '/docker/Dockerfile');
+        self::assertIsString($dockerfile);
 
-        $manifest = json_decode($contents, true, flags: JSON_THROW_ON_ERROR);
-        self::assertIsArray($manifest);
-
-        self::assertSame('php-ext', $manifest['type'] ?? null);
-        self::assertArrayNotHasKey('replace', $manifest);
-        self::assertSame(['php' => '^8.5'], $manifest['require'] ?? null);
-        self::assertIsArray($manifest['php-ext'] ?? null);
-        /** @var array<string, mixed> $extensionMetadata */
-        $extensionMetadata = $manifest['php-ext'];
-        self::assertSame('yiipress_highlighter', $extensionMetadata['extension-name'] ?? null);
-        self::assertArrayNotHasKey('support-zts', $extensionMetadata);
+        self::assertStringContainsString('composer create-project --no-dev --no-progress --no-interaction yiipress/highlighter', $dockerfile);
+        self::assertStringContainsString('docker-php-ext-enable highlighter', $dockerfile);
+        self::assertStringNotContainsString('packages/highlighter-extension', $dockerfile);
+        self::assertStringNotContainsString('yiipress-highligher', $dockerfile);
+        self::assertStringNotContainsString('yiipress_highlighter', $dockerfile);
     }
 
     /**

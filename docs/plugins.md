@@ -45,10 +45,10 @@ echo "Hello, world!";
 ```
 ````
 
-The highlighter is a reusable native PHP extension package, `yiipress/highligher`. The extension
+The highlighter is a reusable native PHP extension package, `yiipress/highlighter`. The extension
 defines the PHP API as `YiiPress\Highlighter`, builds a Rust
 library with [syntect](https://github.com/trishume/syntect) and [rayon](https://github.com/rayon-rs/rayon),
-then statically links that library into `ext-yiipress_highlighter`. It processes all
+then statically links that library into `ext-highlighter`. It processes all
 `<pre><code class="language-xxx">` blocks in the rendered HTML, replacing them with
 inline-styled highlighted output.
 
@@ -58,12 +58,12 @@ extra C-string scans at the PHP/Rust boundary.
 Rayon parallelizes highlighting across code blocks within a single page, which helps
 when a page contains many code blocks (e.g., documentation pages).
 
-The extension is compiled during Docker image build and enabled as `ext-yiipress_highlighter`.
+The extension is downloaded from Packagist during Docker image build, compiled, and enabled as `ext-highlighter`.
 No additional setup is needed in the YiiPress Docker images. Outside Docker, install the extension
-with PIE after the package is published:
+with PIE:
 
 ```bash
-pie install yiipress/highligher
+pie install yiipress/highlighter
 ```
 
 Use it directly from PHP:
