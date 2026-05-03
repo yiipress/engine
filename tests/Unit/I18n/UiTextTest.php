@@ -27,6 +27,7 @@ final class UiTextTest extends TestCase
         assertSame('Закрыть поиск', $ui->get('search_close'));
         assertSame('Страница 2 из 5', $ui->get('page_of', ['current' => 2, 'total' => 5]));
         assertSame('Март', $ui->monthName(3));
+        assertSame('Русский', $ui->languageName('ru-RU'));
     }
 
     public function testFallsBackToEnglishThemeTranslationForUnknownLanguage(): void
@@ -71,7 +72,10 @@ final class UiTextTest extends TestCase
         assertArrayHasKey('en', $catalogs);
         assertArrayHasKey('ru', $catalogs);
         assertSame('Interface language', $catalogs['en']['ui_language']);
+        assertSame('March', $catalogs['en']['month.03']);
+        assertSame('Русский', $catalogs['en']['language.ru']);
         assertSame('Язык интерфейса', $catalogs['ru']['ui_language']);
+        assertSame('Март', $catalogs['ru']['month.03']);
     }
 
     public function testFallsBackToKeyWhenThemeHasNoTranslationFiles(): void
@@ -83,6 +87,7 @@ final class UiTextTest extends TestCase
         assertSame('search', $ui->get('search'));
         assertSame('Categories', $ui->taxonomyLabel('categories'));
         assertSame('Март', $ui->monthName(3));
+        assertSame('DE', $ui->languageName('de-DE'));
     }
 
     private function createTemplateResolver(): TemplateResolver

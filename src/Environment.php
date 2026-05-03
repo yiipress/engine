@@ -23,9 +23,9 @@ final class Environment
 
     private static array $values = [];
 
-    public static function prepare(): void
+    public static function prepare(?string $defaultEnvironment = null): void
     {
-        self::setEnvironment();
+        self::setEnvironment($defaultEnvironment);
         self::setBoolean('APP_DEBUG', false);
         self::setNonEmptyStringOrNull('APP_HOST_PATH', null);
     }
@@ -68,9 +68,9 @@ final class Environment
         return self::$values['APP_DEBUG'];
     }
 
-    private static function setEnvironment(): void
+    private static function setEnvironment(?string $defaultEnvironment): void
     {
-        $environment = self::getRawValue('APP_ENV');
+        $environment = self::getRawValue('APP_ENV') ?? $defaultEnvironment;
 
         if (!in_array($environment, self::ENVIRONMENTS, true)) {
             if ($environment === null) {

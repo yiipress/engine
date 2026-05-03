@@ -5,10 +5,6 @@ declare(strict_types=1);
 namespace App\I18n;
 
 use App\Build\TemplateResolver;
-use DateTimeImmutable;
-use DateTimeZone;
-use IntlDateFormatter;
-use Locale;
 use RuntimeException;
 
 use function array_filter;
@@ -19,25 +15,62 @@ use function explode;
 use function file_get_contents;
 use function is_array;
 use function is_string;
-use function mb_strtoupper;
-use function mb_substr;
 use function sprintf;
 use function str_replace;
 use function strtolower;
+use function strtoupper;
 use function strtr;
 use function ucfirst;
 use function yaml_parse;
 
 final class UiText
 {
+    /** @var array<string, array<int, string>> */
+    private const array BUILTIN_MONTH_NAMES = [
+        'en' => [
+            1 => 'January',
+            2 => 'February',
+            3 => 'March',
+            4 => 'April',
+            5 => 'May',
+            6 => 'June',
+            7 => 'July',
+            8 => 'August',
+            9 => 'September',
+            10 => 'October',
+            11 => 'November',
+            12 => 'December',
+        ],
+        'ru' => [
+            1 => 'Январь',
+            2 => 'Февраль',
+            3 => 'Март',
+            4 => 'Апрель',
+            5 => 'Май',
+            6 => 'Июнь',
+            7 => 'Июль',
+            8 => 'Август',
+            9 => 'Сентябрь',
+            10 => 'Октябрь',
+            11 => 'Ноябрь',
+            12 => 'Декабрь',
+        ],
+    ];
+
+    /** @var array<string, string> */
+    private const array BUILTIN_LANGUAGE_NAMES = [
+        'en' => 'English',
+        'ru' => 'Русский',
+    ];
+
     /** @var array<string, array<string, string>> */
     private static array $catalogCache = [];
 
-    /** @var array<string, array<int, string>> */
-    private static array $monthNameCache = [];
-
     /** @var array<string, array<string, string>> */
     private static array $resolvedCatalogCache = [];
+
+    /** @var array<int, string> */
+    private array $monthNameCache = [];
 
     /**
      * @param array<string, array<string, string>> $catalogs
@@ -134,31 +167,33 @@ final class UiText
             throw new RuntimeException('Month must be between 1 and 12.');
         }
 
-        if (isset(self::$monthNameCache[$this->language][$month])) {
-            return self::$monthNameCache[$this->language][$month];
+        if (isset($this->monthNameCache[$month])) {
+            return $this->monthNameCache[$month];
         }
 
-        $monthDate = new DateTimeImmutable(sprintf('2000-%02d-01', $month), new DateTimeZone('UTC'));
-        foreach (self::monthLocales($this->language) as $locale) {
-            $formatter = IntlDateFormatter::create(
-                $locale,
-                IntlDateFormatter::NONE,
-                IntlDateFormatter::NONE,
-                'UTC',
-                IntlDateFormatter::GREGORIAN,
-                'LLLL',
-            );
-            if (!$formatter instanceof IntlDateFormatter) {
-                continue;
-            }
+        $catalogName = $this->resolveMessage(sprintf('month.%02d', $month));
+        if ($catalogName !== null && $catalogName !== '') {
+            return $this->monthNameCache[$month] = $catalogName;
+        }
 
-            $monthName = $formatter->format($monthDate);
-            if (is_string($monthName) && $monthName !== '') {
-                return self::$monthNameCache[$this->language][$month] = self::capitalizeUtf8($monthName);
+        foreach (array_unique([$this->language, $this->defaultLanguage, 'en']) as $language) {
+            if (isset(self::BUILTIN_MONTH_NAMES[$language][$month])) {
+                return $this->monthNameCache[$month] = self::BUILTIN_MONTH_NAMES[$language][$month];
             }
         }
 
         throw new RuntimeException('Unable to format month name for language: ' . $this->language);
+    }
+
+    public function languageName(string $language): string
+    {
+        $normalizedLanguage = self::normalizeLanguage($language);
+        $catalogName = $this->resolveMessage('language.' . $normalizedLanguage);
+        if ($catalogName !== null && $catalogName !== '') {
+            return $catalogName;
+        }
+
+        return self::BUILTIN_LANGUAGE_NAMES[$normalizedLanguage] ?? strtoupper($normalizedLanguage);
     }
 
     public function taxonomyLabel(string $taxonomyName): string
@@ -219,16 +254,6 @@ final class UiText
         return $parts[0];
     }
 
-    private static function capitalizeUtf8(string $value): string
-    {
-        $firstCharacter = mb_substr($value, 0, 1);
-        if ($firstCharacter === '') {
-            return $value;
-        }
-
-        return mb_strtoupper($firstCharacter) . mb_substr($value, 1);
-    }
-
     /**
      * @return list<string>
      */
@@ -283,17 +308,4 @@ final class UiText
         return self::$resolvedCatalogCache[$cacheKey] = $catalog;
     }
 
-    /**
-     * @return list<string>
-     */
-    private static function monthLocales(string $language): array
-    {
-        $exactLanguage = strtolower(str_replace('_', '-', $language));
-
-        return array_values(array_unique(array_filter([
-            Locale::canonicalize(str_replace('-', '_', $exactLanguage)),
-            Locale::canonicalize(str_replace('-', '_', self::normalizeLanguage($language))),
-            'en',
-        ])));
-    }
 }
