@@ -4,11 +4,13 @@ The web application serves the built site for local development. In the Docker d
 
 Source, PHAR, and static binary execution all use the same `serve` command. They resolve `content/` and `output/` from the current working directory by default, and custom paths can be passed with `--content-dir` and `--output-dir`. The server uses ReactPHP stream sockets with preforked worker processes, serves built files from the output directory directly in the server loop, and handles the live reload SSE endpoint there too. Each worker keeps one shared inotify watcher for all live reload clients, so fast navigation does not repeat recursive watch setup. Idle live reload connections and static file responses do not occupy Yii request workers. EventSource clients close during page navigation, so stale browser connections are cleaned up without periodically dropping active live reload listeners. It does not require PHP's native `sockets` extension.
 
+The command validates paths before opening the socket. The content directory must exist, and the output directory must exist or be creatable and writable. If either check fails, run it with explicit paths such as `./yii serve --content-dir=content --output-dir=output`.
+
 ## Static file serving
 
 The web application serves files from the configured output directory. Requests for `/foo/` serve `<output-dir>/foo/index.html`, requests for `/style.css` serve `<output-dir>/style.css`, etc. `serve` follows these resolution rules in its ReactPHP server loop, injects the live reload script into served HTML directly, and streams non-HTML files so large images, fonts, and media do not have to be buffered into memory before being sent.
 
-If the output directory is missing or empty, a build runs automatically on the first request.
+If the output directory is empty after startup validation, a build runs automatically on the first request.
 
 ## Live reload
 

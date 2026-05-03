@@ -246,8 +246,9 @@ Two separate pipelines are configured via Yii3 DI container in `config/common/di
 
 In serve mode, YiiPress runs a ReactPHP preview server over the built output directory, `output/` by default.
 
-- The first request triggers a build if the configured output directory is missing or empty.
+- The first request triggers a build if the configured output directory is empty.
 - `--content-dir` and `--output-dir` are passed through to live reload rebuilds and static file serving.
+- Startup fails before opening the socket if the content directory is missing or the output directory is not writable or cannot be created.
 - Static file serving and live reload SSE are handled in the server loop, so normal page and asset responses avoid Yii HTTP runner overhead.
 - Non-HTML assets are streamed with backpressure instead of being buffered into memory.
 - Each worker owns one shared live reload inotify watcher and attaches all SSE clients in that worker to it.
@@ -260,7 +261,7 @@ Caching targets the most expensive operations:
 - **Markdown HTML cache** — keyed by content hash (accounts for plugin changes). Avoids re-rendering unchanged content.
 - **Site index cache** — for incremental builds, the full index is cached and selectively invalidated when files change.
 
-Cache storage: filesystem (`runtime/cache/`). No external dependencies.
+Cache storage: filesystem. Source installs use `runtime/cache/`; PHAR and static binary runs use a project-scoped cache under the OS temp directory so packaged commands do not write framework state into the site directory. No external dependencies.
 
 ## Directory structure (source code)
 

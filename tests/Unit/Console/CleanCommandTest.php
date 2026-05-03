@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiPress\Tests\Unit\Console;
 
+use YiiPress\RuntimePaths;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
 
@@ -24,7 +25,7 @@ final class CleanCommandTest extends TestCase
     protected function setUp(): void
     {
         $this->outputDir = dirname(__DIR__, 2) . '/Support/Data/output';
-        $this->cacheDir = dirname(__DIR__, 3) . '/runtime/cache/build';
+        $this->cacheDir = RuntimePaths::cachePath(dirname(__DIR__, 3));
     }
 
     protected function tearDown(): void
@@ -32,7 +33,7 @@ final class CleanCommandTest extends TestCase
         $this->removeDir($this->outputDir);
         $this->removeDir($this->cacheDir);
 
-        $manifestPath = dirname(__DIR__, 3) . '/runtime/cache/build-manifest-' . hash('xxh128', $this->outputDir) . '.json';
+        $manifestPath = RuntimePaths::cachePath(dirname(__DIR__, 3)) . '/build-manifest-' . hash('xxh128', $this->outputDir) . '.json';
         if (is_file($manifestPath)) {
             unlink($manifestPath);
         }

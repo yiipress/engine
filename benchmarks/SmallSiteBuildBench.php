@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiPress\Benchmarks;
 
+use YiiPress\RuntimePaths;
 use FilesystemIterator;
 use PhpBench\Attributes\AfterMethods;
 use PhpBench\Attributes\BeforeMethods;
@@ -57,12 +58,13 @@ final class SmallSiteBuildBench
 
     public function tearDown(): void
     {
-        $manifestPath = $this->rootPath . '/runtime/cache/build-manifest-' . hash('xxh128', $this->outputDir) . '.json';
+        $cachePath = RuntimePaths::cachePath($this->rootPath);
+        $manifestPath = $cachePath . '/build-manifest-' . hash('xxh128', $this->outputDir) . '.json';
         if (is_file($manifestPath)) {
             unlink($manifestPath);
         }
 
-        $buildCacheDir = $this->rootPath . '/runtime/cache/build';
+        $buildCacheDir = $cachePath . '/build';
         if (is_dir($buildCacheDir)) {
             $this->removeDir($buildCacheDir);
         }

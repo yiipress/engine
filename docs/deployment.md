@@ -149,5 +149,6 @@ The command writes artifacts to `dist/`:
 The PHAR builder copies only runtime inputs into the build stage: `config/`, `public/`, `src/`, `themes/`, `yii`, Composer metadata, and the PHAR build script. Dependencies are installed with `--no-dev` inside that stage before the PHAR is assembled.
 The static executable includes `ext-highlighter`, so syntax highlighting does not need FFI or an external shared library. `serve` uses ReactPHP stream sockets with preforked worker processes, serves built files and live reload SSE in the server loop, keeps one shared live reload watcher per worker, and does not require PHP's native `sockets` extension.
 Relative `content-dir`, `output-dir`, `new`, `clean`, `serve`, and `import` paths are resolved from the directory where you run `yiipress`, not from the packaged executable location.
+PHAR and static binary runs keep build cache and incremental manifests under the OS temp directory, keyed by the current project directory, instead of writing to `runtime/` in the site checkout. `yiipress clean` removes that packaged cache as well as the configured output directory.
 
 GitHub Actions builds the same artifacts in the `Package Static Binary` workflow and uploads them as a workflow artifact.

@@ -15,7 +15,7 @@ yii build [--content-dir=content] [--output-dir=output] [--workers=auto] [--no-c
 - `--content-dir`, `-c` — path to the content directory (default: `content`). Absolute or relative to project root.
 - `--output-dir`, `-o` — path to the output directory (default: `output`). Absolute or relative to project root.
 - `--workers`, `-w` — number of parallel workers or `auto` (default: `auto`). Auto mode detects available CPU capacity inside the container, caps it at `4`, and still falls back to sequential work for small task sets.
-- `--no-cache` — disable build cache and incremental builds. Forces a full rebuild, clearing the output directory. By default, rendered HTML is cached in `runtime/cache/build/` and a build manifest tracks source file hashes for incremental builds.
+- `--no-cache` — disable build cache and incremental builds. Forces a full rebuild, clearing the output directory. By default, rendered HTML is cached and a build manifest tracks source file hashes for incremental builds.
 - `--drafts` — include draft entries in the build. By default, entries with `draft: true` in front matter are excluded from HTML output, feeds, and sitemap.
 - `--future` — include future-dated entries in the build. By default, entries with a date in the future are excluded from HTML output, feeds, and sitemap.
 - `--dry-run` — list all files that would be generated without writing anything. The output directory is not created or modified.
@@ -24,7 +24,7 @@ yii build [--content-dir=content] [--output-dir=output] [--workers=auto] [--no-c
 
 ### Incremental builds
 
-By default, subsequent builds are incremental — only changed source files are re-rendered and re-written. A build manifest (`runtime/cache/build-manifest-*.json`) tracks source file hashes between builds. If no files changed, the build exits immediately with "No changes detected".
+By default, subsequent builds are incremental — only changed source files are re-rendered and re-written. A build manifest tracks source file hashes between builds. Source installs store it under `runtime/cache/`; PHAR and static binary runs store it under the OS temp directory, keyed by the current project directory. If no files changed, the build exits immediately with "No changes detected".
 
 Aggregate pages (feeds, listings, archives, sitemap, taxonomy, author pages) are always regenerated since they depend on the full entry set.
 
@@ -77,6 +77,8 @@ The Docker development server uses `yii serve 0.0.0.0 --port=19777`, exposed to 
 On startup, `serve` only prints the URL it is listening on. Build progress is printed by rebuilds triggered after file changes.
 
 `serve` does not look for `public/index.php`. It runs on ReactPHP streams with preforked worker processes and serves built files from the configured output directory directly in the server loop. It streams non-HTML static files, so large images, fonts, and media are sent with backpressure instead of being buffered as full response bodies. It also handles the live reload SSE endpoint directly there with one shared inotify watcher per worker, so fast navigation does not recreate filesystem watches for every EventSource connection. Idle live reload connections and static file responses do not block Yii request workers, and browser EventSource connections are closed on page navigation. It does not require PHP's built-in server or native `sockets` extension. Content and output paths resolve from the current working directory, so run the binary from the site directory or pass explicit `--content-dir` and `--output-dir` paths.
+
+Before starting the server, `serve` verifies that the content directory exists and that the output directory exists or can be created and written to. If the check fails, pass explicit paths, for example `./yii serve --content-dir=content --output-dir=output`.
 
 See [Web application](web-app.md) for details on static file serving and live reload.
 
@@ -191,7 +193,7 @@ yii clear [--output-dir=output]
 The command removes:
 
 1. The output directory (default: `output/`).
-2. The build cache directory (`runtime/cache/build/`).
+2. The build cache and incremental manifests. Source installs use `runtime/cache/`; PHAR and static binary runs use a project-scoped cache under the OS temp directory.
 
 If a directory does not exist, it is skipped with a notice.
 

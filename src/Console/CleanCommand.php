@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiPress\Console;
 
+use YiiPress\RuntimePaths;
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -25,7 +26,6 @@ use function str_starts_with;
 final class CleanCommand extends Command
 {
     private const string DEFAULT_OUTPUT_DIR = 'output';
-    private const string CACHE_DIR = 'runtime/cache/build';
 
     public function __construct(private readonly string $rootPath)
     {
@@ -50,7 +50,7 @@ final class CleanCommand extends Command
         /** @var string $outputDirOption */
         $outputDirOption = $input->getOption('output-dir');
         $outputDir = $this->resolvePath($outputDirOption, $rootPath);
-        $cacheDir = $rootPath . '/' . self::CACHE_DIR;
+        $cacheDir = RuntimePaths::cachePath($rootPath);
 
         $outputRemoved = $this->removeDirectory($outputDir);
         $cacheRemoved = $this->removeDirectory($cacheDir);
