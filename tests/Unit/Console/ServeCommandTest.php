@@ -122,6 +122,40 @@ final class ServeCommandTest extends TestCase
     }
 
     #[Test]
+    public function packagedServeStreamsNonHtmlStaticResponse(): void
+    {
+        $previousDirectory = getcwd();
+        self::assertIsString($previousDirectory);
+
+        $root = sys_get_temp_dir() . '/yiipress-packaged-static-' . uniqid();
+        mkdir($root . '/output/assets', 0o755, true);
+        file_put_contents($root . '/output/assets/image.jpg', 'image-bytes');
+
+        try {
+            chdir($root);
+
+            $command = new ServeCommand(packaged: true);
+            $method = new ReflectionMethod($command, 'createPackagedStaticResponse');
+
+            $response = $method->invoke($command, "GET /assets/image.jpg HTTP/1.1\r\nHost: example.test\r\n\r\n");
+        } finally {
+            chdir($previousDirectory);
+            unlink($root . '/output/assets/image.jpg');
+            rmdir($root . '/output/assets');
+            rmdir($root . '/output');
+            rmdir($root);
+        }
+
+        self::assertIsArray($response);
+        self::assertSame(200, $response['status']);
+        self::assertIsArray($response['headers']);
+        self::assertSame('image/jpeg', $response['headers']['Content-Type']);
+        self::assertNull($response['body']);
+        self::assertIsString($response['file']);
+        self::assertStringEndsWith('/output/assets/image.jpg', $response['file']);
+    }
+
+    #[Test]
     public function packagedServePreventsStaticPathTraversal(): void
     {
         $previousDirectory = getcwd();
