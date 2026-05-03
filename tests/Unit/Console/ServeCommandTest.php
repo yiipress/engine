@@ -27,6 +27,18 @@ final class ServeCommandTest extends TestCase
     }
 
     #[Test]
+    public function packagedServeShowsConfiguredWorkers(): void
+    {
+        $tester = new CommandTester(new ServeCommand(packaged: true));
+
+        $exitCode = $tester->execute(['--env' => 'test', '--workers' => '4']);
+
+        self::assertSame(ExitCode::OK, $exitCode);
+        self::assertStringContainsString('Workers', $tester->getDisplay());
+        self::assertStringContainsString('4', $tester->getDisplay());
+    }
+
+    #[Test]
     public function packagedServeCreatesFreshHttpRunnerPerRequest(): void
     {
         $command = new ServeCommand(packaged: true);

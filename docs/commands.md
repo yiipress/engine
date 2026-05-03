@@ -68,7 +68,7 @@ yii serve [address] [--port=8080] [--docroot=public] [--router=public/index.php]
 
 The Docker development server uses `yii serve 0.0.0.0 --port=8080`, exposed to the host port configured by `DEV_PORT` in `docker/.env`. Alternatively, use `composer serve` which disables the process timeout.
 
-When running from the PHAR or static binary, `serve` uses the embedded YiiPress web application instead of looking for `public/index.php` next to the binary. The packaged server runs on ReactPHP streams so the single-file static binary can serve without PHP's built-in server or native `sockets` extension. Content and output paths resolve from the current working directory, so run the binary from the site directory that contains `content/` and `output/`.
+When running from the PHAR or static binary, `serve` uses the embedded YiiPress web application instead of looking for `public/index.php` next to the binary. The packaged server runs on ReactPHP streams with preforked worker processes, so one long-lived request such as live reload does not block the whole server. It does not require PHP's built-in server or native `sockets` extension. Content and output paths resolve from the current working directory, so run the binary from the site directory that contains `content/` and `output/`.
 
 See [Web application](web-app.md) for details on static file serving and live reload.
 

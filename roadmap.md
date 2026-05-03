@@ -46,6 +46,7 @@
 
 - [x] Live reload / file watching during `yiipress serve`
 - [x] PHAR and static PHP binary packaging
+- [x] Worker-mode serving for PHAR and static PHP binary packages
 - [x] `yiipress new` command — scaffold new entries from archetypes/templates
 - [x] Incremental builds (only rebuild changed files)
 - [x] Smaller static package by removing unused runtime extension dependencies
