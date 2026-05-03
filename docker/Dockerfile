@@ -23,7 +23,8 @@ RUN install-php-extensions \
     simplexml \
     yaml \
     md4c \
-    pcntl
+    pcntl \
+    sockets
 
 FROM base AS highlighter-extension-builder
 ENV CARGO_HOME=/root/.cargo \
@@ -114,7 +115,7 @@ FROM app-base AS static-package
 ARG PHP_VERSION=8.5
 ARG MD4C_VERSION=1.1
 ARG STATIC_PHP_CLI_REF=5b5861c366a0d94bc84002db7b3f46144b388fbb
-ARG STATIC_PHP_EXTENSIONS=ctype,dom,filter,inotify,mbstring,md4c,opcache,pcntl,phar,xml,xmlwriter,yaml,yiipress_highlighter
+ARG STATIC_PHP_EXTENSIONS=ctype,dom,filter,inotify,mbstring,md4c,opcache,pcntl,phar,sockets,xml,xmlwriter,yaml,yiipress_highlighter
 ARG TARGETARCH
 ENV CARGO_HOME=/root/.cargo \
     RUSTUP_HOME=/usr/local/rustup \
@@ -162,15 +163,17 @@ COPY build/static-php/patch-extension-config.php /opt/patch-extension-config.php
 COPY build/static-php/patch-source-config.php /opt/patch-source-config.php
 COPY build/static-php/register-yiipress-highlighter.php /opt/register-yiipress-highlighter.php
 RUN mkdir -p /artifacts
-COPY --from=phar-builder /app/dist/yiipress.phar /artifacts/yiipress.phar
 RUN php /opt/patch-extension-config.php /static-php/config/ext.json \
     && php /opt/patch-source-config.php /static-php/config/source.json \
     && bin/spc download --for-extensions="${STATIC_PHP_EXTENSIONS}" --with-php="${PHP_VERSION}" --without-suggestions \
     && mkdir -p buildroot/bin \
     && ln -sf /usr/bin/pkg-config buildroot/bin/pkg-config \
     && SPC_TOOLCHAIN='SPC\toolchain\MuslToolchain' SPC_TARGET=x86_64-linux-musl bin/spc doctor --auto-fix \
-    && bin/spc build "${STATIC_PHP_EXTENSIONS}" --build-micro --with-micro-fake-cli -P /opt/register-yiipress-highlighter.php \
-    && bin/spc micro:combine /artifacts/yiipress.phar -O /artifacts/yiipress \
+    && (bin/spc build "${STATIC_PHP_EXTENSIONS}" --build-micro --with-micro-fake-cli -P /opt/register-yiipress-highlighter.php \
+        || (tail -n 200 /static-php/log/spc.shell.log && false)) \
+    && cp buildroot/bin/micro.sfx /artifacts/micro.sfx
+COPY --from=phar-builder /app/dist/yiipress.phar /artifacts/yiipress.phar
+RUN bin/spc micro:combine /artifacts/yiipress.phar -O /artifacts/yiipress \
     && chmod +x /artifacts/yiipress
 
 FROM scratch AS package-artifacts

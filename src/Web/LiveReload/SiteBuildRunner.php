@@ -14,7 +14,7 @@ final readonly class SiteBuildRunner
 
     public function build(): bool
     {
-        $command = $this->yiiBinary
+        $command = escapeshellarg($this->yiiBinary)
             . ' build'
             . ' --content-dir=' . escapeshellarg($this->contentDir)
             . ' --output-dir=' . escapeshellarg($this->outputDir)
