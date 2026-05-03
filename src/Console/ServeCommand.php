@@ -25,9 +25,13 @@ use Yiisoft\Yii\Runner\Http\HttpApplicationRunner;
 use function getcwd;
 use function parse_url;
 use function preg_split;
+use function restore_error_handler;
+use function set_error_handler;
 use function sprintf;
 use function strlen;
+use function str_starts_with;
 use function strtolower;
+use function substr;
 use function trim;
 
 #[AsCommand('serve', 'Runs PHP built-in web server')]
@@ -218,7 +222,7 @@ final class ServeCommand extends Command
 
         $request = $this->createRequest($rawRequest, $address);
         if ($request === null) {
-            socket_write($connection, "HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+            $this->writeSocket($connection, "HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
             return;
         }
 
@@ -293,14 +297,16 @@ final class ServeCommand extends Command
 
         $contents = $body->getContents();
 
-        socket_write(
+        if (!$this->writeSocket(
             $connection,
             sprintf(
                 "HTTP/1.1 %d %s\r\n",
                 $response->getStatusCode(),
                 $response->getReasonPhrase(),
             ),
-        );
+        )) {
+            return;
+        }
 
         $hasContentLength = false;
         foreach ($response->getHeaders() as $name => $values) {
@@ -310,16 +316,50 @@ final class ServeCommand extends Command
             }
 
             foreach ($values as $value) {
-                socket_write($connection, $name . ': ' . $value . "\r\n");
+                if (!$this->writeSocket($connection, $name . ': ' . $value . "\r\n")) {
+                    return;
+                }
             }
         }
 
-        if (!$hasContentLength) {
-            socket_write($connection, 'Content-Length: ' . strlen($contents) . "\r\n");
+        if (!$hasContentLength && !$this->writeSocket($connection, 'Content-Length: ' . strlen($contents) . "\r\n")) {
+            return;
         }
 
-        socket_write($connection, "Connection: close\r\n\r\n");
-        socket_write($connection, $contents);
+        if (!$this->writeSocket($connection, "Connection: close\r\n\r\n")) {
+            return;
+        }
+
+        $this->writeSocket($connection, $contents);
+    }
+
+    private function writeSocket(Socket $connection, string $contents): bool
+    {
+        $remaining = strlen($contents);
+        $offset = 0;
+
+        while ($remaining > 0) {
+            $written = $this->socketWrite($connection, substr($contents, $offset));
+            if ($written === false || $written === 0) {
+                return false;
+            }
+
+            $offset += $written;
+            $remaining -= $written;
+        }
+
+        return true;
+    }
+
+    private function socketWrite(Socket $connection, string $contents): int|false
+    {
+        set_error_handler(static fn(): bool => true);
+
+        try {
+            return socket_write($connection, $contents);
+        } finally {
+            restore_error_handler();
+        }
     }
 
     private function isPackaged(): bool
