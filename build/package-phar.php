@@ -25,7 +25,6 @@ $phar->startBuffering();
 
 $includeDirectories = [
     'config',
-    'packages/highlighter-extension/php',
     'public',
     'src',
     'themes',

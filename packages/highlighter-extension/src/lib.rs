@@ -133,13 +133,18 @@ fn strip_leading_php_open_tag(html: &str) -> Cow<'_, str> {
 }
 
 fn highlight_block(ss: &SyntaxSet, theme: &Theme, block: &Block<'_>) -> Option<String> {
-    let syntax = ss
-        .find_syntax_by_token(&block.language)
-        .unwrap_or_else(|| ss.find_syntax_plain_text());
-
     let decoded = decode_html_entities(&block.code);
 
-    let is_php = block.language.eq_ignore_ascii_case("php");
+    highlight_code(ss, theme, block.language, &decoded)
+}
+
+fn highlight_code(ss: &SyntaxSet, theme: &Theme, language: &str, code: &str) -> Option<String> {
+    let syntax = ss
+        .find_syntax_by_token(language)
+        .unwrap_or_else(|| ss.find_syntax_plain_text());
+
+    let is_php = language.eq_ignore_ascii_case("php");
+    let decoded = Cow::Borrowed(code);
     let needs_php_tag = is_php && !decoded.trim_start().starts_with("<?");
 
     let source: Cow<'_, str> = if needs_php_tag {
@@ -233,6 +238,43 @@ fn set_error(error_ptr: *mut *const c_char, message: &str) {
     }
 }
 
+fn requested_theme(
+    theme_name_ptr: *const c_char,
+    theme_name_len: usize,
+    error_ptr: *mut *const c_char,
+) -> Option<&'static Theme> {
+    let requested_theme_name = if theme_name_ptr.is_null() || theme_name_len == 0 {
+        DEFAULT_THEME_NAME
+    } else {
+        let theme_name_bytes = unsafe { slice::from_raw_parts(theme_name_ptr.cast::<u8>(), theme_name_len) };
+        match str::from_utf8(theme_name_bytes) {
+            Ok(s) if !s.is_empty() => s,
+            Ok(_) => DEFAULT_THEME_NAME,
+            Err(e) => {
+                set_error(error_ptr, &format!("Invalid UTF-8 in highlight theme name: {}", e));
+                return None;
+            }
+        }
+    };
+
+    match THEME_SET.themes.get(requested_theme_name) {
+        Some(theme) => Some(theme),
+        None => {
+            let mut available_themes: Vec<&str> = THEME_SET.themes.keys().map(String::as_str).collect();
+            available_themes.sort_unstable();
+            set_error(
+                error_ptr,
+                &format!(
+                    "Unknown highlight theme \"{}\". Available themes: {}",
+                    requested_theme_name,
+                    available_themes.join(", ")
+                ),
+            );
+            None
+        }
+    }
+}
+
 /// Highlights all `<pre><code class="language-xxx">` blocks in the given HTML string.
 ///
 /// # Safety
@@ -283,20 +325,6 @@ pub unsafe extern "C" fn yiipress_highlighter_highlight(
         }
     };
 
-    let requested_theme_name = if theme_name_ptr.is_null() || theme_name_len == 0 {
-        DEFAULT_THEME_NAME
-    } else {
-        let theme_name_bytes = unsafe { slice::from_raw_parts(theme_name_ptr.cast::<u8>(), theme_name_len) };
-        match str::from_utf8(theme_name_bytes) {
-            Ok(s) if !s.is_empty() => s,
-            Ok(_) => DEFAULT_THEME_NAME,
-            Err(e) => {
-                set_error(error_ptr, &format!("Invalid UTF-8 in highlight theme name: {}", e));
-                return ptr::null_mut();
-            }
-        }
-    };
-
     let blocks = find_code_blocks(html);
     if blocks.is_empty() {
         // Return null to signal "no changes needed" — PHP should use the original string.
@@ -304,21 +332,9 @@ pub unsafe extern "C" fn yiipress_highlighter_highlight(
     }
 
     let ss = &*SYNTAX_SET;
-    let theme = match THEME_SET.themes.get(requested_theme_name) {
+    let theme = match requested_theme(theme_name_ptr, theme_name_len, error_ptr) {
         Some(theme) => theme,
-        None => {
-            let mut available_themes: Vec<&str> = THEME_SET.themes.keys().map(String::as_str).collect();
-            available_themes.sort_unstable();
-            set_error(
-                error_ptr,
-                &format!(
-                    "Unknown highlight theme \"{}\". Available themes: {}",
-                    requested_theme_name,
-                    available_themes.join(", ")
-                ),
-            );
-            return ptr::null_mut();
-        }
+        None => return ptr::null_mut(),
     };
 
     let result = if blocks.len() < PARALLEL_BLOCK_THRESHOLD {
@@ -338,6 +354,90 @@ pub unsafe extern "C" fn yiipress_highlighter_highlight(
         }
 
         merge_replacements(html, &blocks, &replacements)
+    };
+
+    unsafe {
+        *result_len_ptr = result.len();
+    }
+
+    into_raw_c_string_unchecked(result)
+}
+
+/// Highlights a raw code string without requiring an HTML `<pre><code>` wrapper.
+///
+/// # Safety
+///
+/// `code_ptr` must point to `code_len` bytes of valid UTF-8 data.
+/// `language_ptr` must point to `language_len` bytes of valid UTF-8 data.
+/// `result_len_ptr` must be a valid pointer to a `usize` that will be set to the result length.
+/// `error_ptr` must be a valid pointer to a `*const c_char` that will be set to an error message
+/// (or null if successful). The error message must be freed by calling `yiipress_highlighter_free`.
+/// The returned pointer must be freed by calling `yiipress_highlighter_free`.
+#[no_mangle]
+pub unsafe extern "C" fn yiipress_highlighter_highlight_code(
+    code_ptr: *const c_char,
+    code_len: usize,
+    language_ptr: *const c_char,
+    language_len: usize,
+    theme_name_ptr: *const c_char,
+    theme_name_len: usize,
+    result_len_ptr: *mut usize,
+    error_ptr: *mut *const c_char,
+) -> *mut c_char {
+    if !error_ptr.is_null() {
+        unsafe {
+            *error_ptr = ptr::null();
+        }
+    }
+
+    if !result_len_ptr.is_null() {
+        unsafe {
+            *result_len_ptr = 0;
+        }
+    }
+
+    if code_ptr.is_null() {
+        set_error(error_ptr, "Code input pointer is null");
+        return ptr::null_mut();
+    }
+
+    if language_ptr.is_null() {
+        set_error(error_ptr, "Language input pointer is null");
+        return ptr::null_mut();
+    }
+
+    if result_len_ptr.is_null() {
+        set_error(error_ptr, "Result length pointer is null");
+        return ptr::null_mut();
+    }
+
+    let code_bytes = unsafe { slice::from_raw_parts(code_ptr.cast::<u8>(), code_len) };
+    let code = match str::from_utf8(code_bytes) {
+        Ok(s) => s,
+        Err(e) => {
+            set_error(error_ptr, &format!("Invalid UTF-8 in code input: {}", e));
+            return ptr::null_mut();
+        }
+    };
+
+    let language_bytes = unsafe { slice::from_raw_parts(language_ptr.cast::<u8>(), language_len) };
+    let language = match str::from_utf8(language_bytes) {
+        Ok(s) => s,
+        Err(e) => {
+            set_error(error_ptr, &format!("Invalid UTF-8 in language input: {}", e));
+            return ptr::null_mut();
+        }
+    };
+
+    let ss = &*SYNTAX_SET;
+    let theme = match requested_theme(theme_name_ptr, theme_name_len, error_ptr) {
+        Some(theme) => theme,
+        None => return ptr::null_mut(),
+    };
+
+    let result = match highlight_code(ss, theme, language, code) {
+        Some(result) => result,
+        None => code.to_owned(),
     };
 
     unsafe {
