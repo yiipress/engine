@@ -213,7 +213,7 @@ fn highlight_blocks_sequential(
 }
 
 fn into_raw_c_string_unchecked(value: String) -> *mut c_char {
-    // HTML produced by YiiPress is text-only. Interior NUL bytes are unsupported at this FFI boundary.
+    // HTML produced by YiiPress is text-only. Interior NUL bytes are unsupported at this C boundary.
     unsafe { CString::from_vec_unchecked(value.into_bytes()).into_raw() }
 }
 
@@ -244,7 +244,7 @@ fn set_error(error_ptr: *mut *const c_char, message: &str) {
 /// (or null if successful). The error message must be freed by calling `yiipress_highlight_free`.
 /// The returned pointer must be freed by calling `yiipress_highlight_free`.
 #[no_mangle]
-pub unsafe extern "C" fn yiipress_highlight(
+pub unsafe extern "C" fn yiipress_highlighter_highlight(
     html_ptr: *const c_char,
     html_len: usize,
     theme_name_ptr: *const c_char,
@@ -347,13 +347,13 @@ pub unsafe extern "C" fn yiipress_highlight(
     into_raw_c_string_unchecked(result)
 }
 
-/// Frees a string previously returned by `yiipress_highlight`.
+/// Frees a string previously returned by `yiipress_highlighter_highlight`.
 ///
 /// # Safety
 ///
 /// `ptr` must be a pointer returned by `yiipress_highlight`, or null.
 #[no_mangle]
-pub unsafe extern "C" fn yiipress_highlight_free(ptr: *mut c_char) {
+pub unsafe extern "C" fn yiipress_highlighter_free(ptr: *mut c_char) {
     if !ptr.is_null() {
         unsafe {
             drop(CString::from_raw(ptr));

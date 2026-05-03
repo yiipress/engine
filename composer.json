@@ -34,7 +34,6 @@
     },
     "require": {
         "php": "^8.5",
-        "ext-ffi": "*",
         "ext-filter": "*",
         "ext-inotify": "*",
         "ext-intl": "*",
@@ -43,6 +42,7 @@
         "ext-mbstring": "*",
         "ext-xmlwriter": "*",
         "ext-yaml": "*",
+        "ext-yiipress_highlighter": "*",
         "httpsoft/http-message": "^1.1.6",
         "psr/container": "^2.0.2",
         "psr/http-factory": "^1.1",
@@ -74,6 +74,9 @@
         "roave/infection-static-analysis-plugin": "^1.43",
         "shipmonk/composer-dependency-analyser": "^1.8.4",
         "vimeo/psalm": "^6.16.1"
+    },
+    "suggest": {
+        "yiipress/highligher": "Installs ext-yiipress_highlighter with PIE for native syntax highlighting."
     },
     "autoload": {
         "psr-4": {

@@ -45,19 +45,25 @@ echo "Hello, world!";
 ```
 ````
 
-The highlighter is a Rust library (`src/Highlighter/`) built with [syntect](https://github.com/trishume/syntect)
-and [rayon](https://github.com/rayon-rs/rayon), called from PHP via FFI. It processes all
+The highlighter is a native PHP extension packaged as `yiipress/highligher`. It builds a Rust
+library with [syntect](https://github.com/trishume/syntect) and [rayon](https://github.com/rayon-rs/rayon),
+then statically links that library into `ext-yiipress_highlighter`. It processes all
 `<pre><code class="language-xxx">` blocks in the rendered HTML, replacing them with
 inline-styled highlighted output.
 
-The FFI binding passes explicit input and output lengths so repeated highlighting calls avoid
+The native extension passes explicit input and output lengths so repeated highlighting calls avoid
 extra C-string scans at the PHP/Rust boundary.
 
 Rayon parallelizes highlighting across code blocks within a single page, which helps
 when a page contains many code blocks (e.g., documentation pages).
 
-The library is compiled during Docker image build (multistage build) and installed as
-`/usr/local/lib/libyiipress_highlighter.so`. No additional setup is needed.
+The extension is compiled during Docker image build and enabled as `ext-yiipress_highlighter`.
+No additional setup is needed in the YiiPress Docker images. Outside Docker, install the extension
+with PIE after the package is published:
+
+```bash
+pie install yiipress/highligher
+```
 
 Supported languages include all syntect defaults (PHP, JavaScript, Python, Rust, YAML,
 Bash, SQL, HTML, CSS, and many more). Code blocks with an unrecognized language are

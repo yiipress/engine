@@ -241,7 +241,7 @@ Two separate pipelines are configured via Yii3 DI container in `config/common/di
 
 - **MarkdownProcessor** — converts markdown to HTML using md4c. Accepts `MarkdownConfig` for feature toggles
 - **OEmbedProcessor** — expands standalone provider URLs into embed HTML before markdown via pluggable `OEmbedInterface` implementations
-- **SyntaxHighlightProcessor** — server-rendered code block highlighting via Rust FFI. Uses syntect + rayon compiled to a shared library (`src/Highlighter/`), with explicit string lengths passed across the FFI boundary to reduce per-call overhead
+- **SyntaxHighlightProcessor** — server-rendered code block highlighting via `ext-yiipress_highlighter`. Uses syntect + rayon compiled as a Rust static library and linked into a native PHP extension, with explicit string lengths passed across the C boundary to reduce per-call overhead
 
 
 ## Serve mode
@@ -297,9 +297,7 @@ src/
 │   ├── ImportResult.php              # Value object for import results
 │   └── TelegramContentImporter.php   # Telegram channel export importer
 ├── Highlighter/
-│   ├── Cargo.toml                # Rust crate config (syntect + rayon)
-│   ├── src/lib.rs                # Rust FFI library for code highlighting
-│   └── SyntaxHighlighter.php     # PHP FFI binding
+│   └── SyntaxHighlighter.php     # PHP wrapper around ext-yiipress_highlighter
 ├── Processor/
 │   ├── ContentProcessorInterface.php  # Processor interface
 │   ├── ContentProcessorPipeline.php   # Chains processors in order

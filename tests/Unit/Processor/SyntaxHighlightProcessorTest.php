@@ -72,12 +72,8 @@ final class SyntaxHighlightProcessorTest extends TestCase
 
     protected function setUp(): void
     {
-        if (!extension_loaded('ffi')) {
-            $this->markTestSkipped('ext-ffi is not available.');
-        }
-
-        if (!file_exists('/usr/local/lib/libyiipress_highlighter.so')) {
-            $this->markTestSkipped('libyiipress_highlighter.so is not available.');
+        if (!extension_loaded('yiipress_highlighter')) {
+            $this->markTestSkipped('ext-yiipress_highlighter is not available.');
         }
     }
 
