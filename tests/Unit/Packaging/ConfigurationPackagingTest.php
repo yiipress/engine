@@ -162,7 +162,9 @@ final class ConfigurationPackagingTest extends TestCase
     public function pharBuilderCopiesOnlyRuntimeInputs(): void
     {
         $dockerfile = file_get_contents(dirname(__DIR__, 3) . '/docker/Dockerfile');
+        $packageScript = file_get_contents(dirname(__DIR__, 3) . '/build/package-phar.php');
         self::assertIsString($dockerfile);
+        self::assertIsString($packageScript);
 
         $start = strpos($dockerfile, 'FROM app-base AS phar-builder');
         $end = strpos($dockerfile, 'FROM app-base AS static-package');
@@ -173,6 +175,8 @@ final class ConfigurationPackagingTest extends TestCase
         $stage = substr($dockerfile, $start, $end - $start);
 
         self::assertStringNotContainsString('COPY . /app', $stage);
+        self::assertStringNotContainsString('COPY content /app/content', $stage);
+        self::assertStringNotContainsString("'content'", $packageScript);
         self::assertStringContainsString('COPY config /app/config', $stage);
         self::assertStringContainsString('COPY public /app/public', $stage);
         self::assertStringContainsString('COPY src /app/src', $stage);

@@ -70,7 +70,6 @@ final class ServeCommand extends Command
     private const string LIVE_RELOAD_PATH = '/_live-reload';
     private const int LIVE_RELOAD_RETRY_MILLISECONDS = 1_000;
     private const float LIVE_RELOAD_PING_SECONDS = 10.0;
-    private const float LIVE_RELOAD_CLIENT_SECONDS = 5.0;
     private const array MIME_TYPES = [
         'html' => 'text/html; charset=utf-8',
         'htm' => 'text/html; charset=utf-8',
@@ -102,8 +101,6 @@ final class ServeCommand extends Command
     private mixed $packagedLiveReloadStream = null;
     /** @var array<int, ConnectionInterface> */
     private array $packagedLiveReloadClients = [];
-    /** @var array<int, TimerInterface> */
-    private array $packagedLiveReloadClientTimers = [];
     private int $nextPackagedLiveReloadClientId = 1;
     private ?TimerInterface $packagedLiveReloadPingTimer = null;
 
@@ -398,21 +395,8 @@ final class ServeCommand extends Command
 
         $clientId = $this->nextPackagedLiveReloadClientId++;
         $this->packagedLiveReloadClients[$clientId] = $connection;
-        $this->packagedLiveReloadClientTimers[$clientId] = Loop::addTimer(
-            self::LIVE_RELOAD_CLIENT_SECONDS,
-            function () use ($clientId, $connection): void {
-                unset($this->packagedLiveReloadClients[$clientId], $this->packagedLiveReloadClientTimers[$clientId]);
-                if ($connection->isWritable()) {
-                    $this->finishLiveReloadResponse($connection, 'ping', 'ok');
-                }
-            },
-        );
         $connection->once('close', function () use ($clientId): void {
             unset($this->packagedLiveReloadClients[$clientId]);
-            if (isset($this->packagedLiveReloadClientTimers[$clientId])) {
-                Loop::cancelTimer($this->packagedLiveReloadClientTimers[$clientId]);
-                unset($this->packagedLiveReloadClientTimers[$clientId]);
-            }
         });
     }
 
@@ -466,10 +450,6 @@ final class ServeCommand extends Command
             if ($close) {
                 $this->finishLiveReloadResponse($client, $event, $data);
                 unset($this->packagedLiveReloadClients[$clientId]);
-                if (isset($this->packagedLiveReloadClientTimers[$clientId])) {
-                    Loop::cancelTimer($this->packagedLiveReloadClientTimers[$clientId]);
-                    unset($this->packagedLiveReloadClientTimers[$clientId]);
-                }
             } else {
                 $client->write("event: {$event}\ndata: {$data}\n\n");
             }
@@ -501,10 +481,6 @@ final class ServeCommand extends Command
             $client->close();
         }
         $this->packagedLiveReloadClients = [];
-        foreach ($this->packagedLiveReloadClientTimers as $timer) {
-            Loop::cancelTimer($timer);
-        }
-        $this->packagedLiveReloadClientTimers = [];
     }
 
     private function buildPackagedLiveReloadSite(): void
