@@ -45,7 +45,7 @@ Write Markdown, run one command, get a fully static site — blogs, docs, portfo
 
 ### Extensions
 
-- **Syntax highlighting** — server-side, via a Rust/[syntect](https://github.com/trishume/syntect) FFI library; zero client-side JavaScript
+- **Syntax highlighting** — server-side, via a native Rust/[syntect](https://github.com/trishume/syntect) PHP extension; zero client-side JavaScript
 - **Configurable highlight themes** — choose a built-in syntect theme in `content/config.yaml` via `highlight_theme`
 - **Table of contents** — auto-generated from headings, with `id` injection
 - **Mermaid diagrams** — flowcharts, sequence, Gantt, pie, and more
@@ -133,6 +133,7 @@ Build and preview:
 ```bash
 make yii build
 make up          # dev server at http://localhost:8087
+make package     # PHAR and static Linux binary artifacts in dist/
 ```
 
 ---

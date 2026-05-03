@@ -132,3 +132,20 @@ docker run -p 3000:3000 my-site
 Your site will be available at `http://localhost:3000`.
 
 To deploy, push the image to any container registry and run it on any platform that supports Docker — a VPS, Fly.io, Railway, Render, or any Kubernetes cluster.
+
+## YiiPress PHAR and Static Binary
+
+YiiPress can be packaged as reproducible Docker-built artifacts:
+
+```bash
+make package
+```
+
+The command writes artifacts to `dist/`:
+
+- `yiipress.phar` — PHP archive for environments that already have PHP 8.5 and required extensions.
+- `yiipress` — static Linux executable built with static-php-cli micro SAPI and the YiiPress PHAR embedded.
+
+The static executable includes `ext-yiipress_highlighter`, so syntax highlighting does not need FFI or an external shared library.
+
+GitHub Actions builds the same artifacts in the `Package Static Binary` workflow and uploads them as a workflow artifact.
