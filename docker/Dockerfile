@@ -106,7 +106,12 @@ FROM app-base AS phar-builder
 ENV APP_ENV=prod
 COPY --from=composer /composer /usr/bin/composer
 WORKDIR /app
-COPY . /app
+COPY config /app/config
+COPY public /app/public
+COPY src /app/src
+COPY themes /app/themes
+COPY build/package-phar.php /app/build/
+COPY yii composer.json composer.lock /app/
 RUN --mount=type=cache,target=/tmp/cache \
     composer install --no-dev --no-progress --no-interaction --classmap-authoritative && \
     php -d phar.readonly=0 build/package-phar.php dist/yiipress.phar

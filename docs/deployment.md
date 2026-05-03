@@ -146,6 +146,7 @@ The command writes artifacts to `dist/`:
 - `yiipress.phar` — PHP archive for environments that already have PHP 8.5 and required extensions.
 - `yiipress` — static Linux executable built with static-php-cli micro SAPI and the YiiPress PHAR embedded.
 
+The PHAR builder copies only runtime inputs into the build stage: `config/`, `public/`, `src/`, `themes/`, `yii`, Composer metadata, and the PHAR build script. Dependencies are installed with `--no-dev` inside that stage before the PHAR is assembled.
 The static executable includes `ext-yiipress_highlighter`, so syntax highlighting does not need FFI or an external shared library. Packaged `serve` uses ReactPHP stream sockets with preforked worker processes and does not require PHP's native `sockets` extension.
 Relative `content-dir`, `output-dir`, `new`, `clean`, and `import` paths are resolved from the directory where you run `yiipress`, not from the packaged executable location.
 
