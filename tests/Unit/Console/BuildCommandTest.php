@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiPress\Tests\Unit\Console;
 
+use YiiPress\RuntimePaths;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
 
@@ -1049,7 +1050,7 @@ PHP,
 
     private function manifestPath(): string
     {
-        return dirname(__DIR__, 3) . '/runtime/cache/build-manifest-' . hash('xxh128', $this->outputDir) . '.json';
+        return RuntimePaths::cachePath(dirname(__DIR__, 3)) . '/build-manifest-' . hash('xxh128', $this->outputDir) . '.json';
     }
 
     private function runBuild(string $contentDir, string $extraOptions = ''): void

@@ -69,12 +69,66 @@ final class ServeCommandTest extends TestCase
     }
 
     #[Test]
+    public function serveFailsBeforeStartingWhenContentDirectoryDoesNotExist(): void
+    {
+        $previousDirectory = getcwd();
+        self::assertIsString($previousDirectory);
+
+        $root = sys_get_temp_dir() . '/yiipress-serve-missing-content-' . uniqid();
+        mkdir($root);
+
+        try {
+            chdir($root);
+
+            $tester = new CommandTester(new ServeCommand());
+            $exitCode = $tester->execute([]);
+        } finally {
+            chdir($previousDirectory);
+            rmdir($root);
+        }
+
+        self::assertSame(ExitCode::UNSPECIFIED_ERROR, $exitCode);
+        self::assertStringContainsString('Content directory does not exist:', $tester->getDisplay());
+        self::assertStringContainsString('./yii serve --content-dir=content --output-dir=output', $tester->getDisplay());
+        self::assertStringNotContainsString('Serving http://127.0.0.1:19777', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function serveFailsBeforeStartingWhenOutputDirectoryCannotBeCreated(): void
+    {
+        $previousDirectory = getcwd();
+        self::assertIsString($previousDirectory);
+
+        $root = sys_get_temp_dir() . '/yiipress-serve-bad-output-' . uniqid();
+        mkdir($root . '/content', 0o755, true);
+        file_put_contents($root . '/output', 'not a directory');
+
+        try {
+            chdir($root);
+
+            $tester = new CommandTester(new ServeCommand());
+            $exitCode = $tester->execute([]);
+        } finally {
+            chdir($previousDirectory);
+            unlink($root . '/output');
+            rmdir($root . '/content');
+            rmdir($root);
+        }
+
+        self::assertSame(ExitCode::UNSPECIFIED_ERROR, $exitCode);
+        self::assertStringContainsString('Output directory cannot be created:', $tester->getDisplay());
+        self::assertStringContainsString('./yii serve --content-dir=content --output-dir=output', $tester->getDisplay());
+        self::assertStringNotContainsString('Serving http://127.0.0.1:19777', $tester->getDisplay());
+    }
+
+    #[Test]
     public function serveUsesConfiguredOutputDirectoryForStaticResponses(): void
     {
         $previousDirectory = getcwd();
         self::assertIsString($previousDirectory);
 
         $root = sys_get_temp_dir() . '/yiipress-serve-custom-output-' . uniqid();
+        mkdir($root . '/content', 0o755, true);
         mkdir($root . '/site-output/blog', 0o755, true);
         file_put_contents($root . '/site-output/blog/index.html', '<html><body><h1>Custom Blog</h1></body></html>');
 
@@ -92,6 +146,7 @@ final class ServeCommandTest extends TestCase
             unlink($root . '/site-output/blog/index.html');
             rmdir($root . '/site-output/blog');
             rmdir($root . '/site-output');
+            rmdir($root . '/content');
             rmdir($root);
         }
 
@@ -108,7 +163,7 @@ final class ServeCommandTest extends TestCase
         self::assertIsString($previousDirectory);
 
         $root = sys_get_temp_dir() . '/yiipress-serve-custom-build-' . uniqid();
-        mkdir($root);
+        mkdir($root . '/site-content', 0o755, true);
 
         try {
             chdir($root);
@@ -126,6 +181,8 @@ final class ServeCommandTest extends TestCase
             $outputDir = new ReflectionProperty($runner, 'outputDir');
         } finally {
             chdir($previousDirectory);
+            rmdir($root . '/site-output');
+            rmdir($root . '/site-content');
             rmdir($root);
         }
 

@@ -40,6 +40,7 @@ use YiiPress\Content\TaxonomyCollector;
 use YiiPress\Environment;
 use YiiPress\I18n\UiText;
 use YiiPress\Processor\ContentProcessorPipeline;
+use YiiPress\RuntimePaths;
 use DateTimeImmutable;
 use FilesystemIterator;
 use FilesystemIterator as BaseFilesystemIterator;
@@ -217,7 +218,7 @@ final class BuildCommand extends Command
                 $trackedDirectories += $this->collectTrackedDirectories($theme->path);
             }
 
-            $manifestPath = $rootPath . '/runtime/cache/build-manifest-' . hash('xxh128', $outputDir) . '.json';
+            $manifestPath = RuntimePaths::cachePath($rootPath) . '/build-manifest-' . hash('xxh128', $outputDir) . '.json';
             $manifest = new BuildManifest($manifestPath);
             $manifest->load();
             $canUseManifestInventory = $manifest->sourceFiles() !== [] && $manifest->hasTrackedDirectories() && !$manifest->trackedDirectoriesChanged();
@@ -424,7 +425,7 @@ final class BuildCommand extends Command
 
         $cache = null;
         if (!$noCache && !$noWrite) {
-            $cacheDir = $rootPath . '/runtime/cache/build';
+            $cacheDir = RuntimePaths::cachePath($rootPath) . '/build';
             $cache = new BuildCache($cacheDir, $this->templateResolver->templateDirs());
         }
 

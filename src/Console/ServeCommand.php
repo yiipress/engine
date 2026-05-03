@@ -33,6 +33,7 @@ use Yiisoft\Yii\Console\ExitCode;
 use Yiisoft\Yii\Runner\Http\HttpApplicationRunner;
 
 use function fclose;
+use function file_exists;
 use function file_get_contents;
 use function filesize;
 use function fopen;
@@ -40,6 +41,8 @@ use function getcwd;
 use function is_dir;
 use function is_file;
 use function is_resource;
+use function is_writable;
+use function mkdir;
 use function microtime;
 use function pcntl_async_signals;
 use function pcntl_fork;
@@ -162,6 +165,10 @@ final class ServeCommand extends Command
         /** @var string $outputDirOption */
         $outputDirOption = $input->getOption('output-dir');
         $this->outputDir = $this->resolvePath($outputDirOption, $root);
+
+        if (!$this->validateServeDirectories($output)) {
+            return ExitCode::UNSPECIFIED_ERROR;
+        }
 
         if (!str_contains($address, ':')) {
             $address .= ':' . $port;
@@ -762,6 +769,49 @@ final class ServeCommand extends Command
 
         closedir($handle);
         return true;
+    }
+
+    private function validateServeDirectories(OutputInterface $output): bool
+    {
+        $contentDir = $this->contentDir();
+        if (!is_dir($contentDir)) {
+            $this->writeDirectoryError(
+                $output,
+                sprintf('Content directory does not exist: %s', $contentDir),
+            );
+
+            return false;
+        }
+
+        $outputDir = $this->outputDir();
+        if (!is_dir($outputDir)) {
+            if (file_exists($outputDir) || !@mkdir($outputDir, 0o755, true) && !is_dir($outputDir)) {
+                $this->writeDirectoryError(
+                    $output,
+                    sprintf('Output directory cannot be created: %s', $outputDir),
+                );
+
+                return false;
+            }
+        }
+
+        if (!is_writable($outputDir)) {
+            $this->writeDirectoryError(
+                $output,
+                sprintf('Output directory is not writable: %s', $outputDir),
+            );
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function writeDirectoryError(OutputInterface $output, string $message): void
+    {
+        $output->writeln(sprintf('<error>%s</error>', $message));
+        $output->writeln('Specify directories explicitly, for example:');
+        $output->writeln('  ./yii serve --content-dir=content --output-dir=output');
     }
 
     /**
