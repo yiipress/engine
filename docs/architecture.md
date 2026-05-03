@@ -322,7 +322,7 @@ src/
 ├── Web/                          # Yii3 web actions for serve mode
 │   ├── LiveReload/
 │   │   ├── FileWatcher.php       # Watches directories via inotify events
-│   │   ├── LiveReloadAction.php  # SSE endpoint streaming reload events
+│   │   ├── LiveReloadAction.php  # Yii web SSE endpoint streaming reload events
 │   │   ├── LiveReloadMiddleware.php # Injects live-reload JS into HTML
 │   │   └── SiteBuildRunner.php   # Triggers yii build on file changes
 │   ├── StaticFile/

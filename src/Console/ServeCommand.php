@@ -5,14 +5,20 @@ declare(strict_types=1);
 namespace App\Console;
 
 use App\Environment;
+use App\Web\LiveReload\SiteBuildRunner;
+use FilesystemIterator;
 use HttpSoft\Message\ServerRequest;
 use HttpSoft\Message\Stream;
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
 use React\EventLoop\Loop;
+use React\EventLoop\TimerInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\SocketServer;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use RuntimeException;
+use SplFileInfo;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Completion\CompletionInput;
@@ -26,7 +32,10 @@ use Yiisoft\Yii\Console\Command\Serve;
 use Yiisoft\Yii\Console\ExitCode;
 use Yiisoft\Yii\Runner\Http\HttpApplicationRunner;
 
+use function fclose;
 use function getcwd;
+use function is_dir;
+use function microtime;
 use function pcntl_async_signals;
 use function pcntl_fork;
 use function pcntl_signal;
@@ -49,12 +58,16 @@ use function trim;
 final class ServeCommand extends Command
 {
     private const int MAX_REQUEST_SIZE = 10_485_760;
+    private const string LIVE_RELOAD_PATH = '/_live-reload';
+    private const int LIVE_RELOAD_RETRY_MILLISECONDS = 1_000;
+    private const float LIVE_RELOAD_TIMEOUT_SECONDS = 20.0;
 
     private string $defaultAddress;
     private string $defaultPort;
     private string $defaultDocroot;
     private string $defaultRouter;
     private int $defaultWorkers;
+    private float $lastPackagedLiveReloadBuildTime = 0.0;
 
     /**
      * @psalm-param array{
@@ -285,7 +298,13 @@ final class ServeCommand extends Command
                 return;
             }
 
-            $request = $this->createRequest(substr($buffer, 0, $requestLength), $address);
+            $rawRequest = substr($buffer, 0, $requestLength);
+            if ($this->isPackagedLiveReloadRequest($rawRequest)) {
+                $this->writeLiveReloadResponse($connection);
+                return;
+            }
+
+            $request = $this->createRequest($rawRequest, $address);
             if ($request === null) {
                 $this->writeBadRequest($connection);
                 return;
@@ -306,24 +325,181 @@ final class ServeCommand extends Command
         );
     }
 
+    private function isPackagedLiveReloadRequest(string $rawRequest): bool
+    {
+        $requestLine = $this->parseRequestLine($rawRequest);
+        if ($requestLine === null) {
+            return false;
+        }
+
+        [$method, $target] = $requestLine;
+
+        return strtoupper($method) === 'GET' && parse_url($target, PHP_URL_PATH) === self::LIVE_RELOAD_PATH;
+    }
+
+    private function writeLiveReloadResponse(ConnectionInterface $connection): void
+    {
+        $connection->write(
+            "HTTP/1.1 200 OK\r\n"
+            . "Content-Type: text/event-stream\r\n"
+            . "Cache-Control: no-cache\r\n"
+            . "Connection: close\r\n"
+            . "X-Accel-Buffering: no\r\n"
+            . "\r\n"
+            . 'retry: ' . self::LIVE_RELOAD_RETRY_MILLISECONDS . "\n",
+        );
+
+        $stream = function_exists('inotify_init') ? inotify_init() : false;
+        if ($stream === false) {
+            $this->finishLiveReloadResponse($connection, 'ping', 'ok');
+            return;
+        }
+
+        stream_set_blocking($stream, false);
+
+        foreach ($this->liveReloadWatchedDirectories() as $directory) {
+            @inotify_add_watch($stream, $directory, $this->liveReloadNativeWatchMask());
+        }
+
+        $closed = false;
+        $timer = null;
+        $finish = function (string $event, string $data) use ($connection, $stream, &$closed, &$timer): void {
+            if ($closed) {
+                return;
+            }
+
+            $closed = true;
+            if ($timer instanceof TimerInterface) {
+                Loop::cancelTimer($timer);
+            }
+
+            $this->closeLiveReloadStream($stream);
+            $this->finishLiveReloadResponse($connection, $event, $data);
+        };
+
+        $connection->once('close', function () use ($stream, &$closed, &$timer): void {
+            if ($closed) {
+                return;
+            }
+
+            $closed = true;
+            if ($timer instanceof TimerInterface) {
+                Loop::cancelTimer($timer);
+            }
+
+            $this->closeLiveReloadStream($stream);
+        });
+
+        Loop::addReadStream($stream, function () use ($stream, $finish): void {
+            $events = inotify_read($stream);
+            if (!is_array($events) || $events === []) {
+                return;
+            }
+
+            $this->buildPackagedLiveReloadSite();
+            $finish('reload', 'changed');
+        });
+
+        $timer = Loop::addTimer(self::LIVE_RELOAD_TIMEOUT_SECONDS, static function () use ($finish): void {
+            $finish('ping', 'ok');
+        });
+    }
+
+    /**
+     * @param resource $stream
+     */
+    private function closeLiveReloadStream(mixed $stream): void
+    {
+        Loop::removeReadStream($stream);
+        fclose($stream);
+    }
+
+    private function buildPackagedLiveReloadSite(): void
+    {
+        $now = microtime(true);
+        if ($now - $this->lastPackagedLiveReloadBuildTime < 1.0) {
+            return;
+        }
+
+        $this->lastPackagedLiveReloadBuildTime = $now;
+        $this->createPackagedLiveReloadBuildRunner()->build();
+    }
+
+    private function finishLiveReloadResponse(ConnectionInterface $connection, string $event, string $data): void
+    {
+        $connection->end("event: {$event}\ndata: {$data}\n\n");
+    }
+
+    private function createPackagedLiveReloadBuildRunner(): SiteBuildRunner
+    {
+        $root = $this->workingDirectory();
+        $yiiBinary = $_SERVER['argv'][0] ?? PHP_BINARY;
+        if (!str_starts_with($yiiBinary, '/')) {
+            $yiiBinary = $root . '/' . $yiiBinary;
+        }
+
+        return new SiteBuildRunner(
+            yiiBinary: $yiiBinary,
+            contentDir: $root . '/content',
+            outputDir: $root . '/output',
+        );
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function liveReloadWatchedDirectories(): array
+    {
+        $directories = [];
+
+        foreach ([$this->workingDirectory() . '/content', $this->workingDirectory() . '/themes'] as $directory) {
+            if (!is_dir($directory)) {
+                continue;
+            }
+
+            $directories[] = $directory;
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::SELF_FIRST,
+            );
+
+            foreach ($iterator as $item) {
+                /** @var SplFileInfo $item */
+                if ($item->isDir()) {
+                    $directories[] = $item->getPathname();
+                }
+            }
+        }
+
+        return $directories;
+    }
+
+    private function liveReloadNativeWatchMask(): int
+    {
+        return constant('IN_ATTRIB')
+            | constant('IN_CLOSE_WRITE')
+            | constant('IN_CREATE')
+            | constant('IN_DELETE')
+            | constant('IN_DELETE_SELF')
+            | constant('IN_MODIFY')
+            | constant('IN_MOVE_SELF')
+            | constant('IN_MOVED_FROM')
+            | constant('IN_MOVED_TO');
+    }
+
     private function createRequest(string $rawRequest, string $address): ?ServerRequest
     {
         $parts = explode("\r\n\r\n", $rawRequest, 2);
         $head = $parts[0] ?? '';
         $body = $parts[1] ?? '';
-        $lines = explode("\r\n", $head);
-        if (!isset($lines[0]) || $lines[0] === '') {
-            return null;
-        }
-
-        $requestLine = preg_split('/\s+/', trim($lines[0]));
-        if ($requestLine === false || count($requestLine) !== 3) {
+        $requestLine = $this->parseRequestLine($rawRequest);
+        if ($requestLine === null) {
             return null;
         }
 
         [$method, $target] = $requestLine;
         $headers = [];
-        foreach (array_slice($lines, 1) as $line) {
+        foreach (array_slice(explode("\r\n", $head), 1) as $line) {
             if (!str_contains($line, ':')) {
                 continue;
             }
@@ -362,6 +538,24 @@ final class ServeCommand extends Command
                 'QUERY_STRING' => parse_url($target, PHP_URL_QUERY) ?: '',
             ],
         );
+    }
+
+    /**
+     * @return array{0:string,1:string,2:string}|null
+     */
+    private function parseRequestLine(string $rawRequest): ?array
+    {
+        $head = explode("\r\n", $rawRequest, 2)[0] ?? '';
+        if ($head === '') {
+            return null;
+        }
+
+        $requestLine = preg_split('/\s+/', trim($head));
+        if ($requestLine === false || count($requestLine) !== 3) {
+            return null;
+        }
+
+        return [$requestLine[0], $requestLine[1], $requestLine[2]];
     }
 
     private function requestLength(string $buffer): ?int
