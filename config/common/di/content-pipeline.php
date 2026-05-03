@@ -19,6 +19,8 @@ use App\Processor\TagLinkProcessor;
 use App\Processor\Toc\TocProcessor;
 use Yiisoft\Definitions\Reference;
 
+$workingDirectory = getcwd() ?: dirname(__DIR__, 3);
+
 return [
     OEmbedProcessor::class => [
         'class' => OEmbedProcessor::class,
@@ -50,7 +52,7 @@ return [
     ],
     BuildCommand::class => [
         '__construct()' => [
-            'rootPath' => dirname(__DIR__, 3),
+            'rootPath' => $workingDirectory,
             'contentPipeline' => Reference::to('contentPipeline'),
             'feedPipeline' => Reference::to('feedPipeline'),
             'themeRegistry' => Reference::to(ThemeRegistry::class),
@@ -59,12 +61,12 @@ return [
     ],
     CleanCommand::class => [
         '__construct()' => [
-            'rootPath' => dirname(__DIR__, 3),
+            'rootPath' => $workingDirectory,
         ],
     ],
     NewCommand::class => [
         '__construct()' => [
-            'rootPath' => dirname(__DIR__, 3),
+            'rootPath' => $workingDirectory,
         ],
     ],
 ];
