@@ -11,12 +11,12 @@ declare(strict_types=1);
  * @var string $collection
  * @var string $language
  * @var ?Navigation $nav
- * @var App\I18n\UiText $ui
+ * @var YiiPress\I18n\UiText $ui
  * @var Closure(string, int, ?string, bool): string $h
  * @var Closure(string, array): string $t
  */
 
-use App\Content\Model\Navigation;
+use YiiPress\Content\Model\Navigation;
 
 ?>
 <div class="minimal-layout"><h1><?= $h($entryTitle) ?></h1><?= $content ?></div>

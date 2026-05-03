@@ -13,12 +13,12 @@ declare(strict_types=1);
  * @var string $uiLanguage
  * @var list<string> $uiLanguages
  * @var array<string, array<string, string>> $uiCatalogs
- * @var App\I18n\UiText $ui
+ * @var YiiPress\I18n\UiText $ui
  * @var Closure(string, int, ?string, bool): string $h
  * @var Closure(string, array): string $t
  */
 
-use App\Content\Model\Navigation;
+use YiiPress\Content\Model\Navigation;
 $language ??= 'en';
 $uiLanguage ??= 'en';
 ?>

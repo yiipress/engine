@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Render;
+namespace YiiPress\Tests\Unit\Render;
 
-use App\Render\MarkdownRenderer;
+use YiiPress\Render\MarkdownRenderer;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;

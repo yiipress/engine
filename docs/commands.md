@@ -166,7 +166,7 @@ yii import telegram --directory=./telegram-data --content-dir=content
 
 ### Adding custom importers
 
-Importers implement `App\Import\ContentImporterInterface` and are registered via Yii3 DI in `config/common/di/importer.php`. Each importer declares its own options via the `options()` method. See [plugins.md](plugins.md#content-importers) for details.
+Importers implement `YiiPress\Import\ContentImporterInterface` and are registered via Yii3 DI in `config/common/di/importer.php`. Each importer declares its own options via the `options()` method. See [plugins.md](plugins.md#content-importers) for details.
 
 ## `yii clean` / `yii clear`
 

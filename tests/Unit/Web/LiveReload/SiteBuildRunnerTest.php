@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Web\LiveReload;
+namespace YiiPress\Tests\Unit\Web\LiveReload;
 
-use App\Web\LiveReload\SiteBuildRunner;
+use YiiPress\Web\LiveReload\SiteBuildRunner;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;

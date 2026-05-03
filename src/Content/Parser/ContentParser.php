@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Content\Parser;
+namespace YiiPress\Content\Parser;
 
-use App\Content\Model\Author;
-use App\Content\Model\Collection;
-use App\Content\Model\Entry;
-use App\Content\Model\Navigation;
-use App\Content\Model\SiteConfig;
+use YiiPress\Content\Model\Author;
+use YiiPress\Content\Model\Collection;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\Navigation;
+use YiiPress\Content\Model\SiteConfig;
 use FilesystemIterator;
 use Generator;
 use SplFileInfo;

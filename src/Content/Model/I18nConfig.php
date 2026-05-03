@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Content\Model;
+namespace YiiPress\Content\Model;
 
 use function in_array;
 

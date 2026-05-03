@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Import\Telegram;
+namespace YiiPress\Import\Telegram;
 
 use DateTimeImmutable;
 

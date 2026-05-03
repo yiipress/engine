@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Build;
+namespace YiiPress\Build;
 
-use App\Content\Model\Entry;
-use App\I18n\UiText;
+use YiiPress\Content\Model\Entry;
+use YiiPress\I18n\UiText;
 use RuntimeException;
 
 use function dirname;

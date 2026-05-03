@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Processor\Mermaid;
+namespace YiiPress\Processor\Mermaid;
 
-use App\Content\Model\Entry;
-use App\Processor\AssetProcessorInterface;
-use App\Processor\ContentProcessorInterface;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Processor\AssetProcessorInterface;
+use YiiPress\Processor\ContentProcessorInterface;
 
 use function str_contains;
 

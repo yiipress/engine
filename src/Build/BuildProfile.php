@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Build;
+namespace YiiPress\Build;
 
 use function array_sum;
 use function hrtime;

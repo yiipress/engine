@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Content\Related;
+namespace YiiPress\Content\Related;
 
-use App\Content\Model\Entry;
-use App\Content\Model\RelatedConfig;
-use App\Content\Model\RelatedEntry;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\RelatedConfig;
+use YiiPress\Content\Model\RelatedEntry;
 
 use function array_slice;
 use function arsort;

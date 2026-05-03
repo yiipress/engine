@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Content\I18n;
+namespace YiiPress\Content\I18n;
 
-use App\Content\Model\Entry;
-use App\Content\Model\I18nConfig;
-use App\Content\Model\Translation;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\I18nConfig;
+use YiiPress\Content\Model\Translation;
 
 use function hash;
 

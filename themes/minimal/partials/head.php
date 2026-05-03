@@ -11,14 +11,14 @@
  * @var string $uiLanguage
  * @var list<string> $uiLanguages
  * @var array<string, array<string, string>> $uiCatalogs
- * @var App\I18n\UiText $ui
+ * @var YiiPress\I18n\UiText $ui
  * @var Closure(string, int, ?string, bool): string $h
  * @var Closure(string, array): string $t
  */
 
-use App\Build\AssetFingerprintManifest;
-use App\Build\Asset;
-use App\Build\MetaTags;
+use YiiPress\Build\AssetFingerprintManifest;
+use YiiPress\Build\Asset;
+use YiiPress\Build\MetaTags;
 
 $headAssets ??= '';
 $collectionName ??= null;

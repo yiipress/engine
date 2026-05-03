@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Tests\Unit\Import\Telegram;
+namespace YiiPress\Tests\Unit\Import\Telegram;
 
-use App\Import\Telegram\Channel;
+use YiiPress\Import\Telegram\Channel;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;

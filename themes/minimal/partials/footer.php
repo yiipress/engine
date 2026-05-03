@@ -1,9 +1,9 @@
 <?php
 
-use App\Content\Model\Navigation;
-use App\Render\NavigationRenderer;
-use App\Build\AssetFingerprintManifest;
-use App\Build\Asset;
+use YiiPress\Content\Model\Navigation;
+use YiiPress\Render\NavigationRenderer;
+use YiiPress\Build\AssetFingerprintManifest;
+use YiiPress\Build\Asset;
 
 /**
  * @var ?Navigation $nav

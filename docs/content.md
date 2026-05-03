@@ -303,7 +303,7 @@ Templates receive a `$nav` variable (a `Navigation` object). Use `NavigationRend
 
 ```php
 <?php if ($nav !== null && $nav->menu('main') !== []): ?>
-    <?= \App\Render\NavigationRenderer::render($nav, 'main') ?>
+    <?= \YiiPress\Render\NavigationRenderer::render($nav, 'main') ?>
 <?php endif; ?>
 ```
 

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Benchmarks;
+namespace YiiPress\Benchmarks;
 
-use App\Build\BuildProfile;
+use YiiPress\Build\BuildProfile;
 use PhpBench\Attributes\Iterations;
 use PhpBench\Attributes\Revs;
 use PhpBench\Attributes\Warmup;

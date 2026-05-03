@@ -50,8 +50,8 @@ theme: custom
 Themes are registered in `config/common/di/theme.php`:
 
 ```php
-use App\Build\Theme;
-use App\Build\ThemeRegistry;
+use YiiPress\Build\Theme;
+use YiiPress\Build\ThemeRegistry;
 use Yiisoft\Definitions\DynamicReference;
 
 return [
@@ -90,7 +90,7 @@ All built-in page templates receive these additional variables:
 | `$uiLanguage` | `string`              | Server-rendered default UI language for theme chrome           |
 | `$uiLanguages` | `list<string>`       | Available UI languages exposed by the site                    |
 | `$uiCatalogs` | `array<string, array<string, string>>` | Theme UI catalogs for client-side switching |
-| `$ui`       | `App\I18n\UiText`       | Injected localized UI-text helper for bundled theme labels    |
+| `$ui`       | `YiiPress\I18n\UiText`       | Injected localized UI-text helper for bundled theme labels    |
 | `$h`        | `Closure(string, int, ?string, bool): string` | Injected alias for `htmlspecialchars()` |
 | `$t`        | `Closure(string, array): string` | Injected shortcut for `$ui->get()` in templates      |
 
@@ -264,7 +264,7 @@ Use `NavigationRenderer` for HTML output:
 
 ```php
 <?php if ($nav !== null && $nav->menu('main') !== []): ?>
-    <?= \App\Render\NavigationRenderer::render($nav, 'main') ?>
+    <?= \YiiPress\Render\NavigationRenderer::render($nav, 'main') ?>
 <?php endif; ?>
 ```
 
@@ -287,7 +287,7 @@ Templates and partials should use `Asset::url()` to resolve the final public URL
 ```php
 <?php
 
-use App\Build\Asset;
+use YiiPress\Build\Asset;
 ?>
 <link rel="stylesheet" href="<?= $h(Asset::url('assets/theme/style.css', $rootPath, $assetManifest)) ?>">
 <script src="<?= $h(Asset::url('assets/theme/search.js', $rootPath, $assetManifest)) ?>" defer></script>
@@ -392,7 +392,7 @@ Create `content/templates/wide.php` (with `theme: local` in config):
 /** @var string $content */
 /** @var string $date */
 /** @var string $author */
-/** @var ?\App\Content\Model\Navigation $nav */
+/** @var ?\YiiPress\Content\Model\Navigation $nav */
 ?>
 <!DOCTYPE html>
 <html>

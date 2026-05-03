@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Processor\Toc;
+namespace YiiPress\Processor\Toc;
 
 /**
  * Processors that generate a table of contents implement this interface.

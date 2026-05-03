@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Build;
+namespace YiiPress\Tests\Unit\Build;
 
-use App\Build\AssetFingerprintManifest;
-use App\Build\EntryRenderer;
-use App\Build\Theme;
-use App\Build\ThemeRegistry;
-use App\Build\TemplateResolver;
-use App\Content\Model\Entry;
-use App\Content\Model\I18nConfig;
-use App\Content\Model\SearchConfig;
-use App\Content\Model\SiteConfig;
-use App\Processor\ContentProcessorPipeline;
+use YiiPress\Build\AssetFingerprintManifest;
+use YiiPress\Build\EntryRenderer;
+use YiiPress\Build\Theme;
+use YiiPress\Build\ThemeRegistry;
+use YiiPress\Build\TemplateResolver;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\I18nConfig;
+use YiiPress\Content\Model\SearchConfig;
+use YiiPress\Content\Model\SiteConfig;
+use YiiPress\Processor\ContentProcessorPipeline;
 use DateTimeImmutable;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
@@ -216,8 +216,8 @@ PHP);
         mkdir($this->contentDir . '/templates', 0o755, true);
         file_put_contents($this->contentDir . '/templates/assets.php', <<<'PHP'
 <?php
-use App\Build\Asset;
-use App\Build\AssetFingerprintManifest;
+use YiiPress\Build\Asset;
+use YiiPress\Build\AssetFingerprintManifest;
 ?>
 <link rel="stylesheet" href="<?= Asset::url('assets/theme/style.css', $rootPath, $assetManifest) ?>">
 <script src="../../assets/theme/image-zoom.js"></script>

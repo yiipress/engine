@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Console;
+namespace YiiPress\Console;
 
 use FilesystemIterator;
 use RecursiveDirectoryIterator;

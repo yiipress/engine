@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Benchmarks;
+namespace YiiPress\Benchmarks;
 
-use App\Build\AssetFingerprintManifest;
-use App\Build\AssetUrlRewriter;
+use YiiPress\Build\AssetFingerprintManifest;
+use YiiPress\Build\AssetUrlRewriter;
 use PhpBench\Attributes\AfterMethods;
 use PhpBench\Attributes\BeforeMethods;
 use PhpBench\Attributes\Iterations;

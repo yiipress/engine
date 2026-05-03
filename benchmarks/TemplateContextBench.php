@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Benchmarks;
+namespace YiiPress\Benchmarks;
 
-use App\Build\TemplateContext;
-use App\Build\TemplateResolver;
-use App\Build\Theme;
-use App\Build\ThemeRegistry;
+use YiiPress\Build\TemplateContext;
+use YiiPress\Build\TemplateResolver;
+use YiiPress\Build\Theme;
+use YiiPress\Build\ThemeRegistry;
 use PhpBench\Attributes\AfterMethods;
 use PhpBench\Attributes\BeforeMethods;
 use PhpBench\Attributes\Iterations;

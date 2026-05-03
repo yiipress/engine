@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Content;
+namespace YiiPress\Content;
 
-use App\Content\Model\Entry;
+use YiiPress\Content\Model\Entry;
 
 final class TaxonomyCollector
 {

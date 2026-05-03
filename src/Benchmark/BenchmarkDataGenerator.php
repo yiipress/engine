@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Benchmark;
+namespace YiiPress\Benchmark;
 
 use FilesystemIterator;
 use RecursiveDirectoryIterator;

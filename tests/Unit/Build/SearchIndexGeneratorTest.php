@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Build;
+namespace YiiPress\Tests\Unit\Build;
 
-use App\Build\SearchIndexGenerator;
-use App\Content\Model\Collection;
-use App\Content\Model\Entry;
-use App\Content\Model\SearchConfig;
-use App\Content\Model\SiteConfig;
+use YiiPress\Build\SearchIndexGenerator;
+use YiiPress\Content\Model\Collection;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\SearchConfig;
+use YiiPress\Content\Model\SiteConfig;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;

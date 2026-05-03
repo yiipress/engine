@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Console\ImportCommand;
-use App\Import\Telegram\TelegramContentImporter;
+use YiiPress\Console\ImportCommand;
+use YiiPress\Import\Telegram\TelegramContentImporter;
 
 $workingDirectory = getcwd() ?: dirname(__DIR__, 3);
 

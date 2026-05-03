@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Processor;
+namespace YiiPress\Processor;
 
-use App\Content\Model\SiteConfig;
+use YiiPress\Content\Model\SiteConfig;
 
 interface SiteConfigAwareProcessorInterface
 {

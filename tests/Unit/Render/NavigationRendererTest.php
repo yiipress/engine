@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Render;
+namespace YiiPress\Tests\Unit\Render;
 
-use App\Content\Model\Navigation;
-use App\Content\Model\NavigationItem;
-use App\Render\NavigationRenderer;
+use YiiPress\Content\Model\Navigation;
+use YiiPress\Content\Model\NavigationItem;
+use YiiPress\Render\NavigationRenderer;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;

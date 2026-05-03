@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Build;
+namespace YiiPress\Build;
 
-use App\Content\Model\Author;
-use App\Content\Model\Collection;
-use App\Content\Model\Entry;
-use App\Content\Model\Navigation;
-use App\Content\Model\SiteConfig;
-use App\Content\PermalinkResolver;
-use App\Render\MarkdownRenderer;
+use YiiPress\Content\Model\Author;
+use YiiPress\Content\Model\Collection;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\Navigation;
+use YiiPress\Content\Model\SiteConfig;
+use YiiPress\Content\PermalinkResolver;
+use YiiPress\Render\MarkdownRenderer;
 use RuntimeException;
 
 final class AuthorPageWriter

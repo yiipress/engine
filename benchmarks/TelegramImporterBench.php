@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Benchmarks;
+namespace YiiPress\Benchmarks;
 
-use App\Import\Telegram\TelegramContentImporter;
+use YiiPress\Import\Telegram\TelegramContentImporter;
 use DateTimeImmutable;
 use FilesystemIterator;
 use PhpBench\Attributes\AfterMethods;

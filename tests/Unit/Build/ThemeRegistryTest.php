@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Build;
+namespace YiiPress\Tests\Unit\Build;
 
-use App\Build\Theme;
-use App\Build\ThemeRegistry;
+use YiiPress\Build\Theme;
+use YiiPress\Build\ThemeRegistry;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 

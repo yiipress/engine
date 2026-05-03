@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Web\StaticFile;
+namespace YiiPress\Web\StaticFile;
 
-use App\Web\LiveReload\SiteBuildRunner;
+use YiiPress\Web\LiveReload\SiteBuildRunner;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;

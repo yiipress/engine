@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Console;
+use YiiPress\Console;
 
 return [
     'build' => Console\BuildCommand::class,

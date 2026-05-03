@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Web\LiveReload\LiveReloadMiddleware;
+use YiiPress\Web\LiveReload\LiveReloadMiddleware;
 use Yiisoft\Definitions\DynamicReference;
 use Yiisoft\ErrorHandler\Middleware\ErrorCatcher;
 use Yiisoft\Middleware\Dispatcher\MiddlewareDispatcher;

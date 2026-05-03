@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Content;
+namespace YiiPress\Tests\Unit\Content;
 
-use App\Content\Model\Entry;
-use App\Content\TaxonomyCollector;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\TaxonomyCollector;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Benchmarks;
+namespace YiiPress\Tests\Unit\Benchmarks;
 
-use App\Benchmark\BenchmarkDataGenerator;
-use App\Content\Parser\EntryParser;
-use App\Content\Parser\FilenameParser;
-use App\Content\Parser\FrontMatterParser;
+use YiiPress\Benchmark\BenchmarkDataGenerator;
+use YiiPress\Content\Parser\EntryParser;
+use YiiPress\Content\Parser\FilenameParser;
+use YiiPress\Content\Parser\FrontMatterParser;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;

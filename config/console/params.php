@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\ApplicationInfo;
+use YiiPress\ApplicationInfo;
 
 return [
     'yiisoft/yii-console' => [

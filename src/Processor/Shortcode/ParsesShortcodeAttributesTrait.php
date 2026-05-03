@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Processor\Shortcode;
+namespace YiiPress\Processor\Shortcode;
 
 /**
  * Trait for parsing shortcode attributes from a string.

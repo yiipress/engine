@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Processor;
+namespace YiiPress\Processor;
 
 /**
  * Processors that need JS/CSS assets implement this interface

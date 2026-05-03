@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Render;
+namespace YiiPress\Render;
 
-use App\Build\RelativePathHelper;
-use App\Content\Model\Navigation;
-use App\Content\Model\NavigationItem;
+use YiiPress\Build\RelativePathHelper;
+use YiiPress\Content\Model\Navigation;
+use YiiPress\Content\Model\NavigationItem;
 
 final class NavigationRenderer
 {

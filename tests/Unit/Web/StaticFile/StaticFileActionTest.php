@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Web\StaticFile;
+namespace YiiPress\Tests\Unit\Web\StaticFile;
 
-use App\Web\LiveReload\SiteBuildRunner;
-use App\Web\StaticFile\StaticFileAction;
+use YiiPress\Web\LiveReload\SiteBuildRunner;
+use YiiPress\Web\StaticFile\StaticFileAction;
 use FilesystemIterator;
 use HttpSoft\Message\ResponseFactory;
 use HttpSoft\Message\ServerRequest;

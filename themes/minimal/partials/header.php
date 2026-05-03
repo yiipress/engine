@@ -1,7 +1,7 @@
 <?php
 
-use App\Content\Model\Navigation;
-use App\Render\NavigationRenderer;
+use YiiPress\Content\Model\Navigation;
+use YiiPress\Render\NavigationRenderer;
 
 /**
  * @var string $siteTitle

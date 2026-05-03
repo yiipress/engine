@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Content\Model;
+namespace YiiPress\Tests\Unit\Content\Model;
 
-use App\Content\Model\Entry;
+use YiiPress\Content\Model\Entry;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;

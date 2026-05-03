@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Build;
+namespace YiiPress\Tests\Unit\Build;
 
-use App\Build\AssetFingerprintManifest;
-use App\Build\ContentAssetCopier;
+use YiiPress\Build\AssetFingerprintManifest;
+use YiiPress\Build\ContentAssetCopier;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
 

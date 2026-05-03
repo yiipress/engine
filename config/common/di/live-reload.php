@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Web\LiveReload\LiveReloadMiddleware;
-use App\Web\LiveReload\SiteBuildRunner;
-use App\Web\StaticFile\StaticFileAction;
+use YiiPress\Web\LiveReload\LiveReloadMiddleware;
+use YiiPress\Web\LiveReload\SiteBuildRunner;
+use YiiPress\Web\StaticFile\StaticFileAction;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 

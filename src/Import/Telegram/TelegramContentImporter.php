@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Import\Telegram;
+namespace YiiPress\Import\Telegram;
 
-use App\Import\ContentImporterInterface;
-use App\Import\ImporterOption;
-use App\Import\ImportResult;
+use YiiPress\Import\ContentImporterInterface;
+use YiiPress\Import\ImporterOption;
+use YiiPress\Import\ImportResult;
 use RuntimeException;
 
 use function count;

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Build;
+namespace YiiPress\Tests\Unit\Build;
 
-use App\Build\NotFoundPageWriter;
-use App\Build\Theme;
-use App\Build\ThemeRegistry;
-use App\Build\TemplateResolver;
-use App\Content\Model\SiteConfig;
+use YiiPress\Build\NotFoundPageWriter;
+use YiiPress\Build\Theme;
+use YiiPress\Build\ThemeRegistry;
+use YiiPress\Build\TemplateResolver;
+use YiiPress\Content\Model\SiteConfig;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;

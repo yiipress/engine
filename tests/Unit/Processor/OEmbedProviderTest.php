@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Processor;
+namespace YiiPress\Tests\Unit\Processor;
 
-use App\Processor\Shortcode\TweetProcessor;
-use App\Processor\Shortcode\VimeoProcessor;
-use App\Processor\Shortcode\YouTubeProcessor;
+use YiiPress\Processor\Shortcode\TweetProcessor;
+use YiiPress\Processor\Shortcode\VimeoProcessor;
+use YiiPress\Processor\Shortcode\YouTubeProcessor;
 use PHPUnit\Framework\TestCase;
 
 final class OEmbedProviderTest extends TestCase

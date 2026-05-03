@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Tests\Unit\Import\Telegram;
+namespace YiiPress\Tests\Unit\Import\Telegram;
 
-use App\Import\Telegram\Channel;
-use App\Import\Telegram\Message;
+use YiiPress\Import\Telegram\Channel;
+use YiiPress\Import\Telegram\Message;
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;

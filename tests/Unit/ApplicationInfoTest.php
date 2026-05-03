@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit;
+namespace YiiPress\Tests\Unit;
 
-use App\ApplicationInfo;
+use YiiPress\ApplicationInfo;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 

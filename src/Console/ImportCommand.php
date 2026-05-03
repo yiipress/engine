@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Console;
+namespace YiiPress\Console;
 
-use App\Import\ContentImporterInterface;
+use YiiPress\Import\ContentImporterInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;

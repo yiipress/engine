@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Highlighter;
+namespace YiiPress\Highlighter;
 
 use RuntimeException;
 

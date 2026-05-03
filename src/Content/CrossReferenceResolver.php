@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Content;
+namespace YiiPress\Content;
 
-use App\Build\RelativePathHelper;
+use YiiPress\Build\RelativePathHelper;
 
 use function hash;
 

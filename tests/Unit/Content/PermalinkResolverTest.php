@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Content;
+namespace YiiPress\Tests\Unit\Content;
 
-use App\Content\Model\Collection;
-use App\Content\Model\Entry;
-use App\Content\Model\I18nConfig;
-use App\Content\PermalinkResolver;
+use YiiPress\Content\Model\Collection;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\I18nConfig;
+use YiiPress\Content\PermalinkResolver;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 

@@ -10,17 +10,17 @@ declare(strict_types=1);
  * @var Closure(string, array): string $partial
  * @var string $language
  * @var string $rootPath
- * @var App\Build\MetaTags $metaTags
+ * @var YiiPress\Build\MetaTags $metaTags
  * @var bool $search
  * @var int $searchResults
  * @var string $uiLanguage
  * @var list<string> $uiLanguages
  * @var array<string, array<string, string>> $uiCatalogs
- * @var App\I18n\UiText $ui
+ * @var YiiPress\I18n\UiText $ui
  * @var Closure(string, int, ?string, bool): string $h
  */
 
-use App\Content\Model\Navigation;
+use YiiPress\Content\Model\Navigation;
 $language ??= 'en';
 $uiLanguage ??= 'en';
 $taxonomyLabel = $ui->taxonomyLabel($taxonomyName);

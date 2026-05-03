@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Benchmarks;
+namespace YiiPress\Benchmarks;
 
-use App\Content\Model\Entry;
-use App\Processor\OEmbed\OEmbedProcessor;
-use App\Processor\Shortcode\TweetProcessor;
-use App\Processor\Shortcode\VimeoProcessor;
-use App\Processor\Shortcode\YouTubeProcessor;
+use YiiPress\Content\Model\Entry;
+use YiiPress\Processor\OEmbed\OEmbedProcessor;
+use YiiPress\Processor\Shortcode\TweetProcessor;
+use YiiPress\Processor\Shortcode\VimeoProcessor;
+use YiiPress\Processor\Shortcode\YouTubeProcessor;
 use DateTimeImmutable;
 use PhpBench\Attributes\AfterMethods;
 use PhpBench\Attributes\BeforeMethods;

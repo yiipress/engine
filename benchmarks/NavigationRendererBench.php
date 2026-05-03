@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Benchmarks;
+namespace YiiPress\Benchmarks;
 
-use App\Content\Model\Navigation;
-use App\Content\Model\NavigationItem;
-use App\Render\NavigationRenderer;
+use YiiPress\Content\Model\Navigation;
+use YiiPress\Content\Model\NavigationItem;
+use YiiPress\Render\NavigationRenderer;
 use PhpBench\Attributes\Iterations;
 use PhpBench\Attributes\Revs;
 use PhpBench\Attributes\Warmup;

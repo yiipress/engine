@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Content;
+namespace YiiPress\Tests\Unit\Content;
 
-use App\Content\Model\MarkdownConfig;
-use App\Content\Model\SiteConfig;
-use App\Content\Parser\SiteConfigParser;
+use YiiPress\Content\Model\MarkdownConfig;
+use YiiPress\Content\Model\SiteConfig;
+use YiiPress\Content\Parser\SiteConfigParser;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertFalse;
