@@ -82,7 +82,6 @@ CMD ["./yii", "serve", "0.0.0.0", "--port=19777", "--workers=1"]
 FROM app-base AS prod-builder
 COPY --from=composer /composer /usr/bin/composer
 COPY config /app/config
-COPY packages/highlighter-extension/php /app/packages/highlighter-extension/php
 COPY public /app/public
 COPY src /app/src
 COPY themes /app/themes
@@ -108,7 +107,6 @@ ENV APP_ENV=prod
 COPY --from=composer /composer /usr/bin/composer
 WORKDIR /app
 COPY config /app/config
-COPY packages/highlighter-extension/php /app/packages/highlighter-extension/php
 COPY public /app/public
 COPY src /app/src
 COPY themes /app/themes

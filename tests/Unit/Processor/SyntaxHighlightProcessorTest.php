@@ -14,6 +14,7 @@ use PHPUnit\Framework\TestCase;
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertNotSame;
 use function PHPUnit\Framework\assertNotFalse;
+use function class_exists;
 
 final class SyntaxHighlightProcessorTest extends TestCase
 {
@@ -75,8 +76,8 @@ final class SyntaxHighlightProcessorTest extends TestCase
 
     protected function setUp(): void
     {
-        if (!extension_loaded('yiipress_highlighter')) {
-            $this->markTestSkipped('ext-yiipress_highlighter is not available.');
+        if (!class_exists(Highlighter::class)) {
+            $this->markTestSkipped('YiiPress\\Highlighter is not available.');
         }
     }
 

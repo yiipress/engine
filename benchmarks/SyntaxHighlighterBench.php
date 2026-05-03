@@ -18,6 +18,7 @@ final class SyntaxHighlighterBench
 {
     private ?Highlighter $highlighter = null;
     private string $plainHtml = '';
+    private string $rawPhpCode = '';
     private string $singleBlockHtml = '';
     private string $multiBlockHtml = '';
 
@@ -29,6 +30,7 @@ final class SyntaxHighlighterBench
 
         $this->highlighter = new Highlighter();
         $this->plainHtml = '<p>Regular paragraph.</p>';
+        $this->rawPhpCode = 'echo "hello";';
         $this->singleBlockHtml = '<pre><code class="language-php">&lt;?php echo &quot;hello&quot;;</code></pre>';
         $this->multiBlockHtml = '<p>Intro</p>'
             . '<pre><code class="language-php">&lt;?php echo 1;</code></pre>'
@@ -46,7 +48,7 @@ final class SyntaxHighlighterBench
     #[Warmup(1)]
     public function benchSkipPlainHtml(): void
     {
-        $this->highlighter()->highlight($this->plainHtml);
+        $this->highlighter()->highlightHtml($this->plainHtml);
     }
 
     #[Revs(2000)]
@@ -54,7 +56,15 @@ final class SyntaxHighlighterBench
     #[Warmup(1)]
     public function benchHighlightSingleBlock(): void
     {
-        $this->highlighter()->highlight($this->singleBlockHtml);
+        $this->highlighter()->highlightHtml($this->singleBlockHtml);
+    }
+
+    #[Revs(2000)]
+    #[Iterations(3)]
+    #[Warmup(1)]
+    public function benchHighlightRawCode(): void
+    {
+        $this->highlighter()->highlight($this->rawPhpCode, 'php');
     }
 
     #[Revs(500)]
@@ -62,7 +72,7 @@ final class SyntaxHighlighterBench
     #[Warmup(1)]
     public function benchHighlightMultipleBlocks(): void
     {
-        $this->highlighter()->highlight($this->multiBlockHtml);
+        $this->highlighter()->highlightHtml($this->multiBlockHtml);
     }
 
     private function highlighter(): Highlighter

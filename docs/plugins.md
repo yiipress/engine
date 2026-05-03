@@ -45,8 +45,8 @@ echo "Hello, world!";
 ```
 ````
 
-The highlighter is a reusable native PHP extension package, `yiipress/highligher`. It exposes
-the PHP API as `YiiPress\Highlighter`, builds a Rust
+The highlighter is a reusable native PHP extension package, `yiipress/highligher`. The extension
+defines the PHP API as `YiiPress\Highlighter`, builds a Rust
 library with [syntect](https://github.com/trishume/syntect) and [rayon](https://github.com/rayon-rs/rayon),
 then statically links that library into `ext-yiipress_highlighter`. It processes all
 `<pre><code class="language-xxx">` blocks in the rendered HTML, replacing them with
@@ -71,8 +71,16 @@ Use it directly from PHP:
 ```php
 use YiiPress\Highlighter;
 
-$html = (new Highlighter())->highlight($html, 'Solarized (dark)');
+$html = (new Highlighter())->highlightHtml($html, 'Solarized (dark)');
 ```
+
+Highlight raw code without wrapping it in `<pre><code>` first:
+
+```php
+$html = (new Highlighter())->highlight('echo "Hello";', 'php');
+```
+
+Use `class_exists(Highlighter::class)` to detect whether the extension is loaded.
 
 Supported languages include all syntect defaults (PHP, JavaScript, Python, Rust, YAML,
 Bash, SQL, HTML, CSS, and many more). Code blocks with an unrecognized language are

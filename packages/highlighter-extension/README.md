@@ -1,7 +1,7 @@
 # YiiPress Highlighter Extension
 
-Native PHP extension and PHP wrapper for server-side syntax highlighting. The public PHP API is
-`YiiPress\Highlighter`; the raw extension function is an implementation detail.
+Native PHP extension for server-side syntax highlighting. It exposes the public PHP API as
+`YiiPress\Highlighter`.
 
 ## Install With PIE
 
@@ -34,7 +34,7 @@ extension=yiipress_highlighter
 use YiiPress\Highlighter;
 
 $highlighter = new Highlighter();
-$html = $highlighter->highlight(
+$html = $highlighter->highlightHtml(
     '<pre><code class="language-php">&lt;?php echo "Hello";</code></pre>',
 );
 ```
@@ -42,8 +42,14 @@ $html = $highlighter->highlight(
 Pass a syntect theme name as the second argument:
 
 ```php
-$html = $highlighter->highlight($html, 'Solarized (dark)');
+$html = $highlighter->highlightHtml($html, 'Solarized (dark)');
 ```
 
-`YiiPress\Highlighter::isAvailable()` returns whether `ext-yiipress_highlighter`
-is loaded in the current PHP process.
+Highlight raw code without wrapping it in `<pre><code>` first:
+
+```php
+$html = $highlighter->highlight('echo "Hello";', 'php');
+```
+
+Use `class_exists(YiiPress\Highlighter::class)` when code needs to detect whether the
+extension is loaded in the current PHP process.

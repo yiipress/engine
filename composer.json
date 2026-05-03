@@ -78,14 +78,11 @@
         "vimeo/psalm": "^6.16.1"
     },
     "suggest": {
-        "yiipress/highligher": "Provides YiiPress\\Highlighter and installs ext-yiipress_highlighter with PIE for native syntax highlighting."
+        "yiipress/highligher": "Installs ext-yiipress_highlighter, which provides YiiPress\\Highlighter for native syntax highlighting."
     },
     "autoload": {
         "psr-4": {
-            "YiiPress\\": [
-                "src",
-                "packages/highlighter-extension/php"
-            ]
+            "YiiPress\\": "src"
         }
     },
     "autoload-dev": {
