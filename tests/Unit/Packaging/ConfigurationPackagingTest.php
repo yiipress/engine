@@ -6,6 +6,7 @@ namespace YiiPress\Tests\Unit\Packaging;
 
 use YiiPress\Console\BuildCommand;
 use YiiPress\Console\CleanCommand;
+use YiiPress\Console\InitCommand;
 use YiiPress\Console\ImportCommand;
 use YiiPress\Console\NewCommand;
 use YiiPress\Console\ServeCommand;
@@ -51,6 +52,7 @@ final class ConfigurationPackagingTest extends TestCase
 
             assertSame($workingDirectory, $contentPipelineConfiguration[BuildCommand::class]['__construct()']['rootPath']);
             assertSame($workingDirectory, $contentPipelineConfiguration[CleanCommand::class]['__construct()']['rootPath']);
+            assertSame($workingDirectory, $contentPipelineConfiguration[InitCommand::class]['__construct()']['rootPath']);
             assertSame($workingDirectory, $contentPipelineConfiguration[NewCommand::class]['__construct()']['rootPath']);
             assertSame($workingDirectory, $importerConfiguration[ImportCommand::class]['__construct()']['rootPath']);
         } finally {
@@ -66,6 +68,7 @@ final class ConfigurationPackagingTest extends TestCase
 
         /** @psalm-suppress RedundantCondition */
         assertSame(ServeCommand::class, $commands['serve']);
+        assertSame(InitCommand::class, $commands['init']);
     }
 
     #[Test]

@@ -48,6 +48,7 @@
 - [x] PHAR and static PHP binary packaging
 - [x] Worker-mode serving for PHAR and static PHP binary packages
 - [x] `yiipress new` command — scaffold new entries from archetypes/templates
+- [x] `yiipress init` command — scaffold initial content structure
 - [x] Incremental builds (only rebuild changed files)
 - [x] Smaller static package by removing unused runtime extension dependencies
 - [x] Build diagnostics (warn on broken internal links, missing images, invalid front matter)

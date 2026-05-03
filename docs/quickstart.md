@@ -9,6 +9,12 @@ cd myblog
 
 ## 2. Configure your site
 
+Create the initial content structure:
+
+```bash
+make yii init
+```
+
 Edit `content/config.yaml`:
 
 ```yaml
@@ -27,22 +33,16 @@ taxonomies:
   - categories
 ```
 
-## 3. Create a collection
+## 3. Review collections
 
-Create a blog collection directory and its config:
+`make yii init` creates `content/page/_collection.yaml` and `content/blog/_collection.yaml`. The blog collection is ready for dated posts:
 
-```bash
-mkdir -p content/blog
-```
-
-Create `content/blog/_collection.yaml`:
-
-```yaml
-title: Blog
-sort_by: date
-sort_direction: desc
-feed: true
-listing: true
+```text
+content/
+├── page/
+│   └── _collection.yaml
+└── blog/
+    └── _collection.yaml
 ```
 
 ## 4. Write your first post
@@ -67,9 +67,9 @@ YiiPress is a static blog engine built on Yii3. It is:
 - Extensible with plugins
 ```
 
-## 5. Create a standalone page
+## 5. Create a page
 
-Create `content/about.md`:
+Create `content/page/about.md`:
 
 ```markdown
 ---
@@ -81,7 +81,7 @@ This is my personal blog where I write about programming.
 
 ## 6. Add navigation
 
-Create `content/navigation.yaml`:
+Edit `content/navigation.yaml`:
 
 ```yaml
 main:

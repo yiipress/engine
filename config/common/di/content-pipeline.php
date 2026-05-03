@@ -6,6 +6,7 @@ use YiiPress\Build\TemplateResolver;
 use YiiPress\Build\ThemeRegistry;
 use YiiPress\Console\BuildCommand;
 use YiiPress\Console\CleanCommand;
+use YiiPress\Console\InitCommand;
 use YiiPress\Console\NewCommand;
 use YiiPress\Processor\ContentProcessorPipeline;
 use YiiPress\Processor\Mermaid\MermaidProcessor;
@@ -60,6 +61,11 @@ return [
         ],
     ],
     CleanCommand::class => [
+        '__construct()' => [
+            'rootPath' => $workingDirectory,
+        ],
+    ],
+    InitCommand::class => [
         '__construct()' => [
             'rootPath' => $workingDirectory,
         ],
