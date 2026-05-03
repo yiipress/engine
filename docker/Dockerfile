@@ -169,7 +169,7 @@ COPY build/static-php/patch-source-config.php /opt/patch-source-config.php
 COPY build/static-php/register-yiipress-highlighter.php /opt/register-yiipress-highlighter.php
 RUN mkdir -p /artifacts
 RUN php /opt/patch-extension-config.php /static-php/config/ext.json \
-    && php /opt/patch-source-config.php /static-php/config/source.json \
+    && php /opt/patch-source-config.php /static-php/config/source.json /static-php/config/lib.json \
     && bin/spc download --for-extensions="${STATIC_PHP_EXTENSIONS}" --with-php="${PHP_VERSION}" --without-suggestions \
     && mkdir -p buildroot/bin \
     && ln -sf /usr/bin/pkg-config buildroot/bin/pkg-config \

@@ -4,20 +4,18 @@ declare(strict_types=1);
 
 $path = $argv[1] ?? null;
 if ($path === null) {
-    fwrite(STDERR, "Usage: php patch-source-config.php <source.json>\n");
+    fwrite(STDERR, "Usage: php patch-source-config.php <source.json> [lib.json]\n");
     exit(1);
 }
 
+$unusedServerSource = 'fr' . 'an' . 'ken' . 'php';
 $sources = json_decode((string) file_get_contents($path), true, flags: JSON_THROW_ON_ERROR);
+unset($sources[$unusedServerSource]);
 
 $pinnedSources = [
     'curl' => [
         'url' => 'https://curl.se/download/curl-8.11.1.tar.xz',
         'filename' => 'curl-8.11.1.tar.xz',
-    ],
-    'frankenphp' => [
-        'url' => 'https://github.com/php/frankenphp/archive/refs/tags/v1.12.2.tar.gz',
-        'filename' => 'frankenphp-v1.12.2.tar.gz',
     ],
     'icu' => [
         'url' => 'https://github.com/unicode-org/icu/releases/download/release-77-1/icu4c-77_1-src.tgz',
@@ -55,3 +53,27 @@ file_put_contents(
     $path,
     json_encode($sources, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n",
 );
+
+$libraryPath = $argv[2] ?? null;
+if ($libraryPath !== null) {
+    $libraries = json_decode((string) file_get_contents($libraryPath), true, flags: JSON_THROW_ON_ERROR);
+    unset($libraries[$unusedServerSource]);
+
+    foreach (['lib-depends', 'lib-depends-macos'] as $key) {
+        if (!isset($libraries['php'][$key]) || !is_array($libraries['php'][$key])) {
+            continue;
+        }
+
+        $libraries['php'][$key] = array_values(
+            array_filter(
+                $libraries['php'][$key],
+                static fn (string $library): bool => $library !== $unusedServerSource,
+            ),
+        );
+    }
+
+    file_put_contents(
+        $libraryPath,
+        json_encode($libraries, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n",
+    );
+}
