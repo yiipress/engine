@@ -8,6 +8,8 @@
 !/config
 !/public
 !/src
+!/packages
+!/build
 !autoload.php
 !yii
 !composer.json

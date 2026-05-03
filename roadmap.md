@@ -45,6 +45,7 @@
 ## Priority 3: Developer experience
 
 - [x] Live reload / file watching during `yiipress serve`
+- [x] PHAR and static PHP binary packaging
 - [x] `yiipress new` command — scaffold new entries from archetypes/templates
 - [x] Incremental builds (only rebuild changed files)
 - [x] Build diagnostics (warn on broken internal links, missing images, invalid front matter)

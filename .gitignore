@@ -26,6 +26,7 @@ Thumbs.db
 /output/
 /docs-output/
 /content/
+/dist/
 
 # Benchmark generated data
 benchmarks/data
