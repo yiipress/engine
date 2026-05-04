@@ -10,6 +10,7 @@ use YiiPress\Console\InitCommand;
 use YiiPress\Console\ImportCommand;
 use YiiPress\Console\NewCommand;
 use YiiPress\Console\ServeCommand;
+use YiiPress\Build\PharArchiveFilter;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -17,6 +18,8 @@ use function chdir;
 use function getcwd;
 use function mkdir;
 use function PHPUnit\Framework\assertSame;
+
+require_once dirname(__DIR__, 3) . '/build/PharArchiveFilter.php';
 
 final class ConfigurationPackagingTest extends TestCase
 {
@@ -179,15 +182,62 @@ final class ConfigurationPackagingTest extends TestCase
 
         self::assertStringNotContainsString('COPY . /app', $stage);
         self::assertStringNotContainsString('COPY content /app/content', $stage);
+        self::assertStringNotContainsString('COPY runtime /app/runtime', $stage);
         self::assertStringNotContainsString("'content'", $packageScript);
+        self::assertStringNotContainsString("'runtime'", $packageScript);
+        self::assertStringContainsString('PharArchiveFilter::shouldExclude($localPath)', $packageScript);
         self::assertStringNotContainsString('packages/highlighter-extension/php', $stage);
         self::assertStringNotContainsString("'packages/highlighter-extension/php'", $packageScript);
         self::assertStringContainsString('COPY config /app/config', $stage);
         self::assertStringContainsString('COPY public /app/public', $stage);
         self::assertStringContainsString('COPY src /app/src', $stage);
         self::assertStringContainsString('COPY themes /app/themes', $stage);
-        self::assertStringContainsString('COPY build/package-phar.php /app/build/', $stage);
+        self::assertStringContainsString('COPY build/package-phar.php build/PharArchiveFilter.php /app/build/', $stage);
         self::assertStringContainsString('COPY yii composer.json composer.lock /app/', $stage);
+    }
+
+    #[Test]
+    public function pharBuilderExcludesVendorNonRuntimeFiles(): void
+    {
+        foreach ([
+            'runtime/cache/build-manifest.json',
+            'vendor/bin/phpunit',
+            'vendor/acme/package/tests/FeatureTest.php',
+            'vendor/acme/package/test/FeatureTest.php',
+            'vendor/acme/package/.github/workflows/ci.yml',
+            'vendor/acme/package/.phan/config.php',
+            'vendor/acme/package/docs/index.md',
+            'vendor/acme/package/doc/index.rst',
+            'vendor/acme/package/examples/example.php',
+            'vendor/acme/package/tools/.gitignore',
+            'vendor/acme/package/.gitignore',
+            'vendor/acme/package/.scrutinizer.yml',
+            'vendor/acme/package/README.md',
+            'vendor/acme/package/UPGRADE.md',
+            'vendor/acme/package/composer.json',
+            'vendor/acme/package/composer.lock',
+            'vendor/acme/package/phpunit.xml.dist',
+            'vendor/acme/package/psalm.xml',
+            'vendor/acme/package/phpstan.neon.dist',
+            'vendor/acme/package/rector.php',
+            'vendor/acme/package/Makefile',
+        ] as $path) {
+            self::assertTrue(PharArchiveFilter::shouldExclude($path), $path);
+        }
+
+        foreach ([
+            'config/common/params.php',
+            'src/Console/BuildCommand.php',
+            'themes/default/layout.php',
+            'vendor/composer/autoload_real.php',
+            'vendor/composer/installed.php',
+            'vendor/acme/package/src/Runtime.php',
+            'vendor/acme/package/LICENSE',
+            'vendor/acme/package/LICENSE.md',
+            'vendor/acme/package/LICENCE.md',
+        ] as $path) {
+            self::assertFalse(PharArchiveFilter::shouldExclude($path), $path);
+        }
     }
 
     #[Test]
