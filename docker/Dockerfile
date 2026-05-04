@@ -111,7 +111,7 @@ COPY config /app/config
 COPY public /app/public
 COPY src /app/src
 COPY themes /app/themes
-COPY build/package-phar.php /app/build/
+COPY build/package-phar.php build/PharArchiveFilter.php /app/build/
 COPY yii composer.json composer.lock /app/
 RUN --mount=type=cache,target=/tmp/cache \
     composer install --no-dev --no-progress --no-interaction --classmap-authoritative && \

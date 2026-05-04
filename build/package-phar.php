@@ -2,12 +2,16 @@
 
 declare(strict_types=1);
 
+use YiiPress\Build\PharArchiveFilter;
+
 if (PHP_SAPI !== 'cli') {
     fwrite(STDERR, "This script must run from CLI.\n");
     exit(1);
 }
 
 $root = dirname(__DIR__);
+require_once __DIR__ . '/PharArchiveFilter.php';
+
 $target = $argv[1] ?? $root . '/dist/yiipress.phar';
 $targetDirectory = dirname($target);
 
@@ -51,7 +55,7 @@ foreach ($includeDirectories as $directory) {
         $fullPath = $file->getPathname();
         $localPath = substr($fullPath, strlen($root) + 1);
 
-        if (str_contains($localPath, '/.git/')) {
+        if (PharArchiveFilter::shouldExclude($localPath)) {
             continue;
         }
 
