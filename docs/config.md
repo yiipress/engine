@@ -45,6 +45,8 @@ params:
 
 assets:
   fingerprint: true
+
+editor: code
 ```
 
 ### Fields
@@ -68,6 +70,7 @@ assets:
 - **search** — opt-in client-side search (see below)
 - **related** — opt-in related content suggestions (see below)
 - **assets** — asset pipeline settings (see below)
+- **editor** — command used by `yii serve` to open the current markdown source from the preview overlay. If omitted, YiiPress uses the platform default opener (`open` on macOS, `xdg-open` on Linux, and `start` through `cmd` on Windows)
 - **params** — arbitrary key-value pairs for use in templates
 - **markdown** — markdown extensions configuration (see below)
 
@@ -178,6 +181,31 @@ When enabled, YiiPress renames copied assets to include a content hash, for exam
 
 Built-in templates use the fingerprinted URLs automatically, and existing hardcoded `src` / `href`
 asset references in rendered HTML are rewritten during build so custom themes continue to work.
+
+### Editor
+
+During `yii serve`, HTML pages get a fixed bottom-right **Edit** button. Clicking it asks the preview server to open the markdown source file that produced the current page.
+
+Configure the editor command in `content/config.yaml`:
+
+```yaml
+editor: code
+```
+
+If the command does not contain `{file}`, YiiPress appends the source file path. For commands that need the path in a specific position, use `{file}`:
+
+```yaml
+editor: "code --goto {file}"
+```
+
+The same command can be written as a list to avoid shell-style quoting:
+
+```yaml
+editor:
+  - code
+  - --goto
+  - "{file}"
+```
 
 ### robots.txt
 

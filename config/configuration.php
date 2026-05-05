@@ -20,7 +20,7 @@ return [
             'common/di/content-pipeline.php',
             'common/di/error-handler.php',
             'common/di/importer.php',
-            'common/di/live-reload.php',
+            'common/di/dev-server.php',
             'common/di/logger.php',
             'common/di/router.php',
             'common/di/theme.php',

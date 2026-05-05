@@ -262,6 +262,7 @@ final class ServeCommandTest extends TestCase
         self::assertSame('text/html; charset=utf-8', $response['headers']['Content-Type']);
         self::assertStringContainsString('<h1>Blog</h1>', $response['body']);
         self::assertStringContainsString('EventSource("/_live-reload")', $response['body']);
+        self::assertStringContainsString('fetch("/_open-source"', $response['body']);
     }
 
     #[Test]

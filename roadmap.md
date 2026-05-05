@@ -55,6 +55,7 @@
 - [x] `yiipress clean` command — clear build output and caches
 - [x] Dry run mode for build — show what would be generated without writing files
 - [x] No-write build mode for render-vs-filesystem performance diagnostics
+- [x] `serve` overlay button to open the current markdown source in a configured editor
 
 ## Priority 4: Templates and theming
 

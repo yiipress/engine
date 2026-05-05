@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace YiiPress\Console;
 
 use YiiPress\Environment;
-use YiiPress\Web\LiveReload\LiveReloadMiddleware;
+use YiiPress\Web\DevServer\DevHtmlInjector;
 use YiiPress\Web\LiveReload\SiteBuildRunner;
 use FilesystemIterator;
 use HttpSoft\Message\ServerRequest;
@@ -581,6 +581,9 @@ final class ServeCommand extends Command
                 'SERVER_PROTOCOL' => 'HTTP/1.1',
                 'HTTP_HOST' => $host,
                 'QUERY_STRING' => parse_url($target, PHP_URL_QUERY) ?: '',
+                'YIIPRESS_PROJECT_ROOT' => $this->workingDirectory(),
+                'YIIPRESS_CONTENT_DIR' => $this->contentDir(),
+                'YIIPRESS_OUTPUT_DIR' => $this->outputDir(),
             ],
         );
     }
@@ -666,7 +669,7 @@ final class ServeCommand extends Command
                 return $this->createNotFoundResponse($method === 'HEAD');
             }
 
-            $body = LiveReloadMiddleware::injectScript($body);
+            $body = DevHtmlInjector::inject($body);
         }
 
         return [
@@ -739,7 +742,7 @@ final class ServeCommand extends Command
         if (is_file($file)) {
             $content = file_get_contents($file);
             if ($content !== false) {
-                $body = LiveReloadMiddleware::injectScript($content);
+                $body = DevHtmlInjector::inject($content);
             }
         }
 

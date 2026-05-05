@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use YiiPress\Web\LiveReload\LiveReloadMiddleware;
+use YiiPress\Web\DevServer\DevHtmlMiddleware;
 use Yiisoft\Definitions\DynamicReference;
 use Yiisoft\ErrorHandler\Middleware\ErrorCatcher;
 use Yiisoft\Middleware\Dispatcher\MiddlewareDispatcher;
@@ -17,7 +17,7 @@ return [
                 'withMiddlewares()' => [
                     [
                         ErrorCatcher::class,
-                        LiveReloadMiddleware::class,
+                        DevHtmlMiddleware::class,
                         Router::class,
                     ],
                 ],

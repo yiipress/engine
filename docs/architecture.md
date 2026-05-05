@@ -250,6 +250,7 @@ In serve mode, YiiPress runs a ReactPHP preview server over the built output dir
 - `--content-dir` and `--output-dir` are passed through to live reload rebuilds and static file serving.
 - Startup fails before opening the socket if the content directory is missing or the output directory is not writable or cannot be created.
 - Static file serving and live reload SSE are handled in the server loop, so normal page and asset responses avoid Yii HTTP runner overhead.
+- HTML responses get a small development overlay that can open the current page's markdown source through the framework-routed `/_open-source` action. Source lookup uses the build manifest and verifies paths stay inside the configured content and output directories.
 - Non-HTML assets are streamed with backpressure instead of being buffered into memory.
 - Each worker owns one shared live reload inotify watcher and attaches all SSE clients in that worker to it.
 
@@ -317,8 +318,10 @@ src/
 │   ├── ThemeRegistry.php         # Named theme registry, configured via DI
 │   ├── TemplateResolver.php      # Resolves template names via ThemeRegistry
 ├── Web/                          # HTTP helpers and direct web entry actions
+│   ├── DevServer/
+│   │   ├── DevHtmlInjector.php   # Adds preview scripts to served HTML
+│   │   └── OpenSourceAction.php  # Framework route action for opening markdown source
 │   ├── LiveReload/
-│   │   ├── LiveReloadMiddleware.php # Injects live-reload JS into HTML
 │   │   └── SiteBuildRunner.php   # Triggers yii build on file changes
 │   ├── StaticFile/
 │   │   └── StaticFileAction.php  # Serves files from output directory

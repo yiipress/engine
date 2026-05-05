@@ -8,7 +8,9 @@ The command validates paths before opening the socket. The content directory mus
 
 ## Static file serving
 
-The web application serves files from the configured output directory. Requests for `/foo/` serve `<output-dir>/foo/index.html`, requests for `/style.css` serve `<output-dir>/style.css`, etc. `serve` follows these resolution rules in its ReactPHP server loop, injects the live reload script into served HTML directly, and streams non-HTML files so large images, fonts, and media do not have to be buffered into memory before being sent.
+The web application serves files from the configured output directory. Requests for `/foo/` serve `<output-dir>/foo/index.html`, requests for `/style.css` serve `<output-dir>/style.css`, etc. `serve` follows these resolution rules in its ReactPHP server loop, injects the live reload and source-open overlay scripts into served HTML directly, and streams non-HTML files so large images, fonts, and media do not have to be buffered into memory before being sent.
+
+The source-open overlay posts the current browser path to the framework-routed `/_open-source` action. The action resolves that path to an output file, looks up the corresponding markdown source in the build manifest, verifies that the source is inside the content directory, and launches the configured `editor` command from `content/config.yaml`. If no editor is configured, the server uses the platform opener (`open` on macOS, `xdg-open` on Linux, or `start` through `cmd` on Windows).
 
 If the output directory is empty after startup validation, a build runs automatically on the first request.
 
@@ -18,7 +20,7 @@ When content files or templates change, the browser refreshes with the updated b
 
 How it works:
 
-1. `LiveReloadMiddleware` injects a small JavaScript snippet before `</body>` in every HTML response.
+1. `DevHtmlInjector` injects a small JavaScript snippet before `</body>` in every served HTML response.
 2. The snippet opens an SSE (Server-Sent Events) connection to `/_live-reload`.
 3. The ReactPHP server handles this endpoint directly and attaches all EventSource clients in the same worker to a shared inotify read stream.
 4. When a change is detected, `SiteBuildRunner` triggers a normal `yii build`, so live reload benefits from the same incremental build pipeline as manual builds.
