@@ -1,100 +1,55 @@
 <p align="center">
-    <img src="logo.svg" alt="YiiPress" width="280">
+    <a href="https://github.com/yiipress" target="_blank">
+        <img src="./logo.svg" height="100px" alt="YiiPress">
+    </a>
+    <h1 align="center">YiiPress Static Website Engine</h1>
+    <br>
 </p>
 
-**YiiPress** is a fast, file-based static website generator built on [Yii3](https://www.yiiframework.com/) and PHP 8.5. 
-Write Markdown, run one command, get a fully static site — blogs, docs, portfolios, feeds, sitemaps, taxonomy pages, authors, search, and all.
+[![Latest Stable Version](https://poser.pugx.org/yiipress/engine/v)](https://packagist.org/packages/yiipress/engine)
+[![Total Downloads](https://poser.pugx.org/yiipress/engine/downloads)](https://packagist.org/packages/yiipress/engine)
+[![Tests](https://github.com/yiipress/engine/actions/workflows/run-tests.yml/badge.svg)](https://github.com/yiipress/engine/actions/workflows/run-tests.yml)
+[![Docker](https://github.com/yiipress/engine/actions/workflows/docker-build.yml/badge.svg)](https://github.com/yiipress/engine/actions/workflows/docker-build.yml)
 
-[![PHP 8.5](https://img.shields.io/badge/PHP-8.5-777bb4?logo=php&logoColor=white)](https://www.php.net/)
-[![Yii3](https://img.shields.io/badge/Yii-3-007bff)](https://www.yiiframework.com/)
-[![Docs](https://img.shields.io/badge/docs-yiipress.github.io-blueviolet)](https://yiipress.github.io/engine/)
+The package provides a fast, file-based static website engine powered by [Yii3](https://www.yiiframework.com/) and PHP 8.5.
+Write Markdown, build static HTML, and serve blogs, documentation, feeds, sitemaps, taxonomy pages, authors, search, and assets
+without a database.
 
----
+## Requirements
 
-## Features
+- Docker and Docker Compose for the standard development, test, and build workflow.
+- PHP 8.5 with required extensions when running the application outside Docker.
+- [`ext-highlighter`](https://github.com/yiipress/highlighter) for native server-side syntax highlighting.
 
-### Content
+The Docker images include the required PHP extensions, including the YiiPress highlighter extension.
 
-- **Markdown** with 15+ configurable extensions (tables, footnotes, strikethrough, task lists, Mermaid diagrams, LaTeX math, wiki-links…)
-- **Collections** — group entries into blogs, docs sections, portfolios, or any other set
-- **Standalone pages** — about, contact, and other one-off pages outside collections
-- **Taxonomies** — tags and categories with index and term pages
-- **Authors** — per-author profile pages with bio and entry archives
-- **Date archives** — yearly and monthly archive pages
-- **Drafts & scheduling** — `draft: true` and future-dated entries excluded from production builds
-- **Entry summaries** — auto-generated or manual via `[cut]` marker in body
-- **Cross-references** — link between entries by file path; permalinks can change without breaking links
+## Installation
 
-### Build
+Create a project:
 
-- **Parallel builds** — auto-selects a sensible worker count by default, with manual override available; 10 000 entries built in ~2.8 s with 4 workers in the current end-to-end benchmark
-- **Incremental builds** — only re-renders files that changed since last build
-- **Build cache** — parsed Markdown and front matter cached between runs
-- **Dry-run mode** — preview what would be generated without writing anything
-- **Build diagnostics** — warns about broken internal links, missing images, invalid front matter
-
-### SEO & Standards
-
-- RSS and Atom feeds per collection
-- XML sitemap
-- Open Graph and Twitter Card meta tags
-- Canonical URLs
-- Configurable `robots.txt`
-- Redirect pages (for permalink migrations)
-- Static `404.html` for Netlify, GitHub Pages, Vercel, Cloudflare Pages
-
-### Extensions
-
-- **Syntax highlighting** — server-side, via a native Rust/[syntect](https://github.com/trishume/syntect) PHP extension; zero client-side JavaScript
-- **Configurable highlight themes** — choose a built-in syntect theme in `content/config.yaml` via `highlight_theme`
-- **Table of contents** — auto-generated from headings, with `id` injection
-- **Mermaid diagrams** — flowcharts, sequence, Gantt, pie, and more
-- **YouTube & Vimeo shortcodes** — responsive embeds with a single tag
-- **Auto-embeds for provider URLs** — standalone YouTube, Vimeo, and Twitter/X links expand automatically
-- **Client-side search** — fuzzy search with modal UI; no external dependencies; opt-in
-- **Asset fingerprinting** — enabled by default; content-hash filenames for CSS, JS, images, and other copied assets
-- **Telegram import** — import channel exports as Markdown entries
-
-### Developer Experience
-
-- Live-reload dev server (`make up`)
-- `yiipress init` — create the initial content directory, site config, collections, and navigation
-- `yiipress new` — scaffold entries from archetypes
-- `yiipress clean` / `yiipress clear` — wipe output and caches
-- PHP template engine with partials — no new templating language to learn
-- Theme system — installable and distributable themes
-- Docker-based setup — one command to start
-
----
-
-## Performance
-
-10 000 entries across 3 collections:
-
-| Mode                | Time    |
-|---------------------|---------|
-| Sequential          | ~3.4 s  |
-| 4 workers           | ~2.8 s  |
-| Incremental         | ~358 ms |
-
-1 000 realistic entries (large posts, images, tables, code blocks):
-
-| Mode       | Time    |
-|------------|---------|
-| Sequential | ~2.0 s  |
-| 4 workers  | ~1.1 s  |
-| Incremental| ~108 ms |
-
----
-
-## Quick Start
-
-```bash
+```shell
 composer create-project yiipress/engine mysite
 cd mysite
 ```
 
-Configure `content/config.yaml`:
+Build the Docker image and initialize content:
+
+```shell
+make build
+make yii init
+```
+
+Start the development server:
+
+```shell
+make up
+```
+
+The preview server is available at the host port configured by `DEV_PORT` in `docker/.env`.
+
+## General Usage
+
+Configure the site in `content/config.yaml`:
 
 ```yaml
 title: My Site
@@ -107,17 +62,17 @@ taxonomies:
 highlight_theme: "Solarized (dark)"
 ```
 
-Create a collection in `content/posts/_collection.yaml`:
+Create a collection in `content/blog/_collection.yaml`:
 
 ```yaml
-title: Posts
+title: Blog
 sort_by: date
 sort_direction: desc
 feed: true
 listing: true
 ```
 
-Write a page in `content/posts/2024-01-15-hello-world.md`:
+Write an entry in `content/blog/2026-01-15-hello-world.md`:
 
 ```markdown
 ---
@@ -126,29 +81,66 @@ tags:
   - general
 ---
 
-Welcome to my site!
+Welcome to my site.
 ```
 
-Build and preview:
+Build the static site:
 
-```bash
+```shell
 make yii build
-make up          # dev server at http://localhost:19777
-make package     # PHAR and static Linux binary artifacts in dist/
 ```
 
----
+Generated files are written to `output/`.
+
+Common commands:
+
+```shell
+make yii new "My First Post"
+make yii build -- --workers=4
+make yii build -- --drafts --future
+make yii clean
+make package
+```
+
+When using `serve`, HTML pages include live reload and a small edit button that opens the current Markdown source file in the
+editor configured in `content/config.yaml`.
+
+## Features
+
+- Markdown content with front matter, collections, standalone pages, taxonomies, authors, date archives, and summaries.
+- Incremental and parallel builds with cache-aware output generation.
+- Feeds, sitemap, canonical URLs, social meta tags, redirects, and static `404.html`.
+- Native server-side syntax highlighting powered by Rust and syntect.
+- Table of contents, Mermaid diagrams, video embeds, fuzzy search, asset fingerprinting, and Telegram import.
+- Yii3-based web application, routing, dependency injection, middleware, and PHP template support.
+
+## Performance
+
+Current benchmark highlights:
+
+| Scenario | Mode | Time |
+|---|---:|---:|
+| 10 000 entries across 3 collections | 4 workers | ~2.8 s |
+| 10 000 entries across 3 collections | incremental | ~358 ms |
+| 1 000 realistic entries | 4 workers | ~1.1 s |
+| 1 000 realistic entries | incremental | ~108 ms |
+
+See [`docs/benchmarking.md`](docs/benchmarking.md) for benchmark workflow details.
 
 ## Documentation
 
-Full documentation is available in the [`docs/`](docs/) directory and rendered at **[yiipress.yiiframework.com](https://yiipress.yiiframework.com/)**.
+Full documentation is available in [`docs/`](docs/) and at [yiipress.yiiframework.com](https://yiipress.yiiframework.com/).
 
-| Guide | Description |
-|---|---|
-| [Quickstart](docs/quickstart.md) | Create your first site in minutes |
-| [Content](docs/content.md) | Collections, front matter, taxonomies, authors |
-| [Configuration](docs/config.md) | All `config.yaml` options |
-| [Commands](docs/commands.md) | CLI reference |
-| [Templates](docs/template.md) | Template variables, partials, themes |
-| [Plugins](docs/plugins.md) | Content processors and importers |
-| [Deployment](docs/deployment.md) | GitHub Pages, Netlify, Vercel, Cloudflare Pages |
+- [Quickstart](docs/quickstart.md)
+- [Content](docs/content.md)
+- [Configuration](docs/config.md)
+- [Commands](docs/commands.md)
+- [Templates](docs/template.md)
+- [Plugins](docs/plugins.md)
+- [Deployment](docs/deployment.md)
+- [Architecture](docs/architecture.md)
+
+## License
+
+YiiPress Static Website Engine is free software. It is released under the terms of the BSD License.
+Please see [`LICENSE.md`](./LICENSE.md) for more information.
