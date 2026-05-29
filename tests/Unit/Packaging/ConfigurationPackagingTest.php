@@ -156,6 +156,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('Smoke test Windows binary', $workflow);
         self::assertStringContainsString('./dist/windows-amd64/yiipress.exe --help', $workflow);
         self::assertStringContainsString('target: distroless', $workflow);
+        self::assertStringContainsString("github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')", $workflow);
         self::assertStringContainsString('type=raw,value=nightly', $workflow);
         self::assertStringContainsString('type=semver,pattern={{version}}', $workflow);
         self::assertStringContainsString('softprops/action-gh-release', $workflow);
