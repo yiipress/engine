@@ -133,22 +133,36 @@ Your site will be available at `http://localhost:3000`.
 
 To deploy, push the image to any container registry and run it on any platform that supports Docker — a VPS, Fly.io, Railway, Render, or any Kubernetes cluster.
 
-## YiiPress PHAR and Static Binary
+## YiiPress PHAR, Static Binary, and Distroless Image
 
-YiiPress can be packaged as reproducible Docker-built artifacts:
+YiiPress can be packaged as reproducible artifacts:
 
 ```bash
 make package
 ```
 
-The command writes artifacts to `dist/`:
+The command builds the Linux artifacts and writes them to `dist/linux-amd64/`:
 
 - `yiipress.phar` — PHP archive for environments that already have PHP 8.5 and required extensions.
 - `yiipress` — static Linux executable built with static-php-cli micro SAPI and the YiiPress PHAR embedded.
+
+Additional package targets are available:
+
+```bash
+make package-linux
+make package-windows
+make package-distroless
+make package-distroless-push
+```
+
+- `make package-linux` is the explicit Linux artifact target. Set `PACKAGE_PLATFORM=linux/amd64` and `PACKAGE_LINUX_DIST=...` to override the defaults.
+- `make package-windows` builds `dist/windows-amd64/yiipress.exe` and `yiipress.phar` with the PowerShell packaging script. It is intended for Windows hosts with PowerShell 7 (`pwsh`), PHP, Composer, Rust, and the Visual Studio C++ toolchain available.
+- `make package-distroless` builds a local `${IMAGE}-static:${IMAGE_TAG}` image from the `distroless` Docker target. The image copies only the static `yiipress` binary into a distroless base and runs it as the entrypoint.
+- `make package-distroless-push` builds and pushes the same image.
 
 The PHAR builder copies only runtime inputs into the build stage: `config/`, `public/`, `src/`, `themes/`, `yii`, Composer metadata, and the PHAR build script. Dependencies are installed with `--no-dev` inside that stage before the PHAR is assembled.
 The static executable includes `ext-highlighter`, so syntax highlighting does not need FFI or an external shared library. `serve` uses ReactPHP stream sockets with preforked worker processes, serves built files and live reload SSE in the server loop, keeps one shared live reload watcher per worker, and does not require PHP's native `sockets` extension.
 Relative `content-dir`, `output-dir`, `new`, `clean`, `serve`, and `import` paths are resolved from the directory where you run `yiipress`, not from the packaged executable location.
 PHAR and static binary runs keep build cache and incremental manifests under the OS temp directory, keyed by the current project directory, instead of writing to `runtime/` in the site checkout. `yiipress clean` removes that packaged cache as well as the configured output directory.
 
-GitHub Actions builds the same artifacts in the `Package Static Binary` workflow and uploads them as a workflow artifact.
+GitHub Actions builds the same outputs in the `Package Static Builds` workflow. Commits to `master` publish nightly Linux and Windows workflow artifacts and push the distroless image as `ghcr.io/<owner>/<repo>-static:nightly` plus a commit-specific `nightly-<sha>` tag. Version tags publish release archives to the GitHub release and push semver tags for the distroless image.

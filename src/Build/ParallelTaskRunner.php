@@ -11,6 +11,7 @@ use function ceil;
 use function count;
 use function file_get_contents;
 use function file_put_contents;
+use function function_exists;
 use function is_dir;
 use function mkdir;
 use function min;
@@ -100,7 +101,7 @@ final class ParallelTaskRunner
 
     private function effectiveWorkerCount(int $taskCount, int $requestedWorkerCount, int $minTasksPerWorker): int
     {
-        if ($requestedWorkerCount <= 1) {
+        if (!function_exists('pcntl_fork') || $requestedWorkerCount <= 1) {
             return 1;
         }
 

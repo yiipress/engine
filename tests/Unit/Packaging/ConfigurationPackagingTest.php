@@ -86,6 +86,79 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringNotContainsString('sockets', $dockerfile);
         self::assertStringNotContainsString('php_sockets', $registrationPatch);
         self::assertStringNotContainsString('sockets_module_entry', $registrationPatch);
+        self::assertStringContainsString("DIRECTORY_SEPARATOR === '\\\\'", $registrationPatch);
+    }
+
+    #[Test]
+    public function makefileExposesAllPackageBuilds(): void
+    {
+        $makefile = file_get_contents(dirname(__DIR__, 3) . '/Makefile');
+        self::assertIsString($makefile);
+
+        self::assertStringContainsString('package-linux:', $makefile);
+        self::assertStringContainsString('--target package-linux-artifacts', $makefile);
+        self::assertStringContainsString('package-windows:', $makefile);
+        self::assertStringContainsString('build/package-windows.ps1', $makefile);
+        self::assertStringContainsString('PowerShell 7 (pwsh) is required for package-windows.', $makefile);
+        self::assertStringContainsString('package-distroless:', $makefile);
+        self::assertStringContainsString('--target distroless', $makefile);
+    }
+
+    #[Test]
+    public function distrolessImageCopiesOnlyStaticBinary(): void
+    {
+        $dockerfile = file_get_contents(dirname(__DIR__, 3) . '/docker/Dockerfile');
+        self::assertIsString($dockerfile);
+
+        $start = strpos($dockerfile, 'FROM gcr.io/distroless/static-debian12:nonroot AS distroless');
+        self::assertIsInt($start);
+        $stage = substr($dockerfile, $start);
+
+        self::assertStringContainsString('COPY --from=static-package /artifacts/yiipress /yiipress', $stage);
+        self::assertStringContainsString('ENTRYPOINT ["/yiipress"]', $stage);
+        self::assertStringNotContainsString('COPY --from=static-package /artifacts/yiipress.phar', $stage);
+        self::assertStringNotContainsString('/bin/sh', $stage);
+        self::assertStringNotContainsString('apt-get', $stage);
+    }
+
+    #[Test]
+    public function windowsPackageScriptBuildsPharAndExecutable(): void
+    {
+        $script = file_get_contents(dirname(__DIR__, 3) . '/build/package-windows.ps1');
+        self::assertIsString($script);
+
+        self::assertStringContainsString('build/package-phar.php', $script);
+        self::assertStringContainsString('yiipress.exe', $script);
+        self::assertStringContainsString('x86_64-pc-windows-msvc', $script);
+        self::assertStringContainsString('micro:combine', $script);
+        self::assertStringContainsString('$appPath = Join-Path $workPath "app"', $script);
+        self::assertStringContainsString('Push-Location $appPath', $script);
+        self::assertStringContainsString('function Test-NativeCommand', $script);
+        self::assertStringContainsString('foreach ($command in @("php", "composer", "tar", "rustup", "cargo"))', $script);
+        self::assertStringContainsString('foreach ($command in @("cl", "nmake"))', $script);
+        self::assertStringContainsString('--ignore-platform-req=ext-inotify', $script);
+        self::assertStringContainsString('--ignore-platform-req=ext-pcntl', $script);
+        self::assertStringContainsString('--ignore-platform-req=ext-posix', $script);
+    }
+
+    #[Test]
+    public function packageWorkflowPublishesNightlyAndReleaseBuilds(): void
+    {
+        $workflow = file_get_contents(dirname(__DIR__, 3) . '/.github/workflows/package-static.yml');
+        self::assertIsString($workflow);
+
+        self::assertStringContainsString('target: package-linux-artifacts', $workflow);
+        self::assertStringContainsString('Smoke test Linux binary', $workflow);
+        self::assertStringContainsString('./dist/linux-amd64/yiipress --help', $workflow);
+        self::assertStringContainsString('build/package-windows.ps1 -DistDir dist/windows-amd64', $workflow);
+        self::assertStringContainsString('Cache Windows package dependencies', $workflow);
+        self::assertStringContainsString('runtime\package-windows\yiipress-highlighter', $workflow);
+        self::assertStringContainsString('Smoke test Windows binary', $workflow);
+        self::assertStringContainsString('./dist/windows-amd64/yiipress.exe --help', $workflow);
+        self::assertStringContainsString('target: distroless', $workflow);
+        self::assertStringContainsString('type=raw,value=nightly', $workflow);
+        self::assertStringContainsString('type=semver,pattern={{version}}', $workflow);
+        self::assertStringContainsString('softprops/action-gh-release', $workflow);
     }
 
     #[Test]
@@ -194,6 +267,45 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('COPY themes /app/themes', $stage);
         self::assertStringContainsString('COPY build/package-phar.php build/PharArchiveFilter.php /app/build/', $stage);
         self::assertStringContainsString('COPY yii composer.json composer.lock /app/', $stage);
+    }
+
+    #[Test]
+    public function staticPackageInstallsRustTargetForHighlighterToolchain(): void
+    {
+        $dockerfile = file_get_contents(dirname(__DIR__, 3) . '/docker/Dockerfile');
+        $windowsScript = file_get_contents(dirname(__DIR__, 3) . '/build/package-windows.ps1');
+        self::assertIsString($dockerfile);
+        self::assertIsString($windowsScript);
+
+        self::assertStringContainsString(
+            'RUN cd /opt/yiipress-highlighter && rustup target add x86_64-unknown-linux-musl',
+            $dockerfile,
+        );
+        self::assertStringContainsString('Invoke-NativeCommand "rustup" @("target", "add", $env:CARGO_BUILD_TARGET)', $windowsScript);
+    }
+
+    #[Test]
+    public function dockerPackageBuildUsesComposerAndCargoCaches(): void
+    {
+        $dockerfile = file_get_contents(dirname(__DIR__, 3) . '/docker/Dockerfile');
+        self::assertIsString($dockerfile);
+
+        self::assertStringContainsString('--mount=type=cache,target=/tmp/composer-cache', $dockerfile);
+        self::assertStringContainsString('COMPOSER_CACHE_DIR=/tmp/composer-cache composer install', $dockerfile);
+        self::assertStringContainsString('COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project', $dockerfile);
+        self::assertStringContainsString('--mount=type=cache,target=/root/.cargo/git', $dockerfile);
+        self::assertStringContainsString('--mount=type=cache,target=/root/.cargo/registry', $dockerfile);
+    }
+
+    #[Test]
+    public function customStaticExtensionsAreAvailableForWindowsBuilds(): void
+    {
+        $script = file_get_contents(dirname(__DIR__, 3) . '/build/static-php/patch-extension-config.php');
+        self::assertIsString($script);
+
+        self::assertStringContainsString("'highlighter'", $script);
+        self::assertStringContainsString("'md4c'", $script);
+        self::assertStringNotContainsString("'unix-only' => true", $script);
     }
 
     #[Test]

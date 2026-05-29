@@ -18,7 +18,6 @@ foreach ($externalExtensions as $extension) {
     $json[$extension] = [
         'type' => 'builtin',
         'arg-type' => 'enable',
-        'unix-only' => true,
     ];
 }
 ksort($json);

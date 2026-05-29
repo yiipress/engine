@@ -100,6 +100,7 @@ make yii build -- --workers=4
 make yii build -- --drafts --future
 make yii clean
 make package
+make package-distroless
 ```
 
 When using `serve`, HTML pages include live reload and a small edit button that opens the current Markdown source file in the

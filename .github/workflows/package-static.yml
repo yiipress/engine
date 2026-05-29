@@ -1,4 +1,4 @@
-name: Package Static Binary
+name: Package Static Builds
 
 on:
   push:
@@ -11,11 +11,21 @@ on:
       - master
   workflow_dispatch:
 
+concurrency:
+  group: package-static-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}-static
+
 jobs:
-  package:
+  linux:
+    name: Linux static binary and distroless image
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: write
 
     steps:
       - name: Checkout repository
@@ -24,19 +34,139 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build package artifacts
+      - name: Log in to Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract distroless image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=nightly,enable={{is_default_branch}}
+            type=sha,prefix=nightly-,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+
+      - name: Build Linux artifacts
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
-          target: package-artifacts
-          outputs: type=local,dest=dist
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          target: package-linux-artifacts
+          outputs: type=local,dest=dist/linux-amd64
+          cache-from: type=gha,scope=package-linux-amd64
+          cache-to: type=gha,scope=package-linux-amd64,mode=max
           platforms: linux/amd64
 
-      - name: Upload package artifacts
+      - name: Smoke test Linux binary
+        run: ./dist/linux-amd64/yiipress --help
+
+      - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
           name: yiipress-linux-amd64
-          path: dist/
+          path: dist/linux-amd64/
+          if-no-files-found: error
+
+      - name: Build and push distroless image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          target: distroless
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=package-linux-amd64
+          cache-to: type=gha,scope=package-linux-amd64,mode=max
+          platforms: linux/amd64
+
+  windows:
+    name: Windows static binary
+    if: github.event_name != 'pull_request'
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: none
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Cache Windows package dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~\AppData\Local\Composer\files
+            ~\.cargo\git
+            ~\.cargo\registry
+            runtime\package-windows\app\vendor
+            runtime\package-windows\static-php-cli
+            runtime\package-windows\md4c-extension
+            runtime\package-windows\yiipress-highlighter
+          key: windows-package-${{ runner.os }}-${{ hashFiles('composer.lock', 'build/package-windows.ps1') }}
+          restore-keys: |
+            windows-package-${{ runner.os }}-
+
+      - name: Build Windows artifacts
+        shell: pwsh
+        run: build/package-windows.ps1 -DistDir dist/windows-amd64
+
+      - name: Smoke test Windows binary
+        shell: pwsh
+        run: ./dist/windows-amd64/yiipress.exe --help
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: yiipress-windows-amd64
+          path: dist/windows-amd64/
+          if-no-files-found: error
+
+  release:
+    name: Publish release artifacts
+    if: startsWith(github.ref, 'refs/tags/')
+    needs:
+      - linux
+      - windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release
+
+      - name: Pack release archives
+        run: |
+          tar -C release/yiipress-linux-amd64 -czf yiipress-linux-amd64.tar.gz .
+          zip -j yiipress-windows-amd64.zip release/yiipress-windows-amd64/*
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            yiipress-linux-amd64.tar.gz
+            yiipress-windows-amd64.zip

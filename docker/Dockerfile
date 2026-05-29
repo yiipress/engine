@@ -33,8 +33,11 @@ ENV CARGO_HOME=/root/.cargo \
 COPY --from=composer /composer /usr/bin/composer
 COPY --from=rust:bookworm /usr/local/cargo /root/.cargo
 COPY --from=rust:bookworm /usr/local/rustup /usr/local/rustup
-RUN composer create-project --no-dev --no-progress --no-interaction yiipress/highlighter /build/highlighter-extension dev-master
-RUN cd /build/highlighter-extension \
+RUN --mount=type=cache,target=/tmp/composer-cache \
+    COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project --no-dev --no-progress --no-interaction yiipress/highlighter /build/highlighter-extension dev-master
+RUN --mount=type=cache,target=/root/.cargo/git \
+    --mount=type=cache,target=/root/.cargo/registry \
+    cd /build/highlighter-extension \
     && phpize \
     && ./configure \
     && make -j"$(nproc)" \
@@ -88,8 +91,8 @@ COPY public /app/public
 COPY src /app/src
 COPY themes /app/themes
 COPY yii composer.json composer.lock /app/
-RUN --mount=type=cache,target=/tmp/cache \
-    composer install --no-dev --no-progress --no-interaction --classmap-authoritative && \
+RUN --mount=type=cache,target=/tmp/composer-cache \
+    COMPOSER_CACHE_DIR=/tmp/composer-cache composer install --no-dev --no-progress --no-interaction --classmap-authoritative && \
     rm composer.lock composer.json
 
 FROM app-base AS prod
@@ -114,8 +117,8 @@ COPY src /app/src
 COPY themes /app/themes
 COPY build/package-phar.php build/PharArchiveFilter.php /app/build/
 COPY yii composer.json composer.lock /app/
-RUN --mount=type=cache,target=/tmp/cache \
-    composer install --no-dev --no-progress --no-interaction --classmap-authoritative && \
+RUN --mount=type=cache,target=/tmp/composer-cache \
+    COMPOSER_CACHE_DIR=/tmp/composer-cache composer install --no-dev --no-progress --no-interaction --classmap-authoritative && \
     php -d phar.readonly=0 build/package-phar.php dist/yiipress.phar
 
 FROM app-base AS static-package
@@ -159,18 +162,23 @@ COPY --from=rust:bookworm /usr/local/cargo /root/.cargo
 COPY --from=rust:bookworm /usr/local/rustup /usr/local/rustup
 RUN rustup target add x86_64-unknown-linux-musl
 WORKDIR /static-php
-RUN curl -fsSL "https://github.com/crazywhalecc/static-php-cli/archive/${STATIC_PHP_CLI_REF}.tar.gz" \
+RUN --mount=type=cache,target=/tmp/composer-cache \
+    curl -fsSL "https://github.com/crazywhalecc/static-php-cli/archive/${STATIC_PHP_CLI_REF}.tar.gz" \
     | tar -xz --strip-components=1 -C /static-php \
-    && composer install --no-dev --no-progress --no-interaction --classmap-authoritative
+    && COMPOSER_CACHE_DIR=/tmp/composer-cache composer install --no-dev --no-progress --no-interaction --classmap-authoritative
 RUN mkdir -p /opt/md4c-extension \
     && curl -fsSL "https://pecl.php.net/get/md4c-${MD4C_VERSION}.tgz" \
     | tar -xz --strip-components=1 -C /opt/md4c-extension
-RUN composer create-project --no-dev --no-progress --no-interaction yiipress/highlighter /opt/yiipress-highlighter dev-master
+RUN --mount=type=cache,target=/tmp/composer-cache \
+    COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project --no-dev --no-progress --no-interaction yiipress/highlighter /opt/yiipress-highlighter dev-master
+RUN cd /opt/yiipress-highlighter && rustup target add x86_64-unknown-linux-musl
 COPY build/static-php/patch-extension-config.php /opt/patch-extension-config.php
 COPY build/static-php/patch-source-config.php /opt/patch-source-config.php
 COPY build/static-php/register-yiipress-highlighter.php /opt/register-yiipress-highlighter.php
 RUN mkdir -p /artifacts
-RUN php /opt/patch-extension-config.php /static-php/config/ext.json \
+RUN --mount=type=cache,target=/root/.cargo/git \
+    --mount=type=cache,target=/root/.cargo/registry \
+    php /opt/patch-extension-config.php /static-php/config/ext.json \
     && php /opt/patch-source-config.php /static-php/config/source.json /static-php/config/lib.json \
     && bin/spc download --for-extensions="${STATIC_PHP_EXTENSIONS}" --with-php="${PHP_VERSION}" --without-suggestions \
     && mkdir -p buildroot/bin \
@@ -183,6 +191,23 @@ COPY --from=phar-builder /app/dist/yiipress.phar /artifacts/yiipress.phar
 RUN bin/spc micro:combine /artifacts/yiipress.phar -O /artifacts/yiipress \
     && chmod +x /artifacts/yiipress
 
-FROM scratch AS package-artifacts
+FROM scratch AS package-linux-artifacts
 COPY --from=static-package /artifacts/yiipress /yiipress
 COPY --from=static-package /artifacts/yiipress.phar /yiipress.phar
+
+FROM package-linux-artifacts AS package-artifacts
+
+FROM gcr.io/distroless/static-debian12:nonroot AS distroless
+LABEL org.opencontainers.image.licenses="BSD-3-Clause" \
+    org.opencontainers.image.title="YiiPress static binary" \
+    org.opencontainers.image.description="YiiPress static website builder packaged as a distroless image with only the static binary copied in" \
+    org.opencontainers.image.source="https://github.com/yiipress/engine" \
+    org.opencontainers.image.url="https://github.com/yiipress/engine" \
+    org.opencontainers.image.vendor="Alexander Makarov" \
+    org.opencontainers.image.created="" \
+    org.opencontainers.image.revision="" \
+    org.opencontainers.image.version=""
+COPY --from=static-package /artifacts/yiipress /yiipress
+WORKDIR /site
+ENTRYPOINT ["/yiipress"]
+CMD ["--help"]

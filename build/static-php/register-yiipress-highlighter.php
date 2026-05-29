@@ -15,12 +15,19 @@ if (patch_point() === 'before-php-make') {
         throw new RuntimeException('Unable to read generated internal_functions_cli.c.');
     }
 
+    $includeProcessExtensions = getenv('YIIPRESS_STATIC_INCLUDE_PROCESS_EXTENSIONS') !== '0';
     if (!str_contains($contents, 'YIIPRESS_STATIC_PATCHED_INTERNAL_FUNCTIONS')) {
-        $includes = <<<'C'
-/* YIIPRESS_STATIC_PATCHED_INTERNAL_FUNCTIONS */
-#include "ext/opcache/zend_accelerator_module.h"
+        $processExtensionIncludes = '';
+        if ($includeProcessExtensions) {
+            $processExtensionIncludes = <<<'C'
 #include "ext/pcntl/php_pcntl.h"
 #include "ext/posix/php_posix.h"
+C;
+        }
+
+        $includes = <<<C
+/* YIIPRESS_STATIC_PATCHED_INTERNAL_FUNCTIONS */
+#include "ext/opcache/zend_accelerator_module.h"
 #include "ext/standard/php_standard.h"
 #include "ext/spl/php_spl.h"
 #include "ext/phar/php_phar.h"
@@ -29,6 +36,7 @@ if (patch_point() === 'before-php-make') {
 #include "ext/uri/php_uri.h"
 #include "ext/xml/php_xml.h"
 #include "ext/xmlwriter/php_xmlwriter.h"
+{$processExtensionIncludes}
 
 extern zend_module_entry md4c_module_entry;
 #ifndef phpext_md4c_ptr
@@ -52,6 +60,10 @@ C;
         }
 
         file_put_contents($internalFunctionsFile, $contents);
+    }
+
+    if (DIRECTORY_SEPARATOR === '\\') {
+        return;
     }
 
     $target = getenv('CARGO_BUILD_TARGET') ?: 'x86_64-unknown-linux-musl';
