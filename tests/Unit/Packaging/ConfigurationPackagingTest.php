@@ -321,6 +321,8 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('ARG_ENABLE("md4c"', $registrationPatch);
         self::assertStringContainsString('EXTENSION("highlighter", "highlighter.c", false);', $registrationPatch);
         self::assertStringContainsString('EXTENSION("md4c", "md4c.c", false);', $registrationPatch);
+        self::assertStringContainsString('php_md4c.h', $registrationPatch);
+        self::assertStringContainsString('phpext_md4c_ptr', $registrationPatch);
     }
 
     #[Test]

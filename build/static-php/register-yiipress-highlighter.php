@@ -165,20 +165,24 @@ if ($md4cWindowsConfigContents === false) {
     throw new RuntimeException('Unable to read md4c config.w32.');
 }
 
-if (!str_contains($md4cWindowsConfigContents, 'ARG_ENABLE("md4c"')) {
-    $md4cWindowsConfigContents = <<<JS
-ARG_ENABLE("md4c", "md4c", "no");
+$md4cWindowsConfigContents = <<<'JS'
+ARG_ENABLE("md4c", "Enable the md4c extension", "no");
 
-if (PHP_MD4C == "yes") {
-{$md4cWindowsConfigContents}
+if (PHP_MD4C != "no") {
+    EXTENSION("md4c", "md4c.c", false);
 }
 JS;
-}
-
-$md4cWindowsConfigContents = str_replace(
-    'EXTENSION("md4c", "md4c.c", true);',
-    'EXTENSION("md4c", "md4c.c", false);',
-    $md4cWindowsConfigContents,
-);
 
 file_put_contents($md4cWindowsConfig, $md4cWindowsConfigContents);
+
+$md4cHeader = <<<'C'
+#ifndef PHP_MD4C_H
+#define PHP_MD4C_H
+
+extern zend_module_entry md4c_module_entry;
+#define phpext_md4c_ptr &md4c_module_entry
+
+#endif
+C;
+
+file_put_contents(SOURCE_PATH . '/php-src/ext/md4c/php_md4c.h', $md4cHeader);
