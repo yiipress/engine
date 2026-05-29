@@ -143,6 +143,8 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('log/spc.output.log', $script);
         self::assertStringContainsString('log/spc.shell.log', $script);
         self::assertStringNotContainsString('--with-micro-fake-cli', $script);
+        self::assertStringContainsString('buildroot/lib', $script);
+        self::assertStringContainsString('highlighter.lib', $script);
     }
 
     #[Test]

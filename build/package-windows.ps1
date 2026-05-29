@@ -181,6 +181,12 @@ try {
         "--without-suggestions"
     )
     Invoke-NativeCommand "php" @("bin/spc", "doctor", "--auto-fix")
+    $buildrootLibraryPath = Join-Path $staticPhpPath "buildroot/lib"
+    New-Item -ItemType Directory -Force -Path $buildrootLibraryPath | Out-Null
+    Copy-Item `
+        (Join-Path $highlighterPath "target/$($env:CARGO_BUILD_TARGET)/release/highlighter.lib") `
+        (Join-Path $buildrootLibraryPath "highlighter.lib") `
+        -Force
     try {
         Invoke-NativeCommand "php" @(
             "bin/spc",
