@@ -42,6 +42,17 @@ function Test-NativeCommand {
     }
 }
 
+function Write-LogTail {
+    param(
+        [string] $Path
+    )
+
+    if (Test-Path $Path) {
+        Write-Output "===== $Path ====="
+        Get-Content $Path -Tail 200
+    }
+}
+
 function Expand-TarGzArchive {
     param(
         [string] $Url,
@@ -170,15 +181,21 @@ try {
         "--without-suggestions"
     )
     Invoke-NativeCommand "php" @("bin/spc", "doctor", "--auto-fix")
-    Invoke-NativeCommand "php" @(
-        "bin/spc",
-        "build",
-        $StaticPhpExtensions,
-        "--build-micro",
-        "--with-micro-fake-cli",
-        "-P",
-        (Join-Path $root "build/static-php/register-yiipress-highlighter.php")
-    )
+    try {
+        Invoke-NativeCommand "php" @(
+            "bin/spc",
+            "build",
+            $StaticPhpExtensions,
+            "--build-micro",
+            "--with-micro-fake-cli",
+            "-P",
+            (Join-Path $root "build/static-php/register-yiipress-highlighter.php")
+        )
+    } catch {
+        Write-LogTail (Join-Path $staticPhpPath "log/spc.output.log")
+        Write-LogTail (Join-Path $staticPhpPath "log/spc.shell.log")
+        throw
+    }
     Invoke-NativeCommand "php" @("bin/spc", "micro:combine", $pharPath, "-O", $exePath)
 } finally {
     Pop-Location
