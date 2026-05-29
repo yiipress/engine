@@ -187,7 +187,6 @@ try {
             "build",
             $StaticPhpExtensions,
             "--build-micro",
-            "--with-micro-fake-cli",
             "-P",
             (Join-Path $root "build/static-php/register-yiipress-highlighter.php")
         )

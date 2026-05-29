@@ -97,7 +97,7 @@ C;
     return;
 }
 
-if (patch_point() !== 'before-php-buildconf') {
+if (patch_point() !== 'after-exts-extract') {
     return;
 }
 
@@ -107,6 +107,30 @@ if ($source === false || $source === '') {
 }
 
 FileSystem::copyDir($source, SOURCE_PATH . '/php-src/ext/highlighter');
+
+$highlighterWindowsConfig = SOURCE_PATH . '/php-src/ext/highlighter/config.w32';
+$highlighterWindowsConfigContents = file_get_contents($highlighterWindowsConfig);
+if ($highlighterWindowsConfigContents === false) {
+    throw new RuntimeException('Unable to read highlighter config.w32.');
+}
+
+if (!str_contains($highlighterWindowsConfigContents, 'ARG_ENABLE("highlighter"')) {
+    $highlighterWindowsConfigContents = <<<JS
+ARG_ENABLE("highlighter", "highlighter", "no");
+
+if (PHP_HIGHLIGHTER == "yes") {
+{$highlighterWindowsConfigContents}
+}
+JS;
+}
+
+$highlighterWindowsConfigContents = str_replace(
+    'EXTENSION("highlighter", "highlighter.c", true);',
+    'EXTENSION("highlighter", "highlighter.c", false);',
+    $highlighterWindowsConfigContents,
+);
+
+file_put_contents($highlighterWindowsConfig, $highlighterWindowsConfigContents);
 
 $highlighterConfig = SOURCE_PATH . '/php-src/ext/highlighter/config.m4';
 $highlighterConfigContents = file_get_contents($highlighterConfig);
@@ -134,3 +158,27 @@ if ($md4cSource === false || $md4cSource === '') {
 }
 
 FileSystem::copyDir($md4cSource, SOURCE_PATH . '/php-src/ext/md4c');
+
+$md4cWindowsConfig = SOURCE_PATH . '/php-src/ext/md4c/config.w32';
+$md4cWindowsConfigContents = file_get_contents($md4cWindowsConfig);
+if ($md4cWindowsConfigContents === false) {
+    throw new RuntimeException('Unable to read md4c config.w32.');
+}
+
+if (!str_contains($md4cWindowsConfigContents, 'ARG_ENABLE("md4c"')) {
+    $md4cWindowsConfigContents = <<<JS
+ARG_ENABLE("md4c", "md4c", "no");
+
+if (PHP_MD4C == "yes") {
+{$md4cWindowsConfigContents}
+}
+JS;
+}
+
+$md4cWindowsConfigContents = str_replace(
+    'EXTENSION("md4c", "md4c.c", true);',
+    'EXTENSION("md4c", "md4c.c", false);',
+    $md4cWindowsConfigContents,
+);
+
+file_put_contents($md4cWindowsConfig, $md4cWindowsConfigContents);

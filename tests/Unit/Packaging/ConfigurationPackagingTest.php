@@ -142,6 +142,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('function Write-LogTail', $script);
         self::assertStringContainsString('log/spc.output.log', $script);
         self::assertStringContainsString('log/spc.shell.log', $script);
+        self::assertStringNotContainsString('--with-micro-fake-cli', $script);
     }
 
     #[Test]
@@ -304,12 +305,19 @@ final class ConfigurationPackagingTest extends TestCase
     #[Test]
     public function customStaticExtensionsAreAvailableForWindowsBuilds(): void
     {
-        $script = file_get_contents(dirname(__DIR__, 3) . '/build/static-php/patch-extension-config.php');
-        self::assertIsString($script);
+        $extensionConfigPatch = file_get_contents(dirname(__DIR__, 3) . '/build/static-php/patch-extension-config.php');
+        $registrationPatch = file_get_contents(dirname(__DIR__, 3) . '/build/static-php/register-yiipress-highlighter.php');
+        self::assertIsString($extensionConfigPatch);
+        self::assertIsString($registrationPatch);
 
-        self::assertStringContainsString("'highlighter'", $script);
-        self::assertStringContainsString("'md4c'", $script);
-        self::assertStringNotContainsString("'unix-only' => true", $script);
+        self::assertStringContainsString("'highlighter'", $extensionConfigPatch);
+        self::assertStringContainsString("'md4c'", $extensionConfigPatch);
+        self::assertStringNotContainsString("'unix-only' => true", $extensionConfigPatch);
+        self::assertStringContainsString("patch_point() !== 'after-exts-extract'", $registrationPatch);
+        self::assertStringContainsString('ARG_ENABLE("highlighter"', $registrationPatch);
+        self::assertStringContainsString('ARG_ENABLE("md4c"', $registrationPatch);
+        self::assertStringContainsString('EXTENSION("highlighter", "highlighter.c", false);', $registrationPatch);
+        self::assertStringContainsString('EXTENSION("md4c", "md4c.c", false);', $registrationPatch);
     }
 
     #[Test]
