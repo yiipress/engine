@@ -145,6 +145,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringNotContainsString('--with-micro-fake-cli', $script);
         self::assertStringContainsString('buildroot/lib', $script);
         self::assertStringContainsString('highlighter.lib', $script);
+        self::assertStringContainsString('$env:RUSTFLAGS = "-C target-feature=+crt-static"', $script);
     }
 
     #[Test]

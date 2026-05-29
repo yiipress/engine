@@ -158,6 +158,7 @@ try {
     $env:HIGHLIGHTER_SOURCE = $highlighterPath
     $env:YIIPRESS_MD4C_SOURCE = $md4cPath
     $env:YIIPRESS_STATIC_INCLUDE_PROCESS_EXTENSIONS = "0"
+    $env:RUSTFLAGS = "-C target-feature=+crt-static"
 
     Push-Location $highlighterPath
     try {
