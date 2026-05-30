@@ -16,7 +16,7 @@ $appPath = Join-Path $workPath "app"
 $staticPhpPath = Join-Path $workPath "static-php-cli"
 $md4cPath = Join-Path $workPath "md4c-extension"
 $highlighterPath = Join-Path $workPath "yiipress-highlighter"
-$pharPath = Join-Path $distPath "yiipress.phar"
+$pharPath = Join-Path $workPath "yiipress.phar"
 $exePath = Join-Path $distPath "yiipress.exe"
 
 function Invoke-NativeCommand {
@@ -90,6 +90,10 @@ if ($IsWindows) {
 }
 
 New-Item -ItemType Directory -Force -Path $distPath, $workPath | Out-Null
+$legacyDistPharPath = Join-Path $distPath "yiipress.phar"
+if (Test-Path $legacyDistPharPath) {
+    Remove-Item $legacyDistPharPath -Force
+}
 
 New-Item -ItemType Directory -Force -Path $appPath | Out-Null
 foreach ($directory in @("config", "public", "src", "themes")) {

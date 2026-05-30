@@ -99,6 +99,7 @@ make yii new "My First Post"
 make yii build -- --workers=4
 make yii build -- --drafts --future
 make yii clean
+make package-phar
 make package
 make package-distroless
 ```

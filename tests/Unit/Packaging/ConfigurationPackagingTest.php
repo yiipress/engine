@@ -95,8 +95,11 @@ final class ConfigurationPackagingTest extends TestCase
         $makefile = file_get_contents(dirname(__DIR__, 3) . '/Makefile');
         self::assertIsString($makefile);
 
+        self::assertStringContainsString('package-phar:', $makefile);
+        self::assertStringContainsString('--target package-phar-artifacts', $makefile);
         self::assertStringContainsString('package-linux:', $makefile);
         self::assertStringContainsString('--target package-linux-artifacts', $makefile);
+        self::assertStringContainsString('rm -f $(PACKAGE_LINUX_DIST)/yiipress.phar', $makefile);
         self::assertStringContainsString('package-windows:', $makefile);
         self::assertStringContainsString('build/package-windows.ps1', $makefile);
         self::assertStringContainsString('PowerShell 7 (pwsh) is required for package-windows.', $makefile);
@@ -117,8 +120,37 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('COPY --from=static-package /artifacts/yiipress /yiipress', $stage);
         self::assertStringContainsString('ENTRYPOINT ["/yiipress"]', $stage);
         self::assertStringNotContainsString('COPY --from=static-package /artifacts/yiipress.phar', $stage);
+        self::assertStringNotContainsString('micro.sfx', $stage);
         self::assertStringNotContainsString('/bin/sh', $stage);
         self::assertStringNotContainsString('apt-get', $stage);
+    }
+
+    #[Test]
+    public function platformArtifactsDoNotIncludeStandalonePhar(): void
+    {
+        $dockerfile = file_get_contents(dirname(__DIR__, 3) . '/docker/Dockerfile');
+        $script = file_get_contents(dirname(__DIR__, 3) . '/build/package-windows.ps1');
+        self::assertIsString($dockerfile);
+        self::assertIsString($script);
+
+        $pharStart = strpos($dockerfile, 'FROM scratch AS package-phar-artifacts');
+        $linuxStart = strpos($dockerfile, 'FROM scratch AS package-linux-artifacts');
+        $aliasStart = strpos($dockerfile, 'FROM package-linux-artifacts AS package-artifacts');
+
+        self::assertIsInt($pharStart);
+        self::assertIsInt($linuxStart);
+        self::assertIsInt($aliasStart);
+
+        $pharStage = substr($dockerfile, $pharStart, $linuxStart - $pharStart);
+        $linuxStage = substr($dockerfile, $linuxStart, $aliasStart - $linuxStart);
+
+        self::assertStringContainsString('COPY --from=phar-builder /app/dist/yiipress.phar /yiipress.phar', $pharStage);
+        self::assertStringContainsString('COPY --from=static-package /artifacts/yiipress /yiipress', $linuxStage);
+        self::assertStringNotContainsString('yiipress.phar', $linuxStage);
+        self::assertStringContainsString('$pharPath = Join-Path $workPath "yiipress.phar"', $script);
+        self::assertStringNotContainsString('$pharPath = Join-Path $distPath "yiipress.phar"', $script);
+        self::assertStringContainsString('$legacyDistPharPath = Join-Path $distPath "yiipress.phar"', $script);
+        self::assertStringContainsString('Remove-Item $legacyDistPharPath -Force', $script);
     }
 
     #[Test]
@@ -154,18 +186,24 @@ final class ConfigurationPackagingTest extends TestCase
         $workflow = file_get_contents(dirname(__DIR__, 3) . '/.github/workflows/package-static.yml');
         self::assertIsString($workflow);
 
+        self::assertStringContainsString('target: package-phar-artifacts', $workflow);
+        self::assertStringContainsString('name: yiipress-phar', $workflow);
+        self::assertStringContainsString('path: dist/phar/yiipress.phar', $workflow);
         self::assertStringContainsString('target: package-linux-artifacts', $workflow);
         self::assertStringContainsString('Smoke test Linux binary', $workflow);
         self::assertStringContainsString('./dist/linux-amd64/yiipress --help', $workflow);
+        self::assertStringContainsString('path: dist/linux-amd64/yiipress', $workflow);
         self::assertStringContainsString('build/package-windows.ps1 -DistDir dist/windows-amd64', $workflow);
         self::assertStringContainsString('Cache Windows package dependencies', $workflow);
         self::assertStringContainsString('runtime\package-windows\yiipress-highlighter', $workflow);
         self::assertStringContainsString('Smoke test Windows binary', $workflow);
         self::assertStringContainsString('./dist/windows-amd64/yiipress.exe --help', $workflow);
+        self::assertStringContainsString('path: dist/windows-amd64/yiipress.exe', $workflow);
         self::assertStringContainsString('target: distroless', $workflow);
         self::assertStringContainsString("github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')", $workflow);
         self::assertStringContainsString('type=raw,value=nightly', $workflow);
         self::assertStringContainsString('type=semver,pattern={{version}}', $workflow);
+        self::assertStringContainsString('cp release/yiipress-phar/yiipress.phar yiipress.phar', $workflow);
         self::assertStringContainsString('softprops/action-gh-release', $workflow);
     }
 

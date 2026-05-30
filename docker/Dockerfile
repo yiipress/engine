@@ -185,15 +185,16 @@ RUN --mount=type=cache,target=/root/.cargo/git \
     && ln -sf /usr/bin/pkg-config buildroot/bin/pkg-config \
     && SPC_TOOLCHAIN='SPC\toolchain\MuslToolchain' SPC_TARGET=x86_64-linux-musl bin/spc doctor --auto-fix \
     && (bin/spc build "${STATIC_PHP_EXTENSIONS}" --build-micro --with-micro-fake-cli -P /opt/register-yiipress-highlighter.php \
-        || (tail -n 200 /static-php/log/spc.shell.log && false)) \
-    && cp buildroot/bin/micro.sfx /artifacts/micro.sfx
+        || (tail -n 200 /static-php/log/spc.shell.log && false))
 COPY --from=phar-builder /app/dist/yiipress.phar /artifacts/yiipress.phar
 RUN bin/spc micro:combine /artifacts/yiipress.phar -O /artifacts/yiipress \
     && chmod +x /artifacts/yiipress
 
+FROM scratch AS package-phar-artifacts
+COPY --from=phar-builder /app/dist/yiipress.phar /yiipress.phar
+
 FROM scratch AS package-linux-artifacts
 COPY --from=static-package /artifacts/yiipress /yiipress
-COPY --from=static-package /artifacts/yiipress.phar /yiipress.phar
 
 FROM package-linux-artifacts AS package-artifacts
 
