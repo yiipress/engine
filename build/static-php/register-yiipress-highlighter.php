@@ -132,7 +132,9 @@ $highlighterWindowsConfigContents = str_replace(
 );
 
 if ($highlighterWindowsConfigReplacementCount !== 1) {
-    throw new RuntimeException('Unable to patch highlighter config.w32 extension mode.');
+    if (!str_contains($highlighterWindowsConfigContents, 'EXTENSION("highlighter", "highlighter.c", false);')) {
+        throw new RuntimeException('Unable to patch highlighter config.w32 extension mode.');
+    }
 }
 
 file_put_contents($highlighterWindowsConfig, $highlighterWindowsConfigContents);

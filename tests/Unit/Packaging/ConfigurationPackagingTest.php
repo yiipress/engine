@@ -442,6 +442,10 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('ARG_ENABLE("md4c"', $registrationPatch);
         self::assertStringContainsString('EXTENSION("highlighter", "highlighter.c", false);', $registrationPatch);
         self::assertStringContainsString('$highlighterWindowsConfigReplacementCount !== 1', $registrationPatch);
+        self::assertStringContainsString(
+            'str_contains($highlighterWindowsConfigContents, \'EXTENSION("highlighter", "highlighter.c", false);\')',
+            $registrationPatch,
+        );
         self::assertStringContainsString('EXTENSION("md4c", "md4c.c", false);', $registrationPatch);
         self::assertStringContainsString('md4c config.w32 was not found.', $registrationPatch);
         self::assertStringContainsString('php_md4c.h', $registrationPatch);
