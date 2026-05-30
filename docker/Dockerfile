@@ -171,7 +171,6 @@ RUN mkdir -p /opt/md4c-extension \
     | tar -xz --strip-components=1 -C /opt/md4c-extension
 RUN --mount=type=cache,target=/tmp/composer-cache \
     COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project --no-dev --no-progress --no-interaction yiipress/highlighter /opt/yiipress-highlighter dev-master
-RUN cd /opt/yiipress-highlighter && rustup target add x86_64-unknown-linux-musl
 COPY build/static-php/patch-extension-config.php /opt/patch-extension-config.php
 COPY build/static-php/patch-source-config.php /opt/patch-source-config.php
 COPY build/static-php/register-yiipress-highlighter.php /opt/register-yiipress-highlighter.php
@@ -201,8 +200,8 @@ FROM package-linux-artifacts AS package-artifacts
 
 FROM gcr.io/distroless/static-debian12:nonroot AS distroless
 LABEL org.opencontainers.image.licenses="BSD-3-Clause" \
-    org.opencontainers.image.title="YiiPress static binary" \
-    org.opencontainers.image.description="YiiPress static website builder packaged as a distroless image with only the static binary copied in" \
+    org.opencontainers.image.title="YiiPress" \
+    org.opencontainers.image.description="YiiPress static website builder" \
     org.opencontainers.image.source="https://github.com/yiipress/engine" \
     org.opencontainers.image.url="https://github.com/yiipress/engine" \
     org.opencontainers.image.vendor="Alexander Makarov" \

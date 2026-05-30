@@ -128,7 +128,12 @@ $highlighterWindowsConfigContents = str_replace(
     'EXTENSION("highlighter", "highlighter.c", true);',
     'EXTENSION("highlighter", "highlighter.c", false);',
     $highlighterWindowsConfigContents,
+    $highlighterWindowsConfigReplacementCount,
 );
+
+if ($highlighterWindowsConfigReplacementCount !== 1) {
+    throw new RuntimeException('Unable to patch highlighter config.w32 extension mode.');
+}
 
 file_put_contents($highlighterWindowsConfig, $highlighterWindowsConfigContents);
 
@@ -160,9 +165,8 @@ if ($md4cSource === false || $md4cSource === '') {
 FileSystem::copyDir($md4cSource, SOURCE_PATH . '/php-src/ext/md4c');
 
 $md4cWindowsConfig = SOURCE_PATH . '/php-src/ext/md4c/config.w32';
-$md4cWindowsConfigContents = file_get_contents($md4cWindowsConfig);
-if ($md4cWindowsConfigContents === false) {
-    throw new RuntimeException('Unable to read md4c config.w32.');
+if (!is_file($md4cWindowsConfig)) {
+    throw new RuntimeException('md4c config.w32 was not found.');
 }
 
 $md4cWindowsConfigContents = <<<'JS'

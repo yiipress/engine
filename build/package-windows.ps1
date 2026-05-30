@@ -60,10 +60,15 @@ function Expand-TarGzArchive {
     )
 
     $archive = Join-Path $workPath ([IO.Path]::GetRandomFileName() + ".tar.gz")
-    Invoke-WebRequest -Uri $Url -OutFile $archive
-    New-Item -ItemType Directory -Force -Path $Destination | Out-Null
-    Invoke-NativeCommand "tar" @("-xzf", $archive, "--strip-components=1", "-C", $Destination)
-    Remove-Item $archive -Force
+    try {
+        Invoke-WebRequest -Uri $Url -OutFile $archive -TimeoutSec 300
+        New-Item -ItemType Directory -Force -Path $Destination | Out-Null
+        Invoke-NativeCommand "tar" @("-xzf", $archive, "--strip-components=1", "-C", $Destination)
+    } finally {
+        if (Test-Path $archive) {
+            Remove-Item $archive -Force
+        }
+    }
 }
 
 function Copy-CleanPath {
@@ -83,10 +88,8 @@ foreach ($command in @("php", "composer", "tar", "rustup", "cargo")) {
     Test-NativeCommand $command
 }
 
-if ($IsWindows) {
-    foreach ($command in @("cl", "nmake")) {
-        Test-NativeCommand $command
-    }
+foreach ($command in @("cl", "nmake")) {
+    Test-NativeCommand $command
 }
 
 New-Item -ItemType Directory -Force -Path $distPath, $workPath | Out-Null

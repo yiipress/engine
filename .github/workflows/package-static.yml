@@ -121,7 +121,7 @@ jobs:
 
   windows:
     name: Windows static binary
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: windows-latest
     permissions:
       contents: read

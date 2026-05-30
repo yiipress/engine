@@ -105,6 +105,8 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('PowerShell 7 (pwsh) is required for package-windows.', $makefile);
         self::assertStringContainsString('package-distroless:', $makefile);
         self::assertStringContainsString('--target distroless', $makefile);
+        self::assertStringContainsString('package-distroless-push:', $makefile);
+        self::assertStringContainsString('--push -t $(PACKAGE_IMAGE):$(IMAGE_TAG)', $makefile);
     }
 
     #[Test]
@@ -118,6 +120,8 @@ final class ConfigurationPackagingTest extends TestCase
         $stage = substr($dockerfile, $start);
 
         self::assertStringContainsString('COPY --from=static-package /artifacts/yiipress /yiipress', $stage);
+        self::assertStringContainsString('org.opencontainers.image.title="YiiPress"', $stage);
+        self::assertStringContainsString('org.opencontainers.image.description="YiiPress static website builder"', $stage);
         self::assertStringContainsString('ENTRYPOINT ["/yiipress"]', $stage);
         self::assertStringNotContainsString('COPY --from=static-package /artifacts/yiipress.phar', $stage);
         self::assertStringNotContainsString('micro.sfx', $stage);
@@ -168,6 +172,9 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('function Test-NativeCommand', $script);
         self::assertStringContainsString('foreach ($command in @("php", "composer", "tar", "rustup", "cargo"))', $script);
         self::assertStringContainsString('foreach ($command in @("cl", "nmake"))', $script);
+        self::assertStringNotContainsString('if ($IsWindows)', $script);
+        self::assertStringContainsString('Invoke-WebRequest -Uri $Url -OutFile $archive -TimeoutSec 300', $script);
+        self::assertStringContainsString('finally {', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-inotify', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-pcntl', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-posix', $script);
@@ -194,6 +201,10 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('./dist/linux-amd64/yiipress --help', $workflow);
         self::assertStringContainsString('path: dist/linux-amd64/yiipress', $workflow);
         self::assertStringContainsString('build/package-windows.ps1 -DistDir dist/windows-amd64', $workflow);
+        self::assertStringContainsString(
+            "github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository",
+            $workflow,
+        );
         self::assertStringContainsString('Cache Windows package dependencies', $workflow);
         self::assertStringContainsString('runtime\package-windows\yiipress-highlighter', $workflow);
         self::assertStringContainsString('Smoke test Windows binary', $workflow);
@@ -323,7 +334,8 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertIsString($dockerfile);
         self::assertIsString($windowsScript);
 
-        self::assertStringContainsString(
+        self::assertStringContainsString('RUN rustup target add x86_64-unknown-linux-musl', $dockerfile);
+        self::assertStringNotContainsString(
             'RUN cd /opt/yiipress-highlighter && rustup target add x86_64-unknown-linux-musl',
             $dockerfile,
         );
@@ -358,7 +370,9 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('ARG_ENABLE("highlighter"', $registrationPatch);
         self::assertStringContainsString('ARG_ENABLE("md4c"', $registrationPatch);
         self::assertStringContainsString('EXTENSION("highlighter", "highlighter.c", false);', $registrationPatch);
+        self::assertStringContainsString('$highlighterWindowsConfigReplacementCount !== 1', $registrationPatch);
         self::assertStringContainsString('EXTENSION("md4c", "md4c.c", false);', $registrationPatch);
+        self::assertStringContainsString('md4c config.w32 was not found.', $registrationPatch);
         self::assertStringContainsString('php_md4c.h', $registrationPatch);
         self::assertStringContainsString('phpext_md4c_ptr', $registrationPatch);
     }
