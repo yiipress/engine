@@ -201,7 +201,7 @@ COPY --from=static-package /artifacts/yiipress /yiipress
 
 FROM package-linux-artifacts AS package-artifacts
 
-FROM gcr.io/distroless/static-debian12:nonroot AS distroless
+FROM gcr.io/distroless/static-debian12:nonroot@sha256:d093aa3e30dbadd3efe1310db061a14da60299baff8450a17fe0ccc514a16639 AS distroless
 LABEL org.opencontainers.image.licenses="BSD-3-Clause" \
     org.opencontainers.image.title="YiiPress" \
     org.opencontainers.image.description="YiiPress static website builder" \

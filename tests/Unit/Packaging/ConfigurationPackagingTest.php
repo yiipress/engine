@@ -115,7 +115,10 @@ final class ConfigurationPackagingTest extends TestCase
         $dockerfile = file_get_contents(dirname(__DIR__, 3) . '/docker/Dockerfile');
         self::assertIsString($dockerfile);
 
-        $start = strpos($dockerfile, 'FROM gcr.io/distroless/static-debian12:nonroot AS distroless');
+        $start = strpos(
+            $dockerfile,
+            'FROM gcr.io/distroless/static-debian12:nonroot@sha256:d093aa3e30dbadd3efe1310db061a14da60299baff8450a17fe0ccc514a16639 AS distroless',
+        );
         self::assertIsInt($start);
         $stage = substr($dockerfile, $start);
 
@@ -220,6 +223,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('softprops/action-gh-release', $workflow);
         self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@v\d+/', $workflow);
         self::assertStringNotContainsString('dtolnay/rust-toolchain@stable', $workflow);
+        self::assertSame(3, substr_count($workflow, 'persist-credentials: false'));
     }
 
     #[Test]
