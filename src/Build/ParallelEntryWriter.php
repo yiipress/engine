@@ -17,6 +17,7 @@ use function array_slice;
 use function ceil;
 use function count;
 use function dirname;
+use function function_exists;
 use function min;
 use function pcntl_fork;
 use function pcntl_wexitstatus;
@@ -137,7 +138,7 @@ final readonly class ParallelEntryWriter
 
     public function workerCountFor(int $taskCount, int $requestedWorkerCount): int
     {
-        if ($requestedWorkerCount <= 1 || $taskCount < self::MIN_TASKS_PER_WORKER * 2) {
+        if (!function_exists('pcntl_fork') || $requestedWorkerCount <= 1 || $taskCount < self::MIN_TASKS_PER_WORKER * 2) {
             return 1;
         }
 

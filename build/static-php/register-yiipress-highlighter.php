@@ -15,12 +15,19 @@ if (patch_point() === 'before-php-make') {
         throw new RuntimeException('Unable to read generated internal_functions_cli.c.');
     }
 
+    $includeProcessExtensions = getenv('YIIPRESS_STATIC_INCLUDE_PROCESS_EXTENSIONS') !== '0';
     if (!str_contains($contents, 'YIIPRESS_STATIC_PATCHED_INTERNAL_FUNCTIONS')) {
-        $includes = <<<'C'
-/* YIIPRESS_STATIC_PATCHED_INTERNAL_FUNCTIONS */
-#include "ext/opcache/zend_accelerator_module.h"
+        $processExtensionIncludes = '';
+        if ($includeProcessExtensions) {
+            $processExtensionIncludes = <<<'C'
 #include "ext/pcntl/php_pcntl.h"
 #include "ext/posix/php_posix.h"
+C;
+        }
+
+        $includes = <<<C
+/* YIIPRESS_STATIC_PATCHED_INTERNAL_FUNCTIONS */
+#include "ext/opcache/zend_accelerator_module.h"
 #include "ext/standard/php_standard.h"
 #include "ext/spl/php_spl.h"
 #include "ext/phar/php_phar.h"
@@ -29,6 +36,7 @@ if (patch_point() === 'before-php-make') {
 #include "ext/uri/php_uri.h"
 #include "ext/xml/php_xml.h"
 #include "ext/xmlwriter/php_xmlwriter.h"
+{$processExtensionIncludes}
 
 extern zend_module_entry md4c_module_entry;
 #ifndef phpext_md4c_ptr
@@ -52,6 +60,10 @@ C;
         }
 
         file_put_contents($internalFunctionsFile, $contents);
+    }
+
+    if (DIRECTORY_SEPARATOR === '\\') {
+        return;
     }
 
     $target = getenv('CARGO_BUILD_TARGET') ?: 'x86_64-unknown-linux-musl';
@@ -85,7 +97,7 @@ C;
     return;
 }
 
-if (patch_point() !== 'before-php-buildconf') {
+if (patch_point() !== 'after-exts-extract') {
     return;
 }
 
@@ -95,6 +107,35 @@ if ($source === false || $source === '') {
 }
 
 FileSystem::copyDir($source, SOURCE_PATH . '/php-src/ext/highlighter');
+
+$highlighterWindowsConfig = SOURCE_PATH . '/php-src/ext/highlighter/config.w32';
+$highlighterWindowsConfigContents = file_get_contents($highlighterWindowsConfig);
+if ($highlighterWindowsConfigContents === false) {
+    throw new RuntimeException('Unable to read highlighter config.w32.');
+}
+
+if (!str_contains($highlighterWindowsConfigContents, 'ARG_ENABLE("highlighter"')) {
+    $highlighterWindowsConfigContents = <<<JS
+ARG_ENABLE("highlighter", "highlighter", "no");
+
+if (PHP_HIGHLIGHTER == "yes") {
+{$highlighterWindowsConfigContents}
+}
+JS;
+}
+
+$highlighterWindowsConfigContents = str_replace(
+    'EXTENSION("highlighter", "highlighter.c", true);',
+    'EXTENSION("highlighter", "highlighter.c", false);',
+    $highlighterWindowsConfigContents,
+    $highlighterWindowsConfigReplacementCount,
+);
+
+if ($highlighterWindowsConfigReplacementCount !== 1) {
+    throw new RuntimeException('Unable to patch highlighter config.w32 extension mode.');
+}
+
+file_put_contents($highlighterWindowsConfig, $highlighterWindowsConfigContents);
 
 $highlighterConfig = SOURCE_PATH . '/php-src/ext/highlighter/config.m4';
 $highlighterConfigContents = file_get_contents($highlighterConfig);
@@ -122,3 +163,30 @@ if ($md4cSource === false || $md4cSource === '') {
 }
 
 FileSystem::copyDir($md4cSource, SOURCE_PATH . '/php-src/ext/md4c');
+
+$md4cWindowsConfig = SOURCE_PATH . '/php-src/ext/md4c/config.w32';
+if (!is_file($md4cWindowsConfig)) {
+    throw new RuntimeException('md4c config.w32 was not found.');
+}
+
+$md4cWindowsConfigContents = <<<'JS'
+ARG_ENABLE("md4c", "Enable the md4c extension", "no");
+
+if (PHP_MD4C != "no") {
+    EXTENSION("md4c", "md4c.c", false);
+}
+JS;
+
+file_put_contents($md4cWindowsConfig, $md4cWindowsConfigContents);
+
+$md4cHeader = <<<'C'
+#ifndef PHP_MD4C_H
+#define PHP_MD4C_H
+
+extern zend_module_entry md4c_module_entry;
+#define phpext_md4c_ptr &md4c_module_entry
+
+#endif
+C;
+
+file_put_contents(SOURCE_PATH . '/php-src/ext/md4c/php_md4c.h', $md4cHeader);

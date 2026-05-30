@@ -21,8 +21,14 @@ endif
 export COMPOSE_PROJECT_NAME=${STACK_NAME}
 DOCKER_COMPOSE_DEV := docker compose -f docker/compose.yml -f docker/dev/compose.yml
 DOCKER_COMPOSE_TEST := docker compose -f docker/compose.yml -f docker/test/compose.yml
+PACKAGE_PLATFORM ?= linux/amd64
+PACKAGE_LINUX_DIST ?= dist/linux-amd64
+PACKAGE_WINDOWS_DIST ?= dist/windows-amd64
+PACKAGE_PHAR_DIST ?= dist/phar
+PACKAGE_IMAGE ?= ${IMAGE}-static
+WINDOWS_PACKAGE_ARGS ?=
 
-.PHONY: build up open down stop clear shell yii composer rector cs-fix test test-coverage psalm composer-dependency-analyser bench-generate bench-generate-realistic bench bench-baseline bench-compare bench-profile profile-build php build-docs package prod-build prod-push prod-deploy help
+.PHONY: build up open down stop clear shell yii composer rector cs-fix test test-coverage psalm composer-dependency-analyser bench-generate bench-generate-realistic bench bench-baseline bench-compare bench-profile profile-build php build-docs package package-phar package-linux package-windows package-distroless package-distroless-push prod-build prod-push prod-deploy help
 
 #
 # Development
@@ -190,8 +196,38 @@ build-docs: ## Build documentation site from docs/ directory
 endif
 
 ifeq ($(PRIMARY_GOAL),package)
-package: ## Build PHAR and static PHP artifacts into dist/
-	docker build --file docker/Dockerfile --target package-artifacts --output type=local,dest=dist .
+package: ## Build Linux static binary into dist/linux-amd64/
+	@mkdir -p $(PACKAGE_LINUX_DIST)
+	@rm -f $(PACKAGE_LINUX_DIST)/yiipress.phar
+	docker buildx build --file docker/Dockerfile --target package-linux-artifacts --platform $(PACKAGE_PLATFORM) --output type=local,dest=$(PACKAGE_LINUX_DIST) .
+endif
+
+ifeq ($(PRIMARY_GOAL),package-phar)
+package-phar: ## Build YiiPress PHAR into dist/phar/
+	docker buildx build --file docker/Dockerfile --target package-phar-artifacts --platform $(PACKAGE_PLATFORM) --output type=local,dest=$(PACKAGE_PHAR_DIST) .
+endif
+
+ifeq ($(PRIMARY_GOAL),package-linux)
+package-linux: ## Build Linux static binary into dist/linux-amd64/
+	@mkdir -p $(PACKAGE_LINUX_DIST)
+	@rm -f $(PACKAGE_LINUX_DIST)/yiipress.phar
+	docker buildx build --file docker/Dockerfile --target package-linux-artifacts --platform $(PACKAGE_PLATFORM) --output type=local,dest=$(PACKAGE_LINUX_DIST) .
+endif
+
+ifeq ($(PRIMARY_GOAL),package-windows)
+package-windows: ## Build Windows static executable into dist/windows-amd64/
+	@command -v pwsh >/dev/null 2>&1 || { echo 'PowerShell 7 (pwsh) is required for package-windows.' >&2; exit 127; }
+	pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File build/package-windows.ps1 -DistDir $(PACKAGE_WINDOWS_DIST) $(WINDOWS_PACKAGE_ARGS)
+endif
+
+ifeq ($(PRIMARY_GOAL),package-distroless)
+package-distroless: ## Build local distroless image containing only the static Linux binary
+	docker buildx build --file docker/Dockerfile --target distroless --platform $(PACKAGE_PLATFORM) --load -t $(PACKAGE_IMAGE):$(IMAGE_TAG) .
+endif
+
+ifeq ($(PRIMARY_GOAL),package-distroless-push)
+package-distroless-push: ## Build and push distroless image containing only the static Linux binary
+	docker buildx build --file docker/Dockerfile --target distroless --platform $(PACKAGE_PLATFORM) --push -t $(PACKAGE_IMAGE):$(IMAGE_TAG) .
 endif
 
 #
