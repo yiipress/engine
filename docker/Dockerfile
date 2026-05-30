@@ -181,10 +181,11 @@ RUN --mount=type=cache,target=/root/.cargo/git \
     php /opt/patch-extension-config.php /static-php/config/ext.json \
     && php /opt/patch-source-config.php /static-php/config/source.json /static-php/config/lib.json \
     && bin/spc download --for-extensions="${STATIC_PHP_EXTENSIONS}" --with-php="${PHP_VERSION}" --without-suggestions \
+    && bin/spc install-pkg upx \
     && mkdir -p buildroot/bin \
     && ln -sf /usr/bin/pkg-config buildroot/bin/pkg-config \
     && SPC_TOOLCHAIN='SPC\toolchain\MuslToolchain' SPC_TARGET=x86_64-linux-musl bin/spc doctor --auto-fix \
-    && (bin/spc build "${STATIC_PHP_EXTENSIONS}" --build-micro --with-micro-fake-cli -P /opt/register-yiipress-highlighter.php \
+    && (bin/spc build "${STATIC_PHP_EXTENSIONS}" --build-micro --with-micro-fake-cli --with-upx-pack -P /opt/register-yiipress-highlighter.php \
         || (tail -n 200 /static-php/log/spc.shell.log && false))
 COPY --from=phar-builder /app/dist/yiipress.phar /artifacts/yiipress.phar
 RUN bin/spc micro:combine /artifacts/yiipress.phar -O /artifacts/yiipress \
