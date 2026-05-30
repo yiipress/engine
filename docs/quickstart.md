@@ -1,21 +1,32 @@
 # Quickstart
 
-## 1. Create a new project
+This guide uses the static `yiipress` binary. It is the recommended way to use YiiPress because it includes the PHP runtime and native extensions.
+
+## 1. Create a site directory
 
 ```bash
-composer create-project yiipress/engine myblog
+mkdir myblog
 cd myblog
 ```
 
-## 2. Configure your site
-
-Create the initial content structure:
+Download the YiiPress binary from the latest GitHub release or workflow artifact and place it in this directory as `yiipress` (`yiipress.exe` on Windows):
 
 ```bash
-make yii init
+cp /path/to/yiipress ./yiipress
+chmod +x ./yiipress
 ```
 
-Edit `content/config.yaml`:
+On Windows, use `yiipress.exe` in the examples below.
+
+## 2. Create the initial files
+
+Run:
+
+```bash
+./yiipress init
+```
+
+This creates `content/config.yaml`, `content/navigation.yaml`, and two starter collections. Edit `content/config.yaml`:
 
 ```yaml
 title: My Blog
@@ -35,7 +46,7 @@ taxonomies:
 
 ## 3. Review collections
 
-`make yii init` creates `content/page/_collection.yaml` and `content/blog/_collection.yaml`. The blog collection is ready for dated posts:
+`yiipress init` creates a `page` collection for standalone pages and a `blog` collection for dated posts:
 
 ```text
 content/
@@ -47,7 +58,13 @@ content/
 
 ## 4. Write your first post
 
-Create `content/blog/2024-01-15-hello-world.md`:
+Create the post with the scaffold command:
+
+```bash
+./yiipress new "Hello World" --collection=blog
+```
+
+Then edit the generated file in `content/blog/`. A typical post looks like this:
 
 ```markdown
 ---
@@ -69,7 +86,13 @@ YiiPress is a static blog engine built on Yii3. It is:
 
 ## 5. Create a page
 
-Create `content/page/about.md`:
+Use the same command without `--collection` for a root-level page:
+
+```bash
+./yiipress new "About"
+```
+
+A simple `content/about.md` page looks like this:
 
 ```markdown
 ---
@@ -96,7 +119,7 @@ main:
 ## 7. Build the site
 
 ```bash
-make yii build
+./yiipress build
 ```
 
 This generates static HTML in the `output/` directory:
@@ -104,8 +127,10 @@ This generates static HTML in the `output/` directory:
 ```
 output/
 ├── blog/
+│   ├── feed.xml
 │   ├── hello-world/
 │   │   └── index.html
+│   ├── rss.xml
 │   └── index.html
 ├── about/
 │   └── index.html
@@ -113,10 +138,7 @@ output/
 │   ├── general/
 │   │   └── index.html
 │   └── index.html
-├── sitemap.xml
-└── blog/
-    ├── feed.xml
-    └── rss.xml
+└── sitemap.xml
 ```
 
 ## 8. Preview locally
@@ -124,23 +146,23 @@ output/
 Start the dev server:
 
 ```bash
-make up
+./yiipress serve
 ```
 
-Open `http://localhost:19777` in your browser (port is configured in `docker/.env`).
+Open the URL printed by the command. The preview server rebuilds after content changes and refreshes the browser.
 
 ## Build options
 
 Include drafts and future-dated posts during development:
 
 ```bash
-make yii build -- --drafts --future
+./yiipress build --drafts --future
 ```
 
 Use multiple workers for faster builds:
 
 ```bash
-make yii build -- --workers=4
+./yiipress build --workers=4
 ```
 
 By default, YiiPress uses `--workers=auto`, which detects available CPU capacity and uses up to 4 workers automatically.
@@ -148,7 +170,7 @@ By default, YiiPress uses `--workers=auto`, which detects available CPU capacity
 Disable cache for a clean build:
 
 ```bash
-make yii build -- --no-cache
+./yiipress build --no-cache
 ```
 
 ## Next steps

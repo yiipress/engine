@@ -1,15 +1,12 @@
 # Configuration
 
-YiiPress has two separate configuration layers:
+Most site settings live in `content/config.yaml`. This is the file you edit to change the site title, public URL, languages, theme, pagination, search, assets, and Markdown behavior.
 
-- **Content config** (`content/config.yaml`) — site-level settings for templates and content generation
-- **Engine config** (`config/`) — Yii3 framework internals (DI, routing, middleware, environments)
+Engine source checkouts also contain a `config/` directory for Yii3 dependency injection, routing, and framework internals. That is for engine development and is covered in [Internals](internals.md).
 
-Users edit `content/config.yaml` to customize their site. Engine config should rarely need changes.
+## Site config
 
-## Content config
-
-`content/config.yaml` defines site-wide settings available to all templates via the `$config` variable.
+`content/config.yaml` defines site-wide settings used during the build and by the bundled templates.
 
 ```yaml
 title: My Site
@@ -70,7 +67,7 @@ editor: code
 - **search** — opt-in client-side search (see below)
 - **related** — opt-in related content suggestions (see below)
 - **assets** — asset pipeline settings (see below)
-- **editor** — command used by `yii serve` to open the current markdown source from the preview overlay. If omitted, YiiPress uses the platform default opener (`open` on macOS, `xdg-open` on Linux, and `start` through `cmd` on Windows)
+- **editor** — command used by `yiipress serve` to open the current markdown source from the preview overlay. If omitted, YiiPress uses the platform default opener (`open` on macOS, `xdg-open` on Linux, and `start` through `cmd` on Windows)
 - **params** — arbitrary key-value pairs for use in templates
 - **markdown** — markdown extensions configuration (see below)
 
@@ -184,7 +181,7 @@ asset references in rendered HTML are rewritten during build so custom themes co
 
 ### Editor
 
-During `yii serve`, HTML pages get a fixed bottom-right **Edit** button. Clicking it asks the preview server to open the markdown source file that produced the current page.
+During `yiipress serve`, HTML pages get a fixed bottom-right **Edit** button. Clicking it asks the preview server to open the markdown source file that produced the current page.
 
 Configure the editor command in `content/config.yaml`:
 
@@ -234,7 +231,7 @@ Each rule supports:
 
 ### Usage in templates
 
-Currently, the entry template receives individual variables (`$siteTitle`, `$entryTitle`, `$content`, `$date`, `$author`, `$collection`). Full `$config` access in templates is planned for the theming system.
+Templates receive focused variables for the page they render, such as `$siteTitle`, `$entryTitle`, `$content`, `$date`, `$author`, and `$collection`. See [Templates](template.md) for the full variable list.
 
 ### Markdown settings
 
@@ -286,15 +283,3 @@ Collection `_collection.yaml` fields override content config defaults:
 - Entry `permalink` overrides collection permalink
 
 Resolution order: entry → collection → content config → engine defaults.
-
-## Engine config
-
-The `config/` directory contains Yii3 framework configuration:
-
-- `config/common/` — DI containers, routes, aliases, bootstrap
-- `config/web/` — web-specific DI and params
-- `config/console/` — console-specific params and commands
-- `config/environments/` — environment overrides (dev, test, prod)
-
-Engine config controls framework internals: routing, middleware, dependency injection,
-asset management, and view rendering. It is not exposed to templates.

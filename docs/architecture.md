@@ -1,363 +1,79 @@
 # Architecture
 
-YiiPress operates in two modes: **build** (static site generation) and **serve** (near realtime development preview).
-Both modes use the same static build pipeline; serve mode rebuilds into `output/` and serves those files.
+YiiPress is a static website engine with two user-facing modes: build a production-ready static site, and serve a live local preview of that same generated output.
 
-## High-level flow
+The same pipeline is used by both commands:
 
-```
-content/          ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
-  *.md        ──▶ │  Parse   │──▶ │  Index   │──▶ │  Render  │──▶ │  Write   │
-  *.yaml          └──────────┘    └──────────┘    └──────────┘    └──────────┘
-themes/                                                 │           output/
-plugins/                                           (templates)      (build)
-                                                                    and serve
-```
+- `yiipress build` writes the final static files.
+- `yiipress serve` rebuilds the same output directory and serves it with live reload for local preview.
 
-1. **Parse** — read content files, extract front matter and markdown body
-2. **Index** — organize entries into collections, taxonomies, archives; resolve permalinks
-3. **Render** — apply plugins, convert markdown to HTML, render templates
-4. **Write** — emit static files to `output/`
-
-## Core concepts
-
-### Content source
-
-All user content lives under `content/`. The engine treats this directory as read-only input.
-
-- `content/config.yaml` — site-wide settings
-- `content/navigation.yaml` — menu definitions
-- `content/<name>/` — collection directories, each with `_collection.yaml` and entry `.md` files
-- `content/authors/` — author definitions
-- `content/assets/` and `content/<collection>/assets/` — static assets copied as-is
-
-### Value objects
-
-The domain model consists of immutable value objects. No entity has mutable state after construction.
-
-- **SiteConfig** — parsed `content/config.yaml`
-- **Navigation** — parsed `content/navigation.yaml`
-- **Collection** — parsed `_collection.yaml` + resolved settings (permalink pattern, sort, pagination)
-- **Entry** — parsed front matter + raw markdown body + resolved metadata (slug, date, permalink)
-- **Author** — parsed author file
-- **Taxonomy** — a taxonomy type (tags, categories) with its terms and associated entries
-- **TaxonomyTerm** — a single term (e.g., one tag) with its entry list
-- **Page** — a rendered output page: resolved URL + HTML content (entry page, listing page, archive page, feed, sitemap, etc.)
-
-### Collections and entries
-
-A `Collection` groups entries and defines their shared behavior (sorting, pagination, permalink pattern, feed generation). Each first-level directory under `content/` is a collection. Since there could be collections with a large number of entries, it is recommended to use lazy loading for entries and yield for iteration so it fits into servers with limited memory.
-
-An `Entry` belongs to exactly one collection. Its metadata is resolved by merging (highest priority first):
-
-```
-entry front matter → collection _collection.yaml → content/config.yaml → engine defaults
+```mermaid
+flowchart LR
+    content["content/<br>Markdown, YAML, assets"] --> parse["Parse"]
+    parse --> index["Index"]
+    index --> render["Render"]
+    render --> write["Write"]
+    templates["templates/themes"] --> render
+    plugins["processors/plugins"] --> render
+    write --> output["output/<br>static site"]
+    output --> preview["serve preview"]
 ```
 
-## Performance architecture
+## Content Model
 
-Performance is a first-class architectural concern, not an afterthought. It is achieved by eliminating unnecessary work rather than adding complexity.
+User content lives under `content/`:
 
-### Principle 1: Eliminate unnecessary dependencies
+- `config.yaml` — site-wide settings.
+- `navigation.yaml` — one or more navigation menus.
+- `<collection>/_collection.yaml` — collection settings.
+- `<collection>/*.md` — entries in a collection.
+- `authors/*.md` — author profiles.
+- `assets/` and `<collection>/assets/` — copied static files.
 
-Every dependency might add autoload overhead, potential bugs, and attack surface.
-Prefer PHP built-ins and small, focused C extensions over large PHP libraries:
+YiiPress turns those files into immutable model objects: site config, navigation, collections, entries, authors, taxonomies, and output pages. Entry settings are resolved in this order:
 
-- **YAML parsing** — use PHP's `yaml_parse()` (PECL yaml extension) instead of pure-PHP YAML parsers.
-  The `yaml_parse()` function wraps libyaml (C) and is significantly faster.
-  Front matter parsing is called once per entry, so this is on the hot path for large sites.
-- **Markdown-to-HTML** — use [MD4C](https://github.com/mity/md4c) via PECL `ext-md4c` (`md4c_toHtml()`)
-  instead of pure-PHP parsers like Parsedown. MD4C is a C library that is an order of magnitude faster.  
-- **Templating** — use plain PHP templates. PHP itself is a template language.  
-  YiiPress uses Yii3 view renderer, which renders plain PHP files with no compilation step.
-
-### Principle 2: Do less work
-
-- **Two-pass front matter extraction** — first pass: read only the front matter (bytes before the second `---`).
-  Do not read the markdown body into memory until render time. For index-only operations
-  (listing pages, taxonomy grouping, sorting), the body is never needed.
-- **Single-file rebuild** — support rebuilding a single entry without re-processing the entire site.
-  The index can be cached and selectively invalidated. This is critical for incremental builds
-  and for the `serve` mode live reload.
-- **Skip unnecessary pages** — do not generate taxonomy pages if no entries use taxonomies.
-  Do not generate feeds for collections with `feed: false`. Do not generate archive pages
-  for collections not sorted by date.
-
-### Principle 3: Parallelize output
-
-Entry rendering (template execution + file write) consumes 40–60% of total build time.
-Each content page is independent — no page's rendered output depends on another page's output.
-
-Use `pcntl_fork()` to render and write content pages in parallel (benchmarked; fibers don't help since work is CPU-bound):
-
-```
-pages = entryPages + standalonePages
-N workers
-each worker processes a contiguous chunk of pages
-parent waits for all workers
-continue with secondary outputs
+```mermaid
+flowchart LR
+    entry["Entry front matter"] --> collection["Collection config"]
+    collection --> site["Site config"]
+    site --> defaults["Engine defaults"]
 ```
 
-This approach requires no shared memory or synchronization — each worker writes to a different file path.
-The parent process coordinates secondary output after entry workers finish.
+The first configured value wins. For example, an entry `permalink` overrides a collection `permalink`, which overrides the site-wide pattern.
 
-Secondary page generation is also batched where the page count is high enough to amortize process startup cost.
-Writers such as collection listings and archives parallelize only when there is enough page volume; small page sets stay sequential.
-Feed generation parallelizes per collection when `--workers` is greater than one because feeds can render every entry body again.
-Sitemap and robots output remain serial.
+## Build Pipeline
 
-### Principle 4: Leverage PHP runtime optimizations
+1. **Parse** — read config, collection files, author files, and entry front matter.
+2. **Index** — resolve permalinks, apply draft/future filters, sort collections, group taxonomies, build archives, and connect authors.
+3. **Render** — convert Markdown to HTML, apply processors, render PHP templates, and produce page objects.
+4. **Write** — write `index.html`, feeds, sitemap, redirects, search index, copied assets, and other static files.
 
-- **OPCache** — templates are PHP files included repeatedly. OPCache compiles them once and reuses
-  the compiled bytecode.
-- **JIT** — PHP 8's JIT compiler (opcache.jit=1255) provides additional gains for CPU-bound template rendering.
-- **Preloading** — consider `opcache.preload` for the engine's own classes to eliminate autoload overhead during build.
-
-### Principle 5: Build and serve must produce identical output
-
-The same content pipeline (parse → index → render → write) must be used in both modes.
-Serve mode reads from the generated `output/` directory instead of rendering pages through a separate HTTP path.
-This prevents the class of bugs where build and preview produce different HTML.
-
-## Build pipeline
-
-The build pipeline is a sequence of discrete stages. Each stage produces output consumed by the next.
-
-### Stage 1: Parse
-
-Responsible for reading raw files from disk and producing structured data.
-
-- **ContentParser** — orchestrates parsing of all content files
-  - **FrontMatterParser** — extracts YAML front matter from `.md` files.
-    Reads only the bytes between the two `---` delimiters, parses with `yaml_parse()`.
-    Does not read the markdown body — that is deferred to render time
-  - **CollectionConfigParser** — parses `_collection.yaml` files
-  - **SiteConfigParser** — parses `content/config.yaml`
-  - **NavigationParser** — parses `content/navigation.yaml`
-  - **FilenameParser** — extracts date and slug from entry filenames
-
-Parsing is file-level and stateless. Each file is parsed independently.
-
-**Performance considerations:**
-
-- Parse only what is needed. Front matter is small; the markdown body is stored as a raw string and not parsed until render.
-- If body is not needed, postpone parsing it until render by even not loading it from disk.
-- Use `SplFileInfo` / directory iterators to avoid loading file contents until needed.
-- Consider fibers to parse files concurrently when I/O bound.
-- Consider using FFI or PECL extensions to parse YAML front matter faster.
-
-**Memory strategy:**
-
-- `FrontMatterParser` reads only front matter bytes via `fgets()` line-by-line. The markdown body is never loaded into memory during parsing.
-- `Entry` and `Author` store `bodyOffset` and `bodyLength` instead of the body string. The `body()` method reads from disk on demand via `fseek()`/`fread()`.
-- `parseEntries()`, `parseAllEntries()`, and `parseAuthors()` return `Generator` instances. Entries and authors are yielded one at a time, never collected into arrays by the parser. Consumers decide whether to collect or stream.
-- YAML config files (`config.yaml`, `_collection.yaml`, `navigation.yaml`) are small and loaded fully — this is intentional since their size is negligible.
-
-### Stage 2: Index
-
-Builds the in-memory site model from parsed data.
-
-- **SiteIndex** — the complete indexed site, holding all collections, entries, taxonomies, archives, and navigation
-  - Resolves entry permalinks using collection and site-level patterns
-  - Sorts entries within each collection
-  - Groups entries by taxonomy terms into pre-computed lookup structures (term → entry list)
-  - Groups entries by date for archive pages
-  - Resolves author references
-  - Filters out drafts and future-dated entries (unless in dev mode)
-  - Computes pagination slices
-
-The index is built once and is read-only afterward. All queries during rendering go through it.
-Optimize the structure for future access for the rest of the build pipeline so it is both O(1) or O(N) and memory efficient.
-
-**Memory considerations:**
-- Entries store raw markdown, not parsed HTML. HTML is produced on demand during render.
-- The index holds references, not copies. For example, a taxonomy term holds entry references, not duplicated entry data.
-- For very large sites (10k+ entries), consider lazy collections that load entry bodies from disk on demand, keeping only metadata in memory.
-
-### Stage 3: Render
-
-Converts the indexed site model into output pages.
-
-- **PageGenerator** — iterates the site index and produces `Page` objects for every output URL:
-  - Entry pages (one per entry)
-  - Collection listing pages (paginated)
-  - Taxonomy listing pages (all tags, all categories)
-  - Taxonomy term pages (entries for a specific tag/category, paginated)
-  - Author pages
-  - Date-based archive pages (yearly, monthly)
-  - Feed pages (RSS/Atom per collection with `feed: true`)
-  - Sitemap
-  - Redirect pages (for entries with `redirect_to`)
-  - Error pages (404)
-
-- **MarkdownRenderer** — converts raw markdown to HTML via MD4C (PECL `ext-md4c`), applying plugins before and after conversion
-- **TemplateRenderer** — renders plain PHP templates via Yii view component, resolving template by type and collection name. No intermediate template language — PHP is the template language
-
-Render order:
-
-```
-raw markdown → plugins (pre-parse) → markdown-to-HTML → plugins (post-parse) → template → layout → Page
+```mermaid
+flowchart TD
+    parse["Parse files"] --> index["Build site index"]
+    index --> entries["Entry and page HTML"]
+    index --> listings["Listings, archives, taxonomies, authors"]
+    index --> feeds["Feeds and sitemap"]
+    entries --> write["Write output"]
+    listings --> write
+    feeds --> write
+    assets["Copy assets"] --> write
 ```
 
-**Performance considerations:**
-- Render pages independently — no page depends on another page's rendered output.
-- Parallelize content page rendering via `pcntl_fork()` — distribute entry and standalone page rendering across N workers (see Performance architecture above).
-- Cache parsed markdown between builds (keyed by file content hash).
-- OPCache eliminates repeated PHP template compilation. Ensure templates are stable files, not generated on the fly.
+## Runtime Modes
 
-### Stage 4: Write
+### Build
 
-Outputs rendered pages to their destination.
+`yiipress build` is the production path. It generates static files and exits. The generated output can be deployed to any static host and does not require PHP in production.
 
-- **StaticWriter** — writes `Page` objects as files to `output/` directory, creating directory structure from permalinks.
-  In parallel mode, each forked worker writes its own subset of entry and standalone pages via `file_put_contents()`.
-  Collection index pages, feeds, sitemap, taxonomy pages, and redirect pages are coordinated after entry workers finish.
-  Feed collections may be split across forked workers when `--workers` is greater than one.
-- **AssetCopier** — copies `content/assets/`, `content/<collection>/assets/`, and processed build assets to `output/`
+### Serve
 
-## Content processor pipeline
+`yiipress serve` is the preview path. It serves files from `output/`, injects live reload into HTML responses, and triggers normal builds when content or templates change. Because preview uses the same generated files as production, build and serve output stay aligned.
 
-Content processors transform entry content through a sequential pipeline. Each processor implements `ContentProcessorInterface` with a single `process(string $content, Entry $entry): string` method.
+## Extension Points
 
-### ContentProcessorPipeline
+- **Templates** control page HTML. See [Templates](template.md).
+- **Content processors** transform Markdown and rendered HTML. See [Plugins](plugins.md).
+- **Importers** convert external content sources into Markdown files. See [Console commands](commands.md#yiipress-import).
 
-`ContentProcessorPipeline` chains processors in order. Each processor receives the output of the previous one:
-
-```php
-$content = $entry->body();
-foreach ($processors as $processor) {
-    $content = $processor->process($content, $entry);
-}
-```
-
-Two separate pipelines are configured via Yii3 DI container in `config/common/di/content-pipeline.php`:
-
-- **contentPipeline** — used by `EntryRenderer` for entry pages: `MarkdownProcessor` → `SyntaxHighlightProcessor`
-- **feedPipeline** — used by `FeedGenerator` for feeds: `MarkdownProcessor` only (no syntax highlighting in feeds)
-
-### Built-in processors
-
-- **MarkdownProcessor** — converts markdown to HTML using md4c. Accepts `MarkdownConfig` for feature toggles
-- **OEmbedProcessor** — expands standalone provider URLs into embed HTML before markdown via pluggable `OEmbedInterface` implementations
-- **SyntaxHighlightProcessor** — server-rendered code block highlighting via `YiiPress\Highlighter::highlightHtml()` from `ext-highlighter`. The reusable native highlighter package, `yiipress/highlighter`, also exposes `highlight()` for raw code strings without an HTML wrapper. Uses syntect + rayon compiled as a Rust static library and linked into the PHP extension, with explicit string lengths passed across the C boundary to reduce per-call overhead
-
-
-## Serve mode
-
-In serve mode, YiiPress runs a ReactPHP preview server over the built output directory, `output/` by default.
-
-- The first request triggers a build if the configured output directory is empty.
-- `--content-dir` and `--output-dir` are passed through to live reload rebuilds and static file serving.
-- Startup fails before opening the socket if the content directory is missing or the output directory is not writable or cannot be created.
-- Static file serving and live reload SSE are handled in the server loop, so normal page and asset responses avoid Yii HTTP runner overhead.
-- HTML responses get a small development overlay that can open the current page's markdown source through the framework-routed `/_open-source` action. Source lookup uses the build manifest and verifies paths stay inside the configured content and output directories.
-- Non-HTML assets are streamed with backpressure instead of being buffered into memory.
-- Each worker owns one shared live reload inotify watcher and attaches all SSE clients in that worker to it.
-
-## Caching
-
-Caching targets the most expensive operations:
-
-- **Parsed front matter cache** — keyed by file path + modification time. Avoids re-parsing unchanged files.
-- **Markdown HTML cache** — keyed by content hash (accounts for plugin changes). Avoids re-rendering unchanged content.
-- **Site index cache** — for incremental builds, the full index is cached and selectively invalidated when files change.
-
-Cache storage: filesystem. Source installs use `runtime/cache/`; PHAR and static binary runs use a project-scoped cache under the OS temp directory so packaged commands do not write framework state into the site directory. No external dependencies.
-
-## Directory structure (source code)
-
-```
-src/
-├── Console/
-│   ├── BuildCommand.php          # `yiipress build`
-│   ├── ImportCommand.php         # `yiipress import` — import from external sources
-│   ├── NewCommand.php            # `yiipress new` — scaffold entries/pages
-│   └── ServeCommand.php          # `yiipress serve`
-├── Content/
-│   ├── Model/
-│   │   ├── SiteConfig.php
-│   │   ├── Collection.php
-│   │   ├── Entry.php
-│   │   ├── Author.php
-│   │   ├── Taxonomy.php
-│   │   ├── TaxonomyTerm.php
-│   │   ├── Navigation.php
-│   │   └── Page.php
-│   ├── Parser/
-│   │   ├── ContentParser.php     # Orchestrates all parsing
-│   │   ├── FrontMatterParser.php
-│   │   ├── CollectionConfigParser.php
-│   │   ├── SiteConfigParser.php
-│   │   ├── NavigationParser.php
-│   │   └── FilenameParser.php
-│   ├── SiteIndex.php             # Indexed site model
-│   └── SiteIndexBuilder.php      # Builds the index from parsed data
-├── Import/
-│   ├── ContentImporterInterface.php  # Interface for content importers
-│   ├── ImporterOption.php            # Value object declaring an importer CLI option
-│   ├── ImportResult.php              # Value object for import results
-│   └── TelegramContentImporter.php   # Telegram channel export importer
-├── Processor/
-│   ├── ContentProcessorInterface.php  # Processor interface
-│   ├── ContentProcessorPipeline.php   # Chains processors in order
-│   ├── MarkdownProcessor.php          # Markdown-to-HTML via md4c
-│   └── SyntaxHighlightProcessor.php   # Code block highlighting
-├── Render/
-│   ├── PageGenerator.php         # Produces Page objects from site index
-│   ├── MarkdownRenderer.php      # Low-level md4c wrapper
-│   └── TemplateRenderer.php      # PHP template rendering via Yii view
-├── Build/
-│   ├── AuthorPageWriter.php      # Writes author index and individual pages
-│   ├── BuildCache.php            # Content-hash based render cache
-│   ├── BuildDiagnostics.php      # Warns on broken links, missing images, invalid front matter
-│   ├── BuildManifest.php         # Tracks source→output mappings for incremental builds
-│   ├── CollectionListingWriter.php # Paginated collection listing pages
-│   ├── ContentAssetCopier.php    # Copies non-md/yaml assets to output directory
-│   ├── Theme.php                 # Theme model (name + path)
-│   ├── ThemeAssetCopier.php      # Copies theme assets/ to output directory
-│   ├── ThemeRegistry.php         # Named theme registry, configured via DI
-│   ├── TemplateResolver.php      # Resolves template names via ThemeRegistry
-├── Web/                          # HTTP helpers and direct web entry actions
-│   ├── DevServer/
-│   │   ├── DevHtmlInjector.php   # Adds preview scripts to served HTML
-│   │   └── OpenSourceAction.php  # Framework route action for opening markdown source
-│   ├── LiveReload/
-│   │   └── SiteBuildRunner.php   # Triggers yii build on file changes
-│   ├── StaticFile/
-│   │   └── StaticFileAction.php  # Serves files from output directory
-│   ├── NotFound/
-│   └── Shared/
-└── Environment.php
-```
-
-## Dependency flow
-
-```
-Console Commands
-      │
-      ▼
-  ContentParser ──▶ Model (value objects)
-      │
-      ▼
-  SiteIndexBuilder ──▶ SiteIndex
-      │
-      ▼
-  PageGenerator ──▶ MarkdownRenderer + TemplateRenderer ──▶ Page
-      │                     │
-      │               PluginRegistry
-      ▼
-  StaticWriter
-```
-
-Dependencies point inward: output depends on render, render depends on index, index depends on parsing. The model layer has no dependencies on any other layer.
-
-## Key design decisions
-
-- **Value objects over entities** — all domain objects are immutable after construction. No hidden state mutations.
-- **Composition over inheritance** — plugins, parsers, and renderers are composed, not subclassed.
-- **Late markdown parsing** — markdown body is stored raw and converted to HTML only during render. This keeps memory usage low during parse and index stages.
-- **File-based caching** — no external cache dependencies. Cache invalidation uses file modification time and content hashing.
-- **ReactPHP for preview serving, Yii3 DI for wiring** — serve mode uses a focused ReactPHP server over generated static output. Build mode uses Yii3 DI for wiring but bypasses HTTP infrastructure.
-- **Plugin simplicity** — plugins are string-in, string-out transformers. No complex lifecycle or dependency graph between plugins.
-- **C for hot paths** — markdown-to-HTML (MD4C) and YAML parsing (`yaml_parse()`) are delegated to C libraries. PHP orchestrates; C does the byte-level work.
-- **Fork-based parallelism** — `pcntl_fork()` for parallel entry rendering. No shared memory, no threads, no synchronization. Each worker is a full copy of the indexed site that writes to its own file paths.
+Engine-level implementation details, dependency flow, source layout, caching strategy, and performance notes are in [Internals](internals.md).

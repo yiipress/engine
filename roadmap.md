@@ -41,6 +41,7 @@
 - [x] Expand `docs/commands.md` — add flags, options, and usage examples for each command
 - [x] Expand `docs/plugins.md` — document plugin API, lifecycle hooks, registration, configuration
 - [x] Expand `docs/template.md` — document available template variables, partials/includes, example templates
+- [x] Make user-facing docs binary-first and split engine developer details into `docs/internals.md`
 
 ## Priority 3: Developer experience
 
