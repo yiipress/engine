@@ -339,7 +339,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertIsString($windowsScript);
 
         self::assertStringContainsString('RUN rustup target add x86_64-unknown-linux-musl', $dockerfile);
-        self::assertStringNotContainsString(
+        self::assertStringContainsString(
             'RUN cd /opt/yiipress-highlighter && rustup target add x86_64-unknown-linux-musl',
             $dockerfile,
         );

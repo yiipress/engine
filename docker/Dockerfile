@@ -173,6 +173,7 @@ RUN mkdir -p /opt/md4c-extension \
     | tar -xz --strip-components=1 -C /opt/md4c-extension
 RUN --mount=type=cache,target=/tmp/composer-cache \
     COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project --no-dev --no-progress --no-interaction yiipress/highlighter /opt/yiipress-highlighter "${HIGHLIGHTER_VERSION}"
+RUN cd /opt/yiipress-highlighter && rustup target add x86_64-unknown-linux-musl
 COPY build/static-php/patch-extension-config.php /opt/patch-extension-config.php
 COPY build/static-php/patch-source-config.php /opt/patch-source-config.php
 COPY build/static-php/register-yiipress-highlighter.php /opt/register-yiipress-highlighter.php
