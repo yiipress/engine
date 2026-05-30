@@ -175,6 +175,8 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringNotContainsString('if ($IsWindows)', $script);
         self::assertStringContainsString('Invoke-WebRequest -Uri $Url -OutFile $archive -TimeoutSec 300', $script);
         self::assertStringContainsString('finally {', $script);
+        self::assertStringContainsString('[string] $HighlighterVersion = "1.0.1"', $script);
+        self::assertStringNotContainsString('"dev-master"', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-inotify', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-pcntl', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-posix', $script);
@@ -216,6 +218,8 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('type=semver,pattern={{version}}', $workflow);
         self::assertStringContainsString('cp release/yiipress-phar/yiipress.phar yiipress.phar', $workflow);
         self::assertStringContainsString('softprops/action-gh-release', $workflow);
+        self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@v\d+/', $workflow);
+        self::assertStringNotContainsString('dtolnay/rust-toolchain@stable', $workflow);
     }
 
     #[Test]
@@ -351,6 +355,9 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('--mount=type=cache,target=/tmp/composer-cache', $dockerfile);
         self::assertStringContainsString('COMPOSER_CACHE_DIR=/tmp/composer-cache composer install', $dockerfile);
         self::assertStringContainsString('COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project', $dockerfile);
+        self::assertStringContainsString('ARG HIGHLIGHTER_VERSION=1.0.1', $dockerfile);
+        self::assertStringNotContainsString('yiipress/highlighter /build/highlighter-extension dev-master', $dockerfile);
+        self::assertStringNotContainsString('yiipress/highlighter /opt/yiipress-highlighter dev-master', $dockerfile);
         self::assertStringContainsString('--mount=type=cache,target=/root/.cargo/git', $dockerfile);
         self::assertStringContainsString('--mount=type=cache,target=/root/.cargo/registry', $dockerfile);
     }

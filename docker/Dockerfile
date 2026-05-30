@@ -27,6 +27,7 @@ RUN install-php-extensions \
     posix
 
 FROM base AS highlighter-extension-builder
+ARG HIGHLIGHTER_VERSION=1.0.1
 ENV CARGO_HOME=/root/.cargo \
     RUSTUP_HOME=/usr/local/rustup \
     PATH="/root/.cargo/bin:${PATH}"
@@ -34,7 +35,7 @@ COPY --from=composer /composer /usr/bin/composer
 COPY --from=rust:bookworm /usr/local/cargo /root/.cargo
 COPY --from=rust:bookworm /usr/local/rustup /usr/local/rustup
 RUN --mount=type=cache,target=/tmp/composer-cache \
-    COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project --no-dev --no-progress --no-interaction yiipress/highlighter /build/highlighter-extension dev-master
+    COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project --no-dev --no-progress --no-interaction yiipress/highlighter /build/highlighter-extension "${HIGHLIGHTER_VERSION}"
 RUN --mount=type=cache,target=/root/.cargo/git \
     --mount=type=cache,target=/root/.cargo/registry \
     cd /build/highlighter-extension \
@@ -124,6 +125,7 @@ RUN --mount=type=cache,target=/tmp/composer-cache \
 FROM app-base AS static-package
 ARG PHP_VERSION=8.5
 ARG MD4C_VERSION=1.1
+ARG HIGHLIGHTER_VERSION=1.0.1
 ARG STATIC_PHP_CLI_REF=5b5861c366a0d94bc84002db7b3f46144b388fbb
 ARG STATIC_PHP_EXTENSIONS=ctype,dom,filter,highlighter,inotify,mbstring,md4c,opcache,pcntl,phar,posix,xml,xmlwriter,yaml
 ARG TARGETARCH
@@ -170,7 +172,7 @@ RUN mkdir -p /opt/md4c-extension \
     && curl -fsSL "https://pecl.php.net/get/md4c-${MD4C_VERSION}.tgz" \
     | tar -xz --strip-components=1 -C /opt/md4c-extension
 RUN --mount=type=cache,target=/tmp/composer-cache \
-    COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project --no-dev --no-progress --no-interaction yiipress/highlighter /opt/yiipress-highlighter dev-master
+    COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project --no-dev --no-progress --no-interaction yiipress/highlighter /opt/yiipress-highlighter "${HIGHLIGHTER_VERSION}"
 COPY build/static-php/patch-extension-config.php /opt/patch-extension-config.php
 COPY build/static-php/patch-source-config.php /opt/patch-source-config.php
 COPY build/static-php/register-yiipress-highlighter.php /opt/register-yiipress-highlighter.php
