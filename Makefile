@@ -23,12 +23,15 @@ DOCKER_COMPOSE_DEV := docker compose -f docker/compose.yml -f docker/dev/compose
 DOCKER_COMPOSE_TEST := docker compose -f docker/compose.yml -f docker/test/compose.yml
 PACKAGE_PLATFORM ?= linux/amd64
 PACKAGE_LINUX_DIST ?= dist/linux-amd64
+PACKAGE_MACOS_ARCH ?= $(shell uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')
+PACKAGE_MACOS_DIST ?= dist/macos-$(PACKAGE_MACOS_ARCH)
 PACKAGE_WINDOWS_DIST ?= dist/windows-amd64
 PACKAGE_PHAR_DIST ?= dist/phar
 PACKAGE_IMAGE ?= ${IMAGE}-static
+MACOS_PACKAGE_ARGS ?=
 WINDOWS_PACKAGE_ARGS ?=
 
-.PHONY: build up open down stop clear shell yii composer rector cs-fix test test-coverage psalm composer-dependency-analyser bench-generate bench-generate-realistic bench bench-baseline bench-compare bench-profile profile-build php build-docs package package-phar package-linux package-windows package-distroless package-distroless-push prod-build prod-push prod-deploy help
+.PHONY: build up open down stop clear shell yii composer rector cs-fix test test-coverage psalm composer-dependency-analyser bench-generate bench-generate-realistic bench bench-baseline bench-compare bench-profile profile-build php build-docs package package-phar package-linux package-macos package-windows package-distroless package-distroless-push prod-build prod-push prod-deploy help
 
 #
 # Development
@@ -212,6 +215,12 @@ package-linux: ## Build Linux static binary into dist/linux-amd64/
 	@mkdir -p $(PACKAGE_LINUX_DIST)
 	@rm -f $(PACKAGE_LINUX_DIST)/yiipress.phar
 	docker buildx build --file docker/Dockerfile --target package-linux-artifacts --platform $(PACKAGE_PLATFORM) --output type=local,dest=$(PACKAGE_LINUX_DIST) .
+endif
+
+ifeq ($(PRIMARY_GOAL),package-macos)
+package-macos: ## Build macOS static executable into dist/macos-<arch>/
+	@command -v bash >/dev/null 2>&1 || { echo 'Bash is required for package-macos.' >&2; exit 127; }
+	build/package-macos.sh --dist-dir $(PACKAGE_MACOS_DIST) --arch $(PACKAGE_MACOS_ARCH) $(MACOS_PACKAGE_ARGS)
 endif
 
 ifeq ($(PRIMARY_GOAL),package-windows)

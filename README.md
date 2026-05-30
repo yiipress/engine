@@ -20,7 +20,7 @@ or a database on the machine that builds or previews the site.
 
 ## Features
 
-- Static Linux and Windows binaries for simple installs with no PHP runtime.
+- Static Linux, macOS, and Windows binaries for simple installs with no PHP runtime.
 - Docker images for CI and container-based workflows.
 - Incremental and parallel builds with native Markdown, YAML, and syntax highlighting.
 - Plain Markdown/YAML content that works well with Git.
@@ -127,6 +127,7 @@ Engine packaging commands, used by maintainers:
 ```shell
 make package-phar
 make package
+make package-macos
 make package-distroless
 ```
 

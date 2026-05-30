@@ -160,12 +160,14 @@ Additional package targets are available:
 ```bash
 make package-phar
 make package-linux
+make package-macos
 make package-windows
 make package-distroless
 make package-distroless-push
 ```
 
 - `make package-linux` is the explicit Linux static executable target. Set `PACKAGE_PLATFORM=linux/amd64` and `PACKAGE_LINUX_DIST=...` to override the defaults.
+- `make package-macos` builds the native macOS static executable into `dist/macos-<arch>/yiipress` with the shell packaging script. It is intended for macOS hosts with PHP, Composer, Rust, and the Xcode command line build toolchain available. Set `PACKAGE_MACOS_ARCH=arm64` or `PACKAGE_MACOS_ARCH=amd64` and `PACKAGE_MACOS_DIST=...` to override the defaults. The intermediate PHAR used by `static-php-cli` is kept under `runtime/package-macos/` and is not part of the macOS artifact.
 - `make package-windows` builds only `dist/windows-amd64/yiipress.exe` with the PowerShell packaging script. It is intended for Windows hosts with PowerShell 7 (`pwsh`), PHP, Composer, Rust, and the Visual Studio C++ toolchain available. The intermediate PHAR used by `static-php-cli` is kept under `runtime/package-windows/` and is not part of the Windows artifact.
 - `make package-phar` builds `dist/phar/yiipress.phar` separately for environments that already have PHP 8.5 and required extensions. Set `PACKAGE_PHAR_DIST=...` to override the output directory.
 - `make package-distroless` builds a local `${IMAGE}-static:${IMAGE_TAG}` image from the `distroless` Docker target. The image copies only the static `yiipress` binary into a distroless base and runs it as the entrypoint.
@@ -176,4 +178,4 @@ The static executable includes `ext-highlighter`, so syntax highlighting does no
 Relative `content-dir`, `output-dir`, `new`, `clean`, `serve`, and `import` paths are resolved from the directory where you run `yiipress`, not from the packaged executable location.
 PHAR and static binary runs keep build cache and incremental manifests under the OS temp directory, keyed by the current project directory, instead of writing to `runtime/` in the site checkout. `yiipress clean` removes that packaged cache as well as the configured output directory.
 
-GitHub Actions builds the same outputs in the `Package Static Builds` workflow. Commits to `master` publish separate nightly PHAR, Linux, and Windows workflow artifacts and push the distroless image as `ghcr.io/<owner>/<repo>-static:nightly` plus a commit-specific `nightly-<sha>` tag. Version tags publish the standalone `yiipress.phar`, Linux archive, and Windows archive to the GitHub release and push semver tags for the distroless image.
+GitHub Actions builds the same outputs in the `Package Static Builds` workflow. Commits to `master` publish separate nightly PHAR, Linux, macOS, and Windows workflow artifacts and push the distroless image as `ghcr.io/<owner>/<repo>-static:nightly` plus a commit-specific `nightly-<sha>` tag. Version tags publish the standalone `yiipress.phar`, Linux archive, macOS archive, and Windows archive to the GitHub release and push semver tags for the distroless image.

@@ -48,7 +48,7 @@
 - [x] Live reload / file watching during `yiipress serve`
 - [x] PHAR and static PHP binary packaging
 - [x] Worker-mode serving for PHAR and static PHP binary packages
-- [x] Linux, Windows, and distroless Docker release packaging
+- [x] Linux, macOS, Windows, and distroless Docker release packaging
 - [x] `yiipress new` command — scaffold new entries from archetypes/templates
 - [x] `yiipress init` command — scaffold initial content structure
 - [x] Incremental builds (only rebuild changed files)
