@@ -1,34 +1,63 @@
 # Templates
 
-Templates are plain PHP files. Variables are passed via `require` inside an `ob_start()`/`ob_get_clean()` block, so each template has direct access to its variables as local PHP variables.
+Templates control the HTML around your Markdown content. YiiPress uses plain PHP templates, so you can write normal HTML and add small PHP expressions where dynamic values are needed.
+
+Most sites do not need a full custom theme. Start by overriding one template in `content/templates/`, then add more files only when you need them.
+
+## Quick customization
+
+1. Create `content/templates/`.
+2. Set the local theme in `content/config.yaml`:
+
+```yaml
+theme: local
+```
+
+3. Add a template file such as `content/templates/entry.php`.
+
+A minimal entry template:
+
+```php
+<?php
+/** @var string $siteTitle */
+/** @var string $entryTitle */
+/** @var string $content */
+/** @var Closure $h */
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title><?= $h($entryTitle) ?> - <?= $h($siteTitle) ?></title>
+</head>
+<body>
+    <main>
+        <h1><?= $h($entryTitle) ?></h1>
+        <?= $content ?>
+    </main>
+</body>
+</html>
+```
+
+Use `$h()` for text that should be escaped. Rendered Markdown content in `$content` is already HTML and should not be escaped again.
 
 ## Themes
 
-A theme is a named set of templates. Themes are registered in the Yii3 DI configuration (`config/common/di/theme.php`). The built-in `minimal` theme ships in the `themes/minimal/` directory at the project root.
+A theme is a named set of template files. YiiPress ships with the built-in `minimal` theme. A project-local `content/templates/` directory is automatically available as the `local` theme.
 
 ### Theme resolution order
 
-When resolving a template, the build process checks:
+When YiiPress renders a page, it chooses templates in this order:
 
 1. **Entry-level theme** — set via `theme` in front matter.
 2. **Site-level default theme** — set via `theme` in `config.yaml`.
-3. **Built-in `minimal` theme** — always used as a fallback.
+3. **Built-in `minimal` theme** — fallback when a template is missing.
 
-Within a theme, if the requested template file is not found, other registered themes are checked as a fallback.
-
-Theme-localized UI labels live in `translation/<language>.yaml` inside the theme directory. The bundled
-`minimal` theme ships with `translation/en.yaml` and `translation/ru.yaml`.
-Theme translation files are the source of UI labels; `UiText` only embeds compact month and language-name fallbacks so packaged builds do not need the PHP `intl` extension.
-If a key is missing for the current UI language, built pages first fall back to the site default UI language,
-then to English, and only then to the key name itself; taxonomy labels finally fall back to `ucfirst()`.
-The bundled `minimal` theme renders UI chrome using the site default UI language and lets the browser switch it client-side from a remembered preference, independently from the current entry language. The UI-language selector keeps language names in their native form.
-Archive month names are translated by `month.01` through `month.12` keys in theme files. The bundled `minimal` theme still updates archive month labels client-side after a UI-language change.
-The bundled `minimal` theme header stays responsive on narrow screens: navigation wraps onto its own row, controls keep touch-friendly hit areas, and the search dialog exposes a dedicated close button on mobile while preserving the keyboard `ESC` hint on larger screens.
-The bundled `minimal` theme also wraps long inline links inside entry content and lays out tag/category chips with flex gaps so dense metadata stays readable on narrow screens.
+Within a theme, YiiPress uses the requested file when it exists and falls back to other registered themes when it does not. That means a local theme can override only `entry.php` and keep every other page type from `minimal`.
 
 ### Local theme
 
-If a `templates/` directory exists inside the content directory, it is automatically registered as a theme named `local`. To use it as the site default:
+If a `templates/` directory exists inside the content directory, it is automatically registered as `local`. To use it as the site default:
 
 ```yaml
 theme: local
@@ -36,7 +65,7 @@ theme: local
 
 ### Per-entry theme
 
-An entry can override the site default theme via front matter:
+An entry can override the site default theme:
 
 ```yaml
 ---
@@ -45,26 +74,17 @@ theme: custom
 ---
 ```
 
-### Registering themes in DI
+Engine-level theme registration is covered in [Internals](internals.md#theme-registration).
 
-Themes are registered in `config/common/di/theme.php`:
+## UI translations
 
-```php
-use YiiPress\Build\Theme;
-use YiiPress\Build\ThemeRegistry;
-use Yiisoft\Definitions\DynamicReference;
+Theme-localized UI labels live in `translation/<language>.yaml` inside the theme directory. The bundled `minimal` theme ships with English and Russian translations.
 
-return [
-    ThemeRegistry::class => DynamicReference::to(static function (): ThemeRegistry {
-        $registry = new ThemeRegistry();
-        $registry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
-        $registry->register(new Theme('fancy', '/path/to/fancy-theme'));
-        return $registry;
-    }),
-];
-```
+Use translation files for labels that are part of the theme, such as "Search", "Related posts", pagination controls, and month names. If a key is missing, YiiPress falls back to the site default UI language, then English, then the key name.
 
 ## Built-in templates
+
+The built-in theme uses these template files:
 
 ```
 themes/minimal/
@@ -300,8 +320,6 @@ The helper accepts logical build-relative paths such as:
 
 - `assets/theme/style.css`
 - `assets/plugins/mermaid.css`
-
-This resolves `partials/head.php` from the active theme (with fallback to other registered themes), renders it with the given variables, and returns the HTML string.
 
 ### Creating a partial
 

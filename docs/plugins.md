@@ -17,8 +17,12 @@ interface ContentProcessorInterface
 
 `ContentProcessorPipeline` chains processors in order:
 
-```
-markdown → MarkdownProcessor → SyntaxHighlightProcessor → ... → final HTML
+```mermaid
+flowchart LR
+    markdown["Markdown"] --> markdownProcessor["MarkdownProcessor"]
+    markdownProcessor --> syntax["SyntaxHighlightProcessor"]
+    syntax --> custom["Custom processors"]
+    custom --> html["Final HTML"]
 ```
 
 Two separate pipelines are configured via Yii3 DI container in `config/common/di/content-pipeline.php`:

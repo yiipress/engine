@@ -11,41 +11,62 @@
 [![Tests](https://github.com/yiipress/engine/actions/workflows/run-tests.yml/badge.svg)](https://github.com/yiipress/engine/actions/workflows/run-tests.yml)
 [![Docker](https://github.com/yiipress/engine/actions/workflows/docker-build.yml/badge.svg)](https://github.com/yiipress/engine/actions/workflows/docker-build.yml)
 
-The package provides a fast, file-based static website engine powered by [Yii3](https://www.yiiframework.com/) and PHP 8.5.
-Write Markdown, build static HTML, and serve blogs, documentation, feeds, sitemaps, taxonomy pages, authors, search, and assets
-without a database.
+YiiPress is a fast, file-based static website engine powered by [Yii3](https://www.yiiframework.com/).
+Write Markdown, build static HTML, and ship blogs, documentation, feeds, sitemaps, taxonomy pages, authors, search, redirects,
+and assets without a database or any runtime.
+
+Use the static binary for normal projects: it includes the runtime and native extensions, so you do not need Docker, PHP, Composer,
+or a database on the machine that builds or previews the site.
+
+## Features
+
+- Static Linux and Windows binaries for simple installs with no PHP runtime.
+- Docker images for CI and container-based workflows.
+- Incremental and parallel builds with native Markdown, YAML, and syntax highlighting.
+- Plain Markdown/YAML content that works well with Git.
+- PHP templates for full control without learning a custom template language.
+- Static production output that can be hosted anywhere.
+- Markdown content with front matter, collections, standalone pages, taxonomies, authors, date archives, and summaries.
+- Feeds, sitemap, canonical URLs, social meta tags, redirects, and static `404.html`.
+- Native server-side syntax highlighting powered by Rust and syntect.
+- Table of contents, Mermaid diagrams, video embeds, fuzzy search, asset fingerprinting, and Telegram import.
+- Yii3-based web application, routing, dependency injection, middleware, and PHP template support.
 
 ## Requirements
 
-- Docker and Docker Compose for the standard development, test, and build workflow.
-- PHP 8.5 with required extensions when running the application outside Docker.
-- [`ext-highlighter`](https://github.com/yiipress/highlighter) for native server-side syntax highlighting.
+- For users: the `yiipress` static binary for your platform.
+- For CI or container workflows: Docker, using the published YiiPress image.
+- For engine development from source: Docker and Docker Compose.
 
-The Docker images include the required PHP extensions, including the YiiPress highlighter extension.
+Source installs require PHP 8.5 and native extensions. Prefer the binary unless you are developing the engine itself.
 
 ## Installation
 
-Create a project:
+Download the static binary from the latest GitHub release or workflow artifact, then put it in your site repository as
+`yiipress` (`yiipress.exe` on Windows).
+
+Create a content project:
 
 ```shell
-composer create-project yiipress/engine mysite
+mkdir mysite
 cd mysite
+cp /path/to/yiipress ./yiipress
+chmod +x ./yiipress
 ```
 
-Build the Docker image and initialize content:
+Initialize content:
 
 ```shell
-make build
-make yii init
+./yiipress init
 ```
 
 Start the development server:
 
 ```shell
-make up
+./yiipress serve
 ```
 
-The preview server is available at the host port configured by `DEV_PORT` in `docker/.env`.
+The preview server prints the URL it is listening on.
 
 ## General Usage
 
@@ -87,7 +108,7 @@ Welcome to my site.
 Build the static site:
 
 ```shell
-make yii build
+./yiipress build
 ```
 
 Generated files are written to `output/`.
@@ -95,10 +116,15 @@ Generated files are written to `output/`.
 Common commands:
 
 ```shell
-make yii new "My First Post"
-make yii build -- --workers=4
-make yii build -- --drafts --future
-make yii clean
+./yiipress new "My First Post" --collection=blog
+./yiipress build --workers=4
+./yiipress build --drafts --future
+./yiipress clean
+```
+
+Engine packaging commands, used by maintainers:
+
+```shell
 make package-phar
 make package
 make package-distroless
@@ -106,15 +132,6 @@ make package-distroless
 
 When using `serve`, HTML pages include live reload and a small edit button that opens the current Markdown source file in the
 editor configured in `content/config.yaml`.
-
-## Features
-
-- Markdown content with front matter, collections, standalone pages, taxonomies, authors, date archives, and summaries.
-- Incremental and parallel builds with cache-aware output generation.
-- Feeds, sitemap, canonical URLs, social meta tags, redirects, and static `404.html`.
-- Native server-side syntax highlighting powered by Rust and syntect.
-- Table of contents, Mermaid diagrams, video embeds, fuzzy search, asset fingerprinting, and Telegram import.
-- Yii3-based web application, routing, dependency injection, middleware, and PHP template support.
 
 ## Performance
 
@@ -141,6 +158,7 @@ Full documentation is available in [`docs/`](docs/) and at [yiipress.yiiframewor
 - [Plugins](docs/plugins.md)
 - [Deployment](docs/deployment.md)
 - [Architecture](docs/architecture.md)
+- [Internals](docs/internals.md)
 
 ## License
 

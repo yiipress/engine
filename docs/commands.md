@@ -1,13 +1,13 @@
 # Console commands
 
-All commands are run via the `yii` CLI entry point (or `composer serve` for the dev server).
+The examples below assume the static binary is in your project directory and use `./yiipress` so they work without changing `PATH`. Source checkouts expose the same commands through `./yii`; engine contributors should run them through the repository `make` targets.
 
-## `yii build`
+## `yiipress build`
 
 Generates static HTML content from source files.
 
 ```
-yii build [--content-dir=content] [--output-dir=output] [--workers=auto] [--no-cache] [--drafts] [--future] [--dry-run] [--no-write] [--profile]
+./yiipress build [--content-dir=content] [--output-dir=output] [--workers=auto] [--no-cache] [--drafts] [--future] [--dry-run] [--no-write] [--profile]
 ```
 
 **Options:**
@@ -58,12 +58,12 @@ The command:
 
 With `--workers=N` (N > 1), entry rendering and writing is parallelized across N forked processes. With `--workers=auto`, YiiPress uses up to the detected worker count and lets page writers clamp back to sequential mode for smaller workloads. Feeds are generated after entry writing and can be split per collection across workers. Sitemap generation remains serial.
 
-## `yii serve`
+## `yiipress serve`
 
-Starts the ReactPHP preview server for local development.
+Starts the preview server for local development.
 
 ```
-yii serve [address] [--content-dir=content] [--output-dir=output] [--port=19777] [--workers=2]
+./yiipress serve [address] [--content-dir=content] [--output-dir=output] [--port=19777] [--workers=2]
 ```
 
 **Options:**
@@ -73,18 +73,15 @@ yii serve [address] [--content-dir=content] [--output-dir=output] [--port=19777]
 - `--port`, `-p` — port to serve at when the address argument does not include a port (default: `19777`).
 - `--workers`, `-w` — number of preforked server workers (default: `2`).
 
-The Docker development server uses `yii serve 0.0.0.0 --port=19777`, exposed to the host port configured by `DEV_PORT` in `docker/.env`. Alternatively, use `composer serve` which disables the process timeout.
-On startup, `serve` only prints the URL it is listening on. Build progress is printed by rebuilds triggered after file changes.
-
-`serve` does not look for `public/index.php`. It runs on ReactPHP streams with preforked worker processes and serves built files from the configured output directory directly in the server loop. It streams non-HTML static files, so large images, fonts, and media are sent with backpressure instead of being buffered as full response bodies. It also handles the live reload SSE endpoint directly there with one shared inotify watcher per worker, so fast navigation does not recreate filesystem watches for every EventSource connection. Idle live reload connections and static file responses do not block Yii request workers, and browser EventSource connections are closed on page navigation. It does not require PHP's built-in server or native `sockets` extension. Content and output paths resolve from the current working directory, so run the binary from the site directory or pass explicit `--content-dir` and `--output-dir` paths.
+On startup, `serve` prints the URL it is listening on. Build progress is printed by rebuilds triggered after file changes. Content and output paths resolve from the current working directory, so run the binary from the site directory or pass explicit `--content-dir` and `--output-dir` paths.
 
 HTML pages served by `serve` include a fixed bottom-right **Edit** button. It opens the markdown source file for the current page using the `editor` command from `content/config.yaml`; when `editor` is omitted, YiiPress uses the platform default opener (`open`, `xdg-open`, or Windows `start`). The button resolves source files through the build manifest, so it is available for entry and standalone markdown pages and hidden failures are reported in the browser console.
 
-Before starting the server, `serve` verifies that the content directory exists and that the output directory exists or can be created and written to. If the check fails, pass explicit paths, for example `./yii serve --content-dir=content --output-dir=output`.
+Before starting the server, `serve` verifies that the content directory exists and that the output directory exists or can be created and written to. If the check fails, pass explicit paths, for example `./yiipress serve --content-dir=content --output-dir=output`.
 
-See [Web application](web-app.md) for details on static file serving and live reload.
+See [Web preview](web-app.md) for static file serving and live reload behavior. Implementation details are in [Internals](internals.md#serve-mode).
 
-## `yii init`
+## `yiipress init`
 
 Initializes a content directory with the minimal YiiPress structure:
 
@@ -94,7 +91,7 @@ Initializes a content directory with the minimal YiiPress structure:
 - `blog/_collection.yaml`
 
 ```
-yii init [--content-dir=content]
+./yiipress init [--content-dir=content]
 ```
 
 **Options:**
@@ -103,12 +100,12 @@ yii init [--content-dir=content]
 
 The command creates parent directories as needed and fails if any scaffolded file already exists.
 
-## `yii new`
+## `yiipress new`
 
 Scaffolds a new content entry or standalone page.
 
 ```
-yii new <title> [--collection=<name>] [--content-dir=content] [--draft]
+./yiipress new <title> [--collection=<name>] [--content-dir=content] [--draft]
 ```
 
 **Arguments:**
@@ -132,17 +129,17 @@ yii new <title> [--collection=<name>] [--content-dir=content] [--draft]
 **Examples:**
 
 ```bash
-yii new "My First Post" --collection=blog
-yii new "Draft Ideas" --collection=blog --draft
-yii new "About Us"
+./yiipress new "My First Post" --collection=blog
+./yiipress new "Draft Ideas" --collection=blog --draft
+./yiipress new "About Us"
 ```
 
-## `yii import`
+## `yiipress import`
 
 Imports content from external sources into a YiiPress collection.
 
 ```
-yii import <source> [--collection=blog] [--content-dir=content] [--<importer-options>...]
+./yiipress import <source> [--collection=blog] [--content-dir=content] [--<importer-options>...]
 ```
 
 **Arguments:**
@@ -179,8 +176,8 @@ The importer reads `result.json` from the export directory and converts each mes
 - **Strikethrough** → `~~text~~`
 - **Inline code** → `` `code` ``
 - **Pre-formatted blocks** → fenced code blocks
-- **Text links** → `[text](url)`
-- **Photos** → copied to `assets/` and referenced as `![](/collection/assets/filename.jpg)`
+- **Text links** → converted to standard Markdown link syntax
+- **Photos** → copied to `assets/` and referenced with root-relative asset paths
 
 The title is extracted from the first line of the message. The filename is prefixed with the message date (e.g., `2024-03-15-my-post.md`).
 
@@ -189,22 +186,22 @@ Supports both single-chat exports (`result.json` with `messages` array) and full
 **Examples:**
 
 ```bash
-yii import telegram --directory=/path/to/telegram-export
-yii import telegram --directory=/path/to/telegram-export --collection=channel
-yii import telegram --directory=./telegram-data --content-dir=content
+./yiipress import telegram --directory=/path/to/telegram-export
+./yiipress import telegram --directory=/path/to/telegram-export --collection=channel
+./yiipress import telegram --directory=./telegram-data --content-dir=content
 ```
 
 ### Adding custom importers
 
 Importers implement `YiiPress\Import\ContentImporterInterface` and are registered via Yii3 DI in `config/common/di/importer.php`. Each importer declares its own options via the `options()` method. See [plugins.md](plugins.md#content-importers) for details.
 
-## `yii clean` / `yii clear`
+## `yiipress clean` / `yiipress clear`
 
 Clears build output and caches.
 
 ```
-yii clean [--output-dir=output]
-yii clear [--output-dir=output]
+./yiipress clean [--output-dir=output]
+./yiipress clear [--output-dir=output]
 ```
 
 **Options:**
@@ -218,6 +215,6 @@ The command removes:
 
 If a directory does not exist, it is skipped with a notice.
 
-## `yii` / `yii list`
+## `yiipress` / `yiipress list`
 
 Shows available commands and help.
