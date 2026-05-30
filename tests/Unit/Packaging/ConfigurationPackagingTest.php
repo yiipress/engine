@@ -209,6 +209,8 @@ final class ConfigurationPackagingTest extends TestCase
 
         self::assertStringContainsString('build/package-phar.php', $script);
         self::assertStringContainsString('BIN_PATH="${DIST_PATH}/yiipress"', $script);
+        self::assertStringContainsString('HOST_ARCH="$(detect_arch)"', $script);
+        self::assertStringContainsString('package-macos does not support cross-compilation', $script);
         self::assertStringContainsString('aarch64-apple-darwin', $script);
         self::assertStringContainsString('x86_64-apple-darwin', $script);
         self::assertStringContainsString('micro:combine', $script);
@@ -216,7 +218,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('pushd "$APP_PATH"', $script);
         self::assertStringContainsString('require_command "$command"', $script);
         self::assertStringContainsString('for command in php composer tar curl rustup cargo make; do', $script);
-        self::assertStringContainsString('curl -fsSL "$url" -o "$archive"', $script);
+        self::assertStringContainsString('curl -fsSL --max-time 300 --retry 3 --retry-delay 5 "$url" -o "$archive"', $script);
         self::assertStringContainsString('HIGHLIGHTER_VERSION="${HIGHLIGHTER_VERSION:-1.0.1}"', $script);
         self::assertStringNotContainsString('dev-master', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-inotify', $script);
@@ -261,14 +263,19 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('make package-macos PACKAGE_MACOS_ARCH=arm64 PACKAGE_MACOS_DIST=dist/macos-arm64', $workflow);
         self::assertStringContainsString('Smoke test macOS binary', $workflow);
         self::assertStringContainsString('./dist/macos-arm64/yiipress --help', $workflow);
+        self::assertStringContainsString('Pack macOS artifact', $workflow);
+        self::assertStringContainsString('tar -C dist/macos-arm64 -czf dist/yiipress-macos-arm64.tar.gz yiipress', $workflow);
         self::assertStringContainsString('name: yiipress-macos-arm64', $workflow);
-        self::assertStringContainsString('path: dist/macos-arm64/yiipress', $workflow);
+        self::assertStringContainsString('path: dist/yiipress-macos-arm64.tar.gz', $workflow);
         self::assertStringContainsString('target: distroless', $workflow);
         self::assertStringContainsString("github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')", $workflow);
         self::assertStringContainsString('type=raw,value=nightly', $workflow);
         self::assertStringContainsString('type=semver,pattern={{version}}', $workflow);
         self::assertStringContainsString('cp release/yiipress-phar/yiipress.phar yiipress.phar', $workflow);
-        self::assertStringContainsString('tar -C release/yiipress-macos-arm64 -czf yiipress-macos-arm64.tar.gz .', $workflow);
+        self::assertStringContainsString(
+            'cp release/yiipress-macos-arm64/yiipress-macos-arm64.tar.gz yiipress-macos-arm64.tar.gz',
+            $workflow,
+        );
         self::assertStringContainsString('yiipress-macos-arm64.tar.gz', $workflow);
         self::assertStringContainsString('softprops/action-gh-release', $workflow);
         self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@v\d+/', $workflow);

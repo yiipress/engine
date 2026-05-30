@@ -230,11 +230,14 @@ jobs:
       - name: Smoke test macOS binary
         run: ./dist/macos-arm64/yiipress --help
 
+      - name: Pack macOS artifact
+        run: tar -C dist/macos-arm64 -czf dist/yiipress-macos-arm64.tar.gz yiipress
+
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: yiipress-macos-arm64
-          path: dist/macos-arm64/yiipress
+          path: dist/yiipress-macos-arm64.tar.gz
           if-no-files-found: error
 
   release:
@@ -258,7 +261,7 @@ jobs:
       - name: Pack release archives
         run: |
           tar -C release/yiipress-linux-amd64 -czf yiipress-linux-amd64.tar.gz .
-          tar -C release/yiipress-macos-arm64 -czf yiipress-macos-arm64.tar.gz .
+          cp release/yiipress-macos-arm64/yiipress-macos-arm64.tar.gz yiipress-macos-arm64.tar.gz
           zip -j yiipress-windows-amd64.zip release/yiipress-windows-amd64/*
           cp release/yiipress-phar/yiipress.phar yiipress.phar
 

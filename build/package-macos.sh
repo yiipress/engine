@@ -24,7 +24,8 @@ detect_arch() {
     esac
 }
 
-ARCH="$(detect_arch)"
+HOST_ARCH="$(detect_arch)"
+ARCH="$HOST_ARCH"
 DIST_DIR="dist/macos-${ARCH}"
 
 while [ "$#" -gt 0 ]; do
@@ -46,6 +47,11 @@ done
 
 if [ "$(uname -s)" != "Darwin" ]; then
     printf 'package-macos must run on macOS.\n' >&2
+    exit 1
+fi
+
+if [ "$ARCH" != "$HOST_ARCH" ]; then
+    printf 'package-macos does not support cross-compilation: requested %s on %s host.\n' "$ARCH" "$HOST_ARCH" >&2
     exit 1
 fi
 
@@ -96,7 +102,7 @@ expand_tar_gz_archive() {
     local archive
 
     archive="$(mktemp "${WORK_PATH}/archive.XXXXXX")"
-    curl -fsSL "$url" -o "$archive"
+    curl -fsSL --max-time 300 --retry 3 --retry-delay 5 "$url" -o "$archive"
     mkdir -p "$destination"
     tar -xzf "$archive" --strip-components=1 -C "$destination"
     rm -f "$archive"
