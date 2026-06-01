@@ -100,6 +100,10 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('package-linux:', $makefile);
         self::assertStringContainsString('--target package-linux-artifacts', $makefile);
         self::assertStringContainsString('rm -f $(PACKAGE_LINUX_DIST)/yiipress.phar', $makefile);
+        self::assertStringContainsString('PACKAGE_MACOS_DIST ?= dist/macos-$(PACKAGE_MACOS_ARCH)', $makefile);
+        self::assertStringContainsString('package-macos:', $makefile);
+        self::assertStringContainsString('build/package-macos.sh --dist-dir $(PACKAGE_MACOS_DIST) --arch $(PACKAGE_MACOS_ARCH)', $makefile);
+        self::assertStringContainsString('Bash is required for package-macos.', $makefile);
         self::assertStringContainsString('package-windows:', $makefile);
         self::assertStringContainsString('build/package-windows.ps1', $makefile);
         self::assertStringContainsString('PowerShell 7 (pwsh) is required for package-windows.', $makefile);
@@ -137,8 +141,10 @@ final class ConfigurationPackagingTest extends TestCase
     {
         $dockerfile = file_get_contents(dirname(__DIR__, 3) . '/docker/Dockerfile');
         $script = file_get_contents(dirname(__DIR__, 3) . '/build/package-windows.ps1');
+        $macosScript = file_get_contents(dirname(__DIR__, 3) . '/build/package-macos.sh');
         self::assertIsString($dockerfile);
         self::assertIsString($script);
+        self::assertIsString($macosScript);
 
         $pharStart = strpos($dockerfile, 'FROM scratch AS package-phar-artifacts');
         $linuxStart = strpos($dockerfile, 'FROM scratch AS package-linux-artifacts');
@@ -158,6 +164,9 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringNotContainsString('$pharPath = Join-Path $distPath "yiipress.phar"', $script);
         self::assertStringContainsString('$legacyDistPharPath = Join-Path $distPath "yiipress.phar"', $script);
         self::assertStringContainsString('Remove-Item $legacyDistPharPath -Force', $script);
+        self::assertStringContainsString('PHAR_PATH="${WORK_PATH}/yiipress.phar"', $macosScript);
+        self::assertStringNotContainsString('PHAR_PATH="${DIST_PATH}/yiipress.phar"', $macosScript);
+        self::assertStringContainsString('rm -f "${DIST_PATH}/yiipress.phar"', $macosScript);
     }
 
     #[Test]
@@ -193,6 +202,38 @@ final class ConfigurationPackagingTest extends TestCase
     }
 
     #[Test]
+    public function macosPackageScriptBuildsPharAndExecutable(): void
+    {
+        $script = file_get_contents(dirname(__DIR__, 3) . '/build/package-macos.sh');
+        self::assertIsString($script);
+
+        self::assertStringContainsString('build/package-phar.php', $script);
+        self::assertStringContainsString('BIN_PATH="${DIST_PATH}/yiipress"', $script);
+        self::assertStringContainsString('HOST_ARCH="$(detect_arch)"', $script);
+        self::assertStringContainsString('package-macos does not support cross-compilation', $script);
+        self::assertStringContainsString('aarch64-apple-darwin', $script);
+        self::assertStringContainsString('x86_64-apple-darwin', $script);
+        self::assertStringContainsString('micro:combine', $script);
+        self::assertStringContainsString('APP_PATH="${WORK_PATH}/app"', $script);
+        self::assertStringContainsString('pushd "$APP_PATH"', $script);
+        self::assertStringContainsString('require_command "$command"', $script);
+        self::assertStringContainsString('for command in php composer tar curl rustup cargo make; do', $script);
+        self::assertStringContainsString('curl -fsSL --max-time 300 --retry 3 --retry-delay 5 "$url" -o "$archive"', $script);
+        self::assertStringContainsString('HIGHLIGHTER_VERSION="${HIGHLIGHTER_VERSION:-1.0.1}"', $script);
+        self::assertStringNotContainsString('dev-master', $script);
+        self::assertStringContainsString('--ignore-platform-req=ext-inotify', $script);
+        self::assertStringContainsString('--ignore-platform-req=ext-md4c', $script);
+        self::assertStringContainsString('--ignore-platform-req=ext-yaml', $script);
+        self::assertStringContainsString('--ignore-platform-req=ext-highlighter', $script);
+        self::assertStringContainsString('write_log_tail "${STATIC_PHP_PATH}/log/spc.output.log"', $script);
+        self::assertStringContainsString('write_log_tail "${STATIC_PHP_PATH}/log/spc.shell.log"', $script);
+        self::assertStringNotContainsString('--with-micro-fake-cli', $script);
+        self::assertStringContainsString('rustup target add "$CARGO_BUILD_TARGET"', $script);
+        self::assertStringContainsString('cargo build --release --target "$CARGO_BUILD_TARGET"', $script);
+        self::assertStringContainsString('chmod +x "$BIN_PATH"', $script);
+    }
+
+    #[Test]
     public function packageWorkflowPublishesNightlyAndReleaseBuilds(): void
     {
         $workflow = file_get_contents(dirname(__DIR__, 3) . '/.github/workflows/package-static.yml');
@@ -215,15 +256,31 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('Smoke test Windows binary', $workflow);
         self::assertStringContainsString('./dist/windows-amd64/yiipress.exe --help', $workflow);
         self::assertStringContainsString('path: dist/windows-amd64/yiipress.exe', $workflow);
+        self::assertStringContainsString('runs-on: macos-latest', $workflow);
+        self::assertStringContainsString('targets: aarch64-apple-darwin', $workflow);
+        self::assertStringContainsString('Cache macOS package dependencies', $workflow);
+        self::assertStringContainsString('runtime/package-macos/yiipress-highlighter', $workflow);
+        self::assertStringContainsString('make package-macos PACKAGE_MACOS_ARCH=arm64 PACKAGE_MACOS_DIST=dist/macos-arm64', $workflow);
+        self::assertStringContainsString('Smoke test macOS binary', $workflow);
+        self::assertStringContainsString('./dist/macos-arm64/yiipress --help', $workflow);
+        self::assertStringContainsString('Pack macOS artifact', $workflow);
+        self::assertStringContainsString('tar -C dist/macos-arm64 -czf dist/yiipress-macos-arm64.tar.gz yiipress', $workflow);
+        self::assertStringContainsString('name: yiipress-macos-arm64', $workflow);
+        self::assertStringContainsString('path: dist/yiipress-macos-arm64.tar.gz', $workflow);
         self::assertStringContainsString('target: distroless', $workflow);
         self::assertStringContainsString("github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')", $workflow);
         self::assertStringContainsString('type=raw,value=nightly', $workflow);
         self::assertStringContainsString('type=semver,pattern={{version}}', $workflow);
         self::assertStringContainsString('cp release/yiipress-phar/yiipress.phar yiipress.phar', $workflow);
+        self::assertStringContainsString(
+            'cp release/yiipress-macos-arm64/yiipress-macos-arm64.tar.gz yiipress-macos-arm64.tar.gz',
+            $workflow,
+        );
+        self::assertStringContainsString('yiipress-macos-arm64.tar.gz', $workflow);
         self::assertStringContainsString('softprops/action-gh-release', $workflow);
         self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@v\d+/', $workflow);
         self::assertStringNotContainsString('dtolnay/rust-toolchain@stable', $workflow);
-        self::assertSame(3, substr_count($workflow, 'persist-credentials: false'));
+        self::assertSame(4, substr_count($workflow, 'persist-credentials: false'));
     }
 
     #[Test]
@@ -339,8 +396,10 @@ final class ConfigurationPackagingTest extends TestCase
     {
         $dockerfile = file_get_contents(dirname(__DIR__, 3) . '/docker/Dockerfile');
         $windowsScript = file_get_contents(dirname(__DIR__, 3) . '/build/package-windows.ps1');
+        $macosScript = file_get_contents(dirname(__DIR__, 3) . '/build/package-macos.sh');
         self::assertIsString($dockerfile);
         self::assertIsString($windowsScript);
+        self::assertIsString($macosScript);
 
         self::assertStringContainsString('RUN rustup target add x86_64-unknown-linux-musl', $dockerfile);
         self::assertStringContainsString(
@@ -348,6 +407,7 @@ final class ConfigurationPackagingTest extends TestCase
             $dockerfile,
         );
         self::assertStringContainsString('Invoke-NativeCommand "rustup" @("target", "add", $env:CARGO_BUILD_TARGET)', $windowsScript);
+        self::assertStringContainsString('rustup target add "$CARGO_BUILD_TARGET"', $macosScript);
     }
 
     #[Test]
@@ -382,6 +442,10 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('ARG_ENABLE("md4c"', $registrationPatch);
         self::assertStringContainsString('EXTENSION("highlighter", "highlighter.c", false);', $registrationPatch);
         self::assertStringContainsString('$highlighterWindowsConfigReplacementCount !== 1', $registrationPatch);
+        self::assertStringContainsString(
+            'str_contains($highlighterWindowsConfigContents, \'EXTENSION("highlighter", "highlighter.c", false);\')',
+            $registrationPatch,
+        );
         self::assertStringContainsString('EXTENSION("md4c", "md4c.c", false);', $registrationPatch);
         self::assertStringContainsString('md4c config.w32 was not found.', $registrationPatch);
         self::assertStringContainsString('php_md4c.h', $registrationPatch);
