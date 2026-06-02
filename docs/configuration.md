@@ -44,6 +44,7 @@ assets:
   fingerprint: true
 
 last_updated: true
+edit_page: https://github.com/example/mysite/edit/main/content/{path}
 
 editor: code
 ```
@@ -69,6 +70,7 @@ editor: code
 - **search** — opt-in client-side search (see below)
 - **related** — opt-in related content suggestions (see below)
 - **last_updated** — set to `true` to show each entry source file's last modification time below its content (default: `false`)
+- **edit_page** — URL template for an optional "Edit this page" link below entry content (see below)
 - **assets** — asset pipeline settings (see below)
 - **editor** — command used by `yiipress serve` to open the current markdown source from the preview overlay. If omitted, YiiPress uses the platform default opener (`open` on macOS, `xdg-open` on Linux, and `start` through `cmd` on Windows)
 - **params** — arbitrary key-value pairs for use in templates
@@ -110,6 +112,21 @@ related:
 
 Templates receive a `$related` variable (list of `YiiPress\Content\Model\RelatedEntry`) ordered
 by relevance. See [plugins.md](plugins.md#related-content) for details.
+
+### Page actions
+
+Page action links are optional. Enable a GitHub-style edit link with `edit_page`:
+
+```yaml
+edit_page: https://github.com/example/mysite/edit/main/content/{path}
+```
+
+Supported placeholders are:
+
+- `{path}` — source path relative to the content directory, URL-encoded with `/` preserved
+- `{title}` — entry title, URL-encoded
+- `{permalink}` — root-relative permalink, URL-encoded with `/` preserved
+- `{url}` — absolute page URL resolved from `base_url`, URL-encoded
 
 ### Multilingual support
 

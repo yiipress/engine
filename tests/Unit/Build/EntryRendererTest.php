@@ -136,6 +136,36 @@ final class EntryRendererTest extends TestCase
         assertStringNotContainsString('data-ui-key="last_updated"', $html);
     }
 
+    public function testRendersEditPageLinkWhenConfigured(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Current\n---\n\nBody.\n");
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Current');
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver(), contentDir: $this->contentDir);
+        $html = $renderer->render(
+            $this->createSiteConfig(editPageUrl: 'https://github.com/example/site/edit/main/{path}'),
+            $entry,
+            '/blog/current/',
+        );
+
+        assertStringContainsString('class="entry-page-meta"', $html);
+        assertStringContainsString('href="https://github.com/example/site/edit/main/blog/post.md"', $html);
+        assertStringContainsString('data-ui-key="edit_this_page">Edit this page', $html);
+    }
+
+    public function testDoesNotRenderEditPageLinkByDefault(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Current\n---\n\nBody.\n");
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Current');
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver(), contentDir: $this->contentDir);
+        $html = $renderer->render($this->createSiteConfig(), $entry, '/blog/current/');
+
+        assertStringNotContainsString('data-ui-key="edit_this_page"', $html);
+    }
+
     public function testUiLanguageIsIndependentFromEntryLanguage(): void
     {
         $entryFile = $this->contentDir . '/blog/post.md';
@@ -359,6 +389,7 @@ PHP);
         ?SearchConfig $search = null,
         ?I18nConfig $i18n = null,
         bool $lastUpdated = false,
+        ?string $editPageUrl = null,
     ): SiteConfig
     {
         return new SiteConfig(
@@ -377,6 +408,7 @@ PHP);
             search: $search,
             i18n: $i18n,
             lastUpdated: $lastUpdated,
+            editPageUrl: $editPageUrl,
         );
     }
 

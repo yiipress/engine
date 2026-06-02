@@ -21,6 +21,7 @@ declare(strict_types=1);
  * @var list<YiiPress\Content\Model\Translation> $translations
  * @var array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null $navigationPager
  * @var array{iso: string, text: string}|null $lastUpdated
+ * @var string $editPageUrl
  * @var string $language
  * @var string $permalink
  * @var ?Navigation $nav
@@ -100,12 +101,19 @@ $useLegacyTocSidebar = !$useDocsLayout && $hasToc;
                 <div class="content">
                     <?= $content ?>
                 </div>
-<?php if ($lastUpdated !== null): ?>
+<?php if ($lastUpdated !== null || $editPageUrl !== ''): ?>
                 <footer class="entry-page-meta">
+<?php if ($lastUpdated !== null): ?>
                     <span class="entry-last-updated">
                         <span data-ui-key="last_updated"><?= $h($t('last_updated')) ?></span>
                         <time datetime="<?= $h($lastUpdated['iso']) ?>"><?= $h($lastUpdated['text']) ?></time>
                     </span>
+<?php endif; ?>
+<?php if ($editPageUrl !== ''): ?>
+                    <span class="entry-page-actions">
+                        <a class="entry-page-action" href="<?= $h($editPageUrl) ?>" target="_blank" rel="noopener" data-ui-key="edit_this_page"><?= $h($t('edit_this_page')) ?></a>
+                    </span>
+<?php endif; ?>
                 </footer>
 <?php endif; ?>
 <?php if ($tags !== [] || $categories !== []): ?>

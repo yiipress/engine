@@ -68,6 +68,8 @@ final class MinimalThemeAssetsTest extends TestCase
         self::assertNotFalse($css);
         assertStringContainsString('.entry-page-meta {', $css);
         assertStringContainsString('.entry-last-updated {', $css);
+        assertStringContainsString('.entry-page-actions {', $css);
+        assertStringContainsString('.entry-page-action {', $css);
     }
 
     public function testStylePreventsWideContentTablesFromOverlappingSidebars(): void

@@ -143,6 +143,9 @@ final class EntryRenderer
         $rootPath = RelativePathHelper::rootPath($permalink);
         $navigationPager = $this->relativizeNavigationPager($navigationPager, $rootPath);
         $lastUpdated = $this->lastUpdated($siteConfig, $entry);
+        $editPageUrl = $siteConfig->editPageUrl === null
+            ? ''
+            : PageActionUrlFormatter::format($siteConfig->editPageUrl, $siteConfig, $entry, $permalink, $this->contentDir);
         $metaTags = MetaTagsBuilder::forEntry($siteConfig, $entry, $permalink, $translations);
         $language = $entry->language !== ''
             ? $entry->language
@@ -175,6 +178,7 @@ final class EntryRenderer
             'translations' => $translations,
             'navigationPager' => $navigationPager,
             'lastUpdated' => $lastUpdated,
+            'editPageUrl' => $editPageUrl,
             'language' => $language,
             'metaTags' => $metaTags,
             'partial' => $this->partialClosures[$themeName],

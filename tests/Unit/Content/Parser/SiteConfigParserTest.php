@@ -63,6 +63,19 @@ final class SiteConfigParserTest extends TestCase
         unlink($filePath);
     }
 
+    public function testParsesEditPageUrlConfig(): void
+    {
+        $filePath = sys_get_temp_dir() . '/yiipress-site-config-' . uniqid() . '.yaml';
+        file_put_contents($filePath, "title: Test\nlanguages: [en]\nedit_page: https://example.com/edit/{path}\n");
+
+        $parser = new SiteConfigParser();
+        $config = $parser->parse($filePath);
+
+        assertSame('https://example.com/edit/{path}', $config->editPageUrl);
+
+        unlink($filePath);
+    }
+
     public function testUsesFirstLanguageAsI18nDefaultLanguage(): void
     {
         $filePath = sys_get_temp_dir() . '/yiipress-site-config-' . uniqid() . '.yaml';

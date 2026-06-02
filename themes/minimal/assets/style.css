@@ -515,6 +515,17 @@ a.tag-link:hover {
     display: inline-flex;
     gap: .35rem;
 }
+.entry-page-actions {
+    display: inline-flex;
+    gap: .75rem;
+}
+.entry-page-action {
+    color: var(--c-link);
+    text-decoration: none;
+}
+.entry-page-action:hover {
+    text-decoration: underline;
+}
 
 .entry-pager {
     display: grid;

@@ -16,6 +16,7 @@ use RuntimeException;
 
 use function file_get_contents;
 use function is_array;
+use function trim;
 use function yaml_parse;
 
 final class SiteConfigParser
@@ -62,7 +63,18 @@ final class SiteConfigParser
             related: self::parseRelatedConfig($data['related'] ?? null),
             i18n: $i18n,
             lastUpdated: (bool) ($data['last_updated'] ?? false),
+            editPageUrl: self::parseOptionalString($data['edit_page'] ?? null),
         );
+    }
+
+    private static function parseOptionalString(mixed $value): ?string
+    {
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+        return $value === '' ? null : $value;
     }
 
     /**
