@@ -36,5 +36,7 @@ sidebar:
         url: /architecture/
       - title: Engine
         url: /engine/
+      - title: Binaries, PHAR, Docker
+        url: /binaries-phar-docker/
       - title: Benchmarking
         url: /benchmarking/

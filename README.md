@@ -161,6 +161,7 @@ Full documentation is available in [`docs/`](docs/) and at [yiipress.yiiframewor
 - [Deployment](docs/deployment.md)
 - [Architecture](docs/architecture.md)
 - [Engine](docs/engine.md)
+- [Binaries, PHAR, Docker](docs/binaries-phar-docker.md)
 
 ## License
 
