@@ -71,6 +71,27 @@ final class MinimalThemeAssetsTest extends TestCase
         assertStringContainsString('.content .header-anchor:focus {', $css);
     }
 
+    public function testStyleSupportsCodeCopyButtons(): void
+    {
+        $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');
+
+        self::assertNotFalse($css);
+        assertStringContainsString('.code-block {', $css);
+        assertStringContainsString('.code-copy-button {', $css);
+        assertStringContainsString('.code-copy-button.copied {', $css);
+    }
+
+    public function testCodeCopyScriptEnhancesContentPreBlocks(): void
+    {
+        $script = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/code-copy.js');
+
+        self::assertNotFalse($script);
+        assertStringContainsString("document.querySelectorAll('.content pre')", $script);
+        assertStringContainsString("button.className = 'code-copy-button';", $script);
+        assertStringContainsString("navigator.clipboard.writeText(text)", $script);
+        assertStringContainsString("document.execCommand('copy')", $script);
+    }
+
     public function testStyleSupportsEntryNavigationPager(): void
     {
         $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');

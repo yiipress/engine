@@ -60,6 +60,8 @@ then statically links that library into `ext-highlighter`. It processes all
 `<pre><code class="language-xxx">` blocks in the rendered HTML, replacing them with
 inline-styled highlighted output.
 
+The bundled `minimal` theme adds a client-side **Copy** button to rendered code blocks.
+
 The native extension passes explicit input and output lengths so repeated highlighting calls avoid
 extra C-string scans at the PHP/Rust boundary.
 

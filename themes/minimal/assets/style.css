@@ -295,6 +295,50 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
     line-height: 1.6;
     transition: background .2s;
 }
+.code-block {
+    position: relative;
+    margin: 1.25rem 0;
+}
+.code-block pre {
+    margin: 0;
+    padding-right: 4.5rem;
+}
+.code-copy-button {
+    position: absolute;
+    top: .5rem;
+    right: .5rem;
+    z-index: 1;
+    min-width: 3rem;
+    height: 2rem;
+    padding: 0 .625rem;
+    border: 1px solid var(--c-border);
+    border-radius: .375rem;
+    background: color-mix(in srgb, var(--c-bg) 88%, transparent);
+    color: var(--c-text-muted);
+    font: 600 .75rem/1 var(--font-sans);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .15s, color .15s, border-color .15s, background .15s;
+}
+.code-block:hover .code-copy-button,
+.code-copy-button:focus,
+.code-copy-button.copied,
+.code-copy-button.copy-failed {
+    opacity: 1;
+}
+.code-copy-button:hover,
+.code-copy-button:focus {
+    border-color: var(--c-link);
+    color: var(--c-link);
+}
+.code-copy-button.copied {
+    color: #047857;
+    border-color: #10b981;
+}
+.code-copy-button.copy-failed {
+    color: #b91c1c;
+    border-color: #ef4444;
+}
 .content pre[style] { background-color: var(--c-code-bg) !important; }
 [data-theme="dark"] .content pre[style] span[style] { filter: invert(.85) hue-rotate(180deg); }
 .content code { font-family: var(--font-mono); font-size: .9em; }

@@ -183,6 +183,7 @@ $uiCatalogs ??= [$uiLanguage => []];
     <link rel="alternate" type="application/atom+xml" title="<?= $h($t('atom_feed')) ?>" data-ui-attr-title="atom_feed" href="<?= $rootPath . $h($collectionName) ?>/feed.xml">
 <?php endif; ?>
     <script src="<?= $h(Asset::url('assets/theme/image-zoom.js', $rootPath, $assetManifest)) ?>" defer></script>
+    <script src="<?= $h(Asset::url('assets/theme/code-copy.js', $rootPath, $assetManifest)) ?>" defer></script>
     <script src="<?= $h(Asset::url('assets/theme/toc-highlight.js', $rootPath, $assetManifest)) ?>" defer></script>
     <script src="<?= $h(Asset::url('assets/theme/ui-language.js', $rootPath, $assetManifest)) ?>" defer></script>
 <?php if ($search): ?>
