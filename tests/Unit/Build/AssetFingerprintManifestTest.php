@@ -60,6 +60,20 @@ final class AssetFingerprintManifestTest extends TestCase
         assertSame('<link href="/' . $fingerprinted . '">', $absolute);
     }
 
+    public function testRewriterPrefixesUnqualifiedAssetUrlsWithRootPath(): void
+    {
+        $source = $this->tempDir . '/mermaid.css';
+        file_put_contents($source, '.mermaid{}');
+
+        $manifest = new AssetFingerprintManifest();
+        $fingerprinted = $manifest->register('assets/plugins/mermaid.css', $source);
+        $rewriter = new AssetUrlRewriter($manifest);
+
+        $html = $rewriter->rewrite('<link href="assets/plugins/mermaid.css">', '../');
+
+        assertSame('<link href="../' . $fingerprinted . '">', $html);
+    }
+
     public function testRewriterSkipsHtmlWithoutAssetReferences(): void
     {
         $manifest = new AssetFingerprintManifest();

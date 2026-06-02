@@ -61,6 +61,10 @@ final readonly class AssetUrlRewriter
             return $url;
         }
 
+        if ($prefix === '' && $rootPath !== '' && $rootPath !== '/') {
+            $prefix = $rootPath;
+        }
+
         return $prefix . $resolvedPath . $suffix;
     }
 
