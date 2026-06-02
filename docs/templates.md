@@ -297,6 +297,8 @@ Use `NavigationRenderer` for HTML output:
 
 This renders a `<nav><ul><li>` structure with nested lists for children. Menu names correspond to top-level keys in `content/navigation.yaml`.
 
+`NavigationRenderer` escapes menu labels and generated attributes with HTML5-compatible Yii helpers, so raw menu data can contain characters such as `&`, `<`, `>`, and quotes.
+
 Pass the optional class and current URL arguments when rendering sidebars that need active item styling:
 
 ```php

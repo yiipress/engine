@@ -321,6 +321,8 @@ Templates receive a `$nav` variable (a `Navigation` object). Use `NavigationRend
 
 This renders a `<nav><ul><li>` structure with nested lists for children. You can render as many different menus as needed — just use the menu name from `navigation.yaml`.
 
+The renderer escapes menu labels and generated attributes with HTML5-compatible Yii helpers, so navigation titles and URLs can contain special characters without breaking markup.
+
 ## Assets
 
 Assets are stored at two levels:

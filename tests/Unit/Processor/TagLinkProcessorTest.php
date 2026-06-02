@@ -199,6 +199,31 @@ final class TagLinkProcessorTest extends TestCase
         );
     }
 
+    public function testSkipsHashCharactersInProtectedBlocksAndAttributes(): void
+    {
+        $processor = new TagLinkProcessor('/');
+        $content = '<p><a href="/docs/#section">Docs</a></p>'
+            . '<p style="color: #fff">White text</p>'
+            . '<pre>#hashtag in code</pre>'
+            . '<p>Use # for comments.</p>';
+
+        assertSame($content, $processor->process($content, $this->createEntry()));
+    }
+
+    public function testDoesNotConvertHashtagsInUppercaseProtectedTags(): void
+    {
+        $processor = new TagLinkProcessor('/');
+        $content = '<PRE>#pre-tag</PRE>'
+            . '<p><CODE>#code-tag</CODE></p>'
+            . '<A href="/docs/#section">#link-tag</A>'
+            . '<p>#outside</p>';
+
+        assertSame(
+            '<PRE>#pre-tag</PRE><p><CODE>#code-tag</CODE></p><A href="/docs/#section">#link-tag</A><p><a href="/tags/outside/" class="tag-link">#outside</a></p>',
+            $processor->process($content, $this->createEntry()),
+        );
+    }
+
     private function createEntry(): Entry
     {
         $tmp = tempnam(sys_get_temp_dir(), 'yiipress_taglink_test_');
