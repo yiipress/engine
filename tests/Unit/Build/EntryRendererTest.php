@@ -13,14 +13,15 @@ use YiiPress\Content\Model\Entry;
 use YiiPress\Content\Model\I18nConfig;
 use YiiPress\Content\Model\SearchConfig;
 use YiiPress\Content\Model\SiteConfig;
-use YiiPress\Hook\HookDispatcher;
 use YiiPress\Hook\RenderFinishedEvent;
 use YiiPress\Hook\RenderStartedEvent;
 use YiiPress\Processor\ContentProcessorPipeline;
 use DateTimeImmutable;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
-
+use Yiisoft\EventDispatcher\Dispatcher\Dispatcher;
+use Yiisoft\EventDispatcher\Provider\ListenerCollection;
+use Yiisoft\EventDispatcher\Provider\Provider;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -409,25 +410,21 @@ PHP);
         file_put_contents($entryFile, "---\ntitle: Hooked Post\n---\n\nHooked body.\n");
 
         $events = [];
-        $dispatcher = new HookDispatcher([
-            RenderStartedEvent::NAME => [
-                static function (RenderStartedEvent $event) use (&$events): void {
-                    $events[] = $event->name() . ':' . $event->entry->title;
-                },
-            ],
-            RenderFinishedEvent::NAME => [
-                static function (RenderFinishedEvent $event): void {
-                    $event->setHtml(str_replace('</body>', '<span id="hooked"></span></body>', $event->html()));
-                },
-            ],
-        ]);
+        $listenerCollection = (new ListenerCollection())
+            ->add(static function (RenderStartedEvent $event) use (&$events): void {
+                $events[] = 'render.started:' . $event->entry->title;
+            })
+            ->add(static function (RenderFinishedEvent $event): void {
+                $event->setHtml(str_replace('</body>', '<span id="hooked"></span></body>', $event->html()));
+            });
+        $dispatcher = new Dispatcher(new Provider($listenerCollection));
 
         $entry = $this->createEntry(filePath: $entryFile, title: 'Hooked Post');
         $renderer = new EntryRenderer(
             $this->createPipeline(),
             $this->createTemplateResolver(),
             contentDir: $this->contentDir,
-            hookDispatcher: $dispatcher,
+            eventDispatcher: $dispatcher,
         );
         $html = $renderer->render($this->createSiteConfig(), $entry, '/blog/hooked-post/');
 

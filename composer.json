@@ -36,6 +36,7 @@
         "php": "^8.5",
         "ext-ctype": "*",
         "ext-filter": "*",
+        "ext-highlighter": "*",
         "ext-inotify": "*",
         "ext-mbstring": "*",
         "ext-md4c": "*",
@@ -43,9 +44,9 @@
         "ext-posix": "*",
         "ext-xmlwriter": "*",
         "ext-yaml": "*",
-        "ext-highlighter": "*",
         "httpsoft/http-message": "^1.1.6",
         "psr/container": "^2.0.2",
+        "psr/event-dispatcher": "^1.0",
         "psr/http-factory": "^1.1",
         "psr/http-message": "^2.0",
         "psr/http-server-handler": "^1.0.2",
@@ -64,6 +65,7 @@
         "yiisoft/router": "^4.0.2",
         "yiisoft/router-fastroute": "^4.0.3",
         "yiisoft/yii-console": "^2.4.2",
+        "yiisoft/yii-event": "^2.2",
         "yiisoft/yii-http": "^1.1.1",
         "yiisoft/yii-runner-console": "^2.2.1",
         "yiisoft/yii-runner-http": "^3.2.1"
@@ -75,7 +77,8 @@
         "rector/rector": "^2.4.2",
         "roave/infection-static-analysis-plugin": "^1.43",
         "shipmonk/composer-dependency-analyser": "^1.8.4",
-        "vimeo/psalm": "^6.16.1"
+        "vimeo/psalm": "^6.16.1",
+        "yiisoft/event-dispatcher": "^1.1"
     },
     "suggest": {
         "yiipress/highlighter": "Installs ext-highlighter, which provides YiiPress\\Highlighter for native syntax highlighting."

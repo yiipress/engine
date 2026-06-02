@@ -7,18 +7,11 @@ namespace YiiPress\Hook;
 use YiiPress\Content\Model\Entry;
 use YiiPress\Content\Model\SiteConfig;
 
-final readonly class RenderStartedEvent implements HookEventInterface
+final readonly class RenderStartedEvent
 {
-    public const string NAME = 'render.started';
-
     public function __construct(
         public SiteConfig $siteConfig,
         public Entry $entry,
         public string $permalink,
     ) {}
-
-    public function name(): string
-    {
-        return self::NAME;
-    }
 }

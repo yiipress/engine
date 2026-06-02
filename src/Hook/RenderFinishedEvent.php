@@ -7,21 +7,14 @@ namespace YiiPress\Hook;
 use YiiPress\Content\Model\Entry;
 use YiiPress\Content\Model\SiteConfig;
 
-final class RenderFinishedEvent implements HookEventInterface
+final class RenderFinishedEvent
 {
-    public const string NAME = 'render.finished';
-
     public function __construct(
         public readonly SiteConfig $siteConfig,
         public readonly Entry $entry,
         public readonly string $permalink,
         private string $html,
     ) {}
-
-    public function name(): string
-    {
-        return self::NAME;
-    }
 
     public function html(): string
     {

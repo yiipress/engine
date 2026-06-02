@@ -8,7 +8,6 @@ use YiiPress\Console\BuildCommand;
 use YiiPress\Console\CleanCommand;
 use YiiPress\Console\InitCommand;
 use YiiPress\Console\NewCommand;
-use YiiPress\Hook\HookDispatcher;
 use YiiPress\Processor\ContentProcessorPipeline;
 use YiiPress\Processor\Mermaid\MermaidProcessor;
 use YiiPress\Processor\OEmbed\OEmbedProcessor;
@@ -19,6 +18,7 @@ use YiiPress\Processor\MarkdownProcessor;
 use YiiPress\Processor\SyntaxHighlightProcessor;
 use YiiPress\Processor\TagLinkProcessor;
 use YiiPress\Processor\Toc\TocProcessor;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Yiisoft\Definitions\Reference;
 
 $workingDirectory = getcwd() ?: dirname(__DIR__, 3);
@@ -59,7 +59,7 @@ return [
             'feedPipeline' => Reference::to('feedPipeline'),
             'themeRegistry' => Reference::to(ThemeRegistry::class),
             'templateResolver' => Reference::to(TemplateResolver::class),
-            'hookDispatcher' => Reference::to(HookDispatcher::class),
+            'eventDispatcher' => Reference::to(EventDispatcherInterface::class),
         ],
     ],
     CleanCommand::class => [

@@ -9,10 +9,8 @@ use YiiPress\Content\Model\Collection;
 use YiiPress\Content\Model\Navigation;
 use YiiPress\Content\Model\SiteConfig;
 
-final readonly class BuildStartedEvent implements HookEventInterface
+final readonly class BuildStartedEvent
 {
-    public const string NAME = 'build.started';
-
     /**
      * @param array<string, Collection> $collections
      * @param array<string, Author> $authors
@@ -24,9 +22,4 @@ final readonly class BuildStartedEvent implements HookEventInterface
         public array $collections,
         public array $authors,
     ) {}
-
-    public function name(): string
-    {
-        return self::NAME;
-    }
 }

@@ -10,7 +10,6 @@ use YiiPress\Build\ThemeRegistry;
 use YiiPress\Console\BuildCommand;
 use YiiPress\Hook\BuildFinishedEvent;
 use YiiPress\Hook\BuildStartedEvent;
-use YiiPress\Hook\HookDispatcher;
 use YiiPress\Processor\ContentProcessorPipeline;
 use YiiPress\Processor\MarkdownProcessor;
 use YiiPress\Render\MarkdownRenderer;
@@ -22,6 +21,9 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 use Symfony\Component\Console\Tester\CommandTester;
+use Yiisoft\EventDispatcher\Dispatcher\Dispatcher;
+use Yiisoft\EventDispatcher\Provider\ListenerCollection;
+use Yiisoft\EventDispatcher\Provider\Provider;
 
 use function PHPUnit\Framework\assertDirectoryExists;
 use function PHPUnit\Framework\assertFalse;
@@ -105,18 +107,14 @@ final class BuildCommandTest extends TestCase
         file_put_contents($contentDir . '/index.md', "---\ntitle: Home\n---\n\nHello.\n");
 
         $events = [];
-        $hookDispatcher = new HookDispatcher([
-            BuildStartedEvent::NAME => [
-                static function (BuildStartedEvent $event) use (&$events): void {
-                    $events[] = $event->name() . ':' . $event->siteConfig->title;
-                },
-            ],
-            BuildFinishedEvent::NAME => [
-                static function (BuildFinishedEvent $event) use (&$events): void {
-                    $events[] = $event->name() . ':' . $event->context->outputDir;
-                },
-            ],
-        ]);
+        $listenerCollection = (new ListenerCollection())
+            ->add(static function (BuildStartedEvent $event) use (&$events): void {
+                $events[] = 'build.started:' . $event->siteConfig->title;
+            })
+            ->add(static function (BuildFinishedEvent $event) use (&$events): void {
+                $events[] = 'build.finished:' . $event->context->outputDir;
+            });
+        $eventDispatcher = new Dispatcher(new Provider($listenerCollection));
 
         $themeRegistry = new ThemeRegistry();
         $themeRegistry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
@@ -128,7 +126,7 @@ final class BuildCommandTest extends TestCase
             feedPipeline: new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())),
             themeRegistry: $themeRegistry,
             templateResolver: $templateResolver,
-            hookDispatcher: $hookDispatcher,
+            eventDispatcher: $eventDispatcher,
         );
         $tester = new CommandTester($command);
 

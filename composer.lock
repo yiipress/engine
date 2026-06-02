@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b21072c83e4da4213df98b3d0fd1c060",
+    "content-hash": "699ce3e3d0a838017a426d5ee3b2e04b",
     "packages": [
         {
             "name": "alexkart/curl-builder",
@@ -10441,14 +10441,14 @@
         "php": "^8.5",
         "ext-ctype": "*",
         "ext-filter": "*",
+        "ext-highlighter": "*",
         "ext-inotify": "*",
         "ext-mbstring": "*",
         "ext-md4c": "*",
         "ext-pcntl": "*",
         "ext-posix": "*",
         "ext-xmlwriter": "*",
-        "ext-yaml": "*",
-        "ext-highlighter": "*"
+        "ext-yaml": "*"
     },
     "platform-dev": {},
     "plugin-api-version": "2.9.0"
