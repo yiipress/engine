@@ -58,6 +58,8 @@ final class MinimalThemeAssetsTest extends TestCase
         assertStringNotContainsString('.docs-layout:not(.docs-layout-with-toc)', $css);
         assertStringContainsString('.docs-sidebar-nav .is-current > a {', $css);
         assertStringContainsString('.toc-sidebar .is-current > a {', $css);
+        assertStringContainsString('.toc-sidebar .is-current::before {', $css);
+        assertStringContainsString('left: -1px;', $css);
         assertStringContainsString('.toc-sidebar-right {', $css);
     }
 
