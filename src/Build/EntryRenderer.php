@@ -12,9 +12,13 @@ use YiiPress\Content\Model\SiteConfig;
 use YiiPress\Content\Related\RelatedIndex;
 use YiiPress\Processor\ContentProcessorPipeline;
 use Closure;
+use DateTimeImmutable;
+use DateTimeZone;
 use RuntimeException;
 
+use function date_default_timezone_get;
 use function dirname;
+use function filemtime;
 use function hash;
 use function strlen;
 
@@ -50,7 +54,7 @@ final class EntryRenderer
     ): string {
         $cacheContext = '';
         if ($this->cache !== null) {
-            $cacheContext = $this->cacheContext($siteConfig, $navigation, $crossRefResolver, $navigationPager);
+            $cacheContext = $this->cacheContext($siteConfig, $entry, $navigation, $crossRefResolver, $navigationPager);
             $cached = $this->cache->get($entry->filePath, $cacheContext);
             if ($cached !== null) {
                 return $cached;
@@ -81,6 +85,7 @@ final class EntryRenderer
 
     private function cacheContext(
         SiteConfig $siteConfig,
+        Entry $entry,
         ?Navigation $navigation,
         ?CrossReferenceResolver $crossRefResolver,
         ?array $navigationPager,
@@ -93,6 +98,7 @@ final class EntryRenderer
             'crossReferences' => $crossRefResolver?->signature() ?? '',
             'related' => $this->relatedIndex?->signature() ?? '',
             'translations' => $this->translationIndex?->signature() ?? '',
+            'lastUpdatedMtime' => $siteConfig->lastUpdated ? filemtime($entry->sourceFilePath()) : null,
         ]));
     }
 
@@ -136,6 +142,7 @@ final class EntryRenderer
         $templateContext = $this->templateContexts[$themeName];
         $rootPath = RelativePathHelper::rootPath($permalink);
         $navigationPager = $this->relativizeNavigationPager($navigationPager, $rootPath);
+        $lastUpdated = $this->lastUpdated($siteConfig, $entry);
         $metaTags = MetaTagsBuilder::forEntry($siteConfig, $entry, $permalink, $translations);
         $language = $entry->language !== ''
             ? $entry->language
@@ -167,6 +174,7 @@ final class EntryRenderer
             'related' => $related,
             'translations' => $translations,
             'navigationPager' => $navigationPager,
+            'lastUpdated' => $lastUpdated,
             'language' => $language,
             'metaTags' => $metaTags,
             'partial' => $this->partialClosures[$themeName],
@@ -181,6 +189,29 @@ final class EntryRenderer
         $html = ($this->templateClosures[$templatePath])($variables);
 
         return $templateContext->rewriteHtml($html, $rootPath);
+    }
+
+    /**
+     * @return array{iso: string, text: string}|null
+     */
+    private function lastUpdated(SiteConfig $siteConfig, Entry $entry): ?array
+    {
+        if (!$siteConfig->lastUpdated) {
+            return null;
+        }
+
+        $timestamp = filemtime($entry->sourceFilePath());
+        if ($timestamp === false) {
+            return null;
+        }
+
+        $date = (new DateTimeImmutable('@' . $timestamp))
+            ->setTimezone(new DateTimeZone(date_default_timezone_get()));
+
+        return [
+            'iso' => $date->format(DATE_ATOM),
+            'text' => $date->format('n/j/y, g:i A'),
+        ];
     }
 
     /**

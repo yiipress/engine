@@ -501,6 +501,21 @@ a.tag-link:hover {
 .toc-sidebar .toc-level-5 { padding-left: 3rem; }
 .toc-sidebar .toc-level-6 { padding-left: 3.75rem; }
 
+.entry-page-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem 1rem;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--c-border);
+    color: var(--c-text-muted);
+    font-size: .875rem;
+}
+.entry-last-updated {
+    display: inline-flex;
+    gap: .35rem;
+}
+
 .entry-pager {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

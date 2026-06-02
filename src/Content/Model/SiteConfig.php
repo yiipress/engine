@@ -33,5 +33,6 @@ final readonly class SiteConfig
         public AssetConfig $assets = new AssetConfig(),
         public ?RelatedConfig $related = null,
         public ?I18nConfig $i18n = null,
+        public bool $lastUpdated = false,
     ) {}
 }

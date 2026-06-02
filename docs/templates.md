@@ -144,6 +144,7 @@ Built-in templates and partials expect `$ui` to be passed by the renderer; `Page
 | `$language`   | `string`      | Effective language code for the current entry                    |
 | `$translations` | `list<Translation>` | Alternate-language versions of the current entry           |
 | `$navigationPager` | `?array{previous: ?array, next: ?array}` | Previous/next links resolved from sidebar navigation when enabled |
+| `$lastUpdated` | `?array{iso: string, text: string}` | Source file modification time when `last_updated` is enabled |
 
 Example:
 

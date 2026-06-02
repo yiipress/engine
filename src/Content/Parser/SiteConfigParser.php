@@ -61,6 +61,7 @@ final class SiteConfigParser
             assets: self::parseAssetConfig($data['assets'] ?? null),
             related: self::parseRelatedConfig($data['related'] ?? null),
             i18n: $i18n,
+            lastUpdated: (bool) ($data['last_updated'] ?? false),
         );
     }
 

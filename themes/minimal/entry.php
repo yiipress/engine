@@ -20,6 +20,7 @@ declare(strict_types=1);
  * @var list<YiiPress\Content\Model\RelatedEntry> $related
  * @var list<YiiPress\Content\Model\Translation> $translations
  * @var array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null $navigationPager
+ * @var array{iso: string, text: string}|null $lastUpdated
  * @var string $language
  * @var string $permalink
  * @var ?Navigation $nav
@@ -99,6 +100,14 @@ $useLegacyTocSidebar = !$useDocsLayout && $hasToc;
                 <div class="content">
                     <?= $content ?>
                 </div>
+<?php if ($lastUpdated !== null): ?>
+                <footer class="entry-page-meta">
+                    <span class="entry-last-updated">
+                        <span data-ui-key="last_updated"><?= $h($t('last_updated')) ?></span>
+                        <time datetime="<?= $h($lastUpdated['iso']) ?>"><?= $h($lastUpdated['text']) ?></time>
+                    </span>
+                </footer>
+<?php endif; ?>
 <?php if ($tags !== [] || $categories !== []): ?>
                 <footer class="entry-footer">
 <?php if ($tags !== []): ?>

@@ -61,6 +61,15 @@ final class MinimalThemeAssetsTest extends TestCase
         assertStringContainsString('.entry-pager-title {', $css);
     }
 
+    public function testStyleSupportsEntryPageMetadata(): void
+    {
+        $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');
+
+        self::assertNotFalse($css);
+        assertStringContainsString('.entry-page-meta {', $css);
+        assertStringContainsString('.entry-last-updated {', $css);
+    }
+
     public function testStylePreventsWideContentTablesFromOverlappingSidebars(): void
     {
         $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');

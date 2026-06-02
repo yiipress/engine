@@ -43,6 +43,8 @@ params:
 assets:
   fingerprint: true
 
+last_updated: true
+
 editor: code
 ```
 
@@ -66,6 +68,7 @@ editor: code
 - **toc** — generate a table of contents from headings (default: `true`); set to `false` to disable globally. When enabled, heading tags receive `id` attributes and a `$toc` variable is passed to templates
 - **search** — opt-in client-side search (see below)
 - **related** — opt-in related content suggestions (see below)
+- **last_updated** — set to `true` to show each entry source file's last modification time below its content (default: `false`)
 - **assets** — asset pipeline settings (see below)
 - **editor** — command used by `yiipress serve` to open the current markdown source from the preview overlay. If omitted, YiiPress uses the platform default opener (`open` on macOS, `xdg-open` on Linux, and `start` through `cmd` on Windows)
 - **params** — arbitrary key-value pairs for use in templates

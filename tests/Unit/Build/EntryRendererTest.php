@@ -108,6 +108,34 @@ final class EntryRendererTest extends TestCase
         assertStringNotContainsString('class="entry-pager"', $html);
     }
 
+    public function testRendersLastUpdatedWhenEnabled(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Updated\n---\n\nBody.\n");
+        touch($entryFile, 1_780_000_000);
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Updated');
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver(), contentDir: $this->contentDir);
+        $html = $renderer->render($this->createSiteConfig(lastUpdated: true), $entry);
+
+        assertStringContainsString('class="entry-page-meta"', $html);
+        assertStringContainsString('data-ui-key="last_updated">Last updated:', $html);
+        assertStringContainsString('<time datetime="2026-', $html);
+    }
+
+    public function testDoesNotRenderLastUpdatedByDefault(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Current\n---\n\nBody.\n");
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Current');
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver(), contentDir: $this->contentDir);
+        $html = $renderer->render($this->createSiteConfig(), $entry);
+
+        assertStringNotContainsString('class="entry-page-meta"', $html);
+        assertStringNotContainsString('data-ui-key="last_updated"', $html);
+    }
+
     public function testUiLanguageIsIndependentFromEntryLanguage(): void
     {
         $entryFile = $this->contentDir . '/blog/post.md';
@@ -326,7 +354,12 @@ PHP);
         return new TemplateResolver($registry);
     }
 
-    private function createSiteConfig(string $theme = '', ?SearchConfig $search = null, ?I18nConfig $i18n = null): SiteConfig
+    private function createSiteConfig(
+        string $theme = '',
+        ?SearchConfig $search = null,
+        ?I18nConfig $i18n = null,
+        bool $lastUpdated = false,
+    ): SiteConfig
     {
         return new SiteConfig(
             title: 'Test Site',
@@ -343,6 +376,7 @@ PHP);
             theme: $theme,
             search: $search,
             i18n: $i18n,
+            lastUpdated: $lastUpdated,
         );
     }
 

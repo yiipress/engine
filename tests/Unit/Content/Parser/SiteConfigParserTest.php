@@ -50,6 +50,19 @@ final class SiteConfigParserTest extends TestCase
         unlink($filePath);
     }
 
+    public function testParsesLastUpdatedConfig(): void
+    {
+        $filePath = sys_get_temp_dir() . '/yiipress-site-config-' . uniqid() . '.yaml';
+        file_put_contents($filePath, "title: Test\nlanguages: [en]\nlast_updated: true\n");
+
+        $parser = new SiteConfigParser();
+        $config = $parser->parse($filePath);
+
+        assertTrue($config->lastUpdated);
+
+        unlink($filePath);
+    }
+
     public function testUsesFirstLanguageAsI18nDefaultLanguage(): void
     {
         $filePath = sys_get_temp_dir() . '/yiipress-site-config-' . uniqid() . '.yaml';
