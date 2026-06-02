@@ -40,6 +40,10 @@ use YiiPress\Content\PermalinkResolver;
 use YiiPress\Content\Related\RelatedIndex;
 use YiiPress\Content\TaxonomyCollector;
 use YiiPress\Environment;
+use YiiPress\Hook\BuildContext;
+use YiiPress\Hook\BuildFinishedEvent;
+use YiiPress\Hook\BuildStartedEvent;
+use YiiPress\Hook\HookDispatcher;
 use YiiPress\I18n\UiText;
 use YiiPress\Processor\ContentProcessorPipeline;
 use YiiPress\RuntimePaths;
@@ -100,6 +104,7 @@ final class BuildCommand extends Command
         private readonly ContentProcessorPipeline $feedPipeline,
         private readonly ThemeRegistry $themeRegistry,
         private readonly TemplateResolver $templateResolver,
+        private readonly HookDispatcher $hookDispatcher = new HookDispatcher(),
     ) {
         parent::__construct();
     }
@@ -188,6 +193,17 @@ final class BuildCommand extends Command
         $includeFuture = $input->getOption('future') !== false ? (bool) $input->getOption('future') : Environment::isDev();
         $dryRun = (bool) $input->getOption('dry-run');
         $noWrite = (bool) $input->getOption('no-write');
+        $buildContext = new BuildContext(
+            rootPath: $rootPath,
+            contentDir: $contentDir,
+            outputDir: $outputDir,
+            workerCount: $workerCount,
+            noCache: $noCache,
+            includeDrafts: $includeDrafts,
+            includeFuture: $includeFuture,
+            dryRun: $dryRun,
+            noWrite: $noWrite,
+        );
         $profile = new BuildProfile((bool) $input->getOption('profile'));
         $profile->start('prepare');
 
@@ -332,6 +348,8 @@ final class BuildCommand extends Command
             return $exitCode;
         }
 
+        $this->hookDispatcher->dispatch(new BuildStartedEvent($buildContext, $siteConfig, $navigation, $collections, $authors));
+
         /** @var array<string, list<Entry>> $rawEntriesByCollection */
         $rawEntriesByCollection = [];
         $fileToPermalink = [];
@@ -464,7 +482,7 @@ final class BuildCommand extends Command
             ? new TranslationIndex($indexedEntries, $siteConfig->i18n)
             : null;
 
-        $writer = new ParallelEntryWriter($this->contentPipeline, $this->templateResolver, $cache, $assetManifest, $relatedIndex, $translationIndex);
+        $writer = new ParallelEntryWriter($this->contentPipeline, $this->templateResolver, $cache, $assetManifest, $relatedIndex, $translationIndex, $this->hookDispatcher);
         $effectiveEntryWorkerCount = $writer->workerCountFor(count($tasksToWrite), $workerCount);
         $profile->switchTo('write entries');
         $entriesWritten = $writer->write($siteConfig, $tasksToWrite, $contentDir, $workerCount, $navigation, $crossRefResolver, $authors, $noWrite);
@@ -776,6 +794,8 @@ final class BuildCommand extends Command
             }
             $manifest->save();
         }
+
+        $this->hookDispatcher->dispatch(new BuildFinishedEvent($buildContext, $siteConfig));
 
         $profile->stop();
         $this->writeProfile($output, $profile);

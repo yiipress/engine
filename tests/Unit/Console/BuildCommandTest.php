@@ -4,6 +4,16 @@ declare(strict_types=1);
 
 namespace YiiPress\Tests\Unit\Console;
 
+use YiiPress\Build\TemplateResolver;
+use YiiPress\Build\Theme;
+use YiiPress\Build\ThemeRegistry;
+use YiiPress\Console\BuildCommand;
+use YiiPress\Hook\BuildFinishedEvent;
+use YiiPress\Hook\BuildStartedEvent;
+use YiiPress\Hook\HookDispatcher;
+use YiiPress\Processor\ContentProcessorPipeline;
+use YiiPress\Processor\MarkdownProcessor;
+use YiiPress\Render\MarkdownRenderer;
 use YiiPress\RuntimePaths;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
@@ -11,6 +21,7 @@ use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
+use Symfony\Component\Console\Tester\CommandTester;
 
 use function PHPUnit\Framework\assertDirectoryExists;
 use function PHPUnit\Framework\assertFalse;
@@ -80,6 +91,57 @@ final class BuildCommandTest extends TestCase
         assertSame(0, $exitCode, "Build failed: $outputText");
         assertMatchesRegularExpression('/Build complete in \d+(?:\.\d+)?(?:ms|s)\. Peak memory: \d+(?:\.\d+)? MiB\./', $outputText);
         assertDirectoryExists($this->outputDir);
+    }
+
+    public function testBuildHooksAreDispatched(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/yiipress-build-hooks-test-' . uniqid();
+        $contentDir = $tempDir . '/content';
+        $outputDir = $tempDir . '/output';
+        mkdir($contentDir, 0o755, true);
+        $this->tempContentDirs[] = $tempDir;
+
+        file_put_contents($contentDir . '/config.yaml', "title: Hook Site\nbase_url: https://example.com\nlanguages: [en]\n");
+        file_put_contents($contentDir . '/index.md', "---\ntitle: Home\n---\n\nHello.\n");
+
+        $events = [];
+        $hookDispatcher = new HookDispatcher([
+            BuildStartedEvent::NAME => [
+                static function (BuildStartedEvent $event) use (&$events): void {
+                    $events[] = $event->name() . ':' . $event->siteConfig->title;
+                },
+            ],
+            BuildFinishedEvent::NAME => [
+                static function (BuildFinishedEvent $event) use (&$events): void {
+                    $events[] = $event->name() . ':' . $event->context->outputDir;
+                },
+            ],
+        ]);
+
+        $themeRegistry = new ThemeRegistry();
+        $themeRegistry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
+        $templateResolver = new TemplateResolver($themeRegistry);
+        $pipeline = new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer()));
+        $command = new BuildCommand(
+            rootPath: dirname(__DIR__, 3),
+            contentPipeline: $pipeline,
+            feedPipeline: new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())),
+            themeRegistry: $themeRegistry,
+            templateResolver: $templateResolver,
+            hookDispatcher: $hookDispatcher,
+        );
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--content-dir' => $contentDir,
+            '--output-dir' => $outputDir,
+            '--workers' => '1',
+            '--no-cache' => true,
+        ]);
+
+        assertSame(0, $exitCode, $tester->getDisplay());
+        assertSame(['build.started:Hook Site', 'build.finished:' . $outputDir], $events);
+        assertFileExists($outputDir . '/index/index.html');
     }
 
     public function testBuildOutputContainsRenderedHtml(): void

@@ -74,6 +74,7 @@ flowchart TD
 
 - **Templates** control page HTML. See [Templates](templates.md).
 - **Content processors** transform Markdown and rendered HTML. See [Plugins](plugins.md).
+- **Lifecycle hooks** observe build and render phases for plugin behavior that is not a single content transformation. See [Plugins](plugins.md#lifecycle-hooks).
 - **Importers** convert external content sources into Markdown files. See [Importing content](importing-content.md).
 
 Engine-level implementation details, dependency flow, source layout, caching strategy, and performance notes are in [Engine](engine.md).

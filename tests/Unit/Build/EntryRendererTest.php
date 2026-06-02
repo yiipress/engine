@@ -13,6 +13,9 @@ use YiiPress\Content\Model\Entry;
 use YiiPress\Content\Model\I18nConfig;
 use YiiPress\Content\Model\SearchConfig;
 use YiiPress\Content\Model\SiteConfig;
+use YiiPress\Hook\HookDispatcher;
+use YiiPress\Hook\RenderFinishedEvent;
+use YiiPress\Hook\RenderStartedEvent;
 use YiiPress\Processor\ContentProcessorPipeline;
 use DateTimeImmutable;
 use FilesystemIterator;
@@ -24,6 +27,7 @@ use SplFileInfo;
 
 use function PHPUnit\Framework\assertStringContainsString;
 use function PHPUnit\Framework\assertStringNotContainsString;
+use function PHPUnit\Framework\assertSame;
 
 final class EntryRendererTest extends TestCase
 {
@@ -397,6 +401,38 @@ PHP);
         assertStringContainsString('<span class="search-hint" aria-hidden="true">ESC</span>', $html);
         assertStringContainsString('assets/theme/search.css', $html);
         assertStringContainsString('assets/theme/search.js', $html);
+    }
+
+    public function testRenderHooksCanObserveAndModifyRenderedHtml(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Hooked Post\n---\n\nHooked body.\n");
+
+        $events = [];
+        $dispatcher = new HookDispatcher([
+            RenderStartedEvent::NAME => [
+                static function (RenderStartedEvent $event) use (&$events): void {
+                    $events[] = $event->name() . ':' . $event->entry->title;
+                },
+            ],
+            RenderFinishedEvent::NAME => [
+                static function (RenderFinishedEvent $event): void {
+                    $event->setHtml(str_replace('</body>', '<span id="hooked"></span></body>', $event->html()));
+                },
+            ],
+        ]);
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Hooked Post');
+        $renderer = new EntryRenderer(
+            $this->createPipeline(),
+            $this->createTemplateResolver(),
+            contentDir: $this->contentDir,
+            hookDispatcher: $dispatcher,
+        );
+        $html = $renderer->render($this->createSiteConfig(), $entry, '/blog/hooked-post/');
+
+        assertSame(['render.started:Hooked Post'], $events);
+        assertStringContainsString('<span id="hooked"></span></body>', $html);
     }
 
     private function createPipeline(): ContentProcessorPipeline
