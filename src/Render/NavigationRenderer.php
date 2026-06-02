@@ -7,6 +7,7 @@ namespace YiiPress\Render;
 use YiiPress\Build\RelativePathHelper;
 use YiiPress\Content\Model\Navigation;
 use YiiPress\Content\Model\NavigationItem;
+use Yiisoft\Html\Html;
 
 final class NavigationRenderer
 {
@@ -26,7 +27,7 @@ final class NavigationRenderer
 
         [$html] = self::renderItems($items, $rootPath, $language, $defaultLanguage, $currentUrl);
         $classAttribute = $class !== ''
-            ? ' class="' . htmlspecialchars($class, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"'
+            ? ' class="' . Html::encodeAttribute($class) . '"'
             : '';
 
         return '<nav' . $classAttribute . '>' . $html . '</nav>';
@@ -69,7 +70,7 @@ final class NavigationRenderer
                 $classes[] = 'is-active-ancestor';
             }
             $classAttribute = $classes !== []
-                ? ' class="' . htmlspecialchars(implode(' ', $classes), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"'
+                ? ' class="' . Html::encodeAttribute(implode(' ', $classes)) . '"'
                 : '';
 
             $html .= '<li' . $classAttribute . '>';
@@ -84,10 +85,10 @@ final class NavigationRenderer
 
             if ($item->url === '') {
                 $html .= '<span class="nav-section-title"' . $attributes . '>'
-                    . htmlspecialchars($title) . '</span>';
+                    . Html::encode($title) . '</span>';
             } else {
-                $html .= '<a href="' . htmlspecialchars($url) . '"' . $attributes . '>'
-                    . htmlspecialchars($title) . '</a>';
+                $html .= '<a href="' . Html::encodeAttribute($url) . '"' . $attributes . '>'
+                    . Html::encode($title) . '</a>';
             }
             $html .= $childrenHtml;
             $html .= '</li>';
@@ -154,12 +155,12 @@ final class NavigationRenderer
         }
 
         return ' data-ui-menu-title="'
-            . htmlspecialchars((string) json_encode(
+            . Html::encodeAttribute((string) json_encode(
                 $item->titles,
                 JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT,
-            ), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+            ))
             . '" data-ui-menu-default="'
-            . htmlspecialchars($item->title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+            . Html::encodeAttribute($item->title)
             . '"';
     }
 }

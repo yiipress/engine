@@ -104,6 +104,23 @@ final class NavigationRendererTest extends TestCase
         assertStringContainsString('/a&amp;b/', $html);
     }
 
+    public function testRenderEscapesTextAndAttributesWithHtml5Rules(): void
+    {
+        $navigation = new Navigation(menus: [
+            'main' => [
+                new NavigationItem(title: 'Docs "Intro" & <Start>', url: '/docs/<intro>/?q=a&b="c"', children: []),
+            ],
+        ]);
+
+        $html = NavigationRenderer::render($navigation, 'main', './', 'en', 'en', 'docs"sidebar');
+
+        assertStringContainsString('<nav class="docs&quot;sidebar">', $html);
+        assertStringContainsString(
+            '<a href="./docs/&lt;intro&gt;/?q=a&amp;b=&quot;c&quot;">Docs "Intro" &amp; &lt;Start&gt;</a>',
+            $html,
+        );
+    }
+
     public function testRenderMarksCurrentAndAncestorItems(): void
     {
         $navigation = new Navigation(menus: [
