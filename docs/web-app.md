@@ -1,4 +1,4 @@
-# Web preview
+# Preview
 
 The preview server serves the built site during local development:
 
@@ -16,7 +16,7 @@ The preview server serves files from the configured output directory. Requests f
 
 The source-open overlay posts the current browser path to the framework-routed `/_open-source` action. The action resolves that path to an output file, looks up the corresponding markdown source in the build manifest, verifies that the source is inside the content directory, and launches the configured `editor` command from `content/config.yaml`. If no editor is configured, the server uses the platform opener (`open` on macOS, `xdg-open` on Linux, or `start` through `cmd` on Windows).
 
-If the output directory is empty after startup validation, a build runs automatically on the first request. Implementation details are covered in [Internals](internals.md#serve-mode).
+If the output directory is empty after startup validation, a build runs automatically on the first request. Implementation details are covered in [Engine](engine.md#serve-mode).
 
 ## Live reload
 

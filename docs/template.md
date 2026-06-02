@@ -74,7 +74,7 @@ theme: custom
 ---
 ```
 
-Engine-level theme registration is covered in [Internals](internals.md#theme-registration).
+Engine-level theme registration is covered in [Engine](engine.md#theme-registration).
 
 ## UI translations
 

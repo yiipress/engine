@@ -1,4 +1,4 @@
-# Internals
+# Engine
 
 This page is for engine developers and advanced contributors. User-facing concepts are covered in [Architecture](architecture.md), [Content](content.md), and [Templates](template.md).
 

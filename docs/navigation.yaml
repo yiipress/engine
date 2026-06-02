@@ -14,11 +14,13 @@ sidebar:
         url: /config/
       - title: Content
         url: /content/
+      - title: Importing content
+        url: /importing-content/
   - title: Building
     children:
       - title: Commands
         url: /commands/
-      - title: Web App
+      - title: Preview
         url: /web-app/
       - title: Deployment
         url: /deployment/
@@ -32,7 +34,7 @@ sidebar:
     children:
       - title: Architecture
         url: /architecture/
-      - title: Internals
-        url: /internals/
+      - title: Engine
+        url: /engine/
       - title: Benchmarking
         url: /benchmarking/

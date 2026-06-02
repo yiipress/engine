@@ -74,6 +74,6 @@ flowchart TD
 
 - **Templates** control page HTML. See [Templates](template.md).
 - **Content processors** transform Markdown and rendered HTML. See [Plugins](plugins.md).
-- **Importers** convert external content sources into Markdown files. See [Console commands](commands.md#yiipress-import).
+- **Importers** convert external content sources into Markdown files. See [Importing content](importing-content.md).
 
-Engine-level implementation details, dependency flow, source layout, caching strategy, and performance notes are in [Internals](internals.md).
+Engine-level implementation details, dependency flow, source layout, caching strategy, and performance notes are in [Engine](engine.md).

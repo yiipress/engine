@@ -154,12 +154,13 @@ Full documentation is available in [`docs/`](docs/) and at [yiipress.yiiframewor
 - [Quickstart](docs/quickstart.md)
 - [Content](docs/content.md)
 - [Configuration](docs/config.md)
+- [Importing content](docs/importing-content.md)
 - [Commands](docs/commands.md)
 - [Templates](docs/template.md)
 - [Plugins](docs/plugins.md)
 - [Deployment](docs/deployment.md)
 - [Architecture](docs/architecture.md)
-- [Internals](docs/internals.md)
+- [Engine](docs/engine.md)
 
 ## License
 

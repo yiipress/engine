@@ -2,7 +2,7 @@
 
 Most site settings live in `content/config.yaml`. This is the file you edit to change the site title, public URL, languages, theme, pagination, search, assets, and Markdown behavior.
 
-Engine source checkouts also contain a `config/` directory for Yii3 dependency injection, routing, and framework internals. That is for engine development and is covered in [Internals](internals.md).
+Engine source checkouts also contain a `config/` directory for Yii3 dependency injection, routing, and framework internals. That is for engine development and is covered in [Engine](engine.md).
 
 ## Site config
 

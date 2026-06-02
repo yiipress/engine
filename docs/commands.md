@@ -1,4 +1,4 @@
-# Console commands
+# Commands
 
 The examples below assume the static binary is in your project directory and use `./yiipress` so they work without changing `PATH`. Source checkouts expose the same commands through `./yii`; engine contributors should run them through the repository `make` targets.
 
@@ -79,7 +79,7 @@ HTML pages served by `serve` include a fixed bottom-right **Edit** button. It op
 
 Before starting the server, `serve` verifies that the content directory exists and that the output directory exists or can be created and written to. If the check fails, pass explicit paths, for example `./yiipress serve --content-dir=content --output-dir=output`.
 
-See [Web preview](web-app.md) for static file serving and live reload behavior. Implementation details are in [Internals](internals.md#serve-mode).
+See [Preview](web-app.md) for static file serving and live reload behavior. Implementation details are in [Engine](engine.md#serve-mode).
 
 ## `yiipress init`
 
@@ -193,7 +193,7 @@ Supports both single-chat exports (`result.json` with `messages` array) and full
 
 ### Adding custom importers
 
-Importers implement `YiiPress\Import\ContentImporterInterface` and are registered via Yii3 DI in `config/common/di/importer.php`. Each importer declares its own options via the `options()` method. See [plugins.md](plugins.md#content-importers) for details.
+Importers implement `YiiPress\Import\ContentImporterInterface` and are registered via Yii3 DI in `config/common/di/importer.php`. Each importer declares its own options via the `options()` method. See [Importing content](importing-content.md) for details.
 
 ## `yiipress clean` / `yiipress clear`
 

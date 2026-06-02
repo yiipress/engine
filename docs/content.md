@@ -1,4 +1,4 @@
-# Content files
+# Content
 
 Content that YiiPress is generating from is stored in the `content` directory.
 
