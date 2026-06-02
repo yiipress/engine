@@ -1,14 +1,29 @@
 .mermaid {
+    --mermaid-expanded-width: calc(100vw - 2rem);
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     margin: 1.5rem 0;
     padding: 1rem;
+    position: relative;
+    max-width: 100%;
+    overflow-x: auto;
     background: var(--c-bg);
     border-radius: .5rem;
     border: 1px solid var(--c-border);
+    transition: box-shadow .15s, margin-left .15s, max-width .15s, width .15s;
+    z-index: 1;
+}
+.mermaid.mermaid-overflowing.is-expanded,
+.mermaid.mermaid-overflowing:focus-visible {
+    width: var(--mermaid-expanded-width);
+    max-width: var(--mermaid-expanded-width);
+    margin-left: calc((100% - var(--mermaid-expanded-width)) / 2);
+    box-shadow: 0 .75rem 2rem rgba(0, 0, 0, .12);
+    z-index: 5;
 }
 .mermaid svg {
-    max-width: 100%;
+    flex: 0 0 auto;
+    margin-inline: auto;
     height: auto;
 }
 

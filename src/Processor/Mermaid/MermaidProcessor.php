@@ -32,7 +32,7 @@ final readonly class MermaidProcessor implements ContentProcessorInterface, Asse
             '/<pre><code class="language-mermaid">(.+?)<\/code><\/pre>/s',
             static function (array $matches): string {
                 $diagramCode = strip_tags(htmlspecialchars_decode($matches[1], ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5));
-                return '<div class="mermaid">' . $diagramCode . '</div>';
+                return '<div class="mermaid" tabindex="0">' . $diagramCode . '</div>';
             },
             $content,
         );
@@ -40,7 +40,7 @@ final readonly class MermaidProcessor implements ContentProcessorInterface, Asse
 
     public function headAssets(string $processedContent): string
     {
-        if (!str_contains($processedContent, '<div class="mermaid">')) {
+        if (!str_contains($processedContent, '<div class="mermaid"')) {
             return '';
         }
 
@@ -76,9 +76,149 @@ final readonly class MermaidProcessor implements ContentProcessorInterface, Asse
                 titleColor: '#f0f0f0'
             }
         };
+        var activeMermaidDiagram = null;
+        var collapseMermaidTimer = null;
+        var lastMermaidPointer = null;
+        var mermaidInteractionTracking = false;
 
         function getMermaidTheme() {
             return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        }
+
+        function enhanceMermaidDiagrams() {
+            document.querySelectorAll('.mermaid').forEach(function (diagram) {
+                if (diagram.dataset.mermaidEnhanced === 'true') {
+                    return;
+                }
+
+                diagram.dataset.mermaidEnhanced = 'true';
+                updateMermaidOverflow(diagram);
+
+                diagram.addEventListener('pointerenter', function () {
+                    expandMermaidDiagram(diagram);
+                });
+
+                diagram.addEventListener('focus', function () {
+                    if (diagram.classList.contains('mermaid-overflowing')) {
+                        centerMermaidDiagramAfterLayout(diagram);
+                    }
+                });
+
+                diagram.addEventListener('pointerleave', function (event) {
+                    scheduleMermaidCollapse(diagram, { x: event.clientX, y: event.clientY });
+                });
+            });
+
+            ensureMermaidInteractionTracking();
+        }
+
+        function expandMermaidDiagram(diagram) {
+            if (!diagram.classList.contains('mermaid-overflowing')) {
+                return;
+            }
+
+            if (activeMermaidDiagram && activeMermaidDiagram !== diagram) {
+                collapseMermaidDiagram(activeMermaidDiagram);
+            }
+
+            activeMermaidDiagram = diagram;
+            diagram.classList.add('is-expanded');
+            centerMermaidDiagramAfterLayout(diagram);
+        }
+
+        function collapseMermaidDiagram(diagram) {
+            if (!diagram) {
+                return;
+            }
+
+            diagram.classList.remove('is-expanded');
+            if (activeMermaidDiagram === diagram) {
+                activeMermaidDiagram = null;
+            }
+        }
+
+        function scheduleMermaidCollapse(diagram, pointer) {
+            window.clearTimeout(collapseMermaidTimer);
+            collapseMermaidTimer = window.setTimeout(function () {
+                if (activeMermaidDiagram !== diagram) {
+                    return;
+                }
+
+                if (isPointerInsideMermaid(diagram, pointer || lastMermaidPointer, 8)) {
+                    return;
+                }
+
+                collapseMermaidDiagram(diagram);
+            }, 160);
+        }
+
+        function isPointerInsideMermaid(diagram, pointer, tolerance) {
+            var rect;
+
+            if (!pointer) {
+                return false;
+            }
+
+            rect = diagram.getBoundingClientRect();
+
+            return pointer.x >= rect.left - tolerance
+                && pointer.x <= rect.right + tolerance
+                && pointer.y >= rect.top - tolerance
+                && pointer.y <= rect.bottom + tolerance;
+        }
+
+        function ensureMermaidInteractionTracking() {
+            if (mermaidInteractionTracking) {
+                return;
+            }
+
+            mermaidInteractionTracking = true;
+            window.addEventListener('pointermove', function (event) {
+                lastMermaidPointer = { x: event.clientX, y: event.clientY };
+                if (!activeMermaidDiagram) {
+                    return;
+                }
+
+                if (isPointerInsideMermaid(activeMermaidDiagram, lastMermaidPointer, 8)) {
+                    window.clearTimeout(collapseMermaidTimer);
+                    return;
+                }
+
+                scheduleMermaidCollapse(activeMermaidDiagram, lastMermaidPointer);
+            }, { passive: true });
+
+            window.addEventListener('scroll', function () {
+                collapseMermaidDiagram(activeMermaidDiagram);
+            }, { passive: true });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    collapseMermaidDiagram(activeMermaidDiagram);
+                }
+            });
+        }
+
+        function updateMermaidOverflow(diagram) {
+            if (diagram.scrollWidth > diagram.clientWidth + 1) {
+                diagram.classList.add('mermaid-overflowing');
+                centerMermaidDiagram(diagram);
+                return;
+            }
+
+            diagram.classList.remove('mermaid-overflowing', 'is-expanded');
+        }
+
+        function centerMermaidDiagram(diagram) {
+            diagram.scrollLeft = Math.max(0, (diagram.scrollWidth - diagram.clientWidth) / 2);
+        }
+
+        function centerMermaidDiagramAfterLayout(diagram) {
+            window.requestAnimationFrame(function () {
+                centerMermaidDiagram(diagram);
+            });
+            window.setTimeout(function () {
+                centerMermaidDiagram(diagram);
+            }, 180);
         }
 
         function initializeMermaid() {
@@ -86,10 +226,18 @@ final readonly class MermaidProcessor implements ContentProcessorInterface, Asse
                 startOnLoad: false,
                 theme: 'base',
                 securityLevel: 'strict',
+                flowchart: {
+                    useMaxWidth: false
+                },
                 themeVariables: mermaidThemes[getMermaidTheme()]
             });
-            mermaid.run({
+            Promise.resolve(mermaid.run({
                 querySelector: '.mermaid'
+            })).then(function () {
+                enhanceMermaidDiagrams();
+                window.addEventListener('resize', function () {
+                    document.querySelectorAll('.mermaid').forEach(updateMermaidOverflow);
+                });
             });
         }
 

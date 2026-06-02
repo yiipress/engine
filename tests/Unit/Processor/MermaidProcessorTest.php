@@ -26,7 +26,7 @@ final class MermaidProcessorTest extends TestCase
         $input = '<pre><code class="language-mermaid">graph TD
     A-->B</code></pre>';
 
-        $expected = '<div class="mermaid">graph TD
+        $expected = '<div class="mermaid" tabindex="0">graph TD
     A-->B</div>';
 
         $result = $this->processor->process($input, $this->createEntry());
@@ -41,7 +41,7 @@ final class MermaidProcessorTest extends TestCase
     B-->|Yes|C[Action 1]
     B-->|No|D[Action 2]</code></pre>';
 
-        $expected = '<div class="mermaid">graph TD
+        $expected = '<div class="mermaid" tabindex="0">graph TD
     A[Start]-->B{Condition}
     B-->|Yes|C[Action 1]
     B-->|No|D[Action 2]</div>';
@@ -61,7 +61,7 @@ final class MermaidProcessorTest extends TestCase
 
         $this->assertStringContainsString('<pre><code class="language-php">', $result);
         $this->assertStringContainsString('<pre><code class="language-javascript">', $result);
-        $this->assertStringContainsString('<div class="mermaid">', $result);
+        $this->assertStringContainsString('<div class="mermaid" tabindex="0">', $result);
     }
 
     public function testSkipsRegexWorkWhenContentHasNoMermaidMarker(): void
@@ -80,9 +80,9 @@ final class MermaidProcessorTest extends TestCase
         $result = $this->processor->process($input, $this->createEntry());
 
         $this->assertEquals(
-            '<div class="mermaid">graph TD; A-->B;</div>
+            '<div class="mermaid" tabindex="0">graph TD; A-->B;</div>
 <p>Some text</p>
-<div class="mermaid">sequenceDiagram; Alice-->Bob: Hello</div>',
+<div class="mermaid" tabindex="0">sequenceDiagram; Alice-->Bob: Hello</div>',
             $result,
         );
     }
@@ -105,6 +105,13 @@ final class MermaidProcessorTest extends TestCase
         $this->assertStringContainsString('mermaid.min.js', $result);
         $this->assertStringContainsString('mermaid.css', $result);
         $this->assertStringContainsString('initializeMermaid', $result);
+        $this->assertStringContainsString('useMaxWidth: false', $result);
+        $this->assertStringContainsString('enhanceMermaidDiagrams', $result);
+        $this->assertStringContainsString('mermaid-overflowing', $result);
+        $this->assertStringContainsString('centerMermaidDiagram', $result);
+        $this->assertStringContainsString('centerMermaidDiagramAfterLayout', $result);
+        $this->assertStringContainsString('collapseMermaidDiagram', $result);
+        $this->assertStringContainsString('ensureMermaidInteractionTracking', $result);
     }
 
     public function testHeadAssetsReturnsEmptyStringWhenNoMermaid(): void
@@ -126,7 +133,7 @@ final class MermaidProcessorTest extends TestCase
 
         $this->assertStringNotContainsString('<script>', $result);
         $this->assertStringNotContainsString('</script>', $result);
-        $this->assertStringContainsString('<div class="mermaid">', $result);
+        $this->assertStringContainsString('<div class="mermaid" tabindex="0">', $result);
     }
 
     public function testAssetFilesReturnsMermaidCss(): void
@@ -137,6 +144,13 @@ final class MermaidProcessorTest extends TestCase
         $sourceFile = array_key_first($files);
         $this->assertStringEndsWith('/Processor/Mermaid/assets/mermaid.css', $sourceFile);
         assertSame('assets/plugins/mermaid.css', $files[$sourceFile]);
+
+        $css = file_get_contents($sourceFile);
+        $this->assertNotFalse($css);
+        $this->assertStringContainsString('--mermaid-expanded-width: calc(100vw - 2rem);', $css);
+        $this->assertStringContainsString('.mermaid.mermaid-overflowing.is-expanded', $css);
+        $this->assertStringContainsString('.mermaid.mermaid-overflowing:focus-visible', $css);
+        $this->assertStringContainsString('margin-inline: auto;', $css);
     }
 
 
