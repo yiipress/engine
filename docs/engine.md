@@ -1,6 +1,6 @@
 # Engine
 
-This page is for engine developers and advanced contributors. User-facing concepts are covered in [Architecture](architecture.md), [Content](content.md), and [Templates](template.md).
+This page is for engine developers and advanced contributors. User-facing concepts are covered in [Architecture](architecture.md), [Content](content.md), and [Templates](templates.md).
 
 ## Design Principles
 
@@ -9,7 +9,7 @@ This page is for engine developers and advanced contributors. User-facing concep
 - **Immutable models** — parsed content becomes read-only value objects.
 - **Native hot paths** — Markdown, YAML, and syntax highlighting use native extensions where possible.
 - **No unnecessary shared state** — parallel workers render independent pages and write independent files.
-- **Composition over inheritance** — processors, parsers, importers, and writers are composed through Yii3 DI.
+- **Composition over inheritance** — processors, parsers, importers, and writers are composed through [Yii3 DI](https://yiisoft.github.io/docs/guide/concept/di-container.html).
 - **Late body parsing** — front matter is indexed first; Markdown bodies are read and rendered when output needs them.
 
 ## Domain Model
@@ -98,7 +98,7 @@ flowchart LR
     template --> page["Page object"]
 ```
 
-Plain PHP templates are rendered through the Yii view component. There is no compiled intermediate template language.
+Plain PHP templates are rendered directly with output buffering. There is no compiled intermediate template language.
 
 `PageGenerator` produces page objects for every output URL: entries, standalone pages, listings, taxonomies, authors, archives, feeds, sitemap, redirects, and error pages.
 
@@ -187,7 +187,7 @@ The source-open overlay resolves the browser path through the build manifest, ve
 
 ## Theme Registration
 
-Project-local templates under `content/templates/` are registered automatically as the `local` theme. Engine-level or distributable themes are registered in Yii3 DI:
+Project-local templates under `content/templates/` are registered automatically as the `local` theme. Engine-level or distributable themes are registered in [Yii3 DI](https://yiisoft.github.io/docs/guide/concept/di-container.html):
 
 ```php
 use YiiPress\Build\Theme;

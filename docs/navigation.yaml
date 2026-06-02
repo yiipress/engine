@@ -11,7 +11,7 @@ sidebar:
       - title: Quickstart
         url: /quickstart/
       - title: Configuration
-        url: /config/
+        url: /configuration/
       - title: Content
         url: /content/
       - title: Importing content
@@ -21,13 +21,13 @@ sidebar:
       - title: Commands
         url: /commands/
       - title: Preview
-        url: /web-app/
+        url: /preview/
       - title: Deployment
         url: /deployment/
   - title: Extending
     children:
       - title: Templates
-        url: /template/
+        url: /templates/
       - title: Plugins
         url: /plugins/
   - title: Internals

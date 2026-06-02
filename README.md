@@ -153,10 +153,10 @@ Full documentation is available in [`docs/`](docs/) and at [yiipress.yiiframewor
 
 - [Quickstart](docs/quickstart.md)
 - [Content](docs/content.md)
-- [Configuration](docs/config.md)
+- [Configuration](docs/configuration.md)
 - [Importing content](docs/importing-content.md)
 - [Commands](docs/commands.md)
-- [Templates](docs/template.md)
+- [Templates](docs/templates.md)
 - [Plugins](docs/plugins.md)
 - [Deployment](docs/deployment.md)
 - [Architecture](docs/architecture.md)

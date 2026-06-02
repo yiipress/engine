@@ -27,7 +27,7 @@ content/
 │   │   └── john-doe.svg
 │   ├── john-doe.md
 │   └── jane-smith.md
-├── config.yaml                    # Site-wide settings (see docs/config.md)
+├── config.yaml                    # Site-wide settings (see docs/configuration.md)
 ├── navigation.yaml                # Menu definitions
 └── standalone-page.md             # Standalone page (not in any collection)
 ```
@@ -113,7 +113,7 @@ extra:
 - **summary** — manual excerpt; if omitted, auto-generated from content
 - **permalink** — per-entry URL override; takes precedence over collection pattern
 - **layout** — template layout name (default: collection-specific or `entry`)
-- **theme** — theme name for this entry; overrides the site-level default (see [Templates](template.md))
+- **theme** — theme name for this entry; overrides the site-level default (see [Templates](templates.md))
 - **weight** — integer for custom sorting in non-blog collections (lower = first)
 - **language** — language code for multilingual content (e.g., `en`, `ru`)
 - **redirect_to** — URL to redirect to; generates a redirect HTML page (with `<meta http-equiv="refresh">`, JS `window.location.replace()`, and `<link rel="canonical">`) instead of rendering content. Redirect entries are excluded from feeds, sitemaps, listings, archives, and taxonomy pages

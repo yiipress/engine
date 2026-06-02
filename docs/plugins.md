@@ -1,6 +1,6 @@
 # Plugins
 
-YiiPress extension points are configured through Yii3 DI. Content processors transform Markdown and rendered HTML during builds; related-content and table-of-contents processors add shared page behavior.
+YiiPress extension points are configured through [Yii3 DI](https://yiisoft.github.io/docs/guide/concept/di-container.html). Content processors transform Markdown and rendered HTML during builds; related-content and table-of-contents processors add shared page behavior.
 
 ## Content processors
 
@@ -29,7 +29,7 @@ flowchart LR
     custom --> html["Final HTML"]
 ```
 
-Two separate pipelines are configured via Yii3 DI container in `config/common/di/content-pipeline.php`:
+Two separate pipelines are configured via the [Yii3 DI container](https://yiisoft.github.io/docs/guide/concept/di-container.html) in `config/common/di/content-pipeline.php`:
 
 - **contentPipeline** — used by `EntryRenderer`: `MarkdownProcessor` → `SyntaxHighlightProcessor`
 - **feedPipeline** — used by `FeedGenerator`: `MarkdownProcessor` only (no syntax highlighting in feeds)

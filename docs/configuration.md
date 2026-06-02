@@ -2,7 +2,7 @@
 
 Most site settings live in `content/config.yaml`. This is the file you edit to change the site title, public URL, languages, theme, pagination, search, assets, and Markdown behavior.
 
-Engine source checkouts also contain a `config/` directory for Yii3 dependency injection, routing, and framework internals. That is for engine development and is covered in [Engine](engine.md).
+Engine source checkouts also contain a `config/` directory for [Yii3 configuration](https://yiisoft.github.io/docs/guide/concept/configuration.html), [dependency injection](https://yiisoft.github.io/docs/guide/concept/di-container.html), [routing](https://yiisoft.github.io/docs/guide/runtime/routing.html), and framework internals. That is for engine development and is covered in [Engine](engine.md).
 
 ## Site config
 
@@ -58,7 +58,7 @@ editor: code
 - **entries_per_page** — default pagination size (overridden by collection `_collection.yaml`)
 - **permalink** — default permalink pattern (overridden by collection or entry)
 - **taxonomies** — list of enabled taxonomy types
-- **theme** — default theme name for the site (see [Templates](template.md))
+- **theme** — default theme name for the site (see [Templates](templates.md))
 - **highlight_theme** — built-in syntect theme used for fenced code block highlighting. Defaults to `InspiredGitHub`. Available built-in themes include `InspiredGitHub`, `Solarized (dark)`, `Solarized (light)`, `base16-ocean.dark`, `base16-ocean.light`, `base16-eighties.dark`, and `base16-mocha.dark`
 - **image** — default Open Graph image URL (absolute, or root-relative path resolved against `base_url`); used as fallback when an entry has no `image` front matter field
 - **twitter** — Twitter/X account handle (e.g., `@example`) added to `twitter:site` meta tag on all pages
@@ -231,7 +231,7 @@ Each rule supports:
 
 ### Usage in templates
 
-Templates receive focused variables for the page they render, such as `$siteTitle`, `$entryTitle`, `$content`, `$date`, `$author`, and `$collection`. See [Templates](template.md) for the full variable list.
+Templates receive focused variables for the page they render, such as `$siteTitle`, `$entryTitle`, `$content`, `$date`, `$author`, and `$collection`. See [Templates](templates.md) for the full variable list.
 
 ### Markdown settings
 

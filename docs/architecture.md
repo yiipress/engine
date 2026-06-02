@@ -72,7 +72,7 @@ flowchart TD
 
 ## Extension Points
 
-- **Templates** control page HTML. See [Templates](template.md).
+- **Templates** control page HTML. See [Templates](templates.md).
 - **Content processors** transform Markdown and rendered HTML. See [Plugins](plugins.md).
 - **Importers** convert external content sources into Markdown files. See [Importing content](importing-content.md).
 

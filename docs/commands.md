@@ -2,7 +2,7 @@
 
 The examples below assume the static binary is in your project directory and use `./yiipress` so they work without changing `PATH`. Source checkouts expose the same commands through `./yii`; engine contributors should run them through the repository `make` targets.
 
-## `yiipress build`
+## `build`
 
 Generates static HTML content from source files.
 
@@ -58,7 +58,7 @@ The command:
 
 With `--workers=N` (N > 1), entry rendering and writing is parallelized across N forked processes. With `--workers=auto`, YiiPress uses up to the detected worker count and lets page writers clamp back to sequential mode for smaller workloads. Feeds are generated after entry writing and can be split per collection across workers. Sitemap generation remains serial.
 
-## `yiipress serve`
+## `serve`
 
 Starts the preview server for local development.
 
@@ -79,9 +79,9 @@ HTML pages served by `serve` include a fixed bottom-right **Edit** button. It op
 
 Before starting the server, `serve` verifies that the content directory exists and that the output directory exists or can be created and written to. If the check fails, pass explicit paths, for example `./yiipress serve --content-dir=content --output-dir=output`.
 
-See [Preview](web-app.md) for static file serving and live reload behavior. Implementation details are in [Engine](engine.md#serve-mode).
+See [Preview](preview.md) for static file serving and live reload behavior. Implementation details are in [Engine](engine.md#serve-mode).
 
-## `yiipress init`
+## `init`
 
 Initializes a content directory with the minimal YiiPress structure:
 
@@ -100,7 +100,7 @@ Initializes a content directory with the minimal YiiPress structure:
 
 The command creates parent directories as needed and fails if any scaffolded file already exists.
 
-## `yiipress new`
+## `new`
 
 Scaffolds a new content entry or standalone page.
 
@@ -134,7 +134,7 @@ Scaffolds a new content entry or standalone page.
 ./yiipress new "About Us"
 ```
 
-## `yiipress import`
+## `import`
 
 Imports content from external sources into a YiiPress collection.
 
@@ -193,9 +193,9 @@ Supports both single-chat exports (`result.json` with `messages` array) and full
 
 ### Adding custom importers
 
-Importers implement `YiiPress\Import\ContentImporterInterface` and are registered via Yii3 DI in `config/common/di/importer.php`. Each importer declares its own options via the `options()` method. See [Importing content](importing-content.md) for details.
+Importers implement `YiiPress\Import\ContentImporterInterface` and are registered via [Yii3 DI](https://yiisoft.github.io/docs/guide/concept/di-container.html) in `config/common/di/importer.php`. Each importer declares its own options via the `options()` method. See [Importing content](importing-content.md) for details.
 
-## `yiipress clean` / `yiipress clear`
+## `clean` / `clear`
 
 Clears build output and caches.
 
@@ -215,6 +215,6 @@ The command removes:
 
 If a directory does not exist, it is skipped with a notice.
 
-## `yiipress` / `yiipress list`
+## `yiipress` / `list`
 
 Shows available commands and help.

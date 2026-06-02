@@ -77,7 +77,7 @@ Welcome to my blog! This is my first post.
 
 ## What is YiiPress?
 
-YiiPress is a static blog engine built on Yii3. It is:
+YiiPress is a static blog engine built on [Yii3](https://yiisoft.github.io/docs/guide/intro/what-is-yii.html). It is:
 
 - Exceptionally fast
 - File-based (no database)
@@ -177,6 +177,6 @@ Disable cache for a clean build:
 
 - Add authors in `content/authors/` — see [Content](content.md#authors)
 - Customize permalinks — see [Content](content.md#permalinks)
-- Configure markdown extensions — see [Configuration](config.md#markdown-extensions)
+- Configure markdown extensions — see [Configuration](configuration.md#markdown-extensions)
 - Link between posts using relative `.md` paths — see [Content](content.md#internal-links)
 - Learn about all build options — see [Commands](commands.md)
