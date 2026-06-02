@@ -35,5 +35,6 @@ final readonly class SiteConfig
         public ?I18nConfig $i18n = null,
         public bool $lastUpdated = false,
         public ?string $editPageUrl = null,
+        public ?string $reportIssueUrl = null,
     ) {}
 }

@@ -166,6 +166,36 @@ final class EntryRendererTest extends TestCase
         assertStringNotContainsString('data-ui-key="edit_this_page"', $html);
     }
 
+    public function testRendersReportIssueLinkWhenConfigured(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Current\n---\n\nBody.\n");
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Current');
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver(), contentDir: $this->contentDir);
+        $html = $renderer->render(
+            $this->createSiteConfig(reportIssueUrl: 'https://github.com/example/site/issues/new?title={title}&body={url}'),
+            $entry,
+            '/blog/current/',
+        );
+
+        assertStringContainsString('class="entry-page-meta"', $html);
+        assertStringContainsString('data-ui-key="report_an_issue">Report an issue', $html);
+        assertStringContainsString('title=Current&amp;body=https%3A%2F%2Fexample.com%2Fblog%2Fcurrent%2F', $html);
+    }
+
+    public function testDoesNotRenderReportIssueLinkByDefault(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Current\n---\n\nBody.\n");
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Current');
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver(), contentDir: $this->contentDir);
+        $html = $renderer->render($this->createSiteConfig(), $entry, '/blog/current/');
+
+        assertStringNotContainsString('data-ui-key="report_an_issue"', $html);
+    }
+
     public function testUiLanguageIsIndependentFromEntryLanguage(): void
     {
         $entryFile = $this->contentDir . '/blog/post.md';
@@ -390,6 +420,7 @@ PHP);
         ?I18nConfig $i18n = null,
         bool $lastUpdated = false,
         ?string $editPageUrl = null,
+        ?string $reportIssueUrl = null,
     ): SiteConfig
     {
         return new SiteConfig(
@@ -409,6 +440,7 @@ PHP);
             i18n: $i18n,
             lastUpdated: $lastUpdated,
             editPageUrl: $editPageUrl,
+            reportIssueUrl: $reportIssueUrl,
         );
     }
 

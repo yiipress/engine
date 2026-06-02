@@ -25,6 +25,7 @@ redirect_moved: "This page has moved. {link} if you are not redirected automatic
 redirecting: "Redirecting..."
 redirecting_to: "Redirecting to {target}."
 related_posts: "Related posts"
+report_an_issue: "Report an issue"
 rss_feed: "RSS Feed"
 scheduled: "Scheduled: {date}"
 search: "Search"

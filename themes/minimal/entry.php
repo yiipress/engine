@@ -22,6 +22,7 @@ declare(strict_types=1);
  * @var array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null $navigationPager
  * @var array{iso: string, text: string}|null $lastUpdated
  * @var string $editPageUrl
+ * @var string $reportIssueUrl
  * @var string $language
  * @var string $permalink
  * @var ?Navigation $nav
@@ -101,7 +102,7 @@ $useLegacyTocSidebar = !$useDocsLayout && $hasToc;
                 <div class="content">
                     <?= $content ?>
                 </div>
-<?php if ($lastUpdated !== null || $editPageUrl !== ''): ?>
+<?php if ($lastUpdated !== null || $editPageUrl !== '' || $reportIssueUrl !== ''): ?>
                 <footer class="entry-page-meta">
 <?php if ($lastUpdated !== null): ?>
                     <span class="entry-last-updated">
@@ -112,6 +113,13 @@ $useLegacyTocSidebar = !$useDocsLayout && $hasToc;
 <?php if ($editPageUrl !== ''): ?>
                     <span class="entry-page-actions">
                         <a class="entry-page-action" href="<?= $h($editPageUrl) ?>" target="_blank" rel="noopener" data-ui-key="edit_this_page"><?= $h($t('edit_this_page')) ?></a>
+<?php if ($reportIssueUrl !== ''): ?>
+                        <a class="entry-page-action" href="<?= $h($reportIssueUrl) ?>" target="_blank" rel="noopener" data-ui-key="report_an_issue"><?= $h($t('report_an_issue')) ?></a>
+<?php endif; ?>
+                    </span>
+<?php elseif ($reportIssueUrl !== ''): ?>
+                    <span class="entry-page-actions">
+                        <a class="entry-page-action" href="<?= $h($reportIssueUrl) ?>" target="_blank" rel="noopener" data-ui-key="report_an_issue"><?= $h($t('report_an_issue')) ?></a>
                     </span>
 <?php endif; ?>
                 </footer>

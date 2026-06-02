@@ -45,6 +45,7 @@ assets:
 
 last_updated: true
 edit_page: https://github.com/example/mysite/edit/main/content/{path}
+report_issue: https://github.com/example/mysite/issues/new?title=Docs:%20{title}&body={url}
 
 editor: code
 ```
@@ -71,6 +72,7 @@ editor: code
 - **related** — opt-in related content suggestions (see below)
 - **last_updated** — set to `true` to show each entry source file's last modification time below its content (default: `false`)
 - **edit_page** — URL template for an optional "Edit this page" link below entry content (see below)
+- **report_issue** — URL template for an optional "Report an issue" link below entry content (see below)
 - **assets** — asset pipeline settings (see below)
 - **editor** — command used by `yiipress serve` to open the current markdown source from the preview overlay. If omitted, YiiPress uses the platform default opener (`open` on macOS, `xdg-open` on Linux, and `start` through `cmd` on Windows)
 - **params** — arbitrary key-value pairs for use in templates
@@ -119,6 +121,7 @@ Page action links are optional. Enable a GitHub-style edit link with `edit_page`
 
 ```yaml
 edit_page: https://github.com/example/mysite/edit/main/content/{path}
+report_issue: https://github.com/example/mysite/issues/new?title=Docs:%20{title}&body={url}
 ```
 
 Supported placeholders are:

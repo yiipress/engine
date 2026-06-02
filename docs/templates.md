@@ -146,6 +146,7 @@ Built-in templates and partials expect `$ui` to be passed by the renderer; `Page
 | `$navigationPager` | `?array{previous: ?array, next: ?array}` | Previous/next links resolved from sidebar navigation when enabled |
 | `$lastUpdated` | `?array{iso: string, text: string}` | Source file modification time when `last_updated` is enabled |
 | `$editPageUrl` | `string` | Resolved edit-page URL when `edit_page` is configured, otherwise empty |
+| `$reportIssueUrl` | `string` | Resolved issue-report URL when `report_issue` is configured, otherwise empty |
 
 Example:
 

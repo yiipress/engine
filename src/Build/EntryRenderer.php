@@ -146,6 +146,9 @@ final class EntryRenderer
         $editPageUrl = $siteConfig->editPageUrl === null
             ? ''
             : PageActionUrlFormatter::format($siteConfig->editPageUrl, $siteConfig, $entry, $permalink, $this->contentDir);
+        $reportIssueUrl = $siteConfig->reportIssueUrl === null
+            ? ''
+            : PageActionUrlFormatter::format($siteConfig->reportIssueUrl, $siteConfig, $entry, $permalink, $this->contentDir);
         $metaTags = MetaTagsBuilder::forEntry($siteConfig, $entry, $permalink, $translations);
         $language = $entry->language !== ''
             ? $entry->language
@@ -179,6 +182,7 @@ final class EntryRenderer
             'navigationPager' => $navigationPager,
             'lastUpdated' => $lastUpdated,
             'editPageUrl' => $editPageUrl,
+            'reportIssueUrl' => $reportIssueUrl,
             'language' => $language,
             'metaTags' => $metaTags,
             'partial' => $this->partialClosures[$themeName],

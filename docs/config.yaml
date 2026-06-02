@@ -7,3 +7,4 @@ search:
   results: 10        # max results shown (default: 10)
 last_updated: true
 edit_page: "https://github.com/yiipress/engine/edit/master/docs/{path}"
+report_issue: "https://github.com/yiipress/engine/issues/new?title=Docs:%20{title}&body={url}"

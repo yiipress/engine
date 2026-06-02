@@ -76,6 +76,19 @@ final class SiteConfigParserTest extends TestCase
         unlink($filePath);
     }
 
+    public function testParsesReportIssueUrlConfig(): void
+    {
+        $filePath = sys_get_temp_dir() . '/yiipress-site-config-' . uniqid() . '.yaml';
+        file_put_contents($filePath, "title: Test\nlanguages: [en]\nreport_issue: https://example.com/issues/new?title={title}\n");
+
+        $parser = new SiteConfigParser();
+        $config = $parser->parse($filePath);
+
+        assertSame('https://example.com/issues/new?title={title}', $config->reportIssueUrl);
+
+        unlink($filePath);
+    }
+
     public function testUsesFirstLanguageAsI18nDefaultLanguage(): void
     {
         $filePath = sys_get_temp_dir() . '/yiipress-site-config-' . uniqid() . '.yaml';

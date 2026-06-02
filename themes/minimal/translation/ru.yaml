@@ -25,6 +25,7 @@ redirect_moved: "Эта страница переехала. {link}, если п
 redirecting: "Перенаправление..."
 redirecting_to: "Перенаправление на {target}."
 related_posts: "Похожие записи"
+report_an_issue: "Сообщить о проблеме"
 rss_feed: "RSS-лента"
 scheduled: "Запланировано: {date}"
 search: "Поиск"
