@@ -6,6 +6,7 @@ namespace YiiPress\Console;
 
 use YiiPress\Content\Parser\CollectionConfigParser;
 use YiiPress\Content\Parser\SiteConfigParser;
+use YiiPress\Content\Slugifier;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -163,10 +164,7 @@ final class NewCommand extends Command
 
     private function slugify(string $title): string
     {
-        $slug = mb_strtolower($title);
-        $slug = preg_replace('/[^\p{L}\p{N}\s-]/u', '', $slug);
-        $slug = preg_replace('/[\s-]+/', '-', (string) $slug);
-        return trim((string) $slug, '-');
+        return Slugifier::slugify($title);
     }
 
     private function yamlEscape(string $value): string

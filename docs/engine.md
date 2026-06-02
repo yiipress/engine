@@ -85,6 +85,8 @@ The index is built once per build and then treated as read-only.
 
 Entries store raw Markdown, not rendered HTML. The index keeps references rather than copies; for example, taxonomy terms reference entry objects instead of duplicating entry data.
 
+The `yiipress new` command normalizes generated entry filenames through `Slugifier`, which keeps Unicode letters in output paths and uses `yiisoft/strings` for UTF-8 casing.
+
 ## Rendering
 
 Rendering converts indexed entries and pages into final HTML:
