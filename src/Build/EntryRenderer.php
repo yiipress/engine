@@ -6,6 +6,7 @@ namespace YiiPress\Build;
 
 use YiiPress\Content\CrossReferenceResolver;
 use YiiPress\Content\I18n\TranslationIndex;
+use YiiPress\Content\Model\Author;
 use YiiPress\Content\Model\Entry;
 use YiiPress\Content\Model\Navigation;
 use YiiPress\Content\Model\SiteConfig;
@@ -36,6 +37,9 @@ final class EntryRenderer
     /** @var array<string, Closure> */
     private array $partialClosures = [];
 
+    /**
+     * @param array<string, Author> $authors
+     */
     public function __construct(
         private readonly ContentProcessorPipeline $pipeline,
         private readonly TemplateResolver $templateResolver,
@@ -179,10 +183,8 @@ final class EntryRenderer
             'date' => $entry->date?->format($siteConfig->dateFormat) ?? '',
             'dateISO' => $entry->date?->format('Y-m-d') ?? '',
             'draft' => $entry->draft,
-            'author' => implode(', ', array_map(
-                fn (string $authorSlug) => $this->authors[$authorSlug]->title ?? $authorSlug,
-                $entry->authors
-            )),
+            'author' => $this->authorText($entry),
+            'entryAuthors' => $this->entryAuthors($siteConfig, $entry, $rootPath),
             'tags' => array_values(array_filter(
                 $entry->tags,
                 static fn (string $tag) => !in_array(mb_strtolower($tag), $entry->inlineTags, true),
@@ -215,6 +217,35 @@ final class EntryRenderer
         $html = ($this->templateClosures[$templatePath])($variables);
 
         return $templateContext->rewriteHtml($html, $rootPath);
+    }
+
+    private function authorText(Entry $entry): string
+    {
+        return implode(', ', array_map(
+            fn (string $authorSlug) => $this->authors[$authorSlug]->title ?? $authorSlug,
+            $entry->authors,
+        ));
+    }
+
+    /**
+     * @return list<array{slug: string, title: string, url: string}>
+     */
+    private function entryAuthors(SiteConfig $siteConfig, Entry $entry, string $rootPath): array
+    {
+        $entryAuthors = [];
+
+        foreach ($entry->authors as $authorSlug) {
+            $author = $this->authors[$authorSlug] ?? null;
+            $entryAuthors[] = [
+                'slug' => $authorSlug,
+                'title' => $author instanceof Author ? $author->title : $authorSlug,
+                'url' => $siteConfig->authorPages && $author instanceof Author
+                    ? $rootPath . 'authors/' . $authorSlug . '/'
+                    : '',
+            ];
+        }
+
+        return $entryAuthors;
     }
 
     /**

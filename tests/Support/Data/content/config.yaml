@@ -4,6 +4,7 @@ base_url: "https://test.example.com"
 languages: ["en"]
 charset: "UTF-8"
 default_author: "john-doe"
+author_pages: true
 date_format: "F j, Y"
 entries_per_page: 5
 permalink: "/:collection/:slug/"

@@ -228,12 +228,12 @@ Author bio in markdown.
 
 Author slugs (filenames without `.md`) are referenced from entry front matter.
 
-Author pages are generated automatically:
+Set `author_pages: true` in `content/config.yaml` to generate author pages:
 
 - `/authors/` — index page listing all authors with avatars
 - `/authors/:slug/` — individual author page with bio (rendered from markdown body), contact info, and a list of their entries
 
-Author pages are included in the sitemap.
+When enabled, known authors are linked from entry metadata to their author pages, and author pages are included in the sitemap. With the default `author_pages: false`, author names remain plain text and no author pages are generated.
 
 ## Date-based archives
 

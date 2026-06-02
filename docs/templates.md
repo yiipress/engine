@@ -134,6 +134,7 @@ Built-in templates and partials expect `$ui` to be passed by the renderer; `Page
 | `$date`       | `string`      | Formatted date using `date_format` from `config.yaml` or empty   |
 | `$dateISO`    | `string`      | ISO 8601 date (`Y-m-d`) for HTML5 `datetime` attribute or empty |
 | `$author`     | `string`      | Comma-separated author names                                     |
+| `$entryAuthors` | `list<array{slug: string, title: string, url: string}>` | Entry authors; `url` links to the author page when `author_pages` is enabled and the author file exists |
 | `$collection` | `string`      | Collection name the entry belongs to                             |
 | `$extra`      | `array<string, mixed>` | Custom front matter under `extra`                         |
 | `$showTitle`  | `bool`        | Whether the bundled entry template renders the generated `<h1>`  |
@@ -156,8 +157,17 @@ Example:
 <?php if ($date !== ''): ?>
     <time datetime="<?= $h($dateISO) ?>"><?= $h($date) ?></time>
 <?php endif; ?>
-<?php if ($author !== ''): ?>
-    <span class="author"><?= $h($author) ?></span>
+<?php if ($entryAuthors !== []): ?>
+    <span class="author">
+<?php foreach ($entryAuthors as $index => $entryAuthor): ?>
+        <?= $index > 0 ? ', ' : '' ?>
+<?php if ($entryAuthor['url'] !== ''): ?>
+        <a href="<?= $h($entryAuthor['url']) ?>"><?= $h($entryAuthor['title']) ?></a>
+<?php else: ?>
+        <?= $h($entryAuthor['title']) ?>
+<?php endif; ?>
+<?php endforeach; ?>
+    </span>
 <?php endif; ?>
     <div class="content"><?= $content ?></div>
 </article>
@@ -415,7 +425,7 @@ layout: wide
 
 The build process looks for `wide.php` in the active theme, then falls back to the built-in `entry.php` if not found.
 
-Custom layout templates receive the same variables as the default entry template (`$siteTitle`, `$entryTitle`, `$content`, `$date`, `$author`, `$collection`, `$extra`, `$showTitle`, `$nav`).
+Custom layout templates receive the same variables as the default entry template (`$siteTitle`, `$entryTitle`, `$content`, `$date`, `$author`, `$entryAuthors`, `$collection`, `$extra`, `$showTitle`, `$nav`).
 
 ### Example
 

@@ -27,6 +27,7 @@ final class SiteConfigParserTest extends TestCase
         assertSame('en', $config->defaultLanguage);
         assertSame('UTF-8', $config->charset);
         assertSame('john-doe', $config->defaultAuthor);
+        assertTrue($config->authorPages);
         assertSame('F j, Y', $config->dateFormat);
         assertSame(5, $config->entriesPerPage);
         assertSame('/:collection/:slug/', $config->permalink);
@@ -85,6 +86,32 @@ final class SiteConfigParserTest extends TestCase
         $config = $parser->parse($filePath);
 
         assertSame('https://example.com/issues/new?title={title}', $config->reportIssueUrl);
+
+        unlink($filePath);
+    }
+
+    public function testDisablesAuthorPagesByDefault(): void
+    {
+        $filePath = sys_get_temp_dir() . '/yiipress-site-config-' . uniqid() . '.yaml';
+        file_put_contents($filePath, "title: Test\nlanguages: [en]\n");
+
+        $parser = new SiteConfigParser();
+        $config = $parser->parse($filePath);
+
+        assertFalse($config->authorPages);
+
+        unlink($filePath);
+    }
+
+    public function testParsesAuthorPagesConfig(): void
+    {
+        $filePath = sys_get_temp_dir() . '/yiipress-site-config-' . uniqid() . '.yaml';
+        file_put_contents($filePath, "title: Test\nlanguages: [en]\nauthor_pages: true\n");
+
+        $parser = new SiteConfigParser();
+        $config = $parser->parse($filePath);
+
+        assertTrue($config->authorPages);
 
         unlink($filePath);
     }
