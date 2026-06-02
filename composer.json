@@ -60,6 +60,7 @@
         "yiisoft/definitions": "^3.4.1",
         "yiisoft/di": "^1.4.1",
         "yiisoft/error-handler": "^4.3.2",
+        "yiisoft/files": "^2.1",
         "yiisoft/log": "^2.2.1",
         "yiisoft/middleware-dispatcher": "^5.4",
         "yiisoft/router": "^4.0.2",

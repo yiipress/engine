@@ -6,13 +6,13 @@ namespace YiiPress\Console;
 
 use YiiPress\Content\Parser\CollectionConfigParser;
 use YiiPress\Content\Parser\SiteConfigParser;
-use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Yiisoft\Files\FileHelper;
 use Yiisoft\Yii\Console\ExitCode;
 
 use function dirname;
@@ -127,10 +127,7 @@ final class NewCommand extends Command
         }
         $frontMatter .= "---\n\n";
 
-        $dir = dirname($filePath);
-        if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
-            throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
-        }
+        FileHelper::ensureDirectory(dirname($filePath), 0o755);
 
         file_put_contents($filePath, $frontMatter);
 

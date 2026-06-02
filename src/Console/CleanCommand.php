@@ -5,15 +5,12 @@ declare(strict_types=1);
 namespace YiiPress\Console;
 
 use YiiPress\RuntimePaths;
-use FilesystemIterator;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use SplFileInfo;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Yiisoft\Files\FileHelper;
 use Yiisoft\Yii\Console\ExitCode;
 
 use function str_starts_with;
@@ -76,21 +73,7 @@ final class CleanCommand extends Command
             return false;
         }
 
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
-            RecursiveIteratorIterator::CHILD_FIRST,
-        );
-
-        foreach ($iterator as $item) {
-            /** @var SplFileInfo $item */
-            if ($item->isDir()) {
-                rmdir($item->getPathname());
-            } else {
-                unlink($item->getPathname());
-            }
-        }
-
-        rmdir($path);
+        FileHelper::removeDirectory($path);
 
         return true;
     }
