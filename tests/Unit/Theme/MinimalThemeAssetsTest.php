@@ -48,6 +48,20 @@ final class MinimalThemeAssetsTest extends TestCase
         assertStringContainsString('.toc-sidebar-right {', $css);
     }
 
+    public function testStylePreventsWideContentTablesFromOverlappingSidebars(): void
+    {
+        $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');
+
+        self::assertNotFalse($css);
+        assertStringContainsString('.content { font-size: 1.0625rem; line-height: 1.8; min-width: 0; }', $css);
+        assertStringContainsString(
+            '.content table { display: block; width: 100%; max-width: 100%; overflow-x: auto;',
+            $css,
+        );
+        assertStringContainsString('.docs-content {', $css);
+        assertStringContainsString('overflow-wrap: anywhere;', $css);
+    }
+
     public function testTocHighlightScriptTracksCurrentHeading(): void
     {
         $script = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/toc-highlight.js');

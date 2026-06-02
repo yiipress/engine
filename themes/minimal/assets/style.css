@@ -243,7 +243,7 @@ main .container > h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5r
 article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom: .5rem; }
 .entry-meta { color: var(--c-text-muted); font-size: .9375rem; margin-bottom: 2rem; display: flex; gap: .75rem; flex-wrap: wrap; }
 .entry-meta time, .entry-meta .author { display: inline; }
-.content { font-size: 1.0625rem; line-height: 1.8; }
+.content { font-size: 1.0625rem; line-height: 1.8; min-width: 0; }
 .content a {
     overflow-wrap: anywhere;
     word-break: break-word;
@@ -279,6 +279,7 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
     padding: .15em .35em;
     border-radius: .25rem;
     transition: background .2s;
+    overflow-wrap: anywhere;
 }
 .content img { max-width: 100%; border-radius: .5rem; margin: 1.25rem 0; }
 .content img:not([height]) { height: auto; }
@@ -310,8 +311,8 @@ a.tag-link:hover {
     color: #fff;
     text-decoration: none;
 }
-.content table { width: 100%; border-collapse: collapse; margin: 1.25rem 0; font-size: .9375rem; }
-.content th, .content td { padding: .5rem .75rem; border: 1px solid var(--c-border); text-align: left; }
+.content table { display: block; width: 100%; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin: 1.25rem 0; font-size: .9375rem; }
+.content th, .content td { padding: .5rem .75rem; border: 1px solid var(--c-border); text-align: left; vertical-align: top; overflow-wrap: anywhere; }
 .content th { background: var(--c-code-bg); font-weight: 600; }
 .content hr { border: none; border-top: 1px solid var(--c-border); margin: 2rem 0; }
 
@@ -512,6 +513,9 @@ a.tag-link:hover {
 .docs-layout:not(.docs-layout-with-toc) {
     grid-template-columns: 16rem minmax(0, var(--max-width));
     justify-content: center;
+}
+.docs-content {
+    min-width: 0;
 }
 .docs-sidebar {
     position: sticky;
