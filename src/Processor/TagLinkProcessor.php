@@ -19,7 +19,7 @@ final readonly class TagLinkProcessor implements ContentProcessorInterface
 {
     private const HASHTAG_PATTERN = '/(?<!\w)#(\w+(?:-\w+)*)(?![\w-])/';
     private const PROTECTED_BLOCK_PATTERN = '/<pre[^>]*>.*?<\/pre>|<code[^>]*>.*?<\/code>|<a[^>]*>.*?<\/a>/is';
-    private const HTML_SPLIT_PATTERN = '/(<pre[^>]*>.*?<\/pre>|<code[^>]*>.*?<\/code>|<a[^>]*>.*?<\/a>|<[^>]+>)/s';
+    private const HTML_SPLIT_PATTERN = '/(<pre[^>]*>.*?<\/pre>|<code[^>]*>.*?<\/code>|<a[^>]*>.*?<\/a>|<[^>]+>)/is';
 
     public function __construct(
         private string $rootPath = '/',

@@ -210,6 +210,20 @@ final class TagLinkProcessorTest extends TestCase
         assertSame($content, $processor->process($content, $this->createEntry()));
     }
 
+    public function testDoesNotConvertHashtagsInUppercaseProtectedTags(): void
+    {
+        $processor = new TagLinkProcessor('/');
+        $content = '<PRE>#pre-tag</PRE>'
+            . '<p><CODE>#code-tag</CODE></p>'
+            . '<A href="/docs/#section">#link-tag</A>'
+            . '<p>#outside</p>';
+
+        assertSame(
+            '<PRE>#pre-tag</PRE><p><CODE>#code-tag</CODE></p><A href="/docs/#section">#link-tag</A><p><a href="/tags/outside/" class="tag-link">#outside</a></p>',
+            $processor->process($content, $this->createEntry()),
+        );
+    }
+
     private function createEntry(): Entry
     {
         $tmp = tempnam(sys_get_temp_dir(), 'yiipress_taglink_test_');
