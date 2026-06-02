@@ -43,4 +43,12 @@ final class NavigationRendererBench
     {
         NavigationRenderer::render($this->navigation, 'main', './', 'ru', 'en');
     }
+
+    #[Revs(1000)]
+    #[Iterations(3)]
+    #[Warmup(1)]
+    public function benchRenderLocalizedNavigationWithCurrentUrl(): void
+    {
+        NavigationRenderer::render($this->navigation, 'main', './', 'ru', 'en', '', '/docs/getting-started/');
+    }
 }

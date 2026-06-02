@@ -25,7 +25,7 @@ final class NavigationRenderer
             return '';
         }
 
-        [$html] = self::renderItems($items, $rootPath, $language, $defaultLanguage, $currentUrl);
+        [$html] = self::renderItems($items, $rootPath, $language, $defaultLanguage, self::normalizeUrl($currentUrl));
         $classAttribute = $class !== ''
             ? ' class="' . Html::encodeAttribute($class) . '"'
             : '';
@@ -39,7 +39,7 @@ final class NavigationRenderer
             return false;
         }
 
-        return self::itemsContainCurrent($navigation->menu($menuName), $currentUrl);
+        return self::itemsContainCurrent($navigation->menu($menuName), self::normalizeUrl($currentUrl));
     }
 
     /**
@@ -51,16 +51,16 @@ final class NavigationRenderer
         string $rootPath,
         string $language,
         string $defaultLanguage,
-        string $currentUrl,
+        string $normalizedCurrentUrl,
     ): array
     {
         $html = '<ul>';
         $hasCurrent = false;
         foreach ($items as $item) {
             [$childrenHtml, $childHasCurrent] = $item->children !== []
-                ? self::renderItems($item->children, $rootPath, $language, $defaultLanguage, $currentUrl)
+                ? self::renderItems($item->children, $rootPath, $language, $defaultLanguage, $normalizedCurrentUrl)
                 : ['', false];
-            $isCurrent = self::isCurrentUrl($item->url, $currentUrl);
+            $isCurrent = self::isCurrentUrl($item->url, $normalizedCurrentUrl);
             $hasCurrent = $hasCurrent || $isCurrent || $childHasCurrent;
             $classes = [];
             if ($isCurrent) {
@@ -101,12 +101,12 @@ final class NavigationRenderer
     /**
      * @param list<NavigationItem> $items
      */
-    private static function itemsContainCurrent(array $items, string $currentUrl): bool
+    private static function itemsContainCurrent(array $items, string $normalizedCurrentUrl): bool
     {
         foreach ($items as $item) {
             if (
-                self::isCurrentUrl($item->url, $currentUrl)
-                || self::itemsContainCurrent($item->children, $currentUrl)
+                self::isCurrentUrl($item->url, $normalizedCurrentUrl)
+                || self::itemsContainCurrent($item->children, $normalizedCurrentUrl)
             ) {
                 return true;
             }
@@ -115,10 +115,9 @@ final class NavigationRenderer
         return false;
     }
 
-    private static function isCurrentUrl(string $url, string $currentUrl): bool
+    private static function isCurrentUrl(string $url, string $normalizedCurrentUrl): bool
     {
         $normalizedUrl = self::normalizeUrl($url);
-        $normalizedCurrentUrl = self::normalizeUrl($currentUrl);
 
         return $normalizedUrl !== '' && $normalizedUrl === $normalizedCurrentUrl;
     }
@@ -155,7 +154,7 @@ final class NavigationRenderer
         }
 
         return ' data-ui-menu-title="'
-            . Html::encodeAttribute((string) json_encode(
+            . Html::encodeAttribute(json_encode(
                 $item->titles,
                 JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT,
             ))

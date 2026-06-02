@@ -6,10 +6,21 @@ namespace YiiPress\Processor;
 
 use YiiPress\Content\Model\Entry;
 
+use function htmlspecialchars;
+use function mb_strtolower;
+use function preg_match;
+use function preg_replace;
+use function preg_replace_callback;
+use function preg_split;
 use function str_contains;
+use function strip_tags;
 
 final readonly class TagLinkProcessor implements ContentProcessorInterface
 {
+    private const HASHTAG_PATTERN = '/(?<!\w)#(\w+(?:-\w+)*)(?![\w-])/';
+    private const PROTECTED_BLOCK_PATTERN = '/<pre[^>]*>.*?<\/pre>|<code[^>]*>.*?<\/code>|<a[^>]*>.*?<\/a>/is';
+    private const HTML_SPLIT_PATTERN = '/(<pre[^>]*>.*?<\/pre>|<code[^>]*>.*?<\/code>|<a[^>]*>.*?<\/a>|<[^>]+>)/s';
+
     public function __construct(
         private string $rootPath = '/',
     ) {}
@@ -20,9 +31,13 @@ final readonly class TagLinkProcessor implements ContentProcessorInterface
             return $content;
         }
 
+        if (!$this->hasConvertibleHashtag($content)) {
+            return $content;
+        }
+
         // Protect pre/code/a blocks (their content shouldn't have hashtags converted)
         // Then split by remaining HTML tags to exclude hashtags in attributes
-        $parts = preg_split('/(<pre[^>]*>.*?<\/pre>|<code[^>]*>.*?<\/code>|<a[^>]*>.*?<\/a>|<[^>]+>)/s', $content, -1, PREG_SPLIT_DELIM_CAPTURE);
+        $parts = preg_split(self::HTML_SPLIT_PATTERN, $content, -1, PREG_SPLIT_DELIM_CAPTURE);
 
         if ($parts === false) {
             return $content;
@@ -50,8 +65,8 @@ final readonly class TagLinkProcessor implements ContentProcessorInterface
 
     private function convertHashtags(string $text): string
     {
-        return preg_replace_callback(
-            '/(?<!\w)#(\w+(?:-\w+)*)(?![\w-])/',
+        $result = preg_replace_callback(
+            self::HASHTAG_PATTERN,
             function (array $matches): string {
                 $tagDisplay = $matches[1];
                 $tagUrl = mb_strtolower($tagDisplay);
@@ -60,5 +75,17 @@ final readonly class TagLinkProcessor implements ContentProcessorInterface
             },
             $text
         );
+
+        return $result ?? $text;
+    }
+
+    private function hasConvertibleHashtag(string $content): bool
+    {
+        $visibleContent = preg_replace(self::PROTECTED_BLOCK_PATTERN, '', $content);
+        if ($visibleContent === null) {
+            return true;
+        }
+
+        return preg_match(self::HASHTAG_PATTERN, strip_tags($visibleContent)) === 1;
     }
 }
