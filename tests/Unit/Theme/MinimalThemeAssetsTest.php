@@ -44,6 +44,17 @@ final class MinimalThemeAssetsTest extends TestCase
         assertStringContainsString('.docs-layout {', $css);
         assertStringContainsString('grid-template-columns: 16rem minmax(0, var(--max-width)) 14rem;', $css);
         assertStringContainsString('.docs-sidebar-nav .is-current > a {', $css);
+        assertStringContainsString('.toc-sidebar .is-current > a {', $css);
         assertStringContainsString('.toc-sidebar-right {', $css);
+    }
+
+    public function testTocHighlightScriptTracksCurrentHeading(): void
+    {
+        $script = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/toc-highlight.js');
+
+        self::assertNotFalse($script);
+        assertStringContainsString("document.querySelectorAll('.toc-sidebar a[href^=\"#\"]')", $script);
+        assertStringContainsString("activeItem.listItem.classList.add('is-current');", $script);
+        assertStringContainsString("activeItem.link.setAttribute('aria-current', 'true');", $script);
     }
 }

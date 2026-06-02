@@ -489,6 +489,11 @@ a.tag-link:hover {
     color: var(--c-link);
     text-decoration: none;
 }
+.toc-sidebar .is-current > a {
+    border-left-color: var(--c-link);
+    color: var(--c-link);
+    font-weight: 600;
+}
 .toc-sidebar .toc-level-2 { padding-left: .75rem; }
 .toc-sidebar .toc-level-3 { padding-left: 1.5rem; }
 .toc-sidebar .toc-level-4 { padding-left: 2.25rem; }
