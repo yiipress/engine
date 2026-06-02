@@ -19,6 +19,7 @@ declare(strict_types=1);
  * @var list<array{id: string, text: string, level: int}> $toc
  * @var list<YiiPress\Content\Model\RelatedEntry> $related
  * @var list<YiiPress\Content\Model\Translation> $translations
+ * @var array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null $navigationPager
  * @var string $language
  * @var string $permalink
  * @var ?Navigation $nav
@@ -140,6 +141,24 @@ $useLegacyTocSidebar = !$useDocsLayout && $hasToc;
 <?php endforeach; ?>
                     </ul>
                 </section>
+<?php endif; ?>
+<?php if ($navigationPager !== null && ($navigationPager['previous'] !== null || $navigationPager['next'] !== null)): ?>
+                <nav class="entry-pager" aria-label="<?= $h($t('pagination')) ?>" data-ui-attr-aria-label="pagination">
+<?php if ($navigationPager['previous'] !== null): ?>
+                    <a class="entry-pager-link entry-pager-previous" href="<?= $h($navigationPager['previous']['url']) ?>" rel="prev">
+                        <span class="entry-pager-direction" data-ui-key="previous_page"><?= $h($t('previous_page')) ?></span>
+                        <span class="entry-pager-title"><?= $h($navigationPager['previous']['title']) ?></span>
+                    </a>
+<?php else: ?>
+                    <span></span>
+<?php endif; ?>
+<?php if ($navigationPager['next'] !== null): ?>
+                    <a class="entry-pager-link entry-pager-next" href="<?= $h($navigationPager['next']['url']) ?>" rel="next">
+                        <span class="entry-pager-direction" data-ui-key="next_page"><?= $h($t('next_page')) ?></span>
+                        <span class="entry-pager-title"><?= $h($navigationPager['next']['title']) ?></span>
+                    </a>
+<?php endif; ?>
+                </nav>
 <?php endif; ?>
             </article>
 <?php if ($useDocsLayout && $hasToc): ?>

@@ -59,6 +59,7 @@ feed: true
 - **entries_per_page** — number of entries per page, `0` for no pagination
 - **feed** — `true` to generate RSS/Atom feed for this collection
 - **listing** — `true` to generate a collection index page (default: `true`)
+- **navigation_pager** — `true` to render previous/next page links from the configured sidebar navigation (default: `false`)
 
 ## Entries
 
@@ -191,6 +192,8 @@ weight: 1
 ```
 
 Collection pages support sorting by weight, custom permalink patterns, and all other collection features.
+
+For root-level pages, place `_collection.yaml` in the content root. This is useful for documentation sites where standalone pages should share collection-level behavior such as `navigation_pager` without changing their URLs.
 
 ### Explicit entry order
 

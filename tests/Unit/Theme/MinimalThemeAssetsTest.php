@@ -48,6 +48,17 @@ final class MinimalThemeAssetsTest extends TestCase
         assertStringContainsString('.toc-sidebar-right {', $css);
     }
 
+    public function testStyleSupportsEntryNavigationPager(): void
+    {
+        $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');
+
+        self::assertNotFalse($css);
+        assertStringContainsString('.entry-pager {', $css);
+        assertStringContainsString('grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);', $css);
+        assertStringContainsString('.entry-pager-link {', $css);
+        assertStringContainsString('.entry-pager-title {', $css);
+    }
+
     public function testStylePreventsWideContentTablesFromOverlappingSidebars(): void
     {
         $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');

@@ -37,7 +37,7 @@ final readonly class ParallelEntryWriter
     ) {}
 
     /**
-     * @param list<array{entry: Entry, filePath: string, permalink: string}> $tasks
+     * @param list<array{entry: Entry, filePath: string, permalink: string, navigationPager?: array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null}> $tasks
      * @return int number of entries written
      */
     public function write(
@@ -78,14 +78,14 @@ final readonly class ParallelEntryWriter
     }
 
     /**
-     * @param list<array{entry: Entry, filePath: string, permalink: string}> $tasks
+     * @param list<array{entry: Entry, filePath: string, permalink: string, navigationPager?: array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null}> $tasks
      */
     private function writeEntries(SiteConfig $siteConfig, array $tasks, string $contentDir, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors, bool $noWrite): void
     {
         $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors, $this->assetManifest, $this->relatedIndex, $this->translationIndex);
 
         foreach ($tasks as $task) {
-            $html = $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver);
+            $html = $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver, $task['navigationPager'] ?? null);
             if (!$noWrite) {
                 file_put_contents($task['filePath'], $html);
             }
@@ -93,7 +93,7 @@ final readonly class ParallelEntryWriter
     }
 
     /**
-     * @param list<array{entry: Entry, filePath: string, permalink: string}> $tasks
+     * @param list<array{entry: Entry, filePath: string, permalink: string, navigationPager?: array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null}> $tasks
      */
     private function writeParallel(SiteConfig $siteConfig, array $tasks, string $contentDir, int $workerCount, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors, bool $noWrite): void
     {
@@ -111,7 +111,7 @@ final readonly class ParallelEntryWriter
                 $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors, $this->assetManifest, $this->relatedIndex, $this->translationIndex);
 
                 foreach ($chunk as $task) {
-                    $html = $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver);
+                    $html = $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver, $task['navigationPager'] ?? null);
                     if (!$noWrite) {
                         file_put_contents($task['filePath'], $html);
                     }
@@ -146,8 +146,8 @@ final readonly class ParallelEntryWriter
     }
 
     /**
-     * @param list<array{entry: Entry, filePath: string, permalink: string}> $tasks
-     * @return list<list<array{entry: Entry, filePath: string, permalink: string}>>
+     * @param list<array{entry: Entry, filePath: string, permalink: string, navigationPager?: array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null}> $tasks
+     * @return list<list<array{entry: Entry, filePath: string, permalink: string, navigationPager?: array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null}>>
      */
     private function partitionTasks(array $tasks, int $workerCount): array
     {

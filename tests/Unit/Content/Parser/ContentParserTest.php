@@ -9,7 +9,9 @@ use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertArrayHasKey;
 use function PHPUnit\Framework\assertCount;
+use function PHPUnit\Framework\assertFalse;
 use function PHPUnit\Framework\assertSame;
+use function PHPUnit\Framework\assertTrue;
 
 final class ContentParserTest extends TestCase
 {
@@ -33,7 +35,7 @@ final class ContentParserTest extends TestCase
     {
         $navigation = $this->parser->parseNavigation($this->dataDir);
 
-        assertSame(['main', 'footer'], $navigation->menuNames());
+        assertSame(['main', 'footer', 'sidebar'], $navigation->menuNames());
     }
 
     public function testParseCollections(): void
@@ -45,6 +47,24 @@ final class ContentParserTest extends TestCase
         assertArrayHasKey('page', $collections);
         assertSame('Blog', $collections['blog']->title);
         assertSame('Pages', $collections['page']->title);
+    }
+
+    public function testParseRootCollection(): void
+    {
+        $dir = sys_get_temp_dir() . '/yiipress-root-collection-' . uniqid();
+        mkdir($dir);
+        file_put_contents($dir . '/_collection.yaml', "navigation_pager: true\n");
+
+        try {
+            $collection = $this->parser->parseRootCollection($dir);
+
+            assertSame('', $collection->name);
+            assertTrue($collection->navigationPager);
+            assertFalse($collection->listing);
+        } finally {
+            unlink($dir . '/_collection.yaml');
+            rmdir($dir);
+        }
     }
 
     public function testParseEntries(): void

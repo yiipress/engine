@@ -38,6 +38,7 @@ final class CollectionConfigParser
             order: isset($data['order']) && is_array($data['order'])
                 ? array_values(array_map(strval(...), $data['order']))
                 : [],
+            navigationPager: (bool) ($data['navigation_pager'] ?? false),
         );
     }
 }

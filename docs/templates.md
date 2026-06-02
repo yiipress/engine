@@ -143,6 +143,7 @@ Built-in templates and partials expect `$ui` to be passed by the renderer; `Page
 | `$related`    | `list<RelatedEntry>` | Related entries ordered by relevance or empty list        |
 | `$language`   | `string`      | Effective language code for the current entry                    |
 | `$translations` | `list<Translation>` | Alternate-language versions of the current entry           |
+| `$navigationPager` | `?array{previous: ?array, next: ?array}` | Previous/next links resolved from sidebar navigation when enabled |
 
 Example:
 

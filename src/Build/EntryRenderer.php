@@ -46,10 +46,11 @@ final class EntryRenderer
         string $permalink = '',
         ?Navigation $navigation = null,
         ?CrossReferenceResolver $crossRefResolver = null,
+        ?array $navigationPager = null,
     ): string {
         $cacheContext = '';
         if ($this->cache !== null) {
-            $cacheContext = $this->cacheContext($siteConfig, $navigation, $crossRefResolver);
+            $cacheContext = $this->cacheContext($siteConfig, $navigation, $crossRefResolver, $navigationPager);
             $cached = $this->cache->get($entry->filePath, $cacheContext);
             if ($cached !== null) {
                 return $cached;
@@ -69,7 +70,7 @@ final class EntryRenderer
         $toc = $siteConfig->toc ? $this->pipeline->collectToc() : [];
         $related = $this->relatedIndex?->forEntry($entry->filePath) ?? [];
         $translations = $this->translationIndex?->forEntry($entry->filePath) ?? [];
-        $html = $this->renderTemplate($siteConfig, $entry, $content, $permalink, $navigation, $headAssets, $toc, $related, $translations);
+        $html = $this->renderTemplate($siteConfig, $entry, $content, $permalink, $navigation, $headAssets, $toc, $related, $translations, $navigationPager);
 
         if ($this->cache !== null) {
             $this->cache->set($entry->filePath, $html, $cacheContext);
@@ -82,10 +83,12 @@ final class EntryRenderer
         SiteConfig $siteConfig,
         ?Navigation $navigation,
         ?CrossReferenceResolver $crossRefResolver,
+        ?array $navigationPager,
     ): string {
         return hash('xxh128', serialize([
             'siteConfig' => $siteConfig,
             'navigation' => $navigation,
+            'navigationPager' => $navigationPager,
             'assets' => $this->assetManifest?->signature() ?? '',
             'crossReferences' => $crossRefResolver?->signature() ?? '',
             'related' => $this->relatedIndex?->signature() ?? '',
@@ -104,8 +107,9 @@ final class EntryRenderer
      * @param list<array{id: string, text: string, level: int}> $toc
      * @param list<\YiiPress\Content\Model\RelatedEntry> $related
      * @param list<\YiiPress\Content\Model\Translation> $translations
+     * @param array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null $navigationPager
      */
-    private function renderTemplate(SiteConfig $siteConfig, Entry $entry, string $content, string $permalink, ?Navigation $navigation, string $headAssets = '', array $toc = [], array $related = [], array $translations = []): string
+    private function renderTemplate(SiteConfig $siteConfig, Entry $entry, string $content, string $permalink, ?Navigation $navigation, string $headAssets = '', array $toc = [], array $related = [], array $translations = [], ?array $navigationPager = null): string
     {
         $themeName = $entry->theme !== '' ? $entry->theme : $siteConfig->theme;
         $templateName = $entry->layout !== '' ? $entry->layout : 'entry';
@@ -131,6 +135,7 @@ final class EntryRenderer
 
         $templateContext = $this->templateContexts[$themeName];
         $rootPath = RelativePathHelper::rootPath($permalink);
+        $navigationPager = $this->relativizeNavigationPager($navigationPager, $rootPath);
         $metaTags = MetaTagsBuilder::forEntry($siteConfig, $entry, $permalink, $translations);
         $language = $entry->language !== ''
             ? $entry->language
@@ -161,6 +166,7 @@ final class EntryRenderer
             'toc' => $toc,
             'related' => $related,
             'translations' => $translations,
+            'navigationPager' => $navigationPager,
             'language' => $language,
             'metaTags' => $metaTags,
             'partial' => $this->partialClosures[$themeName],
@@ -175,5 +181,24 @@ final class EntryRenderer
         $html = ($this->templateClosures[$templatePath])($variables);
 
         return $templateContext->rewriteHtml($html, $rootPath);
+    }
+
+    /**
+     * @param array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null $navigationPager
+     * @return array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null
+     */
+    private function relativizeNavigationPager(?array $navigationPager, string $rootPath): ?array
+    {
+        if ($navigationPager === null) {
+            return null;
+        }
+
+        foreach (['previous', 'next'] as $key) {
+            if ($navigationPager[$key] !== null && str_starts_with($navigationPager[$key]['url'], '/')) {
+                $navigationPager[$key]['url'] = RelativePathHelper::relativize($navigationPager[$key]['url'], $rootPath);
+            }
+        }
+
+        return $navigationPager;
     }
 }

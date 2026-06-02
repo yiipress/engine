@@ -72,6 +72,42 @@ final class EntryRendererTest extends TestCase
         assertStringContainsString('<title>Logo First — Test Site</title>', $html);
     }
 
+    public function testRendersNavigationPagerWhenProvided(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Current\n---\n\nBody.\n");
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Current');
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver(), contentDir: $this->contentDir);
+        $html = $renderer->render(
+            $this->createSiteConfig(),
+            $entry,
+            '/current/',
+            navigationPager: [
+                'previous' => ['title' => 'Previous Page', 'url' => '/previous/'],
+                'next' => ['title' => 'Next Page', 'url' => '/next/'],
+            ],
+        );
+
+        assertStringContainsString('class="entry-pager"', $html);
+        assertStringContainsString('href="../previous/" rel="prev"', $html);
+        assertStringContainsString('Previous Page', $html);
+        assertStringContainsString('href="../next/" rel="next"', $html);
+        assertStringContainsString('Next Page', $html);
+    }
+
+    public function testDoesNotRenderNavigationPagerWhenMissing(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Current\n---\n\nBody.\n");
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Current');
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver(), contentDir: $this->contentDir);
+        $html = $renderer->render($this->createSiteConfig(), $entry, '/current/');
+
+        assertStringNotContainsString('class="entry-pager"', $html);
+    }
+
     public function testUiLanguageIsIndependentFromEntryLanguage(): void
     {
         $entryFile = $this->contentDir . '/blog/post.md';

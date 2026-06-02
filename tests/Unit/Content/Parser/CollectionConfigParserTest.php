@@ -52,4 +52,19 @@ final class CollectionConfigParserTest extends TestCase
         assertTrue($collection->listing);
         assertSame(['faq', 'about'], $collection->order);
     }
+
+    public function testParsesNavigationPagerOption(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-collection-');
+        self::assertNotFalse($file);
+        file_put_contents($file, "title: Docs\nnavigation_pager: true\n");
+
+        try {
+            $collection = (new CollectionConfigParser())->parse($file, 'docs');
+
+            assertTrue($collection->navigationPager);
+        } finally {
+            unlink($file);
+        }
+    }
 }

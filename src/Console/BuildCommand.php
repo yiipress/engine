@@ -14,6 +14,7 @@ use YiiPress\Build\CollectionListingWriter;
 use YiiPress\Build\ContentAssetCopier;
 use YiiPress\Build\DateArchiveWriter;
 use YiiPress\Build\NotFoundPageWriter;
+use YiiPress\Build\NavigationPager;
 use YiiPress\Build\RedirectPageWriter;
 use YiiPress\Build\RobotsTxtGenerator;
 use YiiPress\Build\SearchIndexGenerator;
@@ -31,6 +32,7 @@ use YiiPress\Content\EntrySorter;
 use YiiPress\Content\Model\Author;
 use YiiPress\Content\Model\Collection;
 use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\Navigation;
 use YiiPress\Content\Model\SiteConfig;
 use YiiPress\Content\I18n\TranslationIndex;
 use YiiPress\Content\Parser\ContentParser;
@@ -306,6 +308,7 @@ final class BuildCommand extends Command
         $this->feedPipeline->applySiteConfig($siteConfig);
         $navigation = $parser->parseNavigation($contentDir);
         $collections = $parser->parseCollections($contentDir);
+        $rootCollection = $parser->parseRootCollection($contentDir);
         $authors = iterator_to_array($parser->parseAuthors($contentDir));
         $parser->setAuthors($authors);
 
@@ -423,6 +426,13 @@ final class BuildCommand extends Command
             $entriesByCollection[$collectionName] = EntrySorter::sort($filtered, $collection);
         }
 
+        foreach ($allTasks as $index => $task) {
+            $collection = $collections[$task['entry']->collection] ?? null;
+            if ($collection !== null) {
+                $allTasks[$index] = $this->withNavigationPager($task, $collection, $siteConfig, $navigation);
+            }
+        }
+
         $cache = null;
         if (!$noCache && !$noWrite) {
             $cacheDir = RuntimePaths::cachePath($rootPath) . '/build';
@@ -523,12 +533,18 @@ final class BuildCommand extends Command
             if ($page->redirectTo !== '') {
                 $standaloneRedirectTasks[] = ['entry' => $page, 'filePath' => $filePath, 'sourcePath' => $sourcePath];
             } else {
-                $standaloneTasks[] = [
+                $standaloneTask = [
                     'entry' => $page,
                     'filePath' => $filePath,
                     'permalink' => $permalink,
                     'sourcePath' => $sourcePath,
                 ];
+                $standaloneTasks[] = $this->withNavigationPager(
+                    $standaloneTask,
+                    $rootCollection,
+                    $siteConfig,
+                    $navigation,
+                );
             }
         }
 
@@ -1160,6 +1176,7 @@ final class BuildCommand extends Command
     {
         $configFiles = array_filter([
             $contentDir . '/config.yaml',
+            $contentDir . '/_collection.yaml',
             $contentDir . '/navigation.yaml',
         ], is_file(...));
 
@@ -1205,6 +1222,34 @@ final class BuildCommand extends Command
             'allSourceFiles' => [...$contentFiles, ...$assetSourceFiles, ...$configFiles],
             'configFiles' => $configFiles,
         ];
+    }
+
+    /**
+     * @param array{entry: Entry, filePath: string, permalink: string, sourcePath: string} $task
+     * @return array{entry: Entry, filePath: string, permalink: string, sourcePath: string, navigationPager?: array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null}
+     */
+    private function withNavigationPager(array $task, Collection $collection, SiteConfig $siteConfig, Navigation $navigation): array
+    {
+        if (!$collection->navigationPager) {
+            return $task;
+        }
+
+        $language = $task['entry']->language !== ''
+            ? $task['entry']->language
+            : ($siteConfig->i18n?->defaultLanguage ?? $siteConfig->defaultLanguage);
+        $navigationPager = NavigationPager::forUrl(
+            $navigation,
+            'sidebar',
+            $task['permalink'],
+            $language,
+            $siteConfig->defaultLanguage,
+        );
+
+        if ($navigationPager !== null) {
+            $task['navigationPager'] = $navigationPager;
+        }
+
+        return $task;
     }
 
 

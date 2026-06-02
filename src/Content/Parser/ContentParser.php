@@ -56,6 +56,40 @@ final class ContentParser
         return $this->navigationParser->parse($path);
     }
 
+    public function parseRootCollection(string $contentDir): Collection
+    {
+        $path = $contentDir . '/_collection.yaml';
+        if (file_exists($path)) {
+            $collection = $this->collectionConfigParser->parse($path, '');
+
+            return new Collection(
+                name: $collection->name,
+                title: $collection->title,
+                description: $collection->description,
+                permalink: $collection->permalink,
+                sortBy: $collection->sortBy,
+                sortOrder: $collection->sortOrder,
+                entriesPerPage: $collection->entriesPerPage,
+                feed: false,
+                listing: false,
+                order: $collection->order,
+                navigationPager: $collection->navigationPager,
+            );
+        }
+
+        return new Collection(
+            name: '',
+            title: '',
+            description: '',
+            permalink: '/:slug/',
+            sortBy: 'weight',
+            sortOrder: 'asc',
+            entriesPerPage: 0,
+            feed: false,
+            listing: false,
+        );
+    }
+
     /**
      * @return array<string, Collection>
      */
