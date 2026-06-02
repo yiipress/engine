@@ -61,6 +61,16 @@ final class MinimalThemeAssetsTest extends TestCase
         assertStringContainsString('.toc-sidebar-right {', $css);
     }
 
+    public function testStyleSupportsHeadingPermalinks(): void
+    {
+        $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');
+
+        self::assertNotFalse($css);
+        assertStringContainsString('.content .header-anchor {', $css);
+        assertStringContainsString('content: "#";', $css);
+        assertStringContainsString('.content .header-anchor:focus {', $css);
+    }
+
     public function testStyleSupportsEntryNavigationPager(): void
     {
         $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');

@@ -255,6 +255,26 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
 .content h2 { font-size: 1.5rem; font-weight: 600; margin: 2rem 0 .75rem; }
 .content h3 { font-size: 1.25rem; font-weight: 600; margin: 1.75rem 0 .5rem; }
 .content h4 { font-size: 1.0625rem; font-weight: 600; margin: 1.5rem 0 .5rem; }
+.content :is(h1, h2, h3, h4, h5, h6) {
+    position: relative;
+    scroll-margin-top: 1.5rem;
+}
+.content .header-anchor {
+    display: inline-block;
+    margin-left: .35em;
+    color: var(--c-link);
+    font-weight: 500;
+    opacity: 0;
+    text-decoration: none;
+    transition: opacity .15s;
+}
+.content .header-anchor::before {
+    content: "#";
+}
+.content :is(h1, h2, h3, h4, h5, h6):hover .header-anchor,
+.content .header-anchor:focus {
+    opacity: 1;
+}
 .content p { margin-bottom: 1.25rem; }
 .content ul, .content ol { margin: 0 0 1.25rem 1.5rem; }
 .content li { margin-bottom: .25rem; }

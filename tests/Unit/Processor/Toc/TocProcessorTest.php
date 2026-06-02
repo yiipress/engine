@@ -33,6 +33,17 @@ final class TocProcessorTest extends TestCase
         assertStringContainsString('id="hello-world"', $result);
     }
 
+    public function testInjectsHeaderAnchorIntoHeadings(): void
+    {
+        $html = '<h2>Hello World</h2>';
+        $result = $this->processor->process($html, $this->entry);
+
+        assertStringContainsString(
+            '<h2 id="hello-world">Hello World<a class="header-anchor" href="#hello-world" aria-label="Permalink to &quot;Hello World&quot;"></a></h2>',
+            $result,
+        );
+    }
+
     public function testAllHeadingLevelsAreProcessed(): void
     {
         $html = '<h1>One</h1><h2>Two</h2><h3>Three</h3><h4>Four</h4><h5>Five</h5><h6>Six</h6>';
@@ -97,6 +108,15 @@ final class TocProcessorTest extends TestCase
         assertStringNotContainsString('id="my-heading"', $result);
     }
 
+    public function testInjectsHeaderAnchorIntoHeadingsWithExistingId(): void
+    {
+        $html = '<h2 id="custom-id">My Heading</h2>';
+        $result = $this->processor->process($html, $this->entry);
+
+        assertStringContainsString('href="#custom-id"', $result);
+        assertStringContainsString('class="header-anchor"', $result);
+    }
+
     public function testCollectsExistingIdIntoToc(): void
     {
         $html = '<h2 id="custom-id">My Heading</h2>';
@@ -105,6 +125,16 @@ final class TocProcessorTest extends TestCase
 
         assertCount(1, $toc);
         assertSame('custom-id', $toc[0]['id']);
+    }
+
+    public function testExistingHeaderAnchorIsNotDuplicatedOrCollectedAsText(): void
+    {
+        $html = '<h2 id="custom-id"><a class="header-anchor" href="#custom-id" aria-label="Permalink to &quot;My Heading&quot;"></a>My Heading</h2>';
+        $result = $this->processor->process($html, $this->entry);
+        $toc = $this->processor->getToc();
+
+        assertSame(1, substr_count($result, 'class="header-anchor"'));
+        assertSame('My Heading', $toc[0]['text']);
     }
 
     public function testTocResetsBetweenProcessCalls(): void

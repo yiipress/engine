@@ -336,8 +336,9 @@ toc: false
 
 When enabled, the processor:
 - Injects `id` attributes into all heading tags (`<h1>`–`<h6>`), slugified from the heading text
+- Renders a hover permalink anchor inside each heading
 - Deduplicates IDs by appending a numeric suffix (`intro`, `intro-2`, `intro-3`)
-- Leaves headings that already have an `id` attribute unchanged
+- Keeps existing heading `id` attributes unchanged
 - Passes a `$toc` variable to entry templates — a list of `{id, text, level}` entries
 
 Templates can render the TOC as a navigation list:

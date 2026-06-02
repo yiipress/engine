@@ -17,11 +17,11 @@ use function strip_tags;
 use function trim;
 
 /**
- * Injects `id` attributes into heading tags and collects table of contents data.
+ * Injects `id` attributes and permalink anchors into heading tags and collects table of contents data.
  *
  * Runs on the final rendered HTML (after markdown, syntax highlighting, etc.).
  * Heading IDs are slugified from the heading text; duplicates get a numeric suffix.
- * Headings that already have an `id` attribute are left unchanged but still collected.
+ * Headings that already have an `id` attribute keep that ID but still get a permalink anchor.
  */
 final class TocProcessor implements ContentProcessorInterface, TocAwareInterface
 {
@@ -45,12 +45,13 @@ final class TocProcessor implements ContentProcessorInterface, TocAwareInterface
                 $attrs = $matches[2] ?? '';
                 $inner = $matches[3];
                 $level = (int) $tag[1];
-                $text = trim(strip_tags($inner));
+                $innerWithoutAnchor = $this->removeHeaderAnchor($inner);
+                $text = trim(strip_tags($innerWithoutAnchor));
 
-                // If already has an id, collect but don't modify
                 if (preg_match('/\bid\s*=\s*["\']([^"\']+)["\']/', $attrs, $idMatch)) {
-                    $this->toc[] = ['id' => $idMatch[1], 'text' => $text, 'level' => $level];
-                    return $matches[0];
+                    $id = $idMatch[1];
+                    $this->toc[] = ['id' => $id, 'text' => $text, 'level' => $level];
+                    return "<$tag$attrs>" . $this->withHeaderAnchor($inner, $id, $text) . "</$tag>";
                 }
 
                 $slug = $this->slugify($text);
@@ -66,7 +67,7 @@ final class TocProcessor implements ContentProcessorInterface, TocAwareInterface
                 $this->toc[] = ['id' => $id, 'text' => $text, 'level' => $level];
 
                 $escapedId = htmlspecialchars($id, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-                return "<$tag$attrs id=\"$escapedId\">$inner</$tag>";
+                return "<$tag$attrs id=\"$escapedId\">" . $this->withHeaderAnchor($inner, $id, $text) . "</$tag>";
             },
             $content,
         );
@@ -83,5 +84,23 @@ final class TocProcessor implements ContentProcessorInterface, TocAwareInterface
         $slug = (string) preg_replace('/[^\p{L}\p{N}]+/u', '-', $slug);
         $slug = trim($slug, '-');
         return $slug !== '' ? $slug : 'heading';
+    }
+
+    private function withHeaderAnchor(string $inner, string $id, string $text): string
+    {
+        if (str_contains($inner, 'header-anchor')) {
+            return $inner;
+        }
+
+        $escapedId = htmlspecialchars($id, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $escapedText = htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $label = $escapedText === '' ? 'Permalink to this heading' : 'Permalink to &quot;' . $escapedText . '&quot;';
+
+        return $inner . '<a class="header-anchor" href="#' . $escapedId . '" aria-label="' . $label . '"></a>';
+    }
+
+    private function removeHeaderAnchor(string $inner): string
+    {
+        return (string) preg_replace('/<a\b[^>]*class=["\'][^"\']*\bheader-anchor\b[^"\']*["\'][^>]*>.*?<\/a>/si', '', $inner);
     }
 }
