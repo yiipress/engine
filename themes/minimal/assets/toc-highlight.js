@@ -36,7 +36,17 @@
 
         function update() {
             var active = items[0];
-            var offset = 96;
+            var offset = Math.min(Math.max(window.innerHeight * 0.4, 160), 360);
+            var scrollBottom = window.scrollY + window.innerHeight;
+            var documentHeight = Math.max(
+                document.body.scrollHeight,
+                document.documentElement.scrollHeight
+            );
+
+            if (scrollBottom >= documentHeight - 2) {
+                setActive(items[items.length - 1]);
+                return;
+            }
 
             items.forEach(function (item) {
                 if (item.heading.getBoundingClientRect().top <= offset) {

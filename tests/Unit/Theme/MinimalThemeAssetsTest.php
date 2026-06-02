@@ -70,5 +70,8 @@ final class MinimalThemeAssetsTest extends TestCase
         assertStringContainsString("document.querySelectorAll('.toc-sidebar a[href^=\"#\"]')", $script);
         assertStringContainsString("activeItem.listItem.classList.add('is-current');", $script);
         assertStringContainsString("activeItem.link.setAttribute('aria-current', 'true');", $script);
+        assertStringContainsString('Math.min(Math.max(window.innerHeight * 0.4, 160), 360)', $script);
+        assertStringContainsString('scrollBottom >= documentHeight - 2', $script);
+        assertStringContainsString('setActive(items[items.length - 1]);', $script);
     }
 }
