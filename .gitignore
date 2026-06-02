@@ -34,3 +34,7 @@ benchmarks/data
 
 # Build cache
 runtime/cache
+
+# LLMs
+
+/.codex

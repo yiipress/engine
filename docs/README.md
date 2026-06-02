@@ -5,7 +5,7 @@ permalink: "/"
 # YiiPress Documentation
 
 <p align="center">
-    <img src="/assets/logo.svg" height="100px" alt="YiiPress">
+    <img src="/assets/logo.svg" height="140" alt="YiiPress">
 </p>
 
 [YiiPress](https://github.com/yiipress/engine) turns Markdown files into a fast static website. Use the static binary for day-to-day work: no PHP, Composer, database, or application server is needed for building or serving a preview.

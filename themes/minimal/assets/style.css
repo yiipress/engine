@@ -280,7 +280,8 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
     border-radius: .25rem;
     transition: background .2s;
 }
-.content img { max-width: 100%; height: auto; border-radius: .5rem; margin: 1.25rem 0; }
+.content img { max-width: 100%; border-radius: .5rem; margin: 1.25rem 0; }
+.content img:not([height]) { height: auto; }
 .entry-footer {
     margin-top: 2rem;
 }
