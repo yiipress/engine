@@ -146,6 +146,8 @@ Writers turn page objects and indexed aggregate data into files:
 
 Entry pages and standalone pages can be rendered and written in parallel because each page writes to its own destination path.
 
+Scaffolding commands, cleanup commands, and importer media copying use `yiisoft/files` helpers for consistent filesystem errors and cross-platform directory removal. Build-path directory setup, page writes, output preparation, and bulk asset writer loops keep direct filesystem operations on their hot paths unless benchmarks show a helper abstraction is neutral or faster.
+
 ## Performance Model
 
 Performance is handled by doing less work, keeping expensive work native, and letting PHP orchestrate the pipeline:

@@ -10,14 +10,13 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Yiisoft\Files\FileHelper;
 use Yiisoft\Yii\Console\ExitCode;
 
 use function array_keys;
 use function dirname;
 use function file_exists;
 use function file_put_contents;
-use function is_dir;
-use function mkdir;
 use function sprintf;
 use function str_starts_with;
 
@@ -65,10 +64,7 @@ final class InitCommand extends Command
         }
 
         foreach ($files as $filePath => $contents) {
-            $directory = dirname($filePath);
-            if (!is_dir($directory) && !mkdir($directory, 0o755, true) && !is_dir($directory)) {
-                throw new RuntimeException(sprintf('Directory "%s" was not created', $directory));
-            }
+            FileHelper::ensureDirectory(dirname($filePath), 0o755);
 
             if (file_put_contents($filePath, $contents) === false) {
                 throw new RuntimeException(sprintf('File "%s" was not written', $filePath));

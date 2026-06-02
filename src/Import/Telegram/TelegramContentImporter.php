@@ -7,7 +7,7 @@ namespace YiiPress\Import\Telegram;
 use YiiPress\Import\ContentImporterInterface;
 use YiiPress\Import\ImporterOption;
 use YiiPress\Import\ImportResult;
-use RuntimeException;
+use Yiisoft\Files\FileHelper;
 
 use function count;
 use function is_array;
@@ -91,9 +91,7 @@ final class TelegramContentImporter implements ContentImporterInterface
 
         $collectionDir = $targetDirectory . '/' . $collection;
 
-        if (!is_dir($collectionDir) && !mkdir($collectionDir, 0o755, true) && !is_dir($collectionDir)) {
-            throw new RuntimeException(sprintf('Directory "%s" was not created', $collectionDir));
-        }
+        FileHelper::ensureDirectory($collectionDir, 0o755);
 
         $assetsDir = $collectionDir . '/assets';
 
@@ -223,22 +221,18 @@ final class TelegramContentImporter implements ContentImporterInterface
 
         $realSourceDir = realpath($sourceDirectory);
         $realSourcePath = realpath($sourcePath);
-        if (
-            $realSourceDir === false
-            || $realSourcePath === false
-            || !str_starts_with($realSourcePath, $realSourceDir . DIRECTORY_SEPARATOR)
-        ) {
+        if ($realSourceDir === false || $realSourcePath === false) {
             return '';
         }
 
-        if (!is_dir($assetsDir) && !mkdir($assetsDir, 0o755, true) && !is_dir($assetsDir)) {
-            throw new RuntimeException(sprintf('Directory "%s" was not created', $assetsDir));
+        if (!str_starts_with($realSourcePath, $realSourceDir . DIRECTORY_SEPARATOR)) {
+            return '';
         }
 
         $info = pathinfo($relativePath);
         $targetPath = $assetsDir . '/' . ($info['filename'] ?? 'file') . '.' . ($info['extension'] ?? '');
 
-        copy($realSourcePath, $targetPath);
+        FileHelper::copyFile($realSourcePath, $targetPath, ['dirMode' => 0o755]);
 
         return $targetPath;
     }
