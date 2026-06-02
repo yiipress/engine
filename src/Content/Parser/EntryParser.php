@@ -93,6 +93,7 @@ final readonly class EntryParser
             bodyLength: $result['bodyLength'],
             image: (string) ($fields['image'] ?? ''),
             translationKey: (string) ($fields['translation_key'] ?? ''),
+            showTitle: (bool) ($fields['showTitle'] ?? true),
         );
     }
 

@@ -38,6 +38,7 @@ final class Entry
         public string $image = '',
         public array $inlineTags = [],
         public string $translationKey = '',
+        public bool $showTitle = true,
     ) {}
 
     private ?string $bodyCache = null;

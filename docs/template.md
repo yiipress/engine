@@ -135,6 +135,8 @@ Built-in templates and partials expect `$ui` to be passed by the renderer; `Page
 | `$dateISO`    | `string`      | ISO 8601 date (`Y-m-d`) for HTML5 `datetime` attribute or empty |
 | `$author`     | `string`      | Comma-separated author names                                     |
 | `$collection` | `string`      | Collection name the entry belongs to                             |
+| `$extra`      | `array<string, mixed>` | Custom front matter under `extra`                         |
+| `$showTitle`  | `bool`        | Whether the bundled entry template renders the generated `<h1>`  |
 | `$permalink`  | `string`      | Current entry permalink                                          |
 | `$nav`        | `?Navigation` | Navigation object or `null`                                      |
 | `$toc`        | `list<array>` | Table of contents entries (`{id, text, level}`) or empty list    |
@@ -157,7 +159,7 @@ Example:
 </article>
 ```
 
-**Note:** Use `$dateISO` for the `datetime` attribute (HTML5 compliance) and `$date` for display text (uses configured format).
+**Note:** Use `$dateISO` for the `datetime` attribute (HTML5 compliance) and `$date` for display text (uses configured format). In the bundled `minimal` theme, set top-level `showTitle: false` to suppress the generated entry `<h1>` while keeping the page title available for metadata and navigation.
 The bundled `minimal` theme also uses `$ui` to localize built-in labels such as
 "Related posts", "Other languages", "Search", pagination controls, and the remembered UI-language selector in the header.
 
@@ -407,7 +409,7 @@ layout: wide
 
 The build process looks for `wide.php` in the active theme, then falls back to the built-in `entry.php` if not found.
 
-Custom layout templates receive the same variables as the default entry template (`$siteTitle`, `$entryTitle`, `$content`, `$date`, `$author`, `$collection`, `$nav`).
+Custom layout templates receive the same variables as the default entry template (`$siteTitle`, `$entryTitle`, `$content`, `$date`, `$author`, `$collection`, `$extra`, `$showTitle`, `$nav`).
 
 ### Example
 

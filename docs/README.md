@@ -1,8 +1,8 @@
 ---
 permalink: "/"
+title: "YiiPress Documentation"
+showTitle: false
 ---
-
-# YiiPress Documentation
 
 <p align="center">
     <img src="/assets/logo.svg" height="140" alt="YiiPress">

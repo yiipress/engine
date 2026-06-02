@@ -58,6 +58,20 @@ final class EntryRendererTest extends TestCase
         assertStringContainsString("root.style.colorScheme = theme;", $html);
     }
 
+    public function testCanHideDefaultTemplateTitle(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Logo First\n---\n\n<p>Logo</p>\n");
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Logo First', showTitle: false);
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver(), contentDir: $this->contentDir);
+        $html = $renderer->render($this->createSiteConfig(), $entry);
+
+        assertStringNotContainsString('<h1>Logo First</h1>', $html);
+        assertStringContainsString('<p>Logo</p>', $html);
+        assertStringContainsString('<title>Logo First — Test Site</title>', $html);
+    }
+
     public function testUiLanguageIsIndependentFromEntryLanguage(): void
     {
         $entryFile = $this->contentDir . '/blog/post.md';
@@ -308,6 +322,8 @@ PHP);
         array $authors = [],
         array $tags = [],
         string $language = '',
+        array $extra = [],
+        bool $showTitle = true,
     ): Entry {
         $content = file_get_contents($filePath);
         $bodyMarker = "---\n\n";
@@ -336,10 +352,11 @@ PHP);
             weight: 0,
             language: $language,
             redirectTo: '',
-            extra: [],
+            extra: $extra,
             bodyOffset: $bodyOffset,
             bodyLength: $bodyLength,
             inlineTags: $inlineTags,
+            showTitle: $showTitle,
         );
     }
 

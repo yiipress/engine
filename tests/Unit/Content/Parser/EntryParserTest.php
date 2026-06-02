@@ -133,4 +133,21 @@ final class EntryParserTest extends TestCase
             unlink($filePath);
         }
     }
+
+    public function testParsesTopLevelShowTitle(): void
+    {
+        $filePath = tempnam(sys_get_temp_dir(), 'yiipress-entry-');
+        self::assertNotFalse($filePath);
+
+        file_put_contents($filePath, "---\ntitle: Logo First\nshowTitle: false\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($filePath, 'pages');
+
+            assertFalse($entry->showTitle);
+            assertSame([], $entry->extra);
+        } finally {
+            unlink($filePath);
+        }
+    }
 }

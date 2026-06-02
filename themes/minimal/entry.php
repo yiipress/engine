@@ -13,6 +13,8 @@ declare(strict_types=1);
  * @var list<string> $tags
  * @var list<string> $categories
  * @var string $collection
+ * @var array<string, mixed> $extra
+ * @var bool $showTitle
  * @var string $headAssets
  * @var list<array{id: string, text: string, level: int}> $toc
  * @var list<YiiPress\Content\Model\RelatedEntry> $related
@@ -75,7 +77,9 @@ $useLegacyTocSidebar = !$useDocsLayout && $hasToc;
             </aside>
 <?php endif; ?>
             <article<?= $useDocsLayout ? ' class="docs-content"' : '' ?>>
+<?php if ($showTitle): ?>
             <h1><?= $h($entryTitle) ?></h1>
+<?php endif; ?>
 <?php if ($draft || ($dateISO !== '' && $dateISO > date('Y-m-d')) || $date !== '' || $author !== ''): ?>
             <div class="entry-meta">
 <?php if ($draft): ?>
