@@ -48,6 +48,19 @@ final class BenchmarkFixtureTest extends TestCase
         assertSame('Entry 0: Benchmark Post', $entry->title);
     }
 
+    public function testBenchmarkDataGeneratorIsDevAutoloaded(): void
+    {
+        $composer = json_decode(
+            (string) file_get_contents(dirname(__DIR__, 3) . '/composer.json'),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+
+        self::assertIsArray($composer);
+        self::assertSame('benchmarks/src', $composer['autoload-dev']['psr-4']['YiiPress\\Benchmark\\'] ?? null);
+        self::assertArrayNotHasKey('YiiPress\\Benchmark\\', $composer['autoload']['psr-4'] ?? []);
+    }
+
     public function testRealisticBenchmarkFixtureEntryHasTitle(): void
     {
         $entry = $this->parser->parse($this->benchmarksDir . '/realistic-content/collection-0/2024-01-01-entry-0.md', 'collection-0');

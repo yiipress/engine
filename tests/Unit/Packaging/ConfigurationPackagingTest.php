@@ -11,6 +11,7 @@ use YiiPress\Console\ImportCommand;
 use YiiPress\Console\NewCommand;
 use YiiPress\Console\ServeCommand;
 use YiiPress\Build\PharArchiveFilter;
+use YiiPress\Build\PhpDocStripper;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -18,8 +19,6 @@ use function chdir;
 use function getcwd;
 use function mkdir;
 use function PHPUnit\Framework\assertSame;
-
-require_once dirname(__DIR__, 3) . '/build/PharArchiveFilter.php';
 
 final class ConfigurationPackagingTest extends TestCase
 {
@@ -387,8 +386,67 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('COPY public /app/public', $stage);
         self::assertStringContainsString('COPY src /app/src', $stage);
         self::assertStringContainsString('COPY themes /app/themes', $stage);
-        self::assertStringContainsString('COPY build/package-phar.php build/PharArchiveFilter.php /app/build/', $stage);
+        self::assertStringContainsString(
+            'COPY build/package-phar.php build/PharArchiveFilter.php build/PhpDocStripper.php /app/build/',
+            $stage,
+        );
         self::assertStringContainsString('COPY yii composer.json composer.lock /app/', $stage);
+    }
+
+    #[Test]
+    public function pharBuilderStripsPhpDocFromPackagedPhpFiles(): void
+    {
+        $packageScript = file_get_contents(dirname(__DIR__, 3) . '/build/package-phar.php');
+        $composer = json_decode(
+            (string) file_get_contents(dirname(__DIR__, 3) . '/composer.json'),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+        self::assertIsString($packageScript);
+        self::assertIsArray($composer);
+
+        self::assertStringContainsString('require_once __DIR__ . \'/PhpDocStripper.php\';', $packageScript);
+        self::assertStringContainsString('str_replace(\'\\\\\', \'/\', substr($fullPath', $packageScript);
+        self::assertStringContainsString('PhpDocStripper::shouldStrip($localPath)', $packageScript);
+        self::assertStringContainsString('PhpDocStripper::strip($contents)', $packageScript);
+        self::assertStringContainsString('$phar->addFromString($localPath', $packageScript);
+        self::assertContains('build/PharArchiveFilter.php', $composer['autoload-dev']['classmap'] ?? []);
+        self::assertContains('build/PhpDocStripper.php', $composer['autoload-dev']['classmap'] ?? []);
+        self::assertArrayNotHasKey('classmap', $composer['autoload']);
+        self::assertTrue(PhpDocStripper::shouldStrip('src/Render/MarkdownRenderer.php'));
+        self::assertTrue(PhpDocStripper::shouldStrip('vendor/acme/package/src/Runtime.php'));
+        self::assertTrue(PhpDocStripper::shouldStrip('vendor\\acme\\package\\src\\Runtime.php'));
+        self::assertFalse(PhpDocStripper::shouldStrip('themes/minimal/entry.html'));
+        self::assertFalse(PhpDocStripper::shouldStrip('vendor/cebe/markdown/Parser.php'));
+        self::assertFalse(PhpDocStripper::shouldStrip('vendor\\cebe\\markdown\\Parser.php'));
+        self::assertFalse(PhpDocStripper::shouldStrip('vendor/cebe/markdown/inline/LinkTrait.php'));
+
+        $code = <<<'PHP'
+<?php
+
+/**
+ * Class documentation.
+ */
+final class Example
+{
+    // Runtime comment kept.
+
+    /**
+     * Method documentation.
+     */
+    public function run(): void
+    {
+    }
+}
+PHP;
+
+        $stripped = PhpDocStripper::strip($code);
+
+        self::assertStringNotContainsString('Class documentation', $stripped);
+        self::assertStringNotContainsString('Method documentation', $stripped);
+        self::assertStringContainsString('// Runtime comment kept.', $stripped);
+        self::assertStringContainsString('final class Example', $stripped);
+        self::assertStringContainsString('public function run(): void', $stripped);
     }
 
     #[Test]
@@ -408,6 +466,20 @@ final class ConfigurationPackagingTest extends TestCase
         );
         self::assertStringContainsString('Invoke-NativeCommand "rustup" @("target", "add", $env:CARGO_BUILD_TARGET)', $windowsScript);
         self::assertStringContainsString('rustup target add "$CARGO_BUILD_TARGET"', $macosScript);
+    }
+
+    #[Test]
+    public function platformPackageScriptsUseStrippedPharBuilderSupportFiles(): void
+    {
+        $windowsScript = file_get_contents(dirname(__DIR__, 3) . '/build/package-windows.ps1');
+        $macosScript = file_get_contents(dirname(__DIR__, 3) . '/build/package-macos.sh');
+        self::assertIsString($windowsScript);
+        self::assertIsString($macosScript);
+
+        self::assertStringContainsString('build/PhpDocStripper.php', $macosScript);
+        self::assertStringContainsString('build/PhpDocStripper.php', $windowsScript);
+        self::assertStringContainsString('Invoke-NativeCommand "php" @("-d", "phar.readonly=0", "build/package-phar.php", $pharPath)', $windowsScript);
+        self::assertStringContainsString('invoke php -d phar.readonly=0 build/package-phar.php "$PHAR_PATH"', $macosScript);
     }
 
     #[Test]
@@ -456,7 +528,12 @@ final class ConfigurationPackagingTest extends TestCase
     public function pharBuilderExcludesVendorNonRuntimeFiles(): void
     {
         foreach ([
+            'config/.gitignore',
             'runtime/cache/build-manifest.json',
+            'vendor/composer/installed.json',
+            'vendor\\composer\\installed.json',
+            'vendor/nikic/fast-route/FastRoute.hhi',
+            'vendor\\nikic\\fast-route\\FastRoute.hhi',
             'vendor/bin/phpunit',
             'vendor/acme/package/tests/FeatureTest.php',
             'vendor/acme/package/test/FeatureTest.php',
@@ -486,6 +563,7 @@ final class ConfigurationPackagingTest extends TestCase
             'src/Console/BuildCommand.php',
             'themes/default/layout.php',
             'vendor/composer/autoload_real.php',
+            'vendor\\composer\\autoload_real.php',
             'vendor/composer/installed.php',
             'vendor/acme/package/src/Runtime.php',
             'vendor/acme/package/LICENSE',

@@ -7,6 +7,7 @@ namespace YiiPress\Build;
 use function basename;
 use function explode;
 use function in_array;
+use function str_replace;
 use function strtolower;
 use function str_contains;
 use function str_ends_with;
@@ -16,7 +17,13 @@ final class PharArchiveFilter
 {
     public static function shouldExclude(string $path): bool
     {
+        $path = str_replace('\\', '/', $path);
+
         if (str_starts_with($path, 'runtime/')) {
+            return true;
+        }
+
+        if ($path === 'config/.gitignore') {
             return true;
         }
 
@@ -25,7 +32,7 @@ final class PharArchiveFilter
         }
 
         if (str_starts_with($path, 'vendor/composer/')) {
-            return false;
+            return basename($path) === 'installed.json';
         }
 
         if (str_starts_with($path, 'vendor/bin/')) {
@@ -68,7 +75,11 @@ final class PharArchiveFilter
             return false;
         }
 
-        if (str_ends_with($lowerBasename, '.md') || str_ends_with($lowerBasename, '.rst')) {
+        if (
+            str_ends_with($lowerBasename, '.hhi')
+            || str_ends_with($lowerBasename, '.md')
+            || str_ends_with($lowerBasename, '.rst')
+        ) {
             return true;
         }
 
