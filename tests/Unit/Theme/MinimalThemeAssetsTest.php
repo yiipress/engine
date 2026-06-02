@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 
 use function file_get_contents;
 use function PHPUnit\Framework\assertStringContainsString;
+use function PHPUnit\Framework\assertStringNotContainsString;
 
 final class MinimalThemeAssetsTest extends TestCase
 {
@@ -43,6 +44,7 @@ final class MinimalThemeAssetsTest extends TestCase
         self::assertNotFalse($css);
         assertStringContainsString('.docs-layout {', $css);
         assertStringContainsString('grid-template-columns: 16rem minmax(0, var(--max-width)) 14rem;', $css);
+        assertStringNotContainsString('.docs-layout:not(.docs-layout-with-toc)', $css);
         assertStringContainsString('.docs-sidebar-nav .is-current > a {', $css);
         assertStringContainsString('.toc-sidebar .is-current > a {', $css);
         assertStringContainsString('.toc-sidebar-right {', $css);

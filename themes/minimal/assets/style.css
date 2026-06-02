@@ -546,10 +546,6 @@ a.tag-link:hover {
     gap: 2.5rem;
     align-items: start;
 }
-.docs-layout:not(.docs-layout-with-toc) {
-    grid-template-columns: 16rem minmax(0, var(--max-width));
-    justify-content: center;
-}
 .docs-content {
     min-width: 0;
 }
