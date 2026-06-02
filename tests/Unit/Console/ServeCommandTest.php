@@ -5,20 +5,26 @@ declare(strict_types=1);
 namespace YiiPress\Tests\Unit\Console;
 
 use YiiPress\Console\ServeCommand;
+use YiiPress\RuntimePaths;
 use Evenement\EventEmitter;
+use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Socket\ConnectionInterface;
 use React\Stream\WritableStreamInterface;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use ReflectionMethod;
 use ReflectionProperty;
+use SplFileInfo;
 use Symfony\Component\Console\Tester\CommandTester;
 use Yiisoft\Yii\Console\ExitCode;
 use Yiisoft\Yii\Runner\Http\HttpApplicationRunner;
 
 use function chdir;
 use function getcwd;
+use function hash;
 use function mkdir;
 use function sys_get_temp_dir;
 
@@ -266,6 +272,57 @@ final class ServeCommandTest extends TestCase
     }
 
     #[Test]
+    public function serveBuildsWhenOutputExistsButBuildManifestIsMissing(): void
+    {
+        $previousDirectory = getcwd();
+        self::assertIsString($previousDirectory);
+
+        $root = dirname(__DIR__, 3);
+        $contentDir = dirname(__DIR__, 2) . '/Support/Data/content';
+        $outputDir = sys_get_temp_dir() . '/yiipress-serve-manifest-output-' . uniqid();
+        $previousArgv = $_SERVER['argv'] ?? null;
+        mkdir($outputDir . '/blog', 0o755, true);
+        file_put_contents($outputDir . '/blog/index.html', '<html><body>Existing output</body></html>');
+        $manifestPath = RuntimePaths::cachePath($root) . '/build-manifest-' . hash('xxh128', $outputDir) . '.json';
+        $manifestExists = false;
+
+        if (is_file($manifestPath)) {
+            unlink($manifestPath);
+        }
+
+        try {
+            chdir($root);
+            $_SERVER['argv'][0] = $root . '/yii';
+
+            $command = new ServeCommand();
+            $tester = new CommandTester($command);
+            $tester->execute([
+                '--content-dir' => $contentDir,
+                '--output-dir' => $outputDir,
+            ]);
+
+            $method = new ReflectionMethod($command, 'createStaticResponse');
+            $response = $method->invoke($command, "GET /about/ HTTP/1.1\r\nHost: example.test\r\n\r\n");
+            $manifestExists = is_file($manifestPath);
+        } finally {
+            if ($previousArgv === null) {
+                unset($_SERVER['argv']);
+            } else {
+                $_SERVER['argv'] = $previousArgv;
+            }
+            chdir($previousDirectory);
+            $this->removeDirectory($outputDir);
+            if (is_file($manifestPath)) {
+                unlink($manifestPath);
+            }
+        }
+
+        self::assertIsArray($response);
+        self::assertSame(200, $response['status']);
+        self::assertTrue($manifestExists);
+    }
+
+    #[Test]
     public function serveStreamsNonHtmlStaticResponse(): void
     {
         $previousDirectory = getcwd();
@@ -369,6 +426,30 @@ final class ServeCommandTest extends TestCase
             62,
             $method->invoke($command, "POST / HTTP/1.1\r\nHost: example.test\r\nContent-Length: 4\r\n\r\nabcd"),
         );
+    }
+
+    private function removeDirectory(string $directory): void
+    {
+        if (!is_dir($directory)) {
+            return;
+        }
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
+        );
+
+        foreach ($iterator as $item) {
+            /** @var SplFileInfo $item */
+            if ($item->isDir()) {
+                rmdir($item->getPathname());
+                continue;
+            }
+
+            unlink($item->getPathname());
+        }
+
+        rmdir($directory);
     }
 }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiPress\Console;
 
 use YiiPress\Environment;
+use YiiPress\RuntimePaths;
 use YiiPress\Web\DevServer\DevHtmlInjector;
 use YiiPress\Web\LiveReload\SiteBuildRunner;
 use FilesystemIterator;
@@ -38,6 +39,7 @@ use function file_get_contents;
 use function filesize;
 use function fopen;
 use function getcwd;
+use function hash;
 use function is_dir;
 use function is_file;
 use function is_resource;
@@ -691,9 +693,15 @@ final class ServeCommand extends Command
         $this->outputBuildAttempted = true;
 
         $output = $this->outputDir();
-        if (!is_dir($output) || $this->isEmptyDirectory($output)) {
+        if (!is_dir($output) || $this->isEmptyDirectory($output) || !is_file($this->buildManifestPath())) {
             $this->createLiveReloadBuildRunner()->build();
         }
+    }
+
+    private function buildManifestPath(): string
+    {
+        return RuntimePaths::cachePath($this->workingDirectory())
+            . '/build-manifest-' . hash('xxh128', $this->outputDir()) . '.json';
     }
 
     private function resolveStaticFilePath(string $path): ?string
