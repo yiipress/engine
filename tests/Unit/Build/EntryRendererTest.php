@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiPress\Tests\Unit\Build;
 
 use YiiPress\Build\AssetFingerprintManifest;
+use YiiPress\Build\BuildCache;
 use YiiPress\Build\EntryRenderer;
 use YiiPress\Build\Theme;
 use YiiPress\Build\ThemeRegistry;
@@ -13,17 +14,23 @@ use YiiPress\Content\Model\Entry;
 use YiiPress\Content\Model\I18nConfig;
 use YiiPress\Content\Model\SearchConfig;
 use YiiPress\Content\Model\SiteConfig;
+use YiiPress\Hook\RenderFinishedEvent;
+use YiiPress\Hook\RenderStartedEvent;
 use YiiPress\Processor\ContentProcessorPipeline;
 use DateTimeImmutable;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
-
+use Yiisoft\EventDispatcher\Dispatcher\Dispatcher;
+use Yiisoft\EventDispatcher\Provider\ListenerCollection;
+use Yiisoft\EventDispatcher\Provider\Provider;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 
 use function PHPUnit\Framework\assertStringContainsString;
 use function PHPUnit\Framework\assertStringNotContainsString;
+use function PHPUnit\Framework\assertSame;
+use function substr_count;
 
 final class EntryRendererTest extends TestCase
 {
@@ -397,6 +404,45 @@ PHP);
         assertStringContainsString('<span class="search-hint" aria-hidden="true">ESC</span>', $html);
         assertStringContainsString('assets/theme/search.css', $html);
         assertStringContainsString('assets/theme/search.js', $html);
+    }
+
+    public function testRenderHooksCanObserveAndModifyRenderedHtml(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Hooked Post\n---\n\nHooked body.\n");
+
+        $events = [];
+        $listenerCollection = (new ListenerCollection())
+            ->add(static function (RenderStartedEvent $event) use (&$events): void {
+                $events[] = 'render.started:' . $event->entry->title;
+            })
+            ->add(static function (RenderFinishedEvent $event) use (&$events): void {
+                $events[] = 'render.finished:' . $event->entry->title;
+                $event->setHtml(str_replace('</body>', '<span id="hooked"></span></body>', $event->html()));
+            });
+        $dispatcher = new Dispatcher(new Provider($listenerCollection));
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Hooked Post');
+        $templateResolver = $this->createTemplateResolver();
+        $renderer = new EntryRenderer(
+            $this->createPipeline(),
+            $templateResolver,
+            cache: new BuildCache($this->contentDir . '/cache', $templateResolver->templateDirs()),
+            contentDir: $this->contentDir,
+            eventDispatcher: $dispatcher,
+        );
+        $html = $renderer->render($this->createSiteConfig(), $entry, '/blog/hooked-post/');
+        $cachedHtml = $renderer->render($this->createSiteConfig(), $entry, '/blog/hooked-post/');
+
+        assertSame([
+            'render.started:Hooked Post',
+            'render.finished:Hooked Post',
+            'render.started:Hooked Post',
+            'render.finished:Hooked Post',
+        ], $events);
+        assertStringContainsString('<span id="hooked"></span></body>', $html);
+        assertStringContainsString('<span id="hooked"></span></body>', $cachedHtml);
+        assertSame(1, substr_count($cachedHtml, '<span id="hooked"></span>'));
     }
 
     private function createPipeline(): ContentProcessorPipeline

@@ -18,6 +18,7 @@ use YiiPress\Processor\MarkdownProcessor;
 use YiiPress\Processor\SyntaxHighlightProcessor;
 use YiiPress\Processor\TagLinkProcessor;
 use YiiPress\Processor\Toc\TocProcessor;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Yiisoft\Definitions\Reference;
 
 $workingDirectory = getcwd() ?: dirname(__DIR__, 3);
@@ -58,6 +59,7 @@ return [
             'feedPipeline' => Reference::to('feedPipeline'),
             'themeRegistry' => Reference::to(ThemeRegistry::class),
             'templateResolver' => Reference::to(TemplateResolver::class),
+            'eventDispatcher' => Reference::to(EventDispatcherInterface::class),
         ],
     ],
     CleanCommand::class => [

@@ -129,6 +129,8 @@ Two pipelines are configured in `config/common/di/content-pipeline.php`:
 
 Built-in processors include Markdown conversion through MD4C, oEmbed expansion, Mermaid block handling, server-side syntax highlighting, table of contents extraction, and related-content data preparation.
 
+Lifecycle hooks are separate from processors. They expose build-level and final-render PSR-14 events through `yiisoft/yii-event`, so plugins can react to `BuildStartedEvent`, `BuildFinishedEvent`, `RenderStartedEvent`, and `RenderFinishedEvent` without replacing writers or commands.
+
 ## Writing
 
 Writers turn page objects and indexed aggregate data into files:

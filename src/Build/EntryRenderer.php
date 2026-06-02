@@ -10,10 +10,13 @@ use YiiPress\Content\Model\Entry;
 use YiiPress\Content\Model\Navigation;
 use YiiPress\Content\Model\SiteConfig;
 use YiiPress\Content\Related\RelatedIndex;
+use YiiPress\Hook\RenderFinishedEvent;
+use YiiPress\Hook\RenderStartedEvent;
 use YiiPress\Processor\ContentProcessorPipeline;
 use Closure;
 use DateTimeImmutable;
 use DateTimeZone;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use RuntimeException;
 
 use function date_default_timezone_get;
@@ -42,6 +45,7 @@ final class EntryRenderer
         private readonly ?AssetFingerprintManifest $assetManifest = null,
         private readonly ?RelatedIndex $relatedIndex = null,
         private readonly ?TranslationIndex $translationIndex = null,
+        private readonly ?EventDispatcherInterface $eventDispatcher = null,
     ) {}
 
     public function render(
@@ -52,12 +56,14 @@ final class EntryRenderer
         ?CrossReferenceResolver $crossRefResolver = null,
         ?array $navigationPager = null,
     ): string {
+        $this->eventDispatcher?->dispatch(new RenderStartedEvent($siteConfig, $entry, $permalink));
+
         $cacheContext = '';
         if ($this->cache !== null) {
             $cacheContext = $this->cacheContext($siteConfig, $entry, $navigation, $crossRefResolver, $navigationPager);
             $cached = $this->cache->get($entry->filePath, $cacheContext);
             if ($cached !== null) {
-                return $cached;
+                return $this->dispatchRenderFinished($siteConfig, $entry, $permalink, $cached);
             }
         }
 
@@ -80,7 +86,19 @@ final class EntryRenderer
             $this->cache->set($entry->filePath, $html, $cacheContext);
         }
 
-        return $html;
+        return $this->dispatchRenderFinished($siteConfig, $entry, $permalink, $html);
+    }
+
+    private function dispatchRenderFinished(SiteConfig $siteConfig, Entry $entry, string $permalink, string $html): string
+    {
+        if ($this->eventDispatcher === null) {
+            return $html;
+        }
+
+        $event = new RenderFinishedEvent($siteConfig, $entry, $permalink, $html);
+        $this->eventDispatcher->dispatch($event);
+
+        return $event->html();
     }
 
     private function cacheContext(

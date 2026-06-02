@@ -11,6 +11,7 @@ use YiiPress\Content\Model\Navigation;
 use YiiPress\Content\Model\SiteConfig;
 use YiiPress\Content\Related\RelatedIndex;
 use YiiPress\Processor\ContentProcessorPipeline;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use RuntimeException;
 
 use function array_slice;
@@ -34,6 +35,7 @@ final readonly class ParallelEntryWriter
         private ?AssetFingerprintManifest $assetManifest = null,
         private ?RelatedIndex $relatedIndex = null,
         private ?TranslationIndex $translationIndex = null,
+        private ?EventDispatcherInterface $eventDispatcher = null,
     ) {}
 
     /**
@@ -82,7 +84,7 @@ final readonly class ParallelEntryWriter
      */
     private function writeEntries(SiteConfig $siteConfig, array $tasks, string $contentDir, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors, bool $noWrite): void
     {
-        $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors, $this->assetManifest, $this->relatedIndex, $this->translationIndex);
+        $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors, $this->assetManifest, $this->relatedIndex, $this->translationIndex, $this->eventDispatcher);
 
         foreach ($tasks as $task) {
             $html = $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver, $task['navigationPager'] ?? null);
@@ -108,7 +110,7 @@ final readonly class ParallelEntryWriter
             }
 
             if ($pid === 0) {
-                $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors, $this->assetManifest, $this->relatedIndex, $this->translationIndex);
+                $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors, $this->assetManifest, $this->relatedIndex, $this->translationIndex, $this->eventDispatcher);
 
                 foreach ($chunk as $task) {
                     $html = $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver, $task['navigationPager'] ?? null);

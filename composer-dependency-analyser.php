@@ -17,4 +17,5 @@ return (new Configuration())
     ->ignoreErrorsOnPackage('psr/container', [ErrorType::UNUSED_DEPENDENCY])
     ->ignoreErrorsOnPackage('yiisoft/config', [ErrorType::UNUSED_DEPENDENCY])
     ->ignoreErrorsOnPackage('yiisoft/di', [ErrorType::UNUSED_DEPENDENCY])
+    ->ignoreErrorsOnPackage('yiisoft/yii-event', [ErrorType::UNUSED_DEPENDENCY])
     ->ignoreErrorsOnPackage('yiisoft/router-fastroute', [ErrorType::UNUSED_DEPENDENCY]);
