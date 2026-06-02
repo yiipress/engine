@@ -12,6 +12,8 @@
     --c-tag-text: #374151;
     --c-blockquote: #6b7280;
     --c-blockquote-border: #d1d5db;
+    --c-image-zoom-bg: rgba(255, 255, 255, 0.94);
+    --c-image-zoom-control: #111827;
     --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     --font-mono: ui-monospace, 'Cascadia Code', 'Fira Code', Menlo, monospace;
     --max-width: 42rem;
@@ -32,6 +34,8 @@
     --c-tag-text: #d1d5db;
     --c-blockquote: #9ca3af;
     --c-blockquote-border: #4b5563;
+    --c-image-zoom-bg: rgba(0, 0, 0, 0.9);
+    --c-image-zoom-control: #fff;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html {
@@ -739,7 +743,7 @@ a.tag-link:hover {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.9);
+    background: var(--c-image-zoom-bg);
     align-items: center;
     justify-content: center;
     opacity: 0;
@@ -761,7 +765,7 @@ a.tag-link:hover {
     right: 1.5rem;
     background: none;
     border: none;
-    color: #fff;
+    color: var(--c-image-zoom-control);
     font-size: 3rem;
     font-weight: 300;
     cursor: pointer;

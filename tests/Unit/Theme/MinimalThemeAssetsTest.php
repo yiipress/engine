@@ -37,6 +37,17 @@ final class MinimalThemeAssetsTest extends TestCase
         assertStringContainsString('.content img:not([height]) { height: auto; }', $css);
     }
 
+    public function testImageViewerUsesThemeAwareBackground(): void
+    {
+        $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');
+
+        self::assertNotFalse($css);
+        assertStringContainsString('--c-image-zoom-bg: rgba(255, 255, 255, 0.94);', $css);
+        assertStringContainsString('--c-image-zoom-bg: rgba(0, 0, 0, 0.9);', $css);
+        assertStringContainsString('background: var(--c-image-zoom-bg);', $css);
+        assertStringContainsString('color: var(--c-image-zoom-control);', $css);
+    }
+
     public function testStyleSupportsDocsNavigationAndTocSidebars(): void
     {
         $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');
