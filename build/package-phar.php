@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use YiiPress\Build\PharArchiveFilter;
+use YiiPress\Build\PhpDocStripper;
 
 if (PHP_SAPI !== 'cli') {
     fwrite(STDERR, "This script must run from CLI.\n");
@@ -11,6 +12,7 @@ if (PHP_SAPI !== 'cli') {
 
 $root = dirname(__DIR__);
 require_once __DIR__ . '/PharArchiveFilter.php';
+require_once __DIR__ . '/PhpDocStripper.php';
 
 $target = $argv[1] ?? $root . '/dist/yiipress.phar';
 $targetDirectory = dirname($target);
@@ -53,9 +55,20 @@ foreach ($includeDirectories as $directory) {
         }
 
         $fullPath = $file->getPathname();
-        $localPath = substr($fullPath, strlen($root) + 1);
+        $localPath = str_replace('\\', '/', substr($fullPath, strlen($root) + 1));
 
         if (PharArchiveFilter::shouldExclude($localPath)) {
+            continue;
+        }
+
+        if (PhpDocStripper::shouldStrip($localPath)) {
+            $contents = file_get_contents($fullPath);
+            if ($contents === false) {
+                fwrite(STDERR, "Failed to read file: {$localPath}\n");
+                exit(1);
+            }
+
+            $phar->addFromString($localPath, PhpDocStripper::strip($contents));
             continue;
         }
 

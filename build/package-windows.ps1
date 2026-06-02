@@ -106,6 +106,7 @@ foreach ($directory in @("config", "public", "src", "themes")) {
 New-Item -ItemType Directory -Force -Path (Join-Path $appPath "build") | Out-Null
 Copy-Item (Join-Path $root "build/package-phar.php") (Join-Path $appPath "build/package-phar.php") -Force
 Copy-Item (Join-Path $root "build/PharArchiveFilter.php") (Join-Path $appPath "build/PharArchiveFilter.php") -Force
+Copy-Item (Join-Path $root "build/PhpDocStripper.php") (Join-Path $appPath "build/PhpDocStripper.php") -Force
 Copy-Item (Join-Path $root "yii") (Join-Path $appPath "yii") -Force
 Copy-Item (Join-Path $root "composer.json") (Join-Path $appPath "composer.json") -Force
 Copy-Item (Join-Path $root "composer.lock") (Join-Path $appPath "composer.lock") -Force
