@@ -648,6 +648,7 @@ final class BuildCommandTest extends TestCase
         assertStringContainsString('Blog', $entryHtml);
         assertStringContainsString('href="../../"', $entryHtml);
         assertStringContainsString('href="../../blog/"', $entryHtml);
+        assertStringNotContainsString('class="docs-layout', $entryHtml);
 
         assertStringContainsString('<footer', $entryHtml);
         assertStringContainsString('Privacy', $entryHtml);
@@ -661,6 +662,12 @@ final class BuildCommandTest extends TestCase
 
         $contactHtml = file_get_contents($this->outputDir . '/contact/index.html');
         assertStringContainsString('Test Site', $contactHtml);
+
+        $aboutHtml = file_get_contents($this->outputDir . '/about/index.html');
+        assertStringContainsString('class="docs-layout docs-layout-with-toc"', $aboutHtml);
+        assertStringContainsString('class="docs-sidebar"', $aboutHtml);
+        assertStringContainsString('class="toc-sidebar toc-sidebar-right"', $aboutHtml);
+        assertStringContainsString('aria-current="page">About</a>', $aboutHtml);
     }
 
     public function testBuildRendersStandalonePages(): void

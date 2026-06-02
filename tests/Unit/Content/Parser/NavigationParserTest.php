@@ -23,7 +23,7 @@ final class NavigationParserTest extends TestCase
 
         $navigation = $parser->parse($dataDir . '/navigation.yaml');
 
-        assertSame(['main', 'footer'], $navigation->menuNames());
+        assertSame(['main', 'footer', 'sidebar'], $navigation->menuNames());
 
         $main = $navigation->menu('main');
         assertCount(2, $main);
@@ -35,6 +35,13 @@ final class NavigationParserTest extends TestCase
         assertCount(1, $main[1]->children);
         assertSame('Getting Started', $main[1]->children[0]->title);
         assertSame('/docs/getting-started/', $main[1]->children[0]->url);
+
+        $sidebar = $navigation->menu('sidebar');
+        assertCount(1, $sidebar);
+        assertSame('Pages', $sidebar[0]->title);
+        assertSame('', $sidebar[0]->url);
+        assertCount(2, $sidebar[0]->children);
+        assertSame('/about/', $sidebar[0]->children[0]->url);
     }
 
     public function testNonExistentMenuReturnsEmptyArray(): void

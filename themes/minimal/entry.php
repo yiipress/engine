@@ -18,6 +18,7 @@ declare(strict_types=1);
  * @var list<YiiPress\Content\Model\RelatedEntry> $related
  * @var list<YiiPress\Content\Model\Translation> $translations
  * @var string $language
+ * @var string $permalink
  * @var ?Navigation $nav
  * @var Closure(string, array): string $partial
  * @var string $rootPath
@@ -33,9 +34,15 @@ declare(strict_types=1);
  */
 
 use YiiPress\Content\Model\Navigation;
+use YiiPress\Render\NavigationRenderer;
 $language ??= 'en';
 $uiLanguage ??= 'en';
 $translations ??= [];
+$permalink ??= '';
+$hasToc = $toc !== [];
+$hasDocsSidebar = $nav !== null && NavigationRenderer::menuContainsUrl($nav, 'sidebar', $permalink);
+$useDocsLayout = $hasDocsSidebar;
+$useLegacyTocSidebar = !$useDocsLayout && $hasToc;
 ?>
 <!DOCTYPE html>
 <html lang="<?= $h($language) ?>">
@@ -48,11 +55,15 @@ $translations ??= [];
 <?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage]]) ?>
 <main>
     <div class="container">
-<?php $hasSidebar = $toc !== []; ?>
-<?php if ($hasSidebar): ?>
+<?php if ($useDocsLayout): ?>
+        <div class="docs-layout<?= $hasToc ? ' docs-layout-with-toc' : '' ?>">
+            <aside class="docs-sidebar" aria-label="<?= $h($t('sidebar_navigation')) ?>" data-ui-attr-aria-label="sidebar_navigation">
+                <?= NavigationRenderer::render($nav, 'sidebar', $rootPath, $uiLanguage, $uiLanguage, 'docs-sidebar-nav', $permalink) ?>
+            </aside>
+<?php elseif ($useLegacyTocSidebar): ?>
         <div class="article-with-sidebar">
 <?php endif; ?>
-<?php if ($hasSidebar): ?>
+<?php if ($useLegacyTocSidebar): ?>
             <aside class="toc-sidebar" aria-label="<?= $h($t('table_of_contents')) ?>" data-ui-attr-aria-label="table_of_contents">
                 <nav>
                     <ol>
@@ -63,7 +74,7 @@ $translations ??= [];
                 </nav>
             </aside>
 <?php endif; ?>
-            <article>
+            <article<?= $useDocsLayout ? ' class="docs-content"' : '' ?>>
             <h1><?= $h($entryTitle) ?></h1>
 <?php if ($draft || ($dateISO !== '' && $dateISO > date('Y-m-d')) || $date !== '' || $author !== ''): ?>
             <div class="entry-meta">
@@ -127,7 +138,18 @@ $translations ??= [];
                 </section>
 <?php endif; ?>
             </article>
-<?php if ($hasSidebar): ?>
+<?php if ($useDocsLayout && $hasToc): ?>
+            <aside class="toc-sidebar toc-sidebar-right" aria-label="<?= $h($t('table_of_contents')) ?>" data-ui-attr-aria-label="table_of_contents">
+                <nav>
+                    <ol>
+<?php foreach ($toc as $item): ?>
+                        <li class="toc-level-<?= $item['level'] ?>"><a href="#<?= $h($item['id']) ?>"><?= $h($item['text']) ?></a></li>
+<?php endforeach; ?>
+                    </ol>
+                </nav>
+            </aside>
+<?php endif; ?>
+<?php if ($useDocsLayout || $useLegacyTocSidebar): ?>
         </div>
 <?php endif; ?>
     </div>

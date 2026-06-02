@@ -153,6 +153,7 @@ final class EntryRenderer
             )),
             'categories' => $entry->categories,
             'collection' => $entry->collection,
+            'permalink' => $permalink,
             'nav' => $navigation,
             'headAssets' => $headAssets,
             'toc' => $toc,

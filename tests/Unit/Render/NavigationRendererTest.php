@@ -103,4 +103,37 @@ final class NavigationRendererTest extends TestCase
         assertStringContainsString('A &amp; B', $html);
         assertStringContainsString('/a&amp;b/', $html);
     }
+
+    public function testRenderMarksCurrentAndAncestorItems(): void
+    {
+        $navigation = new Navigation(menus: [
+            'sidebar' => [
+                new NavigationItem(
+                    title: 'Guide',
+                    url: '',
+                    children: [
+                        new NavigationItem(title: 'Intro', url: '/guide/intro/', children: []),
+                    ],
+                ),
+            ],
+        ]);
+
+        $html = NavigationRenderer::render($navigation, 'sidebar', '../', 'en', 'en', 'docs-sidebar-nav', '/guide/intro/');
+
+        assertStringContainsString('<nav class="docs-sidebar-nav">', $html);
+        assertStringContainsString('<li class="is-active-ancestor"><span class="nav-section-title">Guide</span>', $html);
+        assertStringContainsString('<li class="is-current"><a href="../guide/intro/" aria-current="page">Intro</a>', $html);
+    }
+
+    public function testMenuContainsUrlOnlyForConfiguredMenuItems(): void
+    {
+        $navigation = new Navigation(menus: [
+            'sidebar' => [
+                new NavigationItem(title: 'Intro', url: '/guide/intro/', children: []),
+            ],
+        ]);
+
+        self::assertTrue(NavigationRenderer::menuContainsUrl($navigation, 'sidebar', '/guide/intro/'));
+        self::assertFalse(NavigationRenderer::menuContainsUrl($navigation, 'sidebar', '/blog/post/'));
+    }
 }

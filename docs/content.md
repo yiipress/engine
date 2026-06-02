@@ -272,9 +272,18 @@ main:
 footer:
   - title: Privacy
     url: /privacy/
+sidebar:
+  - title: Guide
+    children:
+      - title: Getting Started
+        url: /docs/getting-started/
+      - title: Configuration
+        url: /docs/configuration/
 ```
 
-You can define any number of menus. Each item has `title` and `url` fields, and supports nested `children` for sub-navigation.
+You can define any number of menus. Each item has a `title`, an optional `url`, and supports nested `children` for sub-navigation. Items without `url` render as section labels, which is useful for grouped sidebars.
+
+In the bundled `minimal` theme, a menu named `sidebar` enables a documentation layout for entries whose permalink appears in that sidebar. Those pages render the sidebar navigation on the left and the generated table of contents on the right. Blog entries and other pages that are not listed in `sidebar` keep the regular article layout.
 
 To localize menu labels, make `title` a language map instead of a scalar:
 

@@ -35,4 +35,15 @@ final class MinimalThemeAssetsTest extends TestCase
         );
         assertStringContainsString('.content img:not([height]) { height: auto; }', $css);
     }
+
+    public function testStyleSupportsDocsNavigationAndTocSidebars(): void
+    {
+        $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');
+
+        self::assertNotFalse($css);
+        assertStringContainsString('.docs-layout {', $css);
+        assertStringContainsString('grid-template-columns: 16rem minmax(0, var(--max-width)) 14rem;', $css);
+        assertStringContainsString('.docs-sidebar-nav .is-current > a {', $css);
+        assertStringContainsString('.toc-sidebar-right {', $css);
+    }
 }

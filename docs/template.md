@@ -135,6 +135,7 @@ Built-in templates and partials expect `$ui` to be passed by the renderer; `Page
 | `$dateISO`    | `string`      | ISO 8601 date (`Y-m-d`) for HTML5 `datetime` attribute or empty |
 | `$author`     | `string`      | Comma-separated author names                                     |
 | `$collection` | `string`      | Collection name the entry belongs to                             |
+| `$permalink`  | `string`      | Current entry permalink                                          |
 | `$nav`        | `?Navigation` | Navigation object or `null`                                      |
 | `$toc`        | `list<array>` | Table of contents entries (`{id, text, level}`) or empty list    |
 | `$related`    | `list<RelatedEntry>` | Related entries ordered by relevance or empty list        |
@@ -290,6 +291,14 @@ Use `NavigationRenderer` for HTML output:
 
 This renders a `<nav><ul><li>` structure with nested lists for children. Menu names correspond to top-level keys in `content/navigation.yaml`.
 
+Pass the optional class and current URL arguments when rendering sidebars that need active item styling:
+
+```php
+<?= \YiiPress\Render\NavigationRenderer::render($nav, 'sidebar', $rootPath, $uiLanguage, $uiLanguage, 'docs-sidebar-nav', $permalink) ?>
+```
+
+The renderer adds `aria-current="page"` to the current link, `is-current` to the current `<li>`, and `is-active-ancestor` to parent `<li>` elements.
+
 ## Partials
 
 Partials are reusable template fragments stored in a `partials/` subdirectory of a theme. Every template receives a `$partial` helper function that renders a partial with isolated variable scope.
@@ -378,6 +387,7 @@ Additional helpers available via static methods:
 | Helper                         | Usage                                      | Description                                             |
 |--------------------------------|--------------------------------------------|---------------------------------------------------------|
 | `NavigationRenderer::render()` | `NavigationRenderer::render($nav, 'main')` | Render a navigation menu as nested `<nav><ul><li>` HTML |
+| `NavigationRenderer::menuContainsUrl()` | `NavigationRenderer::menuContainsUrl($nav, 'sidebar', $permalink)` | Check whether a menu contains the current page URL |
 | `$h()`                         | `$h($text)`                               | Template alias for `htmlspecialchars()`                 |
 
 ## Customizing templates

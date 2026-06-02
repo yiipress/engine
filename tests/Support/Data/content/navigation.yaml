@@ -9,3 +9,10 @@ main:
 footer:
   - title: "Privacy"
     url: "/privacy/"
+sidebar:
+  - title: "Pages"
+    children:
+      - title: "About"
+        url: "/about/"
+      - title: "FAQ"
+        url: "/faq/"

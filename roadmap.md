@@ -66,6 +66,7 @@
 - [x] Template helper functions documentation
 - [x] Multiple layout support (per-entry layout selection via front matter)
 - [x] Beautiful default theme
+- [x] VuePress-style documentation layout with left sidebar navigation and right document table of contents
 
 ## Priority 5: Asset pipeline
 

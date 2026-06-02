@@ -495,6 +495,90 @@ a.tag-link:hover {
 .toc-sidebar .toc-level-5 { padding-left: 3rem; }
 .toc-sidebar .toc-level-6 { padding-left: 3.75rem; }
 
+.container:has(.docs-layout) {
+    max-width: calc(var(--max-width) + 16rem + 14rem + 5rem);
+}
+.docs-layout {
+    display: grid;
+    grid-template-columns: 16rem minmax(0, var(--max-width)) 14rem;
+    gap: 2.5rem;
+    align-items: start;
+}
+.docs-layout:not(.docs-layout-with-toc) {
+    grid-template-columns: 16rem minmax(0, var(--max-width));
+    justify-content: center;
+}
+.docs-sidebar {
+    position: sticky;
+    top: 1.5rem;
+    max-height: calc(100vh - 3rem);
+    overflow-y: auto;
+    padding-right: .75rem;
+}
+.docs-sidebar-nav,
+.docs-sidebar-nav ul {
+    font-size: .875rem;
+    line-height: 1.45;
+}
+.docs-sidebar-nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.docs-sidebar-nav ul ul {
+    margin: .25rem 0 1rem;
+}
+.docs-sidebar-nav li {
+    margin: 0;
+}
+.docs-sidebar-nav a,
+.docs-sidebar-nav .nav-section-title {
+    display: block;
+    padding: .35rem .75rem;
+    border-left: 2px solid transparent;
+    color: var(--c-text-muted);
+    text-decoration: none;
+}
+.docs-sidebar-nav .nav-section-title {
+    color: var(--c-text);
+    font-weight: 600;
+}
+.docs-sidebar-nav a:hover {
+    color: var(--c-link);
+    text-decoration: none;
+}
+.docs-sidebar-nav .is-current > a {
+    border-left-color: var(--c-link);
+    color: var(--c-link);
+    font-weight: 600;
+}
+.docs-sidebar-nav .is-active-ancestor > a,
+.docs-sidebar-nav .is-active-ancestor > .nav-section-title {
+    color: var(--c-text);
+}
+.docs-sidebar-nav ul ul a,
+.docs-sidebar-nav ul ul .nav-section-title {
+    padding-left: 1.25rem;
+}
+.toc-sidebar-right {
+    grid-column: 3;
+}
+
+@media (max-width: 1180px) {
+    .container:has(.docs-layout) {
+        max-width: calc(var(--max-width) + 15rem + 2.5rem);
+    }
+
+    .docs-layout,
+    .docs-layout.docs-layout-with-toc {
+        grid-template-columns: 15rem minmax(0, var(--max-width));
+    }
+
+    .toc-sidebar-right {
+        display: none;
+    }
+}
+
 /* Responsive: hide sidebar on narrow screens */
 @media (max-width: 860px) {
     .site-header .container {
@@ -531,6 +615,19 @@ a.tag-link:hover {
         left: 0;
     }
     .toc-sidebar {
+        display: none;
+    }
+
+    .container:has(.docs-layout) {
+        max-width: var(--max-width);
+    }
+
+    .docs-layout,
+    .docs-layout.docs-layout-with-toc {
+        grid-template-columns: 1fr;
+    }
+
+    .docs-sidebar {
         display: none;
     }
 }

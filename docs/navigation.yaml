@@ -1,0 +1,38 @@
+main:
+  - title: Documentation
+    url: /
+  - title: GitHub
+    url: https://github.com/yiipress/engine
+sidebar:
+  - title: Start
+    children:
+      - title: Overview
+        url: /
+      - title: Quickstart
+        url: /quickstart/
+      - title: Configuration
+        url: /config/
+      - title: Content
+        url: /content/
+  - title: Building
+    children:
+      - title: Commands
+        url: /commands/
+      - title: Web App
+        url: /web-app/
+      - title: Deployment
+        url: /deployment/
+  - title: Extending
+    children:
+      - title: Templates
+        url: /template/
+      - title: Plugins
+        url: /plugins/
+  - title: Internals
+    children:
+      - title: Architecture
+        url: /architecture/
+      - title: Internals
+        url: /internals/
+      - title: Benchmarking
+        url: /benchmarking/

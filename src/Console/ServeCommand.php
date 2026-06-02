@@ -228,8 +228,8 @@ final class ServeCommand extends Command
             $stopping = true;
             $this->terminateWorkers($children);
         };
-        pcntl_signal(SIGINT, $stop);
-        pcntl_signal(SIGTERM, $stop);
+        pcntl_signal(\SIGINT, $stop);
+        pcntl_signal(\SIGTERM, $stop);
 
         $exitCode = ExitCode::OK;
         while ($children !== []) {
@@ -264,7 +264,7 @@ final class ServeCommand extends Command
     private function terminateWorkers(array $children): void
     {
         foreach ($children as $pid) {
-            posix_kill($pid, SIGTERM);
+            posix_kill($pid, \SIGTERM);
         }
     }
 
@@ -281,8 +281,8 @@ final class ServeCommand extends Command
             $server->close();
             $loop->stop();
         };
-        $loop->addSignal(SIGINT, $stop);
-        $loop->addSignal(SIGTERM, $stop);
+        $loop->addSignal(\SIGINT, $stop);
+        $loop->addSignal(\SIGTERM, $stop);
         $loop->run();
 
         return ExitCode::OK;
