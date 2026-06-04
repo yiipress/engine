@@ -739,7 +739,15 @@ final class BuildCommand extends Command
 
         $profile->switchTo('write sitemap');
         $sitemapGenerator = new SitemapGenerator();
-        $sitemapGenerator->generate($siteConfig, $collections, $entriesByCollection, $outputDir, $standalonePages, $authors, $noWrite);
+        $sitemapGenerator->generate(
+            $siteConfig,
+            $collections,
+            $entriesByCollection,
+            $outputDir,
+            $standalonePages,
+            $siteConfig->authorPages ? $authors : [],
+            $noWrite,
+        );
         $output->writeln('  Sitemap generated.');
 
         $profile->switchTo('write support files');
@@ -771,7 +779,7 @@ final class BuildCommand extends Command
             $output->writeln("  Taxonomy pages: <comment>$taxonomyPageCount</comment>");
         }
 
-        if ($authors !== []) {
+        if ($siteConfig->authorPages && $authors !== []) {
             $profile->switchTo('write author pages');
             $allEntries ??= array_merge(...array_values($entriesByCollection));
             $entriesByAuthor = [];
@@ -1139,7 +1147,7 @@ final class BuildCommand extends Command
             }
         }
 
-        if ($authors !== []) {
+        if ($siteConfig->authorPages && $authors !== []) {
             $files[] = $outputDir . '/authors/index.html';
             foreach (array_keys($authors) as $slug) {
                 $files[] = $outputDir . '/authors/' . $slug . '/index.html';

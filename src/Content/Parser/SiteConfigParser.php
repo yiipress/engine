@@ -65,6 +65,7 @@ final class SiteConfigParser
             lastUpdated: (bool) ($data['last_updated'] ?? false),
             editPageUrl: self::parseOptionalString($data['edit_page'] ?? null),
             reportIssueUrl: self::parseOptionalString($data['report_issue'] ?? null),
+            authorPages: (bool) ($data['author_pages'] ?? false),
         );
     }
 

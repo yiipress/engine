@@ -10,6 +10,7 @@ use YiiPress\Build\EntryRenderer;
 use YiiPress\Build\Theme;
 use YiiPress\Build\ThemeRegistry;
 use YiiPress\Build\TemplateResolver;
+use YiiPress\Content\Model\Author;
 use YiiPress\Content\Model\Entry;
 use YiiPress\Content\Model\I18nConfig;
 use YiiPress\Content\Model\SearchConfig;
@@ -141,6 +142,65 @@ final class EntryRendererTest extends TestCase
 
         assertStringNotContainsString('class="entry-page-meta"', $html);
         assertStringNotContainsString('data-ui-key="last_updated"', $html);
+    }
+
+    public function testRendersKnownAuthorAsLinkWhenAuthorPagesAreEnabled(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Authored\n---\n\nBody.\n");
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Authored', authors: ['john-doe']);
+        $renderer = new EntryRenderer(
+            $this->createPipeline(),
+            $this->createTemplateResolver(),
+            contentDir: $this->contentDir,
+            authors: [
+                'john-doe' => new Author(
+                    slug: 'john-doe',
+                    title: 'John Doe',
+                    email: '',
+                    url: '',
+                    avatar: '',
+                    bodyOffset: 0,
+                    bodyLength: 0,
+                    filePath: '',
+                ),
+            ],
+        );
+        $html = $renderer->render($this->createSiteConfig(authorPages: true), $entry, '/blog/authored/');
+
+        assertStringContainsString('class="author"', $html);
+        assertStringContainsString('href="../../authors/john-doe/">John Doe</a>', $html);
+    }
+
+    public function testRendersKnownAuthorAsTextWhenAuthorPagesAreDisabled(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Authored\n---\n\nBody.\n");
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Authored', authors: ['john-doe']);
+        $renderer = new EntryRenderer(
+            $this->createPipeline(),
+            $this->createTemplateResolver(),
+            contentDir: $this->contentDir,
+            authors: [
+                'john-doe' => new Author(
+                    slug: 'john-doe',
+                    title: 'John Doe',
+                    email: '',
+                    url: '',
+                    avatar: '',
+                    bodyOffset: 0,
+                    bodyLength: 0,
+                    filePath: '',
+                ),
+            ],
+        );
+        $html = $renderer->render($this->createSiteConfig(authorPages: false), $entry, '/blog/authored/');
+
+        assertStringContainsString('class="author"', $html);
+        assertStringContainsString('John Doe', $html);
+        assertStringNotContainsString('href="../../authors/john-doe/"', $html);
     }
 
     public function testRendersEditPageLinkWhenConfigured(): void
@@ -467,6 +527,7 @@ PHP);
         bool $lastUpdated = false,
         ?string $editPageUrl = null,
         ?string $reportIssueUrl = null,
+        bool $authorPages = false,
     ): SiteConfig
     {
         return new SiteConfig(
@@ -487,6 +548,7 @@ PHP);
             lastUpdated: $lastUpdated,
             editPageUrl: $editPageUrl,
             reportIssueUrl: $reportIssueUrl,
+            authorPages: $authorPages,
         );
     }
 
