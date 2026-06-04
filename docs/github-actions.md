@@ -1,8 +1,7 @@
 ---
 title: "GitHub Actions"
+showTitle: true
 ---
-
-# GitHub Actions
 
 YiiPress provides a composite GitHub Action that downloads the Linux static binary from a YiiPress release and runs `yiipress build`. It is intended for site repositories that want a fast build without installing PHP, Composer, Docker, or YiiPress source dependencies.
 
@@ -20,7 +19,6 @@ jobs:
         uses: yiipress/engine/.github/actions/build@X.Y.Z
         with:
           version: X.Y.Z
-          args: --no-cache
 ```
 
 The action accepts these inputs:
@@ -32,7 +30,7 @@ The action accepts these inputs:
 | `output-dir` | `_site` | Output directory passed to `yiipress build`. Change it when the host expects a custom output directory. |
 | `working-directory` | `.` | Repository subdirectory where the build runs. |
 | `args` | `--no-cache` | Extra arguments appended to `yiipress build`, one argument per line. |
-| `binary-path` | `.yiipress/yiipress` | Path where the downloaded binary is installed. |
+| `binary-path` | `yiipress` | Path where the downloaded binary is installed. |
 | `github-token` | workflow token | Token used when resolving `version: latest` through the GitHub API. |
 
 The action exposes `version` and `binary-path` outputs if later workflow steps need to report or reuse the downloaded binary.
@@ -70,12 +68,9 @@ jobs:
         uses: yiipress/engine/.github/actions/build@X.Y.Z
         with:
           version: X.Y.Z
-          args: --no-cache
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
-        with:
-          path: _site
 
   deploy:
     environment:

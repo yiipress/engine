@@ -25,7 +25,7 @@ inputs:
   binary-path:
     description: Path where the downloaded yiipress binary is installed.
     required: false
-    default: .yiipress/yiipress
+    default: yiipress
   github-token:
     description: Token used to resolve the latest release through the GitHub API.
     required: false

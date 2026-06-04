@@ -686,6 +686,25 @@ final class BuildCommandTest extends TestCase
         assertStringContainsString('/authors/john-doe/', $sitemap);
     }
 
+    public function testBuildCanDisableAuthorPages(): void
+    {
+        $contentDir = $this->copyContentFixture();
+        file_put_contents($contentDir . '/config.yaml', "\nauthor_pages: false\n", FILE_APPEND);
+
+        $this->runBuild($contentDir);
+
+        assertFalse(is_dir($this->outputDir . '/authors'));
+
+        $entryHtml = file_get_contents($this->outputDir . '/blog/test-post/index.html');
+        assertStringContainsString('class="author"', $entryHtml);
+        assertStringContainsString('John Doe', $entryHtml);
+        assertStringNotContainsString('href="../../authors/john-doe/"', $entryHtml);
+
+        $sitemap = file_get_contents($this->outputDir . '/sitemap.xml');
+        assertStringNotContainsString('/authors/', $sitemap);
+        assertStringNotContainsString('/authors/john-doe/', $sitemap);
+    }
+
     public function testBuildRendersNavigationInOutput(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';

@@ -10,6 +10,7 @@ declare(strict_types=1);
  * @var string $dateISO
  * @var bool $draft
  * @var string $author
+ * @var list<array{slug: string, title: string, url: string}> $entryAuthors
  * @var list<string> $tags
  * @var list<string> $categories
  * @var string $collection
@@ -44,6 +45,7 @@ use YiiPress\Render\NavigationRenderer;
 $language ??= 'en';
 $uiLanguage ??= 'en';
 $translations ??= [];
+$entryAuthors ??= [];
 $permalink ??= '';
 $hasToc = $toc !== [];
 $hasDocsSidebar = $nav !== null && NavigationRenderer::menuContainsUrl($nav, 'sidebar', $permalink);
@@ -94,7 +96,18 @@ $useLegacyTocSidebar = !$useDocsLayout && $hasToc;
 <?php elseif ($date !== ''): ?>
                 <time datetime="<?= $h($dateISO) ?>"><?= $h($date) ?></time>
 <?php endif; ?>
-<?php if ($author !== ''): ?>
+<?php if ($entryAuthors !== []): ?>
+                <span class="author">
+<?php foreach ($entryAuthors as $index => $entryAuthor): ?>
+                    <?= $index > 0 ? ', ' : '' ?>
+<?php if ($entryAuthor['url'] !== ''): ?>
+                    <a href="<?= $h($entryAuthor['url']) ?>"><?= $h($entryAuthor['title']) ?></a>
+<?php else: ?>
+                    <?= $h($entryAuthor['title']) ?>
+<?php endif; ?>
+<?php endforeach; ?>
+                </span>
+<?php elseif ($author !== ''): ?>
                 <span class="author"><?= $h($author) ?></span>
 <?php endif; ?>
             </div>

@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.7
-
 FROM gcr.io/distroless/static-debian12:nonroot@sha256:d093aa3e30dbadd3efe1310db061a14da60299baff8450a17fe0ccc514a16639
 
 LABEL org.opencontainers.image.licenses="BSD-3-Clause" \
@@ -7,10 +5,7 @@ LABEL org.opencontainers.image.licenses="BSD-3-Clause" \
     org.opencontainers.image.description="YiiPress static website builder" \
     org.opencontainers.image.source="https://github.com/yiipress/engine" \
     org.opencontainers.image.url="https://github.com/yiipress/engine" \
-    org.opencontainers.image.vendor="Alexander Makarov" \
-    org.opencontainers.image.created="" \
-    org.opencontainers.image.revision="" \
-    org.opencontainers.image.version=""
+    org.opencontainers.image.vendor="Alexander Makarov"
 
 COPY --chmod=0755 dist/linux-amd64/yiipress /yiipress
 WORKDIR /site

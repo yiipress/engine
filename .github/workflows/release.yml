@@ -283,11 +283,7 @@ jobs:
             if [ -n "${previous_tag}" ]; then
               printf 'Changes since %s:\n\n' "${previous_tag}"
             fi
-            if [ -n "${changes}" ]; then
-              printf '%s\n' "${changes}"
-            else
-              printf '- Initial release (%s)\n' "$(git show -s --format='%an' "${tag}")"
-            fi
+            printf '%s\n' "${changes}"
           } > release-notes.md
 
       - name: Create draft release with assets

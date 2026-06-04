@@ -68,12 +68,9 @@ jobs:
         uses: yiipress/engine/.github/actions/build@X.Y.Z
         with:
           version: X.Y.Z
-          args: --no-cache
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
-        with:
-          path: _site
 
   deploy:
     environment:
