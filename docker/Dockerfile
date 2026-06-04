@@ -199,6 +199,10 @@ COPY --from=phar-builder /app/dist/yiipress.phar /yiipress.phar
 FROM scratch AS package-linux-artifacts
 COPY --from=static-package /artifacts/yiipress /yiipress
 
+FROM scratch AS package-static-artifacts
+COPY --from=static-package /artifacts/yiipress /yiipress
+COPY --from=static-package /artifacts/yiipress.phar /yiipress.phar
+
 FROM package-linux-artifacts AS package-artifacts
 
 FROM gcr.io/distroless/static-debian12:nonroot@sha256:d093aa3e30dbadd3efe1310db061a14da60299baff8450a17fe0ccc514a16639 AS distroless

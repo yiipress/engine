@@ -1,0 +1,307 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}-static
+
+jobs:
+  linux:
+    name: Linux static binary and PHAR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+
+      - name: Build Linux and PHAR artifacts
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          target: package-static-artifacts
+          outputs: type=local,dest=dist/linux-amd64
+          cache-from: type=gha,scope=release-linux-amd64
+          cache-to: type=gha,scope=release-linux-amd64,mode=max
+          platforms: linux/amd64
+
+      - name: Smoke test Linux binary
+        run: ./dist/linux-amd64/yiipress --help
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: yiipress-linux-amd64
+          path: dist/linux-amd64/yiipress
+          if-no-files-found: error
+
+      - name: Upload PHAR artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: yiipress-phar
+          path: dist/linux-amd64/yiipress.phar
+          if-no-files-found: error
+
+  windows:
+    name: Windows static binary
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc
+        with:
+          php-version: '8.5'
+          coverage: none
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756
+
+      - name: Cache Windows package dependencies
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            ~\AppData\Local\Composer\files
+            ~\.cargo\git
+            ~\.cargo\registry
+            runtime\package-windows\app\vendor
+            runtime\package-windows\static-php-cli
+            runtime\package-windows\md4c-extension
+            runtime\package-windows\yiipress-highlighter
+          key: release-windows-package-${{ runner.os }}-${{ hashFiles('composer.lock', 'build/package-windows.ps1') }}
+          restore-keys: |
+            release-windows-package-${{ runner.os }}-
+
+      - name: Build Windows artifact
+        shell: pwsh
+        run: build/package-windows.ps1 -DistDir dist/windows-amd64
+
+      - name: Smoke test Windows binary
+        shell: pwsh
+        run: ./dist/windows-amd64/yiipress.exe --help
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: yiipress-windows-amd64
+          path: dist/windows-amd64/yiipress.exe
+          if-no-files-found: error
+
+  macos:
+    name: macOS static binary
+    runs-on: macos-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc
+        with:
+          php-version: '8.5'
+          coverage: none
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: Install macOS package dependencies
+        run: |
+          brew install autoconf automake bison re2c pkgconf
+          echo "$(brew --prefix bison)/bin" >> "$GITHUB_PATH"
+
+      - name: Cache macOS package dependencies
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            ~/.composer/cache/files
+            ~/.cargo/git
+            ~/.cargo/registry
+            runtime/package-macos/app/vendor
+            runtime/package-macos/static-php-cli
+            runtime/package-macos/md4c-extension
+            runtime/package-macos/yiipress-highlighter
+          key: release-macos-package-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('composer.lock', 'build/package-macos.sh', 'build/static-php/*.php') }}
+          restore-keys: |
+            release-macos-package-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Build macOS artifact
+        run: make package-macos PACKAGE_MACOS_ARCH=arm64 PACKAGE_MACOS_DIST=dist/macos-arm64
+
+      - name: Smoke test macOS binary
+        run: ./dist/macos-arm64/yiipress --help
+
+      - name: Pack macOS artifact
+        run: tar -C dist/macos-arm64 -czf dist/yiipress-macos-arm64.tar.gz yiipress
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: yiipress-macos-arm64
+          path: dist/yiipress-macos-arm64.tar.gz
+          if-no-files-found: error
+
+  container:
+    name: Binary-only distroless image
+    needs:
+      - linux
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: yiipress-linux-amd64
+          path: dist/linux-amd64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract distroless image metadata
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+
+      - name: Build and push binary-only distroless image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: .
+          file: ./docker/Dockerfile.distroless-binary
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64
+
+  publish:
+    name: Publish release
+    needs:
+      - linux
+      - windows
+      - macos
+      - container
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          path: release
+
+      - name: Pack release assets
+        run: |
+          set -euo pipefail
+          mkdir -p assets
+          tar -C release/yiipress-linux-amd64 -czf assets/yiipress-linux-amd64.tar.gz yiipress
+          cp release/yiipress-macos-arm64/yiipress-macos-arm64.tar.gz assets/yiipress-macos-arm64.tar.gz
+          zip -j assets/yiipress-windows-amd64.zip release/yiipress-windows-amd64/*
+          cp release/yiipress-phar/yiipress.phar assets/yiipress.phar
+          sha256sum assets/* > assets/SHA256SUMS
+
+      - name: Generate release notes
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          previous_tag="$(git describe --tags --abbrev=0 "${tag}^" 2>/dev/null || true)"
+          range="${tag}"
+          if [ -n "${previous_tag}" ]; then
+            range="${previous_tag}..${tag}"
+          fi
+
+          changes="$(git log --format='- %s (%an)' "${range}")"
+          image="${REGISTRY}/${IMAGE_NAME}:${tag}"
+
+          {
+            printf '# %s\n\n' "${tag}"
+            printf '## Artifacts\n\n'
+            printf '%s\n' '- yiipress.phar'
+            printf '%s\n' '- yiipress-linux-amd64.tar.gz'
+            printf '%s\n' '- yiipress-macos-arm64.tar.gz'
+            printf '%s\n' '- yiipress-windows-amd64.zip'
+            printf -- '- %s\n\n' "${image}"
+            printf '%s\n\n' 'Checksums are in SHA256SUMS.'
+            printf '## Changes\n\n'
+            if [ -n "${previous_tag}" ]; then
+              printf 'Changes since %s:\n\n' "${previous_tag}"
+            fi
+            if [ -n "${changes}" ]; then
+              printf '%s\n' "${changes}"
+            else
+              printf '- Initial release (%s)\n' "$(git show -s --format='%an' "${tag}")"
+            fi
+          } > release-notes.md
+
+      - name: Create draft release with assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release create "${GITHUB_REF_NAME}" assets/* \
+            --draft \
+            --verify-tag \
+            --title "${GITHUB_REF_NAME}" \
+            --notes-file release-notes.md
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "${GITHUB_REF_NAME}" --draft=false --latest

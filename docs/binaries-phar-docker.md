@@ -28,6 +28,12 @@ make package-distroless-push
 - `make package-distroless` builds a local `${IMAGE}-static:${IMAGE_TAG}` image from the `distroless` Docker target. The image copies only the static `yiipress` binary into a distroless base and runs it as the entrypoint.
 - `make package-distroless-push` builds and pushes the same image.
 
+## Dockerfiles
+
+`docker/Dockerfile` is the source build Dockerfile. It contains development and production image targets, PHAR packaging targets, and the expensive static-php-cli Linux binary build targets used by `make package*` and CI packaging jobs.
+
+`docker/Dockerfile.distroless-binary` is the final image assembly Dockerfile for GitHub Actions. It does not build PHP, Composer dependencies, the PHAR, or static-php-cli. It copies an already-built `dist/linux-amd64/yiipress` binary into the distroless base image, so nightly and release container images reuse the Linux binary artifact instead of rebuilding it.
+
 The PHAR builder copies only runtime inputs into the build stage: `config/`, `public/`, `src/`, `themes/`, `yii`, Composer metadata, and the PHAR build scripts. Dependencies are installed with `--no-dev` inside that stage before the PHAR is assembled.
 
 PHPDoc comments are stripped from packaged PHP files to keep the standalone PHAR and embedded static-binary PHAR smaller while preserving runtime comments, code, and dependency PHPDoc that is read through reflection at runtime. Benchmark fixture helpers, Composer's `installed.json`, VCS placeholders, and non-runtime type stubs are omitted because packaged commands do not need them.
@@ -35,4 +41,6 @@ The static executable includes `ext-highlighter`, so syntax highlighting does no
 Relative `content-dir`, `output-dir`, `new`, `clean`, `serve`, and `import` paths are resolved from the directory where you run `yiipress`, not from the packaged executable location.
 PHAR and static binary runs keep build cache and incremental manifests under the OS temp directory, keyed by the current project directory, instead of writing to `runtime/` in the site checkout. `yiipress clean` removes that packaged cache as well as the configured output directory.
 
-GitHub Actions builds the same outputs in the `Package Static Builds` workflow. Commits to `master` publish separate nightly PHAR, Linux, macOS, and Windows workflow artifacts and push the distroless image as `ghcr.io/<owner>/<repo>-static:nightly` plus a commit-specific `nightly-<sha>` tag. Version tags publish the standalone `yiipress.phar`, Linux archive, macOS archive, and Windows archive to the GitHub release and push semver tags for the distroless image.
+GitHub Actions builds the same outputs in the `Package Static Builds` workflow. Commits to `master` publish separate nightly PHAR, Linux, macOS, and Windows workflow artifacts and push the distroless image as `ghcr.io/<owner>/<repo>-static:nightly` plus a commit-specific `nightly-<sha>` tag.
+
+Version tags run the `Release` workflow. It builds the PHAR, Linux, macOS, and Windows binaries, pushes only the binary-based distroless image as `ghcr.io/<owner>/<repo>-static:<tag>` plus semver aliases, then creates a draft GitHub release, attaches all binaries and `SHA256SUMS`, writes release notes from commits with their authors, and publishes the release. The Linux binary and PHAR come from the same static-package build, and the release image is assembled from the Linux binary artifact, so the expensive packaging build is not repeated for those outputs.

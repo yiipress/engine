@@ -9,7 +9,7 @@
 [![Latest Stable Version](https://poser.pugx.org/yiipress/engine/v)](https://packagist.org/packages/yiipress/engine)
 [![Total Downloads](https://poser.pugx.org/yiipress/engine/downloads)](https://packagist.org/packages/yiipress/engine)
 [![Tests](https://github.com/yiipress/engine/actions/workflows/run-tests.yml/badge.svg)](https://github.com/yiipress/engine/actions/workflows/run-tests.yml)
-[![Docker](https://github.com/yiipress/engine/actions/workflows/docker-build.yml/badge.svg)](https://github.com/yiipress/engine/actions/workflows/docker-build.yml)
+[![Release](https://github.com/yiipress/engine/actions/workflows/release.yml/badge.svg)](https://github.com/yiipress/engine/actions/workflows/release.yml)
 
 YiiPress is a fast, file-based static website engine powered by [Yii3](https://www.yiiframework.com/).
 Write Markdown, build static HTML, and ship blogs, documentation, feeds, sitemaps, taxonomy pages, authors, search, redirects,
@@ -21,7 +21,8 @@ or a database on the machine that builds or previews the site.
 ## Features
 
 - Static Linux, macOS, and Windows binaries for simple installs with no PHP runtime.
-- Docker images for CI and container-based workflows.
+- Binary-only distroless Docker images for container-based workflows.
+- Reusable GitHub Action for fast binary-based CI builds.
 - Incremental and parallel builds with native Markdown, YAML, and syntax highlighting.
 - Plain Markdown/YAML content that works well with Git.
 - PHP templates for full control without learning a custom template language.
@@ -35,7 +36,8 @@ or a database on the machine that builds or previews the site.
 ## Requirements
 
 - For users: the `yiipress` static binary for your platform.
-- For CI or container workflows: Docker, using the published YiiPress image.
+- For GitHub Actions: the YiiPress build action, which downloads the Linux binary automatically.
+- For container workflows: Docker, using the published binary-only YiiPress image.
 - For engine development from source: Docker and Docker Compose.
 
 Source installs require PHP 8.5 and native extensions. Prefer the binary unless you are developing the engine itself.
@@ -156,6 +158,7 @@ Full documentation is available in [`docs/`](docs/) and at [yiipress.yiiframewor
 - [Configuration](docs/configuration.md)
 - [Importing content](docs/importing-content.md)
 - [Commands](docs/commands.md)
+- [GitHub Actions](docs/github-actions.md)
 - [Templates](docs/templates.md)
 - [Plugins](docs/plugins.md)
 - [Deployment](docs/deployment.md)
