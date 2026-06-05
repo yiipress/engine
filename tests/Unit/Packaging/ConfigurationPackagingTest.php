@@ -288,7 +288,10 @@ final class ConfigurationPackagingTest extends TestCase
         $action = file_get_contents(dirname(__DIR__, 3) . '/.github/actions/build/action.yml');
         self::assertIsString($action);
 
-        self::assertStringContainsString('default: ""', $action);
+        self::assertMatchesRegularExpression(
+            '/binary-path:\n\s+description: [^\n]+\n\s+required: false\n\s+default: ""/',
+            $action,
+        );
         self::assertStringContainsString('binary_path="${RUNNER_TEMP}/yiipress"', $action);
         self::assertStringContainsString('elif [[ "${BINARY_PATH}" = /* ]]; then', $action);
         self::assertStringContainsString('printf \'binary-path=%s\n\' "${binary_path}"', $action);
@@ -303,9 +306,15 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('workflow_run:', $workflow);
         self::assertStringContainsString('workflows: ["Package Static Builds"]', $workflow);
         self::assertStringContainsString("github.event.workflow_run.conclusion == 'success'", $workflow);
+        self::assertStringContainsString('uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5', $workflow);
+        self::assertStringContainsString('persist-credentials: false', $workflow);
+        self::assertStringContainsString('mkdir -p _site', $workflow);
+        self::assertStringContainsString('user_id="$(id -u):$(id -g)"', $workflow);
+        self::assertStringContainsString('--user "${user_id}"', $workflow);
         self::assertStringContainsString('ghcr.io/yiipress/engine-static:nightly', $workflow);
         self::assertStringContainsString('build --content-dir=docs --output-dir=_site --no-cache', $workflow);
         self::assertStringNotContainsString('uses: ./.github/actions/build', $workflow);
+        self::assertStringNotContainsString('--user=root', $workflow);
     }
 
     #[Test]

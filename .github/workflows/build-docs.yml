@@ -24,12 +24,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
 
       - name: Build documentation
         run: |
+          mkdir -p _site
+          user_id="$(id -u):$(id -g)"
           docker run --rm \
-            --user=root \
+            --user "${user_id}" \
             -v ${{ github.workspace }}/docs:/site/docs \
             -v ${{ github.workspace }}/_site:/site/_site \
             ghcr.io/yiipress/engine-static:nightly \
