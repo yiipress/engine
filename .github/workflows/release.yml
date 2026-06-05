@@ -31,6 +31,8 @@ jobs:
 
       - name: Build Linux and PHAR artifacts
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: false
         with:
           context: .
           file: ./docker/Dockerfile
@@ -216,6 +218,8 @@ jobs:
 
       - name: Build and push binary-only distroless image
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: false
         with:
           context: .
           file: ./docker/Dockerfile.distroless-binary
