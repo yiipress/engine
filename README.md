@@ -9,6 +9,8 @@
 [![Latest Stable Version](https://poser.pugx.org/yiipress/engine/v)](https://packagist.org/packages/yiipress/engine)
 [![Total Downloads](https://poser.pugx.org/yiipress/engine/downloads)](https://packagist.org/packages/yiipress/engine)
 [![Tests](https://github.com/yiipress/engine/actions/workflows/run-tests.yml/badge.svg)](https://github.com/yiipress/engine/actions/workflows/run-tests.yml)
+[![Static Analysis](https://github.com/yiipress/engine/actions/workflows/static-analysis.yml/badge.svg)](https://github.com/yiipress/engine/actions/workflows/static-analysis.yml)
+[![Coverage](https://codecov.io/gh/yiipress/engine/branch/master/graph/badge.svg)](https://codecov.io/gh/yiipress/engine)
 [![Package](https://github.com/yiipress/engine/actions/workflows/package-static.yml/badge.svg)](https://github.com/yiipress/engine/actions/workflows/package-static.yml)
 
 YiiPress is a fast, file-based static website engine powered by [Yii3](https://www.yiiframework.com/).

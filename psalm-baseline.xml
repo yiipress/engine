@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<files psalm-version="6.16.1@f1f5de594dc76faf8784e02d3dc4716c91c6f6ac">
+  <file src="src/Build/AssetFingerprintManifest.php">
+    <PossiblyFalseArgument>
+      <code><![CDATA[hash_file('xxh128', $sourceFilePath)]]></code>
+    </PossiblyFalseArgument>
+  </file>
+  <file src="src/Build/BuildDiagnostics.php">
+    <InvalidNullableReturnType>
+      <code><![CDATA[string]]></code>
+    </InvalidNullableReturnType>
+    <NullableReturnStatement>
+      <code><![CDATA[preg_replace('/`[^`]+`/', '', (string) $body)]]></code>
+    </NullableReturnStatement>
+  </file>
+  <file src="src/Build/BuildManifest.php">
+    <MixedPropertyTypeCoercion>
+      <code><![CDATA[$data]]></code>
+      <code><![CDATA[$data['entries']]]></code>
+      <code><![CDATA[isset($data['configFiles']) && is_array($data['configFiles']) ? array_values($data['configFiles']) : []]]></code>
+      <code><![CDATA[isset($data['trackedDirectories']) && is_array($data['trackedDirectories']) ? $data['trackedDirectories'] : []]]></code>
+    </MixedPropertyTypeCoercion>
+    <PropertyTypeCoercion>
+      <code><![CDATA[$this->entries]]></code>
+    </PropertyTypeCoercion>
+    <RedundantCast>
+      <code><![CDATA[(int) $mtime]]></code>
+    </RedundantCast>
+    <RedundantFunctionCall>
+      <code><![CDATA[array_values]]></code>
+    </RedundantFunctionCall>
+  </file>
+  <file src="src/Build/DateArchiveWriter.php">
+    <PossiblyNullArgument>
+      <code><![CDATA[$task['month']]]></code>
+      <code><![CDATA[$task['months']]]></code>
+      <code><![CDATA[$task['years']]]></code>
+    </PossiblyNullArgument>
+    <PossiblyUndefinedArrayOffset>
+      <code><![CDATA[$task['month']]]></code>
+      <code><![CDATA[$task['months']]]></code>
+      <code><![CDATA[$task['years']]]></code>
+    </PossiblyUndefinedArrayOffset>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(string) $month]]></code>
+      <code><![CDATA[(string) $year]]></code>
+      <code><![CDATA[(string) $year]]></code>
+    </RedundantCastGivenDocblockType>
+  </file>
+  <file src="src/Build/EntryRenderer.php">
+    <FalsableReturnStatement>
+      <code><![CDATA[ob_get_clean()]]></code>
+    </FalsableReturnStatement>
+    <InvalidFalsableReturnType>
+      <code><![CDATA[string]]></code>
+    </InvalidFalsableReturnType>
+    <MixedArgument>
+      <code><![CDATA[$html]]></code>
+    </MixedArgument>
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$navigationPager]]></code>
+    </MixedArgumentTypeCoercion>
+    <PossiblyUndefinedArrayOffset>
+      <code><![CDATA[$navigationPager[$key]]]></code>
+    </PossiblyUndefinedArrayOffset>
+    <UnresolvableInclude>
+      <code><![CDATA[require $templatePath]]></code>
+    </UnresolvableInclude>
+  </file>
+  <file src="src/Build/FeedGenerator.php">
+    <MixedArgument>
+      <code><![CDATA[$authorName]]></code>
+    </MixedArgument>
+    <MixedPropertyFetch>
+      <code><![CDATA[$this->authors[$authorSlug]->title]]></code>
+    </MixedPropertyFetch>
+  </file>
+  <file src="src/Build/NavigationPager.php">
+    <InvalidArrayOffset>
+      <code><![CDATA[$items[$index - 1]]]></code>
+    </InvalidArrayOffset>
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[[
+                'previous' => $items[$index - 1] ?? null,
+                'next' => $items[$index + 1] ?? null,
+            ]]]></code>
+      <code><![CDATA[array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null]]></code>
+    </MixedReturnTypeCoercion>
+  </file>
+  <file src="src/Build/NotFoundPageWriter.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$params]]></code>
+    </MixedArgumentTypeCoercion>
+    <UnresolvableInclude>
+      <code><![CDATA[require $this->templateResolver->resolve('errors/404', $siteConfig->theme)]]></code>
+    </UnresolvableInclude>
+  </file>
+  <file src="src/Build/PageTemplateRenderer.php">
+    <MixedArgument>
+      <code><![CDATA[$html]]></code>
+    </MixedArgument>
+    <UnresolvableInclude>
+      <code><![CDATA[require $templatePath]]></code>
+    </UnresolvableInclude>
+  </file>
+  <file src="src/Build/ParallelEntryWriter.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$authors]]></code>
+      <code><![CDATA[$authors]]></code>
+    </MixedArgumentTypeCoercion>
+  </file>
+  <file src="src/Build/TaxonomyPageWriter.php">
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(string) $term]]></code>
+    </RedundantCastGivenDocblockType>
+  </file>
+  <file src="src/Build/TemplateContext.php">
+    <FalsableReturnStatement>
+      <code><![CDATA[ob_get_clean()]]></code>
+    </FalsableReturnStatement>
+    <InvalidFalsableReturnType>
+      <code><![CDATA[string]]></code>
+    </InvalidFalsableReturnType>
+    <MixedReturnStatement>
+      <code><![CDATA[($this->closureCache[$name])($variables)]]></code>
+    </MixedReturnStatement>
+    <UnresolvableInclude>
+      <code><![CDATA[require $path]]></code>
+    </UnresolvableInclude>
+  </file>
+  <file src="src/Build/TemplateHelpers.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$params]]></code>
+    </MixedArgumentTypeCoercion>
+  </file>
+  <file src="src/Console/BuildCommand.php">
+    <DocblockTypeContradiction>
+      <code><![CDATA[$quota === null]]></code>
+    </DocblockTypeContradiction>
+    <ForbiddenCode>
+      <code><![CDATA[shell_exec('nproc 2>/dev/null')]]></code>
+    </ForbiddenCode>
+    <InvalidArgument>
+      <code><![CDATA[$standaloneTasks]]></code>
+      <code><![CDATA[$tasksToWrite]]></code>
+    </InvalidArgument>
+    <MixedArgument>
+      <code><![CDATA[$period]]></code>
+    </MixedArgument>
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$entriesByAuthor]]></code>
+    </MixedArgumentTypeCoercion>
+    <MixedArrayOffset>
+      <code><![CDATA[$entriesByAuthor[$authorSlug]]]></code>
+    </MixedArrayOffset>
+    <MixedMethodCall>
+      <code><![CDATA[write]]></code>
+    </MixedMethodCall>
+    <MixedPropertyFetch>
+      <code><![CDATA[$entry->authors]]></code>
+    </MixedPropertyFetch>
+    <NoValue>
+      <code><![CDATA[$collection]]></code>
+    </NoValue>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(string) pathinfo($item->getFilename(), PATHINFO_EXTENSION)]]></code>
+    </RedundantCastGivenDocblockType>
+    <RedundantConditionGivenDocblockType>
+      <code><![CDATA[explode(',', $cpuList)]]></code>
+    </RedundantConditionGivenDocblockType>
+    <TypeDoesNotContainType>
+      <code><![CDATA[$collection !== null]]></code>
+    </TypeDoesNotContainType>
+  </file>
+  <file src="src/Console/ImportCommand.php">
+    <RedundantCast>
+      <code><![CDATA[(string) $token]]></code>
+      <code><![CDATA[(string) $token]]></code>
+    </RedundantCast>
+  </file>
+  <file src="src/Content/CrossReferenceResolver.php">
+    <InvalidNullableReturnType>
+      <code><![CDATA[string]]></code>
+    </InvalidNullableReturnType>
+    <NullableReturnStatement>
+      <code><![CDATA[preg_replace_callback(
+            '/\[([^\]]*)\]\(([^)#]+\.md)(#[^)]*)?\)/',
+            function (array $matches): string {
+                $text = $matches[1];
+                $path = $matches[2];
+                $fragment = $matches[3] ?? '';
+
+                $resolved = $this->resolvePath($path);
+                $permalink = $this->fileToPermalink[$resolved] ?? null;
+
+                if ($permalink === null) {
+                    return $matches[0];
+                }
+
+                if ($this->currentPermalink !== '') {
+                    $rootPath = RelativePathHelper::rootPath($this->currentPermalink);
+                    $permalink = RelativePathHelper::relativize($permalink, $rootPath);
+                }
+
+                return '[' . $text . '](' . $permalink . $fragment . ')';
+            },
+            $markdown,
+        )]]></code>
+    </NullableReturnStatement>
+  </file>
+  <file src="src/Content/Model/Entry.php">
+    <RedundantCast>
+      <code><![CDATA[(string) $text]]></code>
+    </RedundantCast>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(string) $text]]></code>
+    </RedundantCastGivenDocblockType>
+  </file>
+  <file src="src/Content/Parser/CollectionConfigParser.php">
+    <MixedArgument>
+      <code><![CDATA[$data['order']]]></code>
+    </MixedArgument>
+    <MixedArrayAccess>
+      <code><![CDATA[$data['description']]]></code>
+      <code><![CDATA[$data['entries_per_page']]]></code>
+      <code><![CDATA[$data['feed']]]></code>
+      <code><![CDATA[$data['listing']]]></code>
+      <code><![CDATA[$data['navigation_pager']]]></code>
+      <code><![CDATA[$data['permalink']]]></code>
+      <code><![CDATA[$data['sort_by']]]></code>
+      <code><![CDATA[$data['sort_order']]]></code>
+      <code><![CDATA[$data['title']]]></code>
+    </MixedArrayAccess>
+  </file>
+  <file src="src/Content/Parser/ContentParser.php">
+    <PossiblyNullArgument>
+      <code><![CDATA[$this->filenameParser]]></code>
+      <code><![CDATA[$this->filenameParser]]></code>
+      <code><![CDATA[$this->frontMatterParser]]></code>
+      <code><![CDATA[$this->frontMatterParser]]></code>
+    </PossiblyNullArgument>
+  </file>
+  <file src="src/Content/Parser/EntryParser.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[isset($fields['extra']) && is_array($fields['extra'])
+                ? $fields['extra']
+                : []]]></code>
+    </MixedArgumentTypeCoercion>
+  </file>
+  <file src="src/Content/Parser/FrontMatterParser.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$result]]></code>
+    </MixedArgumentTypeCoercion>
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[$result]]></code>
+      <code><![CDATA[array{frontMatter: array<string, mixed>, bodyOffset: int, bodyLength: int}]]></code>
+    </MixedReturnTypeCoercion>
+  </file>
+  <file src="src/Content/Parser/NavigationParser.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$item['children']]]></code>
+      <code><![CDATA[$items]]></code>
+    </ArgumentTypeCoercion>
+    <DocblockTypeContradiction>
+      <code><![CDATA[is_array($item)]]></code>
+    </DocblockTypeContradiction>
+    <RedundantCast>
+      <code><![CDATA[(string) reset($titles)]]></code>
+    </RedundantCast>
+  </file>
+  <file src="src/Content/Parser/SiteConfigParser.php">
+    <MixedArgument>
+      <code><![CDATA[$data]]></code>
+    </MixedArgument>
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[isset($data['params']) && is_array($data['params'])
+                ? $data['params']
+                : []]]></code>
+    </MixedArgumentTypeCoercion>
+  </file>
+  <file src="src/Import/Telegram/Channel.php">
+    <MixedArgument>
+      <code><![CDATA[$this->message['action']]]></code>
+      <code><![CDATA[$this->message['type']]]></code>
+    </MixedArgument>
+    <MixedReturnStatement>
+      <code><![CDATA[$this->message['title']]]></code>
+    </MixedReturnStatement>
+  </file>
+  <file src="src/Import/Telegram/Message.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$this->message['text']]]></code>
+    </ArgumentTypeCoercion>
+    <DocblockTypeContradiction>
+      <code><![CDATA[empty($lines)]]></code>
+      <code><![CDATA[empty($lines)]]></code>
+    </DocblockTypeContradiction>
+    <MixedArgument>
+      <code><![CDATA[$text]]></code>
+      <code><![CDATA[$text]]></code>
+      <code><![CDATA[$text]]></code>
+      <code><![CDATA[$text]]></code>
+      <code><![CDATA[$text]]></code>
+      <code><![CDATA[$text]]></code>
+      <code><![CDATA[$this->message['text']]]></code>
+      <code><![CDATA[$this->message['text_entities']]]></code>
+      <code><![CDATA[$this->message['text_entities']]]></code>
+    </MixedArgument>
+    <MixedArrayAccess>
+      <code><![CDATA[$entity['href']]]></code>
+      <code><![CDATA[$entity['language']]]></code>
+      <code><![CDATA[$entity['length']]]></code>
+      <code><![CDATA[$entity['offset']]]></code>
+      <code><![CDATA[$entity['text']]]></code>
+      <code><![CDATA[$entity['type']]]></code>
+      <code><![CDATA[$entity['type']]]></code>
+    </MixedArrayAccess>
+    <MixedOperand>
+      <code><![CDATA[$annotation['href']]]></code>
+      <code><![CDATA[$annotation['language'] ?? '']]></code>
+      <code><![CDATA[$markdown]]></code>
+      <code><![CDATA[$markdown]]></code>
+    </MixedOperand>
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[$date]]></code>
+      <code><![CDATA[$edited]]></code>
+      <code><![CDATA[$file]]></code>
+      <code><![CDATA[$forwardedFrom]]></code>
+      <code><![CDATA[$id]]></code>
+      <code><![CDATA[$markdown]]></code>
+      <code><![CDATA[$photo]]></code>
+      <code><![CDATA[$slug]]></code>
+      <code><![CDATA[$tags]]></code>
+      <code><![CDATA[$telegramLink]]></code>
+      <code><![CDATA[$title]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="src/Import/Telegram/TelegramContentImporter.php">
+    <MixedArgument>
+      <code><![CDATA[$dataMessage]]></code>
+      <code><![CDATA[$dataMessage]]></code>
+    </MixedArgument>
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$skippedFiles]]></code>
+    </MixedArgumentTypeCoercion>
+    <MixedArrayAccess>
+      <code><![CDATA[$dataMessage['id']]]></code>
+      <code><![CDATA[$dataMessage['id']]]></code>
+      <code><![CDATA[$dataMessage['id']]]></code>
+      <code><![CDATA[$dataMessage['text']]]></code>
+      <code><![CDATA[$dataMessage['type']]]></code>
+      <code><![CDATA[$dataMessage['type']]]></code>
+    </MixedArrayAccess>
+    <MixedOperand>
+      <code><![CDATA[$tag]]></code>
+    </MixedOperand>
+    <PossiblyFalseArgument>
+      <code><![CDATA[$json]]></code>
+      <code><![CDATA[mb_detect_encoding($json, ['UTF-16LE', 'UTF-16BE', 'UTF-8', 'Windows-1251'], true)]]></code>
+    </PossiblyFalseArgument>
+  </file>
+  <file src="src/Processor/OEmbed/OEmbedProcessor.php">
+    <PropertyTypeCoercion>
+      <code><![CDATA[$providers]]></code>
+    </PropertyTypeCoercion>
+  </file>
+  <file src="src/Processor/Shortcode/YouTubeProcessor.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$params]]></code>
+      <code><![CDATA[$params]]></code>
+      <code><![CDATA[$params]]></code>
+    </MixedArgumentTypeCoercion>
+  </file>
+  <file src="src/Render/MarkdownRenderer.php">
+    <MixedReturnStatement>
+      <code><![CDATA[md4c_toHtml($markdown, $this->flags)]]></code>
+    </MixedReturnStatement>
+  </file>
+</files>

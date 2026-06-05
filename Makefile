@@ -31,7 +31,7 @@ PACKAGE_IMAGE ?= ${IMAGE}-static
 MACOS_PACKAGE_ARGS ?=
 WINDOWS_PACKAGE_ARGS ?=
 
-.PHONY: build up open down stop clear shell yii composer rector cs-fix test test-coverage psalm composer-dependency-analyser bench-generate bench-generate-realistic bench bench-baseline bench-compare bench-profile profile-build php build-docs package package-phar package-linux package-macos package-windows package-distroless package-distroless-push prod-build prod-push prod-deploy help
+.PHONY: build up open down stop clear shell yii composer rector cs-fix test test-coverage test-coverage-clover psalm composer-dependency-analyser bench-generate bench-generate-realistic bench bench-baseline bench-compare bench-profile profile-build php build-docs package package-phar package-linux package-macos package-windows package-distroless package-distroless-push prod-build prod-push prod-deploy help
 
 #
 # Development
@@ -139,6 +139,11 @@ endif
 ifeq ($(PRIMARY_GOAL),test-coverage)
 test-coverage: ## Run tests with coverage
 	$(DOCKER_COMPOSE_TEST) run --rm app ./vendor/bin/phpunit --coverage-html runtime/coverage $(CLI_ARGS)
+endif
+
+ifeq ($(PRIMARY_GOAL),test-coverage-clover)
+test-coverage-clover: ## Run tests with Clover coverage
+	$(DOCKER_COMPOSE_TEST) run --rm app bash -lc 'mkdir -p runtime/coverage && ./vendor/bin/phpunit --coverage-clover runtime/coverage/clover.xml $(CLI_ARGS)'
 endif
 
 ifeq ($(PRIMARY_GOAL),psalm)
