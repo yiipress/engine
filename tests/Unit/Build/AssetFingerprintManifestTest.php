@@ -57,7 +57,21 @@ final class AssetFingerprintManifestTest extends TestCase
         $absolute = $rewriter->rewrite('<link href="/assets/theme/style.css">', '../../');
 
         assertSame('<link href="../../' . $fingerprinted . '">', $relative);
-        assertSame('<link href="/' . $fingerprinted . '">', $absolute);
+        assertSame('<link href="../../' . $fingerprinted . '">', $absolute);
+    }
+
+    public function testRewriterRelativizesRootRelativeContentAssetUrls(): void
+    {
+        $source = $this->tempDir . '/photo.jpg';
+        file_put_contents($source, 'jpg');
+
+        $manifest = new AssetFingerprintManifest();
+        $fingerprinted = $manifest->register('blog/assets/photo.jpg', $source);
+        $rewriter = new AssetUrlRewriter($manifest);
+
+        $html = $rewriter->rewrite('<img src="/blog/assets/photo.jpg">', '../../');
+
+        assertSame('<img src="../../' . $fingerprinted . '">', $html);
     }
 
     public function testRewriterPrefixesUnqualifiedAssetUrlsWithRootPath(): void

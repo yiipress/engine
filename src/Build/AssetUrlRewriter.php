@@ -100,7 +100,7 @@ final readonly class AssetUrlRewriter
     private function extractLogicalPath(string $path, string $rootPath): array
     {
         if (str_starts_with($path, '/')) {
-            return ['/', AssetFingerprintManifest::normalizePath($path)];
+            return ['', AssetFingerprintManifest::normalizePath($path)];
         }
 
         if ($rootPath !== '' && $rootPath !== '/' && str_starts_with($path, $rootPath)) {

@@ -203,6 +203,8 @@ When enabled, YiiPress renames copied assets to include a content hash, for exam
 
 Built-in templates use the fingerprinted URLs automatically, and existing hardcoded `src` / `href`
 asset references in rendered HTML are rewritten during build so custom themes continue to work.
+Root-relative local asset references are treated as YiiPress site-root paths and emitted relative to
+the current output page, so they remain valid when `base_url` contains a deployment path.
 
 ### Editor
 

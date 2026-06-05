@@ -9,10 +9,12 @@ use YiiPress\Build\Theme;
 use YiiPress\Build\ThemeRegistry;
 use YiiPress\Build\RedirectPageWriter;
 use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\SiteConfig;
 use YiiPress\I18n\UiText;
 use DateTimeImmutable;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -122,6 +124,40 @@ final class RedirectPageWriterTest extends TestCase
         assertStringContainsString('Эта страница переехала.', $html);
     }
 
+    public function testPrefixesSiteRootRedirectWithBaseUrlPath(): void
+    {
+        $entry = $this->createEntry(redirectTo: '/blog/');
+        $filePath = $this->outputDir . '/index.html';
+
+        new RedirectPageWriter()->write(
+            $entry,
+            $filePath,
+            siteConfig: $this->createSiteConfig('https://samdark.github.io/blog/'),
+            sourcePermalink: '/',
+        );
+
+        $html = file_get_contents($filePath);
+        assertStringContainsString('href="/blog/blog/"', $html);
+        assertStringContainsString('url=/blog/blog/', $html);
+        assertStringContainsString('window.location.replace("\\/blog\\/blog\\/")', $html);
+    }
+
+    public function testRejectsSelfRedirectAfterBaseUrlPathResolution(): void
+    {
+        $entry = $this->createEntry(redirectTo: '/');
+        $filePath = $this->outputDir . '/index.html';
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Redirect from "/" to "/" resolves to the same public URL.');
+
+        new RedirectPageWriter()->write(
+            $entry,
+            $filePath,
+            siteConfig: $this->createSiteConfig('https://samdark.github.io/blog/'),
+            sourcePermalink: '/',
+        );
+    }
+
     private function createEntry(string $redirectTo): Entry
     {
         $file = $this->outputDir . '/entry.md';
@@ -147,6 +183,23 @@ final class RedirectPageWriterTest extends TestCase
             extra: [],
             bodyOffset: 0,
             bodyLength: 0,
+        );
+    }
+
+    private function createSiteConfig(string $baseUrl): SiteConfig
+    {
+        return new SiteConfig(
+            title: 'Test Site',
+            description: '',
+            baseUrl: $baseUrl,
+            defaultLanguage: 'en',
+            charset: 'UTF-8',
+            defaultAuthor: '',
+            dateFormat: 'Y-m-d',
+            entriesPerPage: 10,
+            permalink: '/:collection/:slug/',
+            taxonomies: [],
+            params: [],
         );
     }
 

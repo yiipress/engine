@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiPress\Build;
 
 use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\SiteConfig;
 use YiiPress\I18n\UiText;
 use RuntimeException;
 
@@ -14,10 +15,27 @@ use function json_encode;
 
 final class RedirectPageWriter
 {
-    public function write(Entry $entry, string $filePath, string $language = 'en', ?UiText $ui = null, bool $noWrite = false): void
-    {
+    public function write(
+        Entry $entry,
+        string $filePath,
+        string $language = 'en',
+        ?UiText $ui = null,
+        bool $noWrite = false,
+        ?SiteConfig $siteConfig = null,
+        string $sourcePermalink = '',
+    ): void {
         $htmlLanguage = $language !== '' ? $language : 'en';
-        $target = $entry->redirectTo;
+        if ($siteConfig !== null && $sourcePermalink !== '' && PublicUrlResolver::isSamePublicUrl($siteConfig, $sourcePermalink, $entry->redirectTo)) {
+            throw new RuntimeException(sprintf(
+                'Redirect from "%s" to "%s" resolves to the same public URL.',
+                $sourcePermalink,
+                $entry->redirectTo,
+            ));
+        }
+
+        $target = $siteConfig !== null
+            ? PublicUrlResolver::browserUrl($siteConfig, $entry->redirectTo)
+            : $entry->redirectTo;
         $targetEscaped = htmlspecialchars($target, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $targetJson = json_encode($target, JSON_THROW_ON_ERROR);
         $ui ??= UiText::for($htmlLanguage);
