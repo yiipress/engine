@@ -88,7 +88,7 @@ Enable GitHub Pages in your repository settings: go to **Settings → Pages** an
 
 > **Tip:** Replace `X.Y.Z` with a real YiiPress version tag for reproducible, stable builds. The action builds to `_site` by default for GitHub Pages. See [GitHub Actions](github-actions.md) for custom output directories and other inputs.
 
-> **Real-world example:** This is exactly how the YiiPress documentation itself is built and deployed — see [`.github/workflows/build-docs.yml`](https://github.com/yiipress/engine/blob/master/.github/workflows/build-docs.yml) in this repository.
+> **Real-world example:** YiiPress documentation is built from the nightly binary image after the package workflow succeeds — see [`.github/workflows/build-docs.yml`](https://github.com/yiipress/engine/blob/master/.github/workflows/build-docs.yml) in this repository. Site repositories should use the release action above with a fixed version.
 
 ## Cloudflare Pages
 
@@ -97,7 +97,10 @@ Enable GitHub Pages in your repository settings: go to **Settings → Pages** an
 1. Push your project to a GitHub or GitLab repository.
 2. In the [Cloudflare dashboard](https://dash.cloudflare.com/), go to **Workers & Pages → Create application → Pages → Connect to Git**.
 3. Select your repository and configure the build settings:
-   - **Install command:** `curl -fsSL https://github.com/yiipress/engine/releases/download/X.Y.Z/yiipress-linux-amd64.tar.gz | tar -xz && chmod +x yiipress`
+   - **Install command:**
+     ```bash
+     curl -fsSLO https://github.com/yiipress/engine/releases/download/X.Y.Z/yiipress-linux-amd64.tar.gz && curl -fsSLO https://github.com/yiipress/engine/releases/download/X.Y.Z/SHA256SUMS && checksum="$(awk '$2 ~ /(^|\/)yiipress-linux-amd64\.tar\.gz$/ { print $1; exit }' SHA256SUMS)" && test -n "$checksum" && printf '%s  yiipress-linux-amd64.tar.gz\n' "$checksum" | sha256sum -c - && tar -xzf yiipress-linux-amd64.tar.gz && chmod +x yiipress
+     ```
    - **Build command:** `./yiipress build --output-dir=_site --no-cache`
    - **Build output directory:** `_site`
 4. Click **Save and Deploy**.

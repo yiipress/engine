@@ -1,9 +1,12 @@
 name: Build and Deploy Documentation
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Package Static Builds"]
     branches:
       - master
+    types:
+      - completed
   workflow_dispatch:
 
 permissions:
@@ -17,20 +20,30 @@ concurrency:
 
 jobs:
   build:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
 
       - name: Build documentation
-        uses: ./.github/actions/build
-        with:
-          content-dir: docs
+        run: |
+          mkdir -p _site
+          user_id="$(id -u):$(id -g)"
+          docker run --rm \
+            --user "${user_id}" \
+            -v ${{ github.workspace }}/docs:/site/docs \
+            -v ${{ github.workspace }}/_site:/site/_site \
+            ghcr.io/yiipress/engine-static:nightly \
+            build --content-dir=docs --output-dir=_site --no-cache
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b
 
   deploy:
+    if: ${{ github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch' }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

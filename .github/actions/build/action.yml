@@ -23,9 +23,9 @@ inputs:
     required: false
     default: --no-cache
   binary-path:
-    description: Path where the downloaded yiipress binary is installed.
+    description: Path where the downloaded yiipress binary is installed. Defaults to the runner temp directory.
     required: false
-    default: yiipress
+    default: ""
   github-token:
     description: Token used to resolve the latest release through the GitHub API.
     required: false
@@ -62,6 +62,8 @@ runs:
 
         repository="${ACTION_REPOSITORY:-yiipress/engine}"
         version="${VERSION}"
+        work_dir="$(mktemp -d)"
+        trap 'rm -rf "${work_dir}"' EXIT
 
         if [ "${version}" = "latest" ]; then
           headers=(-H "Accept: application/vnd.github+json")
@@ -69,20 +71,29 @@ runs:
             headers+=(-H "Authorization: Bearer ${GH_TOKEN}")
           fi
 
+          latest_release="${work_dir}/latest-release.json"
+          if ! curl -fsSL "${headers[@]}" "https://api.github.com/repos/${repository}/releases/latest" -o "${latest_release}"; then
+            echo "Could not resolve the latest YiiPress release for ${repository}. Pin the version input to an existing release." >&2
+            exit 1
+          fi
+
           version="$(
-            curl -fsSL "${headers[@]}" "https://api.github.com/repos/${repository}/releases/latest" \
-              | python3 -c 'import json, sys; print(json.load(sys.stdin)["tag_name"])'
+            python3 -c 'import json, sys; print(json.load(sys.stdin)["tag_name"])' < "${latest_release}"
           )"
         fi
 
-        if [[ "${BINARY_PATH}" = /* ]]; then
+        if [ -z "${version}" ]; then
+          echo "YiiPress release version must not be empty." >&2
+          exit 1
+        fi
+
+        if [ -z "${BINARY_PATH}" ]; then
+          binary_path="${RUNNER_TEMP}/yiipress"
+        elif [[ "${BINARY_PATH}" = /* ]]; then
           binary_path="${BINARY_PATH}"
         else
           binary_path="${GITHUB_WORKSPACE}/${BINARY_PATH}"
         fi
-
-        work_dir="$(mktemp -d)"
-        trap 'rm -rf "${work_dir}"' EXIT
 
         archive="${work_dir}/yiipress-linux-amd64.tar.gz"
         checksums="${work_dir}/SHA256SUMS"
@@ -94,9 +105,12 @@ runs:
         curl "${curl_args[@]}" \
           "https://github.com/${repository}/releases/download/${version}/yiipress-linux-amd64.tar.gz" \
           -o "${archive}"
-        curl "${curl_args[@]}" \
+        if ! curl "${curl_args[@]}" \
           "https://github.com/${repository}/releases/download/${version}/SHA256SUMS" \
-          -o "${checksums}"
+          -o "${checksums}"; then
+          echo "Could not download SHA256SUMS for ${repository} ${version}. Use a YiiPress release created by the release workflow." >&2
+          exit 1
+        fi
 
         checksum="$(awk '$2 ~ /(^|\/)yiipress-linux-amd64\.tar\.gz$/ { print $1; exit }' "${checksums}")"
         if [ -z "${checksum}" ]; then
