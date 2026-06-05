@@ -117,7 +117,7 @@ extra:
 - **theme** — theme name for this entry; overrides the site-level default (see [Templates](templates.md))
 - **weight** — integer for custom sorting in non-blog collections (lower = first)
 - **language** — language code for multilingual content (e.g., `en`, `ru`)
-- **redirect_to** — URL to redirect to; generates a redirect HTML page (with `<meta http-equiv="refresh">`, JS `window.location.replace()`, and `<link rel="canonical">`) instead of rendering content. Redirect entries are excluded from feeds, sitemaps, listings, archives, and taxonomy pages
+- **redirect_to** — URL to redirect to; generates a redirect HTML page (with `<meta http-equiv="refresh">`, JS `window.location.replace()`, and `<link rel="canonical">`) instead of rendering content. Redirect entries are excluded from feeds, sitemaps, listings, archives, and taxonomy pages. Root-relative targets such as `/new-url/` are YiiPress site-root paths; when `base_url` includes a deployment path, YiiPress prefixes that path in the generated redirect target. Absolute URLs are emitted unchanged
 - **extra** — arbitrary key-value pairs accessible in templates
 
 ### Internal links
@@ -341,13 +341,16 @@ content/blog/assets/
 └── getting-started-screenshot.png
 ```
 
-Reference assets from markdown using absolute paths:
+Reference assets from markdown using site-root paths:
 
 ```markdown
 ![Banner](/blog/assets/hello-world-banner.svg)
 ```
 
 All `assets/` directories are copied to the build output preserving their path structure.
+When asset fingerprinting is enabled, these root-relative asset paths are rewritten relative to each
+generated page, which keeps them valid for deployments under a subdirectory such as GitHub Pages
+project sites.
 
 The project-level `assets/` directory (outside `content/`) is for build-time assets
 (CSS, JS) processed by the asset pipeline. Content assets are separate and copied as-is.

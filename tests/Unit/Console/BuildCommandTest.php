@@ -1169,6 +1169,70 @@ PHP,
         assertStringNotContainsString('Old URL Post', $atom);
     }
 
+    public function testBuildPrefixesRedirectTargetWithBaseUrlPath(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/yiipress-build-project-redirect-test-' . uniqid();
+        $contentDir = $tempDir . '/content';
+        $outputDir = $tempDir . '/output';
+        mkdir($contentDir, 0o755, true);
+        mkdir($contentDir . '/blog', 0o755, true);
+        $this->tempContentDirs[] = $tempDir;
+
+        file_put_contents($contentDir . '/config.yaml', "title: Project Site\nbase_url: https://samdark.github.io/blog/\nlanguages: [en]\n");
+        file_put_contents($contentDir . '/blog/_collection.yaml', "title: Blog\npermalink: /blog/:slug/\n");
+        file_put_contents($contentDir . '/index.md', "---\ntitle: Home\npermalink: /\nredirect_to: /blog/\n---\n");
+
+        $yii = dirname(__DIR__, 3) . '/yii';
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($outputDir)
+            . ' --no-cache'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        assertSame(0, $exitCode, implode("\n", $output));
+
+        $html = file_get_contents($outputDir . '/index.html');
+        assertNotFalse($html);
+        assertStringContainsString('href="/blog/blog/"', $html);
+        assertStringContainsString('url=/blog/blog/', $html);
+    }
+
+    public function testBuildRewritesRootRelativeContentImageForSubdirectoryDeployment(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/yiipress-build-project-image-test-' . uniqid();
+        $contentDir = $tempDir . '/content';
+        $outputDir = $tempDir . '/output';
+        mkdir($contentDir . '/blog/assets', 0o755, true);
+        $this->tempContentDirs[] = $tempDir;
+
+        file_put_contents($contentDir . '/config.yaml', "title: Project Site\nbase_url: https://samdark.github.io/blog/\nlanguages: [en]\n");
+        file_put_contents($contentDir . '/blog/_collection.yaml', "title: Blog\npermalink: /blog/:slug/\n");
+        file_put_contents($contentDir . '/blog/assets/photo.jpg', 'jpg');
+        file_put_contents($contentDir . '/blog/post.md', "---\ntitle: Post\nimage: /blog/assets/photo.jpg\n---\n\n![](/blog/assets/photo.jpg)\n");
+
+        $yii = dirname(__DIR__, 3) . '/yii';
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($outputDir)
+            . ' --no-cache'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        assertSame(0, $exitCode, implode("\n", $output));
+
+        $html = file_get_contents($outputDir . '/blog/post/index.html');
+        assertNotFalse($html);
+        assertMatchesRegularExpression('~<img src="../../blog/assets/photo\.[a-f0-9]{12}\.jpg" alt="">~', $html);
+        assertStringContainsString('content="https://samdark.github.io/blog/blog/assets/photo.jpg"', $html);
+    }
+
     private function manifestPath(): string
     {
         return RuntimePaths::cachePath(dirname(__DIR__, 3)) . '/build-manifest-' . hash('xxh128', $this->outputDir) . '.json';

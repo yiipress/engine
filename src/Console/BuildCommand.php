@@ -439,7 +439,7 @@ final class BuildCommand extends Command
                 $filePath = $outputDir . $permalink . 'index.html';
 
                 if ($entry->redirectTo !== '') {
-                    $redirectTasks[] = ['entry' => $entry, 'filePath' => $filePath, 'sourcePath' => $sourcePath];
+                    $redirectTasks[] = ['entry' => $entry, 'filePath' => $filePath, 'permalink' => $permalink, 'sourcePath' => $sourcePath];
                     continue;
                 }
 
@@ -516,6 +516,8 @@ final class BuildCommand extends Command
                     $language,
                     UiText::forTheme($siteConfig->defaultLanguage, $this->templateResolver, $siteConfig->theme, $siteConfig->defaultLanguage),
                     $noWrite,
+                    $siteConfig,
+                    $task['permalink'],
                 );
             }
             $output->writeln('  Redirects ' . ($noWrite ? 'rendered' : 'written') . ': <comment>' . count($redirectTasks) . '</comment>');
@@ -559,7 +561,7 @@ final class BuildCommand extends Command
             }
 
             if ($page->redirectTo !== '') {
-                $standaloneRedirectTasks[] = ['entry' => $page, 'filePath' => $filePath, 'sourcePath' => $sourcePath];
+                $standaloneRedirectTasks[] = ['entry' => $page, 'filePath' => $filePath, 'permalink' => $permalink, 'sourcePath' => $sourcePath];
             } else {
                 $standaloneTask = [
                     'entry' => $page,
@@ -596,6 +598,8 @@ final class BuildCommand extends Command
                 $language,
                 UiText::forTheme($siteConfig->defaultLanguage, $this->templateResolver, $siteConfig->theme, $siteConfig->defaultLanguage),
                 $noWrite,
+                $siteConfig,
+                $task['permalink'],
             );
         }
         $standalonePagesWritten += count($standaloneRedirectTasks);

@@ -88,6 +88,8 @@ Enable GitHub Pages in your repository settings: go to **Settings → Pages** an
 
 > **Tip:** Replace `X.Y.Z` with a real YiiPress version tag for reproducible, stable builds. The action builds to `_site` by default for GitHub Pages. See [GitHub Actions](github-actions.md) for custom output directories and other inputs.
 
+For project sites such as `https://user.github.io/project/`, set `base_url` to the full deployed URL including the project path. YiiPress uses that path when rendering root-relative redirect targets, so `redirect_to: /blog/` points to `/project/blog/` in browser-facing redirect HTML. Root-relative local asset links in rendered HTML are emitted relative to each page so images and other copied assets stay valid under the same deployment path.
+
 > **Real-world example:** YiiPress documentation is built from the nightly binary image after the package workflow succeeds — see [`.github/workflows/build-docs.yml`](https://github.com/yiipress/engine/blob/master/.github/workflows/build-docs.yml) in this repository. Site repositories should use the release action above with a fixed version.
 
 ## Cloudflare Pages
