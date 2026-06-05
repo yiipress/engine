@@ -6,11 +6,12 @@ namespace YiiPress\Content\Parser;
 
 use YiiPress\Content\Model\Navigation;
 use YiiPress\Content\Model\NavigationItem;
-use RuntimeException;
 
 use function array_filter;
+use function array_is_list;
 use function explode;
 use function file_get_contents;
+use function implode;
 use function is_array;
 use function is_scalar;
 use function reset;
@@ -24,12 +25,33 @@ final class NavigationParser
     {
         $content = file_get_contents($filePath);
         if ($content === false) {
-            throw new RuntimeException("Cannot read file: $filePath");
+            throw new InvalidContentConfigException(
+                "Cannot read navigation configuration file: $filePath",
+                $filePath,
+                'Check that the file exists and is readable by the build process.',
+            );
         }
 
         $data = yaml_parse($content);
         if ($data === false) {
-            throw new RuntimeException("Invalid YAML in file: $filePath");
+            throw new InvalidContentConfigException(
+                "Invalid YAML in navigation configuration file: $filePath",
+                $filePath,
+                "Fix the YAML syntax in $filePath, then run the build again.",
+            );
+        }
+
+        if (!is_array($data) || array_is_list($data)) {
+            throw new InvalidContentConfigException(
+                'The navigation configuration file must contain YAML key-value pairs.',
+                $filePath,
+                implode("\n", [
+                    'Use menu mappings such as:',
+                    'main:',
+                    '  - title: Home',
+                    '    url: /',
+                ]),
+            );
         }
 
         $menus = [];

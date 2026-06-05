@@ -80,6 +80,11 @@ editor: code
 - **params** — arbitrary key-value pairs for use in templates
 - **markdown** — markdown extensions configuration (see below)
 
+If `content/config.yaml` is missing required values or is not valid YAML, `yiipress build`
+prints the configuration file, the problem, and a suggested fix. For example, a missing
+or empty `languages` option is reported with a `languages: [en]` example instead of a PHP
+stack trace.
+
 ### Search
 
 Client-side search is opt-in. Enable it in `content/config.yaml`:

@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace YiiPress\Tests\Unit\Content\Parser;
 
+use YiiPress\Content\Parser\InvalidContentConfigException;
 use YiiPress\Content\Parser\SiteConfigParser;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertFalse;
 use function PHPUnit\Framework\assertNotNull;
+use function PHPUnit\Framework\assertStringContainsString;
 use function PHPUnit\Framework\assertTrue;
+use function PHPUnit\Framework\fail;
 
 final class SiteConfigParserTest extends TestCase
 {
@@ -137,9 +140,35 @@ final class SiteConfigParserTest extends TestCase
         $filePath = sys_get_temp_dir() . '/yiipress-site-config-' . uniqid() . '.yaml';
         file_put_contents($filePath, "title: Test\n");
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('The "languages" option must be a non-empty list.');
+        try {
+            (new SiteConfigParser())->parse($filePath);
+            fail('Expected invalid content configuration exception.');
+        } catch (InvalidContentConfigException $e) {
+            assertSame('Invalid content configuration', $e->getName());
+            assertSame($filePath, $e->filePath());
+            assertSame(
+                'The "languages" option in site configuration must be a non-empty list of language codes.',
+                $e->getMessage(),
+            );
+            assertStringContainsString('languages: [en]', (string) $e->getSolution());
+        } finally {
+            unlink($filePath);
+        }
+    }
 
-        (new SiteConfigParser())->parse($filePath);
+    public function testThrowsFriendlyExceptionWhenConfigIsNotMapping(): void
+    {
+        $filePath = sys_get_temp_dir() . '/yiipress-site-config-' . uniqid() . '.yaml';
+        file_put_contents($filePath, "- title\n");
+
+        try {
+            (new SiteConfigParser())->parse($filePath);
+            fail('Expected invalid content configuration exception.');
+        } catch (InvalidContentConfigException $e) {
+            assertSame('The site configuration file must contain YAML key-value pairs.', $e->getMessage());
+            assertStringContainsString('title: My Site', (string) $e->getSolution());
+        } finally {
+            unlink($filePath);
+        }
     }
 }

@@ -12,10 +12,12 @@ use YiiPress\Content\Model\RobotsTxtConfig;
 use YiiPress\Content\Model\RobotsTxtRule;
 use YiiPress\Content\Model\SearchConfig;
 use YiiPress\Content\Model\SiteConfig;
-use RuntimeException;
 
+use function array_is_list;
 use function file_get_contents;
+use function implode;
 use function is_array;
+use function is_string;
 use function trim;
 use function yaml_parse;
 
@@ -25,15 +27,35 @@ final class SiteConfigParser
     {
         $content = file_get_contents($filePath);
         if ($content === false) {
-            throw new RuntimeException("Cannot read file: $filePath");
+            throw new InvalidContentConfigException(
+                "Cannot read site configuration file: $filePath",
+                $filePath,
+                'Check that the file exists and is readable by the build process.',
+            );
         }
 
         $data = yaml_parse($content);
         if ($data === false) {
-            throw new RuntimeException("Invalid YAML in file: $filePath");
+            throw new InvalidContentConfigException(
+                "Invalid YAML in site configuration file: $filePath",
+                $filePath,
+                'Fix the YAML syntax in content/config.yaml, then run the build again.',
+            );
         }
 
-        $i18n = self::parseI18nConfig($data);
+        if (!is_array($data) || array_is_list($data)) {
+            throw new InvalidContentConfigException(
+                'The site configuration file must contain YAML key-value pairs.',
+                $filePath,
+                implode("\n", [
+                    'Use mappings such as:',
+                    'title: My Site',
+                    'languages: [en]',
+                ]),
+            );
+        }
+
+        $i18n = self::parseI18nConfig($data, $filePath);
 
         return new SiteConfig(
             title: (string) ($data['title'] ?? ''),
@@ -163,19 +185,51 @@ final class SiteConfigParser
     /**
      * @param array<mixed, mixed> $data
      */
-    private static function parseI18nConfig(array $data): I18nConfig
+    private static function parseI18nConfig(array $data, string $filePath): I18nConfig
     {
-        if (!isset($data['languages']) || !is_array($data['languages'])) {
-            throw new RuntimeException('The "languages" option must be a non-empty list.');
+        if (!isset($data['languages'])) {
+            throw self::invalidLanguages($filePath);
         }
 
-        $languages = array_values(array_unique(array_map(strval(...), $data['languages'])));
+        if (!is_array($data['languages']) || !array_is_list($data['languages'])) {
+            throw self::invalidLanguages($filePath);
+        }
 
+        $languages = [];
+        foreach ($data['languages'] as $language) {
+            if (!is_string($language)) {
+                throw self::invalidLanguages($filePath);
+            }
+
+            $language = trim($language);
+            if ($language === '') {
+                throw self::invalidLanguages($filePath);
+            }
+
+            $languages[] = $language;
+        }
+
+        $languages = array_values(array_unique($languages));
         if ($languages === []) {
-            throw new RuntimeException('The "languages" option must be a non-empty list.');
+            throw self::invalidLanguages($filePath);
         }
 
         return new I18nConfig(languages: $languages, defaultLanguage: $languages[0]);
+    }
+
+    private static function invalidLanguages(string $filePath): InvalidContentConfigException
+    {
+        return new InvalidContentConfigException(
+            'The "languages" option in site configuration must be a non-empty list of language codes.',
+            $filePath,
+            implode("\n", [
+                'Add at least one language to content/config.yaml:',
+                'languages: [en]',
+                'For multiple languages, put the default language first:',
+                'languages: [en, ru]',
+                'If you currently have i18n.languages, move it to the top-level languages option.',
+            ]),
+        );
     }
 
     private static function parseRelatedConfig(mixed $data): ?RelatedConfig

@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace YiiPress\Tests\Unit\Content\Parser;
 
 use YiiPress\Content\Parser\CollectionConfigParser;
+use YiiPress\Content\Parser\InvalidContentConfigException;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertFalse;
 use function PHPUnit\Framework\assertSame;
+use function PHPUnit\Framework\assertStringContainsString;
 use function PHPUnit\Framework\assertTrue;
+use function PHPUnit\Framework\fail;
 
 final class CollectionConfigParserTest extends TestCase
 {
@@ -63,6 +66,24 @@ final class CollectionConfigParserTest extends TestCase
             $collection = (new CollectionConfigParser())->parse($file, 'docs');
 
             assertTrue($collection->navigationPager);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testThrowsFriendlyExceptionWhenConfigIsNotMapping(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-collection-');
+        self::assertNotFalse($file);
+        file_put_contents($file, "- title\n");
+
+        try {
+            (new CollectionConfigParser())->parse($file, 'blog');
+            fail('Expected invalid content configuration exception.');
+        } catch (InvalidContentConfigException $e) {
+            assertSame('Invalid content configuration', $e->getName());
+            assertSame('The collection configuration file must contain YAML key-value pairs.', $e->getMessage());
+            assertStringContainsString('permalink: /blog/:slug/', (string) $e->getSolution());
         } finally {
             unlink($file);
         }
