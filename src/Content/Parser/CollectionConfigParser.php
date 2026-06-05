@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace YiiPress\Content\Parser;
 
 use YiiPress\Content\Model\Collection;
-use RuntimeException;
 
+use function array_is_list;
 use function file_get_contents;
+use function implode;
 use function is_array;
 use function yaml_parse;
 
@@ -17,12 +18,32 @@ final class CollectionConfigParser
     {
         $content = file_get_contents($filePath);
         if ($content === false) {
-            throw new RuntimeException("Cannot read file: $filePath");
+            throw new InvalidContentConfigException(
+                "Cannot read collection configuration file: $filePath",
+                $filePath,
+                'Check that the file exists and is readable by the build process.',
+            );
         }
 
         $data = yaml_parse($content);
         if ($data === false) {
-            throw new RuntimeException("Invalid YAML in file: $filePath");
+            throw new InvalidContentConfigException(
+                "Invalid YAML in collection configuration file: $filePath",
+                $filePath,
+                "Fix the YAML syntax in $filePath, then run the build again.",
+            );
+        }
+
+        if (!is_array($data) || array_is_list($data)) {
+            throw new InvalidContentConfigException(
+                'The collection configuration file must contain YAML key-value pairs.',
+                $filePath,
+                implode("\n", [
+                    'Use mappings such as:',
+                    'title: Blog',
+                    'permalink: /blog/:slug/',
+                ]),
+            );
         }
 
         return new Collection(

@@ -24,6 +24,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 use Yiisoft\EventDispatcher\Dispatcher\Dispatcher;
 use Yiisoft\EventDispatcher\Provider\ListenerCollection;
 use Yiisoft\EventDispatcher\Provider\Provider;
+use Yiisoft\Yii\Console\ExitCode;
 
 use function PHPUnit\Framework\assertDirectoryExists;
 use function PHPUnit\Framework\assertFalse;
@@ -140,6 +141,40 @@ final class BuildCommandTest extends TestCase
         assertSame(0, $exitCode, $tester->getDisplay());
         assertSame(['build.started:Hook Site', 'build.finished:' . $outputDir], $events);
         assertFileExists($outputDir . '/index/index.html');
+    }
+
+    public function testBuildReportsInvalidSiteConfigWithoutTrace(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/yiipress-build-invalid-config-test-' . uniqid();
+        $contentDir = $tempDir . '/content';
+        $outputDir = $tempDir . '/output';
+        mkdir($contentDir, 0o755, true);
+        $this->tempContentDirs[] = $tempDir;
+
+        file_put_contents($contentDir . '/config.yaml', "title: Broken Site\n");
+        file_put_contents($contentDir . '/index.md', "---\ntitle: Home\n---\n\nHello.\n");
+
+        $yii = dirname(__DIR__, 3) . '/yii';
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($outputDir)
+            . ' --no-cache'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        $outputText = implode("\n", $output);
+
+        assertSame(ExitCode::DATAERR, $exitCode, $outputText);
+        assertStringContainsString('Invalid content configuration', $outputText);
+        assertStringContainsString('Problem: The "languages" option in site configuration must be a non-empty list of language codes.', $outputText);
+        assertStringContainsString('languages: [en]', $outputText);
+        assertStringContainsString('If you currently have i18n.languages, move it to the top-level languages option.', $outputText);
+        assertStringNotContainsString('Stack trace:', $outputText);
+        assertStringNotContainsString('RuntimeException:', $outputText);
+        assertStringNotContainsString('#0 ', $outputText);
     }
 
     public function testBuildOutputContainsRenderedHtml(): void

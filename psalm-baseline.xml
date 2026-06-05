@@ -216,22 +216,6 @@
       <code><![CDATA[(string) $text]]></code>
     </RedundantCastGivenDocblockType>
   </file>
-  <file src="src/Content/Parser/CollectionConfigParser.php">
-    <MixedArgument>
-      <code><![CDATA[$data['order']]]></code>
-    </MixedArgument>
-    <MixedArrayAccess>
-      <code><![CDATA[$data['description']]]></code>
-      <code><![CDATA[$data['entries_per_page']]]></code>
-      <code><![CDATA[$data['feed']]]></code>
-      <code><![CDATA[$data['listing']]]></code>
-      <code><![CDATA[$data['navigation_pager']]]></code>
-      <code><![CDATA[$data['permalink']]]></code>
-      <code><![CDATA[$data['sort_by']]]></code>
-      <code><![CDATA[$data['sort_order']]]></code>
-      <code><![CDATA[$data['title']]]></code>
-    </MixedArrayAccess>
-  </file>
   <file src="src/Content/Parser/ContentParser.php">
     <PossiblyNullArgument>
       <code><![CDATA[$this->filenameParser]]></code>
@@ -269,9 +253,6 @@
     </RedundantCast>
   </file>
   <file src="src/Content/Parser/SiteConfigParser.php">
-    <MixedArgument>
-      <code><![CDATA[$data]]></code>
-    </MixedArgument>
     <MixedArgumentTypeCoercion>
       <code><![CDATA[isset($data['params']) && is_array($data['params'])
                 ? $data['params']

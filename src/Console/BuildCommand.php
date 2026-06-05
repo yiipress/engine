@@ -36,6 +36,7 @@ use YiiPress\Content\Model\Navigation;
 use YiiPress\Content\Model\SiteConfig;
 use YiiPress\Content\I18n\TranslationIndex;
 use YiiPress\Content\Parser\ContentParser;
+use YiiPress\Content\Parser\InvalidContentConfigException;
 use YiiPress\Content\PermalinkResolver;
 use YiiPress\Content\Related\RelatedIndex;
 use YiiPress\Content\TaxonomyCollector;
@@ -56,9 +57,11 @@ use RuntimeException;
 use SplFileInfo;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Yiisoft\FriendlyException\FriendlyExceptionInterface;
 use Yiisoft\Yii\Console\ExitCode;
 
 use function count;
@@ -319,14 +322,21 @@ final class BuildCommand extends Command
         $profile->switchTo('parse content');
 
         $parser = new ContentParser();
-        $siteConfig = $parser->parseSiteConfig($contentDir);
-        $this->contentPipeline->applySiteConfig($siteConfig);
-        $this->feedPipeline->applySiteConfig($siteConfig);
-        $navigation = $parser->parseNavigation($contentDir);
-        $collections = $parser->parseCollections($contentDir);
-        $rootCollection = $parser->parseRootCollection($contentDir);
-        $authors = iterator_to_array($parser->parseAuthors($contentDir));
-        $parser->setAuthors($authors);
+        try {
+            $siteConfig = $parser->parseSiteConfig($contentDir);
+            $this->contentPipeline->applySiteConfig($siteConfig);
+            $this->feedPipeline->applySiteConfig($siteConfig);
+            $navigation = $parser->parseNavigation($contentDir);
+            $collections = $parser->parseCollections($contentDir);
+            $rootCollection = $parser->parseRootCollection($contentDir);
+            $authors = iterator_to_array($parser->parseAuthors($contentDir));
+            $parser->setAuthors($authors);
+        } catch (FriendlyExceptionInterface $e) {
+            $this->writeFriendlyException($output, $e);
+            $this->writeProfile($output, $profile);
+
+            return ExitCode::DATAERR;
+        }
 
         $assetManifest = null;
 
@@ -830,6 +840,27 @@ final class BuildCommand extends Command
         }
 
         return sprintf('%.1fms', round($milliseconds, 1));
+    }
+
+    private function writeFriendlyException(OutputInterface $output, FriendlyExceptionInterface $e): void
+    {
+        $output->writeln('<error>' . OutputFormatter::escape($e->getName()) . '</error>');
+
+        if ($e instanceof InvalidContentConfigException) {
+            $output->writeln('  <comment>File:</comment> ' . OutputFormatter::escape($e->filePath()));
+        }
+
+        $output->writeln('  <comment>Problem:</comment> ' . OutputFormatter::escape($e->getMessage()));
+
+        $solution = $e->getSolution();
+        if ($solution === null || trim($solution) === '') {
+            return;
+        }
+
+        $output->writeln('  <comment>Solution:</comment>');
+        foreach (explode("\n", trim($solution)) as $line) {
+            $output->writeln('    ' . OutputFormatter::escape($line));
+        }
     }
 
     private function writeProfile(OutputInterface $output, BuildProfile $profile): void
