@@ -147,18 +147,23 @@ final class ConfigurationPackagingTest extends TestCase
 
         $pharStart = strpos($dockerfile, 'FROM scratch AS package-phar-artifacts');
         $linuxStart = strpos($dockerfile, 'FROM scratch AS package-linux-artifacts');
+        $staticStart = strpos($dockerfile, 'FROM scratch AS package-static-artifacts');
         $aliasStart = strpos($dockerfile, 'FROM package-linux-artifacts AS package-artifacts');
 
         self::assertIsInt($pharStart);
         self::assertIsInt($linuxStart);
+        self::assertIsInt($staticStart);
         self::assertIsInt($aliasStart);
 
         $pharStage = substr($dockerfile, $pharStart, $linuxStart - $pharStart);
-        $linuxStage = substr($dockerfile, $linuxStart, $aliasStart - $linuxStart);
+        $linuxStage = substr($dockerfile, $linuxStart, $staticStart - $linuxStart);
+        $staticStage = substr($dockerfile, $staticStart, $aliasStart - $staticStart);
 
         self::assertStringContainsString('COPY --from=phar-builder /app/dist/yiipress.phar /yiipress.phar', $pharStage);
         self::assertStringContainsString('COPY --from=static-package /artifacts/yiipress /yiipress', $linuxStage);
         self::assertStringNotContainsString('yiipress.phar', $linuxStage);
+        self::assertStringContainsString('COPY --from=static-package /artifacts/yiipress /yiipress', $staticStage);
+        self::assertStringContainsString('COPY --from=static-package /artifacts/yiipress.phar /yiipress.phar', $staticStage);
         self::assertStringContainsString('$pharPath = Join-Path $workPath "yiipress.phar"', $script);
         self::assertStringNotContainsString('$pharPath = Join-Path $distPath "yiipress.phar"', $script);
         self::assertStringContainsString('$legacyDistPharPath = Join-Path $distPath "yiipress.phar"', $script);
@@ -233,15 +238,14 @@ final class ConfigurationPackagingTest extends TestCase
     }
 
     #[Test]
-    public function packageWorkflowPublishesNightlyAndReleaseBuilds(): void
+    public function packageWorkflowPublishesNightlyBuilds(): void
     {
         $workflow = file_get_contents(dirname(__DIR__, 3) . '/.github/workflows/package-static.yml');
         self::assertIsString($workflow);
 
-        self::assertStringContainsString('target: package-phar-artifacts', $workflow);
+        self::assertStringContainsString('target: package-static-artifacts', $workflow);
         self::assertStringContainsString('name: yiipress-phar', $workflow);
-        self::assertStringContainsString('path: dist/phar/yiipress.phar', $workflow);
-        self::assertStringContainsString('target: package-linux-artifacts', $workflow);
+        self::assertStringContainsString('path: dist/linux-amd64/yiipress.phar', $workflow);
         self::assertStringContainsString('Smoke test Linux binary', $workflow);
         self::assertStringContainsString('./dist/linux-amd64/yiipress --help', $workflow);
         self::assertStringContainsString('path: dist/linux-amd64/yiipress', $workflow);
@@ -266,20 +270,16 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('tar -C dist/macos-arm64 -czf dist/yiipress-macos-arm64.tar.gz yiipress', $workflow);
         self::assertStringContainsString('name: yiipress-macos-arm64', $workflow);
         self::assertStringContainsString('path: dist/yiipress-macos-arm64.tar.gz', $workflow);
-        self::assertStringContainsString('target: distroless', $workflow);
-        self::assertStringContainsString("github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')", $workflow);
+        self::assertStringContainsString('file: ./docker/Dockerfile.distroless-binary', $workflow);
+        self::assertStringContainsString("github.ref == 'refs/heads/master'", $workflow);
         self::assertStringContainsString('type=raw,value=nightly', $workflow);
-        self::assertStringContainsString('type=semver,pattern={{version}}', $workflow);
-        self::assertStringContainsString('cp release/yiipress-phar/yiipress.phar yiipress.phar', $workflow);
-        self::assertStringContainsString(
-            'cp release/yiipress-macos-arm64/yiipress-macos-arm64.tar.gz yiipress-macos-arm64.tar.gz',
-            $workflow,
-        );
+        self::assertStringContainsString('type=sha,prefix=nightly-', $workflow);
+        self::assertStringNotContainsString('type=semver,pattern={{version}}', $workflow);
+        self::assertStringNotContainsString("startsWith(github.ref, 'refs/tags/')", $workflow);
         self::assertStringContainsString('yiipress-macos-arm64.tar.gz', $workflow);
-        self::assertStringContainsString('softprops/action-gh-release', $workflow);
         self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@v\d+/', $workflow);
         self::assertStringNotContainsString('dtolnay/rust-toolchain@stable', $workflow);
-        self::assertSame(4, substr_count($workflow, 'persist-credentials: false'));
+        self::assertSame(3, substr_count($workflow, 'persist-credentials: false'));
     }
 
     #[Test]

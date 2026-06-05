@@ -10,10 +10,14 @@
 !/src
 !/packages
 !/build
+!/dist
+!/dist/linux-amd64
+!/dist/linux-amd64/yiipress
 !autoload.php
 !yii
 !composer.json
 !composer.lock
 !.env*
+!/docker/Dockerfile.distroless-binary
 !/docker/php.ini
 !/docker/php-prod.ini

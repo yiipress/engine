@@ -70,13 +70,8 @@ extra C-string scans at the PHP/Rust boundary.
 Rayon parallelizes highlighting across code blocks within a single page, which helps
 when a page contains many code blocks (e.g., documentation pages).
 
-The extension is downloaded from Packagist during Docker image build, compiled, and enabled as `ext-highlighter`.
-No additional setup is needed in the YiiPress Docker images. Outside Docker, install the extension
-with PIE:
-
-```bash
-pie install yiipress/highlighter
-```
+The extension is downloaded from Packagist during YiiPress image and binary builds, compiled, and enabled as `ext-highlighter`.
+No additional setup is needed when using the YiiPress static binary.
 
 Use it directly from PHP:
 

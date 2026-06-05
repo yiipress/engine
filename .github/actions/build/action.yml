@@ -1,0 +1,143 @@
+name: Build YiiPress Site
+description: Download the Linux YiiPress binary and build a static site.
+
+inputs:
+  version:
+    description: YiiPress release tag to download, or "latest".
+    required: false
+    default: latest
+  content-dir:
+    description: Content directory passed to yiipress build.
+    required: false
+    default: content
+  output-dir:
+    description: Output directory passed to yiipress build.
+    required: false
+    default: _site
+  working-directory:
+    description: Directory where yiipress build runs.
+    required: false
+    default: .
+  args:
+    description: Extra arguments appended to yiipress build, one argument per line.
+    required: false
+    default: --no-cache
+  binary-path:
+    description: Path where the downloaded yiipress binary is installed.
+    required: false
+    default: yiipress
+  github-token:
+    description: Token used to resolve the latest release through the GitHub API.
+    required: false
+    default: ""
+
+outputs:
+  binary-path:
+    description: Absolute path to the downloaded yiipress binary.
+    value: ${{ steps.download.outputs.binary-path }}
+  version:
+    description: YiiPress release tag that was downloaded.
+    value: ${{ steps.download.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Require Linux x64 runner
+      if: runner.os != 'Linux' || runner.arch != 'X64'
+      shell: bash
+      run: |
+        echo "YiiPress binary action supports Linux x64 runners only." >&2
+        exit 1
+
+    - name: Download YiiPress binary
+      id: download
+      shell: bash
+      env:
+        ACTION_REPOSITORY: ${{ github.action_repository }}
+        BINARY_PATH: ${{ inputs.binary-path }}
+        GH_TOKEN: ${{ inputs.github-token || github.token }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+
+        repository="${ACTION_REPOSITORY:-yiipress/engine}"
+        version="${VERSION}"
+
+        if [ "${version}" = "latest" ]; then
+          headers=(-H "Accept: application/vnd.github+json")
+          if [ -n "${GH_TOKEN:-}" ]; then
+            headers+=(-H "Authorization: Bearer ${GH_TOKEN}")
+          fi
+
+          version="$(
+            curl -fsSL "${headers[@]}" "https://api.github.com/repos/${repository}/releases/latest" \
+              | python3 -c 'import json, sys; print(json.load(sys.stdin)["tag_name"])'
+          )"
+        fi
+
+        if [[ "${BINARY_PATH}" = /* ]]; then
+          binary_path="${BINARY_PATH}"
+        else
+          binary_path="${GITHUB_WORKSPACE}/${BINARY_PATH}"
+        fi
+
+        work_dir="$(mktemp -d)"
+        trap 'rm -rf "${work_dir}"' EXIT
+
+        archive="${work_dir}/yiipress-linux-amd64.tar.gz"
+        checksums="${work_dir}/SHA256SUMS"
+        curl_args=(-fsSL)
+        if [ -n "${GH_TOKEN:-}" ]; then
+          curl_args+=(-H "Authorization: Bearer ${GH_TOKEN}")
+        fi
+
+        curl "${curl_args[@]}" \
+          "https://github.com/${repository}/releases/download/${version}/yiipress-linux-amd64.tar.gz" \
+          -o "${archive}"
+        curl "${curl_args[@]}" \
+          "https://github.com/${repository}/releases/download/${version}/SHA256SUMS" \
+          -o "${checksums}"
+
+        checksum="$(awk '$2 ~ /(^|\/)yiipress-linux-amd64\.tar\.gz$/ { print $1; exit }' "${checksums}")"
+        if [ -z "${checksum}" ]; then
+          echo "SHA256SUMS does not contain yiipress-linux-amd64.tar.gz." >&2
+          exit 1
+        fi
+
+        printf '%s  %s\n' "${checksum}" "${archive}" | sha256sum -c -
+        tar -xz -C "${work_dir}" -f "${archive}"
+
+        install -D -m 0755 "${work_dir}/yiipress" "${binary_path}"
+
+        printf 'binary-path=%s\n' "${binary_path}" >> "${GITHUB_OUTPUT}"
+        printf 'version=%s\n' "${version}" >> "${GITHUB_OUTPUT}"
+
+    - name: Build site
+      shell: bash
+      env:
+        ARGS: ${{ inputs.args }}
+        BINARY_PATH: ${{ steps.download.outputs.binary-path }}
+        CONTENT_DIR: ${{ inputs.content-dir }}
+        OUTPUT_DIR: ${{ inputs.output-dir }}
+        WORKING_DIRECTORY: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+
+        cd "${GITHUB_WORKSPACE}/${WORKING_DIRECTORY}"
+
+        command=(
+          "${BINARY_PATH}"
+          build
+          "--content-dir=${CONTENT_DIR}"
+          "--output-dir=${OUTPUT_DIR}"
+        )
+
+        if [ -n "${ARGS}" ]; then
+          extra_args=()
+          while IFS= read -r arg; do
+            [ -n "${arg}" ] && extra_args+=( "${arg}" )
+          done <<< "${ARGS}"
+          command+=( "${extra_args[@]}" )
+        fi
+
+        "${command[@]}"

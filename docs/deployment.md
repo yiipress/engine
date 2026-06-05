@@ -15,7 +15,7 @@ The generated files will be placed in the output directory (default: `output`). 
 Prefer these options in this order:
 
 1. **Static binary** — best default for local builds and most CI systems. It has the runtime embedded and does not require PHP or Composer.
-2. **Published Docker image** — useful when your CI platform already standardizes on containers.
+2. **YiiPress GitHub Action** — best default for GitHub-hosted CI. It downloads the Linux binary and runs the build.
 3. **PHAR or source checkout** — intended for contributors or environments that already provide PHP 8.5 and required extensions.
 
 ## Any Web Host (FTP / cPanel)
@@ -64,15 +64,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download YiiPress
-        run: |
-          curl -fsSL https://github.com/yiipress/engine/releases/download/vX.Y.Z/yiipress-linux-amd64.tar.gz \
-            | tar -xz
-          chmod +x yiipress
-
-      - name: Build site
-        run: |
-          ./yiipress build --output-dir=_site --no-cache
+      - name: Build YiiPress site
+        uses: yiipress/engine/.github/actions/build@X.Y.Z
+        with:
+          version: X.Y.Z
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
@@ -91,7 +86,7 @@ jobs:
 
 Enable GitHub Pages in your repository settings: go to **Settings → Pages** and set the source to **GitHub Actions**.
 
-> **Tip:** Replace `vX.Y.Z` with a real YiiPress version tag for reproducible, stable builds.
+> **Tip:** Replace `X.Y.Z` with a real YiiPress version tag for reproducible, stable builds. The action builds to `_site` by default for GitHub Pages. See [GitHub Actions](github-actions.md) for custom output directories and other inputs.
 
 > **Real-world example:** This is exactly how the YiiPress documentation itself is built and deployed — see [`.github/workflows/build-docs.yml`](https://github.com/yiipress/engine/blob/master/.github/workflows/build-docs.yml) in this repository.
 
@@ -102,12 +97,12 @@ Enable GitHub Pages in your repository settings: go to **Settings → Pages** an
 1. Push your project to a GitHub or GitLab repository.
 2. In the [Cloudflare dashboard](https://dash.cloudflare.com/), go to **Workers & Pages → Create application → Pages → Connect to Git**.
 3. Select your repository and configure the build settings:
-   - **Install command:** `curl -fsSL https://github.com/yiipress/engine/releases/download/vX.Y.Z/yiipress-linux-amd64.tar.gz | tar -xz && chmod +x yiipress`
+   - **Install command:** `curl -fsSL https://github.com/yiipress/engine/releases/download/X.Y.Z/yiipress-linux-amd64.tar.gz | tar -xz && chmod +x yiipress`
    - **Build command:** `./yiipress build --output-dir=_site --no-cache`
    - **Build output directory:** `_site`
 4. Click **Save and Deploy**.
 
-Cloudflare Pages will rebuild and redeploy your site automatically on every push to the configured branch. Replace `vX.Y.Z` with a fixed YiiPress release.
+Cloudflare Pages will rebuild and redeploy your site automatically on every push to the configured branch. Replace `X.Y.Z` with a fixed YiiPress release.
 
 > **Alternative:** If you prefer, build the site locally or in your own CI pipeline, then deploy the `_site/` directory using the [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/):
 > ```bash

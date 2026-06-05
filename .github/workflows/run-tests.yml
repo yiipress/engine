@@ -38,8 +38,9 @@ jobs:
 
       - name: Run tests
         run: |
+          user_id="$(id -u):$(id -g)"
           docker run --rm \
-            --user $(id -u):$(id -g) \
+            --user "${user_id}" \
             -v ${{ github.workspace }}:/app \
             --env-file docker/test/.env \
             engine:test \

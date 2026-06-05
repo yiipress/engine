@@ -49,6 +49,8 @@
 - [x] PHAR and static PHP binary packaging
 - [x] Worker-mode serving for PHAR and static PHP binary packages
 - [x] Linux, macOS, Windows, and distroless Docker release packaging
+- [x] Tag release workflow for binaries, PHAR, and binary-only distroless image
+- [x] Reusable GitHub Action for downloading the Linux binary and building third-party sites
 - [x] `yiipress new` command — scaffold new entries from archetypes/templates
 - [x] `yiipress init` command — scaffold initial content structure
 - [x] Incremental builds (only rebuild changed files)

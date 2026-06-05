@@ -22,6 +22,8 @@ sidebar:
         url: /commands/
       - title: Preview
         url: /preview/
+      - title: GitHub Actions
+        url: /github-actions/
       - title: Deployment
         url: /deployment/
   - title: Extending
