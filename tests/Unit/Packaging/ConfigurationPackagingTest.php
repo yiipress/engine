@@ -331,6 +331,69 @@ final class ConfigurationPackagingTest extends TestCase
     }
 
     #[Test]
+    public function readmeExposesStaticAnalysisAndCoverageBadges(): void
+    {
+        $readme = file_get_contents(dirname(__DIR__, 3) . '/README.md');
+        self::assertIsString($readme);
+
+        self::assertStringContainsString(
+            '[![Static Analysis](https://github.com/yiipress/engine/actions/workflows/static-analysis.yml/badge.svg)]',
+            $readme,
+        );
+        self::assertStringContainsString(
+            '[![Coverage](https://codecov.io/gh/yiipress/engine/branch/master/graph/badge.svg)]',
+            $readme,
+        );
+    }
+
+    #[Test]
+    public function staticAnalysisWorkflowRunsProjectAnalysisTargets(): void
+    {
+        $workflow = file_get_contents(dirname(__DIR__, 3) . '/.github/workflows/static-analysis.yml');
+        $psalmConfiguration = file_get_contents(dirname(__DIR__, 3) . '/psalm.xml');
+        $psalmBaseline = file_get_contents(dirname(__DIR__, 3) . '/psalm-baseline.xml');
+        self::assertIsString($workflow);
+        self::assertIsString($psalmConfiguration);
+        self::assertIsString($psalmBaseline);
+
+        self::assertStringContainsString('name: Static Analysis', $workflow);
+        self::assertStringContainsString('uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5', $workflow);
+        self::assertStringContainsString('persist-credentials: false', $workflow);
+        self::assertStringContainsString('make -- composer install --no-progress --no-interaction', $workflow);
+        self::assertStringContainsString('make psalm', $workflow);
+        self::assertStringContainsString('make composer-dependency-analyser', $workflow);
+        self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@v\d+/', $workflow);
+        self::assertStringContainsString('errorBaseline="psalm-baseline.xml"', $psalmConfiguration);
+        self::assertStringContainsString('<files psalm-version=', $psalmBaseline);
+    }
+
+    #[Test]
+    public function coverageWorkflowPublishesRealCloverReport(): void
+    {
+        $workflow = file_get_contents(dirname(__DIR__, 3) . '/.github/workflows/coverage.yml');
+        $makefile = file_get_contents(dirname(__DIR__, 3) . '/Makefile');
+        self::assertIsString($workflow);
+        self::assertIsString($makefile);
+
+        self::assertStringContainsString('name: Coverage', $workflow);
+        self::assertStringContainsString('uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5', $workflow);
+        self::assertStringContainsString('persist-credentials: false', $workflow);
+        self::assertStringContainsString('make -- composer install --no-progress --no-interaction', $workflow);
+        self::assertStringContainsString('make test-coverage-clover', $workflow);
+        self::assertStringContainsString('runtime/coverage/clover.xml', $workflow);
+        self::assertStringContainsString('CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}', $workflow);
+        self::assertStringContainsString("if: env.CODECOV_TOKEN != ''", $workflow);
+        self::assertStringContainsString('token: ${{ env.CODECOV_TOKEN }}', $workflow);
+        self::assertStringContainsString('uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354', $workflow);
+        self::assertStringContainsString('fail_ci_if_error: true', $workflow);
+        self::assertStringContainsString("if: env.CODECOV_TOKEN == ''", $workflow);
+        self::assertStringContainsString('generated coverage but skipped Codecov upload', $workflow);
+        self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@v\d+/', $workflow);
+        self::assertStringContainsString('test-coverage-clover: ## Run tests with Clover coverage', $makefile);
+        self::assertStringContainsString('--coverage-clover runtime/coverage/clover.xml', $makefile);
+    }
+
+    #[Test]
     public function staticBinaryBuildTrimsUnusedServerSource(): void
     {
         $root = dirname(__DIR__, 3);

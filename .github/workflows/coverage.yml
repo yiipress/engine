@@ -1,0 +1,42 @@
+name: Coverage
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install dependencies
+        run: make -- composer install --no-progress --no-interaction
+
+      - name: Generate Clover coverage
+        run: make test-coverage-clover
+
+      - name: Upload coverage to Codecov
+        if: env.CODECOV_TOKEN != ''
+        uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354
+        with:
+          token: ${{ env.CODECOV_TOKEN }}
+          files: runtime/coverage/clover.xml
+          fail_ci_if_error: true
+
+      - name: Skip Codecov upload
+        if: env.CODECOV_TOKEN == ''
+        run: echo "CODECOV_TOKEN is not configured; generated coverage but skipped Codecov upload."
