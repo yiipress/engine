@@ -3,7 +3,7 @@ description: Download the Linux YiiPress binary and build a static site.
 
 inputs:
   version:
-    description: YiiPress release tag to download, or "latest".
+    description: YiiPress release tag to download, "latest", or "nightly".
     required: false
     default: latest
   content-dir:
