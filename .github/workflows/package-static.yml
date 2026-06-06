@@ -22,7 +22,7 @@ jobs:
     name: Linux static binary, PHAR, and distroless image
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
@@ -88,6 +88,53 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64
+
+      - name: Publish nightly Linux release
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p assets
+          tar -C dist/linux-amd64 -czf assets/yiipress-linux-amd64.tar.gz yiipress
+          sha256sum assets/yiipress-linux-amd64.tar.gz > assets/SHA256SUMS
+
+          {
+            printf '# Nightly\n\n'
+            printf 'Built from `%s` on `%s`.\n\n' "${GITHUB_SHA}" "${GITHUB_REF_NAME}"
+            printf '%s\n\n' 'This prerelease is updated after successful package builds on `master`.'
+            printf '%s\n' 'It is intended for testing unreleased YiiPress changes in site build workflows.'
+          } > nightly-release-notes.md
+
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/nightly" >/dev/null 2>&1; then
+            gh api \
+              --method PATCH \
+              "repos/${GITHUB_REPOSITORY}/git/refs/tags/nightly" \
+              -f sha="${GITHUB_SHA}" \
+              -F force=true >/dev/null
+          else
+            gh api \
+              --method POST \
+              "repos/${GITHUB_REPOSITORY}/git/refs" \
+              -f ref="refs/tags/nightly" \
+              -f sha="${GITHUB_SHA}" >/dev/null
+          fi
+
+          if gh release view nightly >/dev/null 2>&1; then
+            gh release upload nightly assets/* --clobber
+            gh release edit nightly \
+              --title "Nightly" \
+              --notes-file nightly-release-notes.md \
+              --prerelease
+          else
+            gh release create nightly assets/* \
+              --verify-tag \
+              --title "Nightly" \
+              --notes-file nightly-release-notes.md \
+              --prerelease \
+              --latest=false
+          fi
 
   windows:
     name: Windows static binary
