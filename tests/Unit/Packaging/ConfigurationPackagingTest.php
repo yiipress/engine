@@ -312,11 +312,14 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertIsString($action);
 
         self::assertStringContainsString('elif [ "${version}" = "nightly" ]; then', $action);
-        self::assertStringContainsString('https://api.github.com/repos/${repository}/releases?per_page=100', $action);
+        self::assertStringContainsString('max_pages=10', $action);
+        self::assertStringContainsString('while [ "${page}" -le "${max_pages}" ]; do', $action);
+        self::assertStringContainsString('https://api.github.com/repos/${repository}/releases?per_page=100&page=${page}', $action);
         self::assertStringContainsString('not release.get("draft")', $action);
         self::assertStringContainsString('release.get("prerelease")', $action);
         self::assertStringContainsString('tag.startswith("nightly-")', $action);
         self::assertStringContainsString('{"yiipress-linux-amd64.tar.gz", "SHA256SUMS"}.issubset(assets)', $action);
+        self::assertStringContainsString('len(json.load(open(sys.argv[1], encoding="utf-8"))) < 100', $action);
         self::assertStringContainsString('Could not find a nightly YiiPress release', $action);
     }
 

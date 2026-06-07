@@ -80,14 +80,19 @@ runs:
             python3 -c 'import json, sys; print(json.load(sys.stdin)["tag_name"])' < "${latest_release}"
           )"
         elif [ "${version}" = "nightly" ]; then
-          nightly_releases="${work_dir}/nightly-releases.json"
-          if ! curl -fsSL "${headers[@]}" "https://api.github.com/repos/${repository}/releases?per_page=100" -o "${nightly_releases}"; then
-            echo "Could not resolve the latest nightly YiiPress release for ${repository}. Pin the version input to an existing release." >&2
-            exit 1
-          fi
+          version=""
+          page=1
+          max_pages=10
 
-          if ! version="$(
-            python3 - "${nightly_releases}" <<'PY'
+          while [ "${page}" -le "${max_pages}" ]; do
+            nightly_releases="${work_dir}/nightly-releases-${page}.json"
+            if ! curl -fsSL "${headers[@]}" "https://api.github.com/repos/${repository}/releases?per_page=100&page=${page}" -o "${nightly_releases}"; then
+              echo "Could not resolve the latest nightly YiiPress release for ${repository}. Pin the version input to an existing release." >&2
+              exit 1
+            fi
+
+            if version="$(
+              python3 - "${nightly_releases}" <<'PY'
 import json
 import sys
 
@@ -108,7 +113,18 @@ for release in releases:
 
 sys.exit(1)
 PY
-          )"; then
+            )"; then
+              break
+            fi
+
+            if python3 -c 'import json, sys; sys.exit(0 if len(json.load(open(sys.argv[1], encoding="utf-8"))) < 100 else 1)' "${nightly_releases}"; then
+              break
+            fi
+
+            page=$((page + 1))
+          done
+
+          if [ -z "${version}" ]; then
             echo "Could not find a nightly YiiPress release for ${repository}. Pin the version input to an existing release." >&2
             exit 1
           fi
