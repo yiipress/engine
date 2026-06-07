@@ -13,7 +13,6 @@ use function PHPUnit\Framework\assertFalse;
 use function PHPUnit\Framework\assertNotNull;
 use function PHPUnit\Framework\assertStringContainsString;
 use function PHPUnit\Framework\assertTrue;
-use function PHPUnit\Framework\fail;
 
 final class SiteConfigParserTest extends TestCase
 {
@@ -142,7 +141,7 @@ final class SiteConfigParserTest extends TestCase
 
         try {
             (new SiteConfigParser())->parse($filePath);
-            fail('Expected invalid content configuration exception.');
+            $this->fail('Expected invalid content configuration exception.');
         } catch (InvalidContentConfigException $e) {
             assertSame('Invalid content configuration', $e->getName());
             assertSame($filePath, $e->filePath());
@@ -163,7 +162,7 @@ final class SiteConfigParserTest extends TestCase
 
         try {
             (new SiteConfigParser())->parse($filePath);
-            fail('Expected invalid content configuration exception.');
+            $this->fail('Expected invalid content configuration exception.');
         } catch (InvalidContentConfigException $e) {
             assertSame('The site configuration file must contain YAML key-value pairs.', $e->getMessage());
             assertStringContainsString('title: My Site', (string) $e->getSolution());

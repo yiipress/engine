@@ -12,7 +12,6 @@ use function PHPUnit\Framework\assertFalse;
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
 use function PHPUnit\Framework\assertTrue;
-use function PHPUnit\Framework\fail;
 
 final class CollectionConfigParserTest extends TestCase
 {
@@ -79,7 +78,7 @@ final class CollectionConfigParserTest extends TestCase
 
         try {
             (new CollectionConfigParser())->parse($file, 'blog');
-            fail('Expected invalid content configuration exception.');
+            $this->fail('Expected invalid content configuration exception.');
         } catch (InvalidContentConfigException $e) {
             assertSame('Invalid content configuration', $e->getName());
             assertSame('The collection configuration file must contain YAML key-value pairs.', $e->getMessage());
