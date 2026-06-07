@@ -19,6 +19,7 @@ use function chdir;
 use function getcwd;
 use function mkdir;
 use function PHPUnit\Framework\assertSame;
+use function yaml_parse;
 
 final class ConfigurationPackagingTest extends TestCase
 {
@@ -303,6 +304,18 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('binary_path="${RUNNER_TEMP}/yiipress"', $action);
         self::assertStringContainsString('elif [[ "${BINARY_PATH}" = /* ]]; then', $action);
         self::assertStringContainsString('printf \'binary-path=%s\n\' "${binary_path}"', $action);
+    }
+
+    #[Test]
+    public function buildActionManifestIsValidYaml(): void
+    {
+        $action = file_get_contents(dirname(__DIR__, 3) . '/.github/actions/build/action.yml');
+        self::assertIsString($action);
+
+        $manifest = yaml_parse($action);
+
+        self::assertIsArray($manifest);
+        self::assertSame('composite', $manifest['runs']['using'] ?? null);
     }
 
     #[Test]
