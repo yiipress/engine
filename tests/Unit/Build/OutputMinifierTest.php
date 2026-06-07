@@ -34,10 +34,10 @@ final class OutputMinifierTest extends TestCase
         $html = <<<'HTML'
             <html>
             <body>
-            <pre>Line 1
+            <pre title="1 > 0">Line 1
                 Line 2</pre>
             <script>
-                const value = "  kept  ";
+                const value = "</pre>  kept  ";
             </script>
             <style>
                 body {
@@ -50,9 +50,9 @@ final class OutputMinifierTest extends TestCase
 
         assertSame(
             <<<'HTML'
-            <html><body><pre>Line 1
+            <html><body><pre title="1 > 0">Line 1
                 Line 2</pre><script>
-                const value = "  kept  ";
+                const value = "</pre>  kept  ";
             </script><style>
                 body {
                     white-space: pre;
@@ -61,5 +61,36 @@ final class OutputMinifierTest extends TestCase
             HTML,
             OutputMinifier::html($html),
         );
+    }
+
+    public function testPreservesTextareaWhitespace(): void
+    {
+        $html = <<<'HTML'
+            <div>
+                <textarea data-value="1 > 0">  spaced
+                    content  </textarea>
+            </div>
+            HTML;
+
+        assertSame(
+            <<<'HTML'
+            <div><textarea data-value="1 > 0">  spaced
+                    content  </textarea></div>
+            HTML,
+            OutputMinifier::html($html),
+        );
+    }
+
+    public function testKeepsTagsWithGreaterThanSignInQuotedAttributesIntact(): void
+    {
+        $html = <<<'HTML'
+            <div>
+                <a title="1 > 0" data-test='x > y'>
+                    Link
+                </a>
+            </div>
+            HTML;
+
+        assertSame('<div><a title="1 > 0" data-test=\'x > y\'> Link </a></div>', OutputMinifier::html($html));
     }
 }
