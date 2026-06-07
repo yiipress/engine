@@ -266,13 +266,50 @@ jobs:
         run: |
           set -euo pipefail
           tag="${GITHUB_REF_NAME}"
-          previous_tag="$(git describe --tags --abbrev=0 "${tag}^" 2>/dev/null || true)"
+          previous_tag="$(git describe --tags --abbrev=0 --match '[0-9]*.[0-9]*.[0-9]*' --exclude '*[!0-9.]*' "${tag}^" 2>/dev/null || true)"
           range="${tag}"
           if [ -n "${previous_tag}" ]; then
             range="${previous_tag}..${tag}"
           fi
 
-          changes="$(git log --format='- %s (%an)' "${range}")"
+          release_author() {
+            local name="$1"
+            local email="$2"
+            local nickname=""
+
+            case "${email}" in
+              *+*@users.noreply.github.com)
+                nickname="${email#*+}"
+                nickname="${nickname%@users.noreply.github.com}"
+                ;;
+              *@users.noreply.github.com)
+                nickname="${email%@users.noreply.github.com}"
+                ;;
+              sam@rmcreative.ru)
+                nickname="samdark"
+                ;;
+              pamparam83@gmail.com)
+                nickname="pamparam83"
+                ;;
+              *)
+                if [[ "${name}" != *" "* ]]; then
+                  nickname="${name}"
+                else
+                  nickname="${email%@*}"
+                fi
+                ;;
+            esac
+
+            nickname="${nickname//[^[:alnum:]_.-]/-}"
+            printf '@%s' "${nickname:-unknown}"
+          }
+
+          changes_file="$(mktemp)"
+          while IFS=$'\t' read -r subject name email; do
+            author="$(release_author "${name}" "${email}")"
+            printf -- '- %s (%s)\n' "${subject}" "${author}" >> "${changes_file}"
+          done < <(git log --format='%s%x09%an%x09%ae' "${range}")
+
           image="${REGISTRY}/${IMAGE_NAME}:${tag}"
 
           {
@@ -288,7 +325,7 @@ jobs:
             if [ -n "${previous_tag}" ]; then
               printf 'Changes since %s:\n\n' "${previous_tag}"
             fi
-            printf '%s\n' "${changes}"
+            cat "${changes_file}"
           } > release-notes.md
 
       - name: Create draft release with assets

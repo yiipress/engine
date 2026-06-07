@@ -357,6 +357,30 @@ final class ConfigurationPackagingTest extends TestCase
     }
 
     #[Test]
+    public function releaseWorkflowBuildsNotesFromPreviousStableReleaseTag(): void
+    {
+        $workflow = file_get_contents(dirname(__DIR__, 3) . '/.github/workflows/release.yml');
+        self::assertIsString($workflow);
+
+        self::assertStringContainsString("tags:\n      - '*.*.*'", $workflow);
+        self::assertStringContainsString(
+            "git describe --tags --abbrev=0 --match '[0-9]*.[0-9]*.[0-9]*' --exclude '*[!0-9.]*' \"\${tag}^\"",
+            $workflow,
+        );
+        self::assertStringContainsString('release_author() {', $workflow);
+        self::assertStringContainsString('*+*@users.noreply.github.com)', $workflow);
+        self::assertStringContainsString('sam@rmcreative.ru)', $workflow);
+        self::assertStringContainsString('nickname="samdark"', $workflow);
+        self::assertStringContainsString('pamparam83@gmail.com)', $workflow);
+        self::assertStringContainsString('nickname="pamparam83"', $workflow);
+        self::assertStringContainsString("git log --format='%s%x09%an%x09%ae'", $workflow);
+        self::assertStringNotContainsString('repos/${GITHUB_REPOSITORY}/commits/${commit}', $workflow);
+        self::assertStringNotContainsString("git log --format='- %s (%an)'", $workflow);
+        self::assertStringNotContainsString('git describe --tags --abbrev=0 "${tag}^"', $workflow);
+        self::assertStringContainsString('Changes since %s:', $workflow);
+    }
+
+    #[Test]
     public function cloudflareDeploymentVerifiesDownloadedBinaryChecksum(): void
     {
         $documentation = file_get_contents(dirname(__DIR__, 3) . '/docs/deployment.md');
