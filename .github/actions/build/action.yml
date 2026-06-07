@@ -93,26 +93,26 @@ runs:
 
             if version="$(
               python3 - "${nightly_releases}" <<'PY'
-import json
-import sys
+        import json
+        import sys
 
-with open(sys.argv[1], encoding="utf-8") as file:
-    releases = json.load(file)
+        with open(sys.argv[1], encoding="utf-8") as file:
+            releases = json.load(file)
 
-for release in releases:
-    tag = release.get("tag_name", "")
-    assets = {asset.get("name") for asset in release.get("assets", [])}
-    if (
-        not release.get("draft")
-        and release.get("prerelease")
-        and tag.startswith("nightly-")
-        and {"yiipress-linux-amd64.tar.gz", "SHA256SUMS"}.issubset(assets)
-    ):
-        print(tag)
-        sys.exit(0)
+        for release in releases:
+            tag = release.get("tag_name", "")
+            assets = {asset.get("name") for asset in release.get("assets", [])}
+            if (
+                not release.get("draft")
+                and release.get("prerelease")
+                and tag.startswith("nightly-")
+                and {"yiipress-linux-amd64.tar.gz", "SHA256SUMS"}.issubset(assets)
+            ):
+                print(tag)
+                sys.exit(0)
 
-sys.exit(1)
-PY
+        sys.exit(1)
+        PY
             )"; then
               break
             fi
