@@ -139,7 +139,7 @@ final readonly class DateArchiveWriter
         ?Navigation $navigation,
         bool $noWrite,
     ): void {
-        $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/archive/');
+        $rootPath = UrlResolver::rootPath('/' . $collection->name . '/archive/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
         $html = $renderer->render('archive_index', [
             'siteTitle' => $siteConfig->title,
@@ -179,7 +179,7 @@ final readonly class DateArchiveWriter
         ?Navigation $navigation,
         bool $noWrite,
     ): void {
-        $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/' . $year . '/');
+        $rootPath = UrlResolver::rootPath('/' . $collection->name . '/' . $year . '/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
 
         rsort($months, SORT_STRING);
@@ -188,7 +188,7 @@ final readonly class DateArchiveWriter
         foreach ($entries as $entry) {
             $entryData[] = [
                 'title' => $entry->title,
-                'url' => RelativePathHelper::relativize(PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n), $rootPath),
+                'url' => UrlResolver::sitePath(PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n), $rootPath),
                 'date' => $entry->date?->format($siteConfig->dateFormat) ?? '',
             ];
         }
@@ -234,7 +234,7 @@ final readonly class DateArchiveWriter
         ?Navigation $navigation,
         bool $noWrite,
     ): void {
-        $rootPath = RelativePathHelper::rootPath('/' . $collection->name . '/' . $year . '/' . $month . '/');
+        $rootPath = UrlResolver::rootPath('/' . $collection->name . '/' . $year . '/' . $month . '/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
         $monthName = $uiViewData->ui->monthName((int) $month);
 
@@ -242,7 +242,7 @@ final readonly class DateArchiveWriter
         foreach ($entries as $entry) {
             $entryData[] = [
                 'title' => $entry->title,
-                'url' => RelativePathHelper::relativize(PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n), $rootPath),
+                'url' => UrlResolver::sitePath(PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n), $rootPath),
                 'date' => $entry->date?->format($siteConfig->dateFormat) ?? '',
             ];
         }

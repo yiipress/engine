@@ -20,6 +20,11 @@ final class TemplateHelpers
             $variables['h'] = self::escape(...);
         }
 
+        if (!isset($variables['url'])) {
+            $rootPath = (string) ($variables['rootPath'] ?? '');
+            $variables['url'] = static fn (string $path): string => UrlResolver::sitePath($path, $rootPath);
+        }
+
         $ui = $variables['ui'] ?? null;
         if ($ui instanceof UiText && !isset($variables['t'])) {
             $variables['t'] = static fn (string $key, array $params = []): string => $ui->get($key, $params);

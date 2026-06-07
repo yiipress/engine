@@ -18,6 +18,9 @@ use YiiPress\Content\Model\SiteConfig;
 use YiiPress\Hook\RenderFinishedEvent;
 use YiiPress\Hook\RenderStartedEvent;
 use YiiPress\Processor\ContentProcessorPipeline;
+use YiiPress\Processor\MarkdownProcessor;
+use YiiPress\Processor\TagLinkProcessor;
+use YiiPress\Render\MarkdownRenderer;
 use DateTimeImmutable;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
@@ -380,6 +383,27 @@ PHP);
 
         assertStringNotContainsString('"tag">php', $html);
         assertStringContainsString('"tag">yii', $html);
+    }
+
+    public function testInlineTagLinksUseCurrentPageRootPath(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Tagged Post\n---\n\n#frankenphp #php\n");
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Tagged Post');
+        $renderer = new EntryRenderer(
+            new ContentProcessorPipeline(
+                new MarkdownProcessor(new MarkdownRenderer()),
+                new TagLinkProcessor(),
+            ),
+            $this->createTemplateResolver(),
+            contentDir: $this->contentDir,
+        );
+        $html = $renderer->render($this->createSiteConfig(), $entry, '/blog/frankenphp-got-faster/');
+
+        assertStringContainsString('href="../../tags/frankenphp/" class="tag-link">#frankenphp</a>', $html);
+        assertStringContainsString('href="../../tags/php/" class="tag-link">#php</a>', $html);
+        assertStringNotContainsString('href="/tags/frankenphp/"', $html);
     }
 
     public function testCustomLayoutReceivesAllVariables(): void

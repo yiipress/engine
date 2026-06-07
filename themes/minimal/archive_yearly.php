@@ -21,6 +21,7 @@ declare(strict_types=1);
  * @var array<string, array<string, string>> $uiCatalogs
  * @var YiiPress\I18n\UiText $ui
  * @var Closure(string, int, ?string, bool): string $h
+ * @var Closure(string): string $url
  */
 
 use YiiPress\Content\Model\Navigation;
@@ -41,7 +42,7 @@ $uiLanguage ??= 'en';
             <ul>
 <?php foreach ($months as $m): ?>
 <?php $month = (string) $m; ?>
-                <li><a href="<?= $rootPath . $h($collectionName) ?>/<?= $h($year) ?>/<?= $h($month) ?>/"><span data-ui-month="<?= $h($month) ?>"><?= $h($ui->monthName((int) $month)) ?></span></a></li>
+                <li><a href="<?= $h($url($collectionName . '/' . $year . '/' . $month . '/')) ?>"><span data-ui-month="<?= $h($month) ?>"><?= $h($ui->monthName((int) $month)) ?></span></a></li>
 <?php endforeach; ?>
             </ul>
         </nav>

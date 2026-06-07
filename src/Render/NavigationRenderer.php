@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiPress\Render;
 
-use YiiPress\Build\RelativePathHelper;
+use YiiPress\Build\UrlResolver;
 use YiiPress\Content\Model\Navigation;
 use YiiPress\Content\Model\NavigationItem;
 use Yiisoft\Html\Html;
@@ -75,7 +75,7 @@ final class NavigationRenderer
 
             $html .= '<li' . $classAttribute . '>';
             $url = str_starts_with($item->url, '/')
-                ? RelativePathHelper::relativize($item->url, $rootPath)
+                ? UrlResolver::relativeUrl($item->url, $rootPath)
                 : $item->url;
             $title = $item->resolveTitle($language, $defaultLanguage);
             $attributes = self::localizedTitleAttributes($item);

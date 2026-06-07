@@ -19,6 +19,7 @@ declare(strict_types=1);
  * @var array<string, array<string, string>> $uiCatalogs
  * @var YiiPress\I18n\UiText $ui
  * @var Closure(string, int, ?string, bool): string $h
+ * @var Closure(string): string $url
  * @var Closure(string, array): string $t
  */
 
@@ -38,7 +39,7 @@ $uiLanguage ??= 'en';
         <h1><?= $h($collectionTitle) ?> <span data-ui-key="archive"><?= $h($t('archive')) ?></span></h1>
         <ul class="archive-years">
 <?php foreach ($years as $year): ?>
-            <li><a href="<?= $rootPath . $h($collectionName) . '/' . $h((string)$year) ?>/"><?= $h((string)$year) ?></a></li>
+            <li><a href="<?= $h($url($collectionName . '/' . (string) $year . '/')) ?>"><?= $h((string)$year) ?></a></li>
 <?php endforeach; ?>
         </ul>
     </div>

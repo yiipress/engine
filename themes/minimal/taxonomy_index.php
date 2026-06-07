@@ -18,6 +18,7 @@ declare(strict_types=1);
  * @var array<string, array<string, string>> $uiCatalogs
  * @var YiiPress\I18n\UiText $ui
  * @var Closure(string, int, ?string, bool): string $h
+ * @var Closure(string): string $url
  */
 
 use YiiPress\Content\Model\Navigation;
@@ -38,7 +39,7 @@ $taxonomyKey = 'taxonomy.' . strtolower($taxonomyName);
         <h1 data-ui-key="<?= $h($taxonomyKey) ?>"><?= $h($taxonomyLabel) ?></h1>
         <ul class="term-list">
 <?php foreach ($terms as $term): ?>
-            <li><a href="<?= $rootPath . $h($taxonomyName) ?>/<?= $h($term) ?>/"><?= $h($term) ?></a></li>
+            <li><a href="<?= $h($url($taxonomyName . '/' . $term . '/')) ?>"><?= $h($term) ?></a></li>
 <?php endforeach; ?>
         </ul>
     </div>

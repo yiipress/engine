@@ -64,7 +64,7 @@ final readonly class TaxonomyPageWriter
         ?Navigation $navigation,
         bool $noWrite,
     ): void {
-        $rootPath = RelativePathHelper::rootPath('/' . $taxonomyName . '/');
+        $rootPath = UrlResolver::rootPath('/' . $taxonomyName . '/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
         $taxonomyLabel = $uiViewData->ui->taxonomyLabel($taxonomyName);
         $html = $renderer->render('taxonomy_index', [
@@ -104,7 +104,7 @@ final readonly class TaxonomyPageWriter
         ?Navigation $navigation,
         bool $noWrite,
     ): void {
-        $rootPath = RelativePathHelper::rootPath('/' . $taxonomyName . '/' . $term . '/');
+        $rootPath = UrlResolver::rootPath('/' . $taxonomyName . '/' . $term . '/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
         $taxonomyLabel = $uiViewData->ui->taxonomyLabel($taxonomyName);
 
@@ -112,7 +112,7 @@ final readonly class TaxonomyPageWriter
         foreach ($entries as $entry) {
             $collection = $collections[$entry->collection] ?? null;
             $url = $collection !== null
-                ? RelativePathHelper::relativize(PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n), $rootPath)
+                ? UrlResolver::sitePath(PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n), $rootPath)
                 : '#';
 
             $entryData[] = [

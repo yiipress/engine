@@ -15,7 +15,7 @@ final class Asset
         $resolved = $assetManifest?->resolve($path) ?? $path;
 
         if ($rootPath !== '' && $rootPath !== '/') {
-            return $rootPath . $resolved;
+            return UrlResolver::sitePath($resolved, $rootPath);
         }
 
         if ($rootPath === '/') {

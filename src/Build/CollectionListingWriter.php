@@ -49,7 +49,7 @@ final readonly class CollectionListingWriter
             $currentPermalink = $pageNumber === 1
                 ? '/' . $collection->name . '/'
                 : '/' . $collection->name . '/page/' . $pageNumber . '/';
-            $rootPath = RelativePathHelper::rootPath($currentPermalink);
+            $rootPath = UrlResolver::rootPath($currentPermalink);
 
             $pagination = [
                 'currentPage' => $pageNumber,
@@ -117,7 +117,7 @@ final readonly class CollectionListingWriter
         foreach ($entries as $entry) {
             $entryData[] = [
                 'title' => $entry->title,
-                'url' => RelativePathHelper::relativize(PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n), $rootPath),
+                'url' => UrlResolver::sitePath(PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n), $rootPath),
                 'date' => $entry->date?->format($siteConfig->dateFormat) ?? '',
                 'dateISO' => $entry->date?->format('Y-m-d') ?? '',
                 'draft' => $entry->draft,
@@ -147,9 +147,9 @@ final readonly class CollectionListingWriter
         }
 
         if ($pageNumber === 1) {
-            return $rootPath . $collectionName . '/';
+            return UrlResolver::sitePath('/' . $collectionName . '/', $rootPath);
         }
 
-        return $rootPath . $collectionName . '/page/' . $pageNumber . '/';
+        return UrlResolver::sitePath('/' . $collectionName . '/page/' . $pageNumber . '/', $rootPath);
     }
 }

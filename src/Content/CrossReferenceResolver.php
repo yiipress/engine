@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiPress\Content;
 
-use YiiPress\Build\RelativePathHelper;
+use YiiPress\Build\UrlResolver;
 
 use function hash;
 
@@ -57,14 +57,14 @@ final readonly class CrossReferenceResolver
                 }
 
                 if ($this->currentPermalink !== '') {
-                    $rootPath = RelativePathHelper::rootPath($this->currentPermalink);
-                    $permalink = RelativePathHelper::relativize($permalink, $rootPath);
+                    $rootPath = UrlResolver::rootPath($this->currentPermalink);
+                    $permalink = UrlResolver::sitePath($permalink, $rootPath);
                 }
 
                 return '[' . $text . '](' . $permalink . $fragment . ')';
             },
             $markdown,
-        );
+        ) ?? $markdown;
     }
 
     public function signature(): string

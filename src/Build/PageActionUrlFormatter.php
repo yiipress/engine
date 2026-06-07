@@ -7,7 +7,6 @@ namespace YiiPress\Build;
 use YiiPress\Content\Model\Entry;
 use YiiPress\Content\Model\SiteConfig;
 
-use function ltrim;
 use function rawurlencode;
 use function rtrim;
 use function str_replace;
@@ -21,7 +20,7 @@ final class PageActionUrlFormatter
     public static function format(string $template, SiteConfig $siteConfig, Entry $entry, string $permalink, string $contentDir): string
     {
         $path = self::sourcePath($entry, $contentDir);
-        $absoluteUrl = self::absoluteUrl($siteConfig, $permalink);
+        $absoluteUrl = UrlResolver::absoluteUrl($siteConfig, $permalink);
 
         return strtr($template, [
             '{path}' => self::encodePath($path),
@@ -39,15 +38,6 @@ final class PageActionUrlFormatter
         }
 
         return str_replace('\\', '/', $sourcePath);
-    }
-
-    private static function absoluteUrl(SiteConfig $siteConfig, string $permalink): string
-    {
-        if ($siteConfig->baseUrl === '') {
-            return $permalink;
-        }
-
-        return rtrim($siteConfig->baseUrl, '/') . '/' . ltrim($permalink, '/');
     }
 
     private static function encodePath(string $path): string

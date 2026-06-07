@@ -17,26 +17,17 @@ final readonly class NotFoundPageWriter
 
     public function write(SiteConfig $siteConfig, string $outputDir, ?Navigation $navigation = null, bool $noWrite = false): void
     {
-        $siteTitle = $siteConfig->title;
-        $nav = $navigation;
-        $templateContext = new TemplateContext($this->templateResolver, $siteConfig->theme, $this->assetManifest);
-        $partial = $templateContext->partial(...);
         $rootPath = './';
-        $assetManifest = $this->assetManifest;
-        $search = $siteConfig->search !== null;
-        $searchResults = $siteConfig->search?->results ?? 10;
-        $language = $siteConfig->defaultLanguage;
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
-        $ui = $uiViewData->ui;
-        $uiLanguage = $uiViewData->language;
-        $uiLanguages = $uiViewData->languages;
-        $uiCatalogs = $uiViewData->catalogs;
-        $t = static fn (string $key, array $params = []): string => $ui->get($key, $params);
-        $h = TemplateHelpers::escape(...);
-
-        ob_start();
-        require $this->templateResolver->resolve('errors/404', $siteConfig->theme);
-        $html = $templateContext->rewriteHtml((string) ob_get_clean(), $rootPath);
+        $renderer = new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest);
+        $html = $renderer->render('errors/404', [
+            'siteTitle' => $siteConfig->title,
+            'nav' => $navigation,
+            'rootPath' => $rootPath,
+            'search' => $siteConfig->search !== null,
+            'searchResults' => $siteConfig->search?->results ?? 10,
+            'language' => $siteConfig->defaultLanguage,
+        ] + $uiViewData->toArray(), $rootPath);
 
         if ($noWrite) {
             return;

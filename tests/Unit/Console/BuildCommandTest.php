@@ -1233,6 +1233,92 @@ PHP,
         assertStringContainsString('content="https://samdark.github.io/blog/blog/assets/photo.jpg"', $html);
     }
 
+    public function testBuildUsesUniformInternalUrlsForSubdirectoryDeployment(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/yiipress-build-project-url-test-' . uniqid();
+        $contentDir = $tempDir . '/content';
+        $outputDir = $tempDir . '/output';
+        mkdir($contentDir . '/blog', 0o755, true);
+        mkdir($contentDir . '/authors', 0o755, true);
+        $this->tempContentDirs[] = $tempDir;
+
+        file_put_contents(
+            $contentDir . '/config.yaml',
+            "title: Project Site\n"
+            . "base_url: https://samdark.github.io/blog/\n"
+            . "languages: [en]\n"
+            . "author_pages: true\n"
+            . "search: true\n"
+            . "taxonomies:\n"
+            . "  - tags\n"
+            . "  - categories\n",
+        );
+        file_put_contents($contentDir . '/blog/_collection.yaml', "title: Blog\npermalink: /blog/:slug/\nfeed: true\n");
+        file_put_contents($contentDir . '/authors/john-doe.md', "---\ntitle: John Doe\n---\n\nAuthor bio.\n");
+        file_put_contents(
+            $contentDir . '/blog/post.md',
+            "---\n"
+            . "title: Post\n"
+            . "date: 2024-03-15\n"
+            . "tags: [php, yii]\n"
+            . "categories: [performance]\n"
+            . "authors: [john-doe]\n"
+            . "---\n\n"
+            . "Inline #php tag.\n",
+        );
+
+        $yii = dirname(__DIR__, 3) . '/yii';
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($outputDir)
+            . ' --no-cache'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        assertSame(0, $exitCode, implode("\n", $output));
+
+        $entryHtml = file_get_contents($outputDir . '/blog/post/index.html');
+        assertNotFalse($entryHtml);
+        assertStringContainsString('href="../../"', $entryHtml);
+        assertStringContainsString('data-root="../../"', $entryHtml);
+        assertStringContainsString('href="../../authors/john-doe/"', $entryHtml);
+        assertStringContainsString('href="../../tags/php/" class="tag-link">#php</a>', $entryHtml);
+        assertStringContainsString('href="../../tags/yii/" class="tag-link">#yii</a>', $entryHtml);
+        assertStringContainsString('href="../../categories/performance/" class="category">performance</a>', $entryHtml);
+        assertStringNotContainsString('href="/tags/', $entryHtml);
+        assertStringNotContainsString('href="/categories/', $entryHtml);
+        assertStringNotContainsString('href="/authors/', $entryHtml);
+
+        $listingHtml = file_get_contents($outputDir . '/blog/index.html');
+        assertNotFalse($listingHtml);
+        assertStringContainsString('href="../blog/archive/"', $listingHtml);
+        assertStringContainsString('href="../blog/rss.xml"', $listingHtml);
+        assertStringContainsString('href="../blog/feed.xml"', $listingHtml);
+
+        $tagsIndexHtml = file_get_contents($outputDir . '/tags/index.html');
+        assertNotFalse($tagsIndexHtml);
+        assertStringContainsString('href="../tags/php/"', $tagsIndexHtml);
+        assertStringContainsString('href="../tags/yii/"', $tagsIndexHtml);
+
+        $authorsIndexHtml = file_get_contents($outputDir . '/authors/index.html');
+        assertNotFalse($authorsIndexHtml);
+        assertStringContainsString('href="../authors/john-doe/"', $authorsIndexHtml);
+
+        $feed = file_get_contents($outputDir . '/blog/feed.xml');
+        assertNotFalse($feed);
+        assertStringContainsString('https://samdark.github.io/blog/blog/post/', $feed);
+        assertStringContainsString('href=&quot;https://samdark.github.io/blog/tags/php/&quot;', $feed);
+        assertStringNotContainsString('href=&quot;/tags/php/&quot;', $feed);
+
+        $sitemap = file_get_contents($outputDir . '/sitemap.xml');
+        assertNotFalse($sitemap);
+        assertStringContainsString('https://samdark.github.io/blog/blog/post/', $sitemap);
+        assertStringContainsString('https://samdark.github.io/blog/authors/john-doe/', $sitemap);
+    }
+
     private function manifestPath(): string
     {
         return RuntimePaths::cachePath(dirname(__DIR__, 3)) . '/build-manifest-' . hash('xxh128', $this->outputDir) . '.json';

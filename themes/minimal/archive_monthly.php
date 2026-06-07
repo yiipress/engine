@@ -22,6 +22,7 @@ declare(strict_types=1);
  * @var array<string, array<string, string>> $uiCatalogs
  * @var YiiPress\I18n\UiText $ui
  * @var Closure(string, int, ?string, bool): string $h
+ * @var Closure(string): string $url
  * @var Closure(string, array): string $t
  */
 
@@ -39,7 +40,7 @@ $uiLanguage ??= 'en';
 <main>
     <div class="container">
         <h1><?= $h($collectionTitle) ?>: <span data-ui-month="<?= $h($month) ?>"><?= $h($monthName) ?></span> <?= $h($year) ?></h1>
-        <p class="back-link"><a href="<?= $rootPath . $h($collectionName) ?>/<?= $h($year) ?>/">&larr; <span data-ui-key="all_of_year" data-ui-params="<?= $h((string) json_encode(['year' => $year], JSON_THROW_ON_ERROR), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"><?= $h($t('all_of_year', ['year' => $year])) ?></span></a></p>
+        <p class="back-link"><a href="<?= $h($url($collectionName . '/' . $year . '/')) ?>">&larr; <span data-ui-key="all_of_year" data-ui-params="<?= $h((string) json_encode(['year' => $year], JSON_THROW_ON_ERROR), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"><?= $h($t('all_of_year', ['year' => $year])) ?></span></a></p>
         <ul class="entry-list">
 <?php foreach ($entries as $entry): ?>
             <li>
