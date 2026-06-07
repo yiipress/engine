@@ -8,8 +8,6 @@ use YiiPress\Content\Model\Entry;
 use YiiPress\Content\Model\SiteConfig;
 use YiiPress\Content\Model\Translation;
 
-use function ltrim;
-use function rtrim;
 use function str_starts_with;
 
 final class MetaTagsBuilder
@@ -23,7 +21,7 @@ final class MetaTagsBuilder
         return new MetaTags(
             title: $entry->title,
             description: $entry->summary(),
-            canonicalUrl: self::absoluteUrl($siteConfig->baseUrl, $permalink),
+            canonicalUrl: self::canonicalUrl($siteConfig, $permalink),
             type: 'article',
             image: $image,
             twitterCard: $image !== '' ? 'summary_large_image' : 'summary',
@@ -43,10 +41,10 @@ final class MetaTagsBuilder
         }
 
         $currentLanguage = $entry->language !== '' ? $entry->language : $siteConfig->i18n->defaultLanguage;
-        $alternates = [$currentLanguage => self::absoluteUrl($siteConfig->baseUrl, $permalink)];
+        $alternates = [$currentLanguage => self::canonicalUrl($siteConfig, $permalink)];
 
         foreach ($translations as $translation) {
-            $alternates[$translation->language] = self::absoluteUrl($siteConfig->baseUrl, $translation->permalink);
+            $alternates[$translation->language] = self::canonicalUrl($siteConfig, $translation->permalink);
         }
 
         if (isset($alternates[$siteConfig->i18n->defaultLanguage])) {
@@ -62,7 +60,7 @@ final class MetaTagsBuilder
         return new MetaTags(
             title: $title,
             description: $description,
-            canonicalUrl: self::absoluteUrl($siteConfig->baseUrl, $permalink),
+            canonicalUrl: self::canonicalUrl($siteConfig, $permalink),
             type: 'website',
             image: $image,
             twitterCard: $image !== '' ? 'summary_large_image' : 'summary',
@@ -79,14 +77,15 @@ final class MetaTagsBuilder
         if (str_starts_with($resolved, 'http://') || str_starts_with($resolved, 'https://')) {
             return $resolved;
         }
-        return rtrim($siteConfig->baseUrl, '/') . '/' . ltrim($resolved, '/');
+        return UrlResolver::absoluteUrl($siteConfig, $resolved);
     }
 
-    private static function absoluteUrl(string $baseUrl, string $permalink): string
+    private static function canonicalUrl(SiteConfig $siteConfig, string $permalink): string
     {
-        if ($baseUrl === '' || $permalink === '') {
+        if ($siteConfig->baseUrl === '' || $permalink === '') {
             return '';
         }
-        return rtrim($baseUrl, '/') . $permalink;
+
+        return UrlResolver::absoluteUrl($siteConfig, $permalink);
     }
 }

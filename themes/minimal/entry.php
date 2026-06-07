@@ -37,6 +37,7 @@ declare(strict_types=1);
  * @var array<string, array<string, string>> $uiCatalogs
  * @var YiiPress\I18n\UiText $ui
  * @var Closure(string, int, ?string, bool): string $h
+ * @var Closure(string): string $url
  * @var Closure(string, array): string $t
  */
 
@@ -142,14 +143,14 @@ $useLegacyTocSidebar = !$useDocsLayout && $hasToc;
 <?php if ($tags !== []): ?>
                     <div class="entry-tags">
 <?php foreach ($tags as $tag): ?>
-                        <a href="<?= $h($rootPath) ?>tags/<?= $h($tag) ?>/" class="tag-link">#<?= $h($tag) ?></a>
+                        <a href="<?= $h($url('tags/' . $tag . '/')) ?>" class="tag-link">#<?= $h($tag) ?></a>
 <?php endforeach; ?>
                     </div>
 <?php endif; ?>
 <?php if ($categories !== []): ?>
                     <div class="entry-categories">
 <?php foreach ($categories as $category): ?>
-                        <a href="<?= $h($rootPath) ?>categories/<?= $h($category) ?>/" class="category"><?= $h($category) ?></a>
+                        <a href="<?= $h($url('categories/' . $category . '/')) ?>" class="category"><?= $h($category) ?></a>
 <?php endforeach; ?>
                     </div>
 <?php endif; ?>

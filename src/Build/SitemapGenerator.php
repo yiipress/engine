@@ -31,17 +31,15 @@ final class SitemapGenerator
         bool $noWrite = false,
     ): void {
         $sitemapPath = ($noWrite ? sys_get_temp_dir() : $outputDir) . '/sitemap.xml';
-        $baseUrl = rtrim($siteConfig->baseUrl, '/');
-
         $sitemap = new Sitemap($sitemapPath);
         $sitemap->setBufferSize(1000);
         $sitemap->setUseIndent(false);
 
-        $sitemap->addItem($baseUrl . '/');
+        $sitemap->addItem(UrlResolver::absoluteUrl($siteConfig, '/'));
 
         foreach ($collections as $collectionName => $collection) {
             if ($collection->listing) {
-                $sitemap->addItem($baseUrl . '/' . $collectionName . '/');
+                $sitemap->addItem(UrlResolver::absoluteUrl($siteConfig, '/' . $collectionName . '/'));
             }
 
             $entries = $entriesByCollection[$collectionName] ?? [];
@@ -50,7 +48,7 @@ final class SitemapGenerator
                 $lastmod = $entry->date?->getTimestamp();
 
                 $sitemap->addItem(
-                    $baseUrl . $permalink,
+                    UrlResolver::absoluteUrl($siteConfig, $permalink),
                     $lastmod ?? null,
                 );
             }
@@ -60,13 +58,13 @@ final class SitemapGenerator
             $basePermalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
             $permalink = PermalinkResolver::applyLanguagePrefix($basePermalink, $page->language, $siteConfig->i18n);
             $lastmod = $page->date?->getTimestamp();
-            $sitemap->addItem($baseUrl . $permalink, $lastmod ?? null);
+            $sitemap->addItem(UrlResolver::absoluteUrl($siteConfig, $permalink), $lastmod ?? null);
         }
 
         if ($authors !== []) {
-            $sitemap->addItem($baseUrl . '/authors/');
+            $sitemap->addItem(UrlResolver::absoluteUrl($siteConfig, '/authors/'));
             foreach ($authors as $slug => $author) {
-                $sitemap->addItem($baseUrl . '/authors/' . $slug . '/');
+                $sitemap->addItem(UrlResolver::absoluteUrl($siteConfig, '/authors/' . $slug . '/'));
             }
         }
 

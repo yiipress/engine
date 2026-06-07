@@ -111,14 +111,14 @@ final class AuthorPageWriter
         ?Navigation $navigation,
         bool $noWrite,
     ): void {
-        $rootPath = RelativePathHelper::rootPath('/authors/');
+        $rootPath = UrlResolver::rootPath('/authors/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
 
         $authorList = [];
         foreach ($authors as $slug => $author) {
             $authorList[] = [
                 'title' => $author->title,
-                'url' => $rootPath . 'authors/' . $slug . '/',
+                'url' => UrlResolver::sitePath('/authors/' . $slug . '/', $rootPath),
                 'avatar' => $author->avatar,
             ];
         }
@@ -158,7 +158,7 @@ final class AuthorPageWriter
         ?Navigation $navigation,
         bool $noWrite,
     ): void {
-        $rootPath = RelativePathHelper::rootPath('/authors/' . $author->slug . '/');
+        $rootPath = UrlResolver::rootPath('/authors/' . $author->slug . '/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
 
         $authorTitle = $author->title;
@@ -174,7 +174,7 @@ final class AuthorPageWriter
         foreach ($entries as $entry) {
             $collection = $collections[$entry->collection] ?? null;
             $url = $collection !== null
-                ? RelativePathHelper::relativize(PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n), $rootPath)
+                ? UrlResolver::sitePath(PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n), $rootPath)
                 : '#';
 
             $entryData[] = [

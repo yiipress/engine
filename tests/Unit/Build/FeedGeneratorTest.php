@@ -11,6 +11,7 @@ use YiiPress\Content\Model\SiteConfig;
 use YiiPress\Processor\ContentProcessorInterface;
 use YiiPress\Processor\ContentProcessorPipeline;
 use YiiPress\Processor\MarkdownProcessor;
+use YiiPress\Processor\TagLinkProcessor;
 use YiiPress\Render\MarkdownRenderer;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
@@ -230,6 +231,59 @@ final class FeedGeneratorTest extends TestCase
         $generator->generateRss($this->siteConfig, $this->collection, $entries);
 
         $this->assertSame(1, $processor->calls);
+    }
+
+    public function testInlineTagLinksUseAbsolutePublicRootInFeedContent(): void
+    {
+        $siteConfig = new SiteConfig(
+            title: 'Project Site',
+            description: 'A project site',
+            baseUrl: 'https://samdark.github.io/blog/',
+            defaultLanguage: 'en',
+            charset: 'UTF-8',
+            defaultAuthor: 'john-doe',
+            dateFormat: 'F j, Y',
+            entriesPerPage: 10,
+            permalink: '/:collection/:slug/',
+            taxonomies: ['tags'],
+            params: [],
+        );
+        file_put_contents($this->tempFile, "Testing #php.\n");
+
+        $entry = new Entry(
+            filePath: $this->tempFile,
+            collection: 'blog',
+            slug: 'first-post',
+            title: 'First Post',
+            date: new DateTimeImmutable('2024-03-15'),
+            draft: false,
+            tags: ['php'],
+            categories: [],
+            authors: ['john-doe'],
+            summary: '',
+            permalink: '',
+            layout: '',
+            theme: '',
+            weight: 0,
+            language: 'en',
+            redirectTo: '',
+            extra: [],
+            bodyOffset: 0,
+            bodyLength: (int) filesize($this->tempFile),
+        );
+
+        $generator = new FeedGenerator(new ContentProcessorPipeline(
+            new MarkdownProcessor(new MarkdownRenderer()),
+            new TagLinkProcessor(),
+        ));
+
+        $atom = $generator->generateAtom($siteConfig, $this->collection, [$entry]);
+        $rss = $generator->generateRss($siteConfig, $this->collection, [$entry]);
+
+        assertStringContainsString('href=&quot;https://samdark.github.io/blog/tags/php/&quot;', $atom);
+        assertStringContainsString('href=&quot;https://samdark.github.io/blog/tags/php/&quot;', $rss);
+        assertStringNotContainsString('href=&quot;/tags/php/&quot;', $atom);
+        assertStringNotContainsString('href=&quot;/tags/php/&quot;', $rss);
     }
 
     /**

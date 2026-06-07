@@ -12,6 +12,7 @@ use YiiPress\Render\NavigationRenderer;
  * @var string $uiLanguage
  * @var list<string> $uiLanguages
  * @var Closure(string, int, ?string, bool): string $h
+ * @var Closure(string): string $url
  * @var Closure(string, array): string $t
  * @var Closure(string): string $languageName
  */
@@ -23,7 +24,7 @@ $languageName ??= static fn (string $language): string => strtoupper($language);
 ?>
 <header class="site-header">
     <div class="container">
-        <a class="site-name" href="<?= $h($rootPath) ?>"><?= $h($siteTitle) ?></a>
+        <a class="site-name" href="<?= $h($url('/')) ?>"><?= $h($siteTitle) ?></a>
         <?php if ($nav !== null && $nav->menu('main') !== []): ?>
             <?= NavigationRenderer::render($nav, 'main', $rootPath, $uiLanguage, $uiLanguage) ?>
             <script>
@@ -72,7 +73,7 @@ $languageName ??= static fn (string $language): string => strtoupper($language);
     <div id="search-input-wrapper">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         <input type="search" id="search-input" placeholder="<?= $h($t('search_placeholder')) ?>" data-ui-attr-placeholder="search_placeholder" autocomplete="off"
-               data-root="<?= $h($rootPath) ?>"
+               data-root="<?= $h($url('/')) ?>"
                data-max-results="<?= $searchResults ?>">
         <span class="search-hint" aria-hidden="true">ESC</span>
         <button id="search-close" class="search-close" type="button" aria-label="<?= $h($t('search_close')) ?>" data-ui-attr-aria-label="search_close">

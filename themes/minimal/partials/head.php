@@ -13,6 +13,7 @@
  * @var array<string, array<string, string>> $uiCatalogs
  * @var YiiPress\I18n\UiText $ui
  * @var Closure(string, int, ?string, bool): string $h
+ * @var Closure(string): string $url
  * @var Closure(string, array): string $t
  */
 
@@ -179,8 +180,8 @@ $uiCatalogs ??= [$uiLanguage => []];
     <script id="yiipress-ui-catalogs" type="application/json" data-default-language="<?= $h($uiLanguage) ?>"><?= json_encode($uiCatalogs, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
     <link rel="stylesheet" href="<?= $h(Asset::url('assets/theme/style.css', $rootPath, $assetManifest)) ?>">
 <?php if ($collectionName !== null): ?>
-    <link rel="alternate" type="application/rss+xml" title="<?= $h($t('rss_feed')) ?>" data-ui-attr-title="rss_feed" href="<?= $rootPath . $h($collectionName) ?>/rss.xml">
-    <link rel="alternate" type="application/atom+xml" title="<?= $h($t('atom_feed')) ?>" data-ui-attr-title="atom_feed" href="<?= $rootPath . $h($collectionName) ?>/feed.xml">
+    <link rel="alternate" type="application/rss+xml" title="<?= $h($t('rss_feed')) ?>" data-ui-attr-title="rss_feed" href="<?= $h($url($collectionName . '/rss.xml')) ?>">
+    <link rel="alternate" type="application/atom+xml" title="<?= $h($t('atom_feed')) ?>" data-ui-attr-title="atom_feed" href="<?= $h($url($collectionName . '/feed.xml')) ?>">
 <?php endif; ?>
     <script src="<?= $h(Asset::url('assets/theme/image-zoom.js', $rootPath, $assetManifest)) ?>" defer></script>
     <script src="<?= $h(Asset::url('assets/theme/code-copy.js', $rootPath, $assetManifest)) ?>" defer></script>

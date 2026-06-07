@@ -64,7 +64,7 @@ final class EntryRenderer
 
         $cacheContext = '';
         if ($this->cache !== null) {
-            $cacheContext = $this->cacheContext($siteConfig, $entry, $navigation, $crossRefResolver, $navigationPager);
+            $cacheContext = $this->cacheContext($siteConfig, $entry, $permalink, $navigation, $crossRefResolver, $navigationPager);
             $cached = $this->cache->get($entry->filePath, $cacheContext);
             if ($cached !== null) {
                 return $this->dispatchRenderFinished($siteConfig, $entry, $permalink, $cached);
@@ -79,7 +79,8 @@ final class EntryRenderer
             }
             $body = $resolver->resolve($body);
         }
-        $content = $this->pipeline->process($body, $entry);
+        $rootPath = UrlResolver::rootPath($permalink);
+        $content = $this->pipeline->process($body, $entry, $rootPath);
         $headAssets = $this->pipeline->collectHeadAssets($content);
         $toc = $siteConfig->toc ? $this->pipeline->collectToc() : [];
         $related = $this->relatedIndex?->forEntry($entry->filePath) ?? [];
@@ -108,12 +109,14 @@ final class EntryRenderer
     private function cacheContext(
         SiteConfig $siteConfig,
         Entry $entry,
+        string $permalink,
         ?Navigation $navigation,
         ?CrossReferenceResolver $crossRefResolver,
         ?array $navigationPager,
     ): string {
         return hash('xxh128', serialize([
             'siteConfig' => $siteConfig,
+            'permalink' => $permalink,
             'navigation' => $navigation,
             'navigationPager' => $navigationPager,
             'assets' => $this->assetManifest?->signature() ?? '',
@@ -162,7 +165,7 @@ final class EntryRenderer
         }
 
         $templateContext = $this->templateContexts[$themeName];
-        $rootPath = RelativePathHelper::rootPath($permalink);
+        $rootPath = UrlResolver::rootPath($permalink);
         $navigationPager = $this->relativizeNavigationPager($navigationPager, $rootPath);
         $lastUpdated = $this->lastUpdated($siteConfig, $entry);
         $editPageUrl = $siteConfig->editPageUrl === null
@@ -240,7 +243,7 @@ final class EntryRenderer
                 'slug' => $authorSlug,
                 'title' => $author instanceof Author ? $author->title : $authorSlug,
                 'url' => $siteConfig->authorPages && $author instanceof Author
-                    ? $rootPath . 'authors/' . $authorSlug . '/'
+                    ? UrlResolver::sitePath('/authors/' . $authorSlug . '/', $rootPath)
                     : '',
             ];
         }
@@ -283,7 +286,7 @@ final class EntryRenderer
 
         foreach (['previous', 'next'] as $key) {
             if ($navigationPager[$key] !== null && str_starts_with($navigationPager[$key]['url'], '/')) {
-                $navigationPager[$key]['url'] = RelativePathHelper::relativize($navigationPager[$key]['url'], $rootPath);
+                $navigationPager[$key]['url'] = UrlResolver::sitePath($navigationPager[$key]['url'], $rootPath);
             }
         }
 

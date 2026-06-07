@@ -7,8 +7,6 @@ namespace YiiPress\Build;
 use YiiPress\Content\Model\RobotsTxtRule;
 use YiiPress\Content\Model\SiteConfig;
 
-use function rtrim;
-
 final class RobotsTxtGenerator
 {
     public function generate(SiteConfig $siteConfig): string
@@ -44,7 +42,7 @@ final class RobotsTxtGenerator
         }
 
         if ($siteConfig->baseUrl !== '') {
-            $lines[] = 'Sitemap: ' . rtrim($siteConfig->baseUrl, '/') . '/sitemap.xml';
+            $lines[] = 'Sitemap: ' . UrlResolver::absoluteUrl($siteConfig, '/sitemap.xml');
         }
 
         return implode("\n", $lines) . "\n";

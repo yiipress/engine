@@ -15,6 +15,7 @@ declare(strict_types=1);
  * @var array<string, array<string, string>> $uiCatalogs
  * @var YiiPress\I18n\UiText $ui
  * @var Closure(string, int, ?string, bool): string $h
+ * @var Closure(string): string $url
  * @var Closure(string, array): string $t
  */
 
@@ -34,7 +35,7 @@ $uiLanguage ??= 'en';
         <div class="error-page">
             <h1>404</h1>
             <p data-ui-key="page_not_found_description"><?= $h($t('page_not_found_description')) ?></p>
-            <p><a href="<?= $h($rootPath) ?>" data-ui-key="go_to_home_page"><?= $h($t('go_to_home_page')) ?></a></p>
+            <p><a href="<?= $h($url('/')) ?>" data-ui-key="go_to_home_page"><?= $h($t('go_to_home_page')) ?></a></p>
         </div>
     </div>
 </main>

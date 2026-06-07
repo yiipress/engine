@@ -25,7 +25,7 @@ final class RedirectPageWriter
         string $sourcePermalink = '',
     ): void {
         $htmlLanguage = $language !== '' ? $language : 'en';
-        if ($siteConfig !== null && $sourcePermalink !== '' && PublicUrlResolver::isSamePublicUrl($siteConfig, $sourcePermalink, $entry->redirectTo)) {
+        if ($siteConfig !== null && $sourcePermalink !== '' && UrlResolver::isSamePublicUrl($siteConfig, $sourcePermalink, $entry->redirectTo)) {
             throw new RuntimeException(sprintf(
                 'Redirect from "%s" to "%s" resolves to the same public URL.',
                 $sourcePermalink,
@@ -34,7 +34,7 @@ final class RedirectPageWriter
         }
 
         $target = $siteConfig !== null
-            ? PublicUrlResolver::browserUrl($siteConfig, $entry->redirectTo)
+            ? UrlResolver::browserUrl($siteConfig, $entry->redirectTo)
             : $entry->redirectTo;
         $targetEscaped = htmlspecialchars($target, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $targetJson = json_encode($target, JSON_THROW_ON_ERROR);

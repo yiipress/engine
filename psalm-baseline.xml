@@ -87,14 +87,6 @@
       <code><![CDATA[array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null]]></code>
     </MixedReturnTypeCoercion>
   </file>
-  <file src="src/Build/NotFoundPageWriter.php">
-    <MixedArgumentTypeCoercion>
-      <code><![CDATA[$params]]></code>
-    </MixedArgumentTypeCoercion>
-    <UnresolvableInclude>
-      <code><![CDATA[require $this->templateResolver->resolve('errors/404', $siteConfig->theme)]]></code>
-    </UnresolvableInclude>
-  </file>
   <file src="src/Build/PageTemplateRenderer.php">
     <MixedArgument>
       <code><![CDATA[$html]]></code>
@@ -177,36 +169,6 @@
       <code><![CDATA[(string) $token]]></code>
       <code><![CDATA[(string) $token]]></code>
     </RedundantCast>
-  </file>
-  <file src="src/Content/CrossReferenceResolver.php">
-    <InvalidNullableReturnType>
-      <code><![CDATA[string]]></code>
-    </InvalidNullableReturnType>
-    <NullableReturnStatement>
-      <code><![CDATA[preg_replace_callback(
-            '/\[([^\]]*)\]\(([^)#]+\.md)(#[^)]*)?\)/',
-            function (array $matches): string {
-                $text = $matches[1];
-                $path = $matches[2];
-                $fragment = $matches[3] ?? '';
-
-                $resolved = $this->resolvePath($path);
-                $permalink = $this->fileToPermalink[$resolved] ?? null;
-
-                if ($permalink === null) {
-                    return $matches[0];
-                }
-
-                if ($this->currentPermalink !== '') {
-                    $rootPath = RelativePathHelper::rootPath($this->currentPermalink);
-                    $permalink = RelativePathHelper::relativize($permalink, $rootPath);
-                }
-
-                return '[' . $text . '](' . $permalink . $fragment . ')';
-            },
-            $markdown,
-        )]]></code>
-    </NullableReturnStatement>
   </file>
   <file src="src/Content/Model/Entry.php">
     <RedundantCast>

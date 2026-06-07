@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiPress\Processor;
 
+use YiiPress\Build\UrlResolver;
 use YiiPress\Content\Model\Entry;
 
 use function htmlspecialchars;
@@ -15,7 +16,7 @@ use function preg_split;
 use function str_contains;
 use function strip_tags;
 
-final readonly class TagLinkProcessor implements ContentProcessorInterface
+final class TagLinkProcessor implements ContentProcessorInterface, RootPathAwareProcessorInterface
 {
     private const HASHTAG_PATTERN = '/(?<!\w)#(\w+(?:-\w+)*)(?![\w-])/';
     private const PROTECTED_BLOCK_PATTERN = '/<pre[^>]*>.*?<\/pre>|<code[^>]*>.*?<\/code>|<a[^>]*>.*?<\/a>/is';
@@ -24,6 +25,11 @@ final readonly class TagLinkProcessor implements ContentProcessorInterface
     public function __construct(
         private string $rootPath = '/',
     ) {}
+
+    public function applyRootPath(string $rootPath): void
+    {
+        $this->rootPath = $rootPath;
+    }
 
     public function process(string $content, Entry $entry): string
     {
@@ -70,7 +76,7 @@ final readonly class TagLinkProcessor implements ContentProcessorInterface
             function (array $matches): string {
                 $tagDisplay = $matches[1];
                 $tagUrl = mb_strtolower($tagDisplay);
-                $url = $this->rootPath . 'tags/' . $tagUrl . '/';
+                $url = UrlResolver::sitePath('/tags/' . $tagUrl . '/', $this->rootPath);
                 return '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" class="tag-link">#' . htmlspecialchars($tagDisplay, ENT_QUOTES, 'UTF-8') . '</a>';
             },
             $text

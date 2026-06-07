@@ -50,6 +50,7 @@ return [
         'class' => ContentProcessorPipeline::class,
         '__construct()' => [
             Reference::to(MarkdownProcessor::class),
+            Reference::to(TagLinkProcessor::class),
         ],
     ],
     BuildCommand::class => [

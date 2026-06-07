@@ -213,7 +213,7 @@ final class FeedGenerator
             $xml->writeElement('summary', $summary);
         }
 
-        $html = $this->renderedContent($entry);
+        $html = $this->renderedContent($siteConfig, $entry);
         if ($html !== '') {
             $xml->startElement('content');
             $xml->writeAttribute('type', 'html');
@@ -246,7 +246,7 @@ final class FeedGenerator
             $xml->writeElement('description', $summary);
         }
 
-        $html = $this->renderedContent($entry);
+        $html = $this->renderedContent($siteConfig, $entry);
         if ($html !== '') {
             $xml->writeElement('content:encoded', $html);
         }
@@ -294,13 +294,15 @@ final class FeedGenerator
         return $xml;
     }
 
-    private function renderedContent(Entry $entry): string
+    private function renderedContent(SiteConfig $siteConfig, Entry $entry): string
     {
-        $cacheKey = $entry->filePath . ':' . $entry->slug;
+        $rootPath = UrlResolver::absoluteUrl($siteConfig, '/');
+        $cacheKey = $entry->filePath . ':' . $entry->slug . ':' . $rootPath;
 
         return $this->renderedContentCache[$cacheKey] ?? ($this->renderedContentCache[$cacheKey] = $this->pipeline->process(
             $entry->body(),
-            $entry
+            $entry,
+            $rootPath,
         ));
     }
 }
