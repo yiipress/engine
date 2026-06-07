@@ -11,7 +11,6 @@ use PHPUnit\Framework\TestCase;
 use function PHPUnit\Framework\assertCount;
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
-use function PHPUnit\Framework\fail;
 use function file_put_contents;
 use function sys_get_temp_dir;
 use function tempnam;
@@ -88,7 +87,7 @@ YAML);
 
         try {
             (new NavigationParser())->parse($file);
-            fail('Expected invalid content configuration exception.');
+            $this->fail('Expected invalid content configuration exception.');
         } catch (InvalidContentConfigException $e) {
             assertSame('Invalid content configuration', $e->getName());
             assertSame('The navigation configuration file must contain YAML key-value pairs.', $e->getMessage());
