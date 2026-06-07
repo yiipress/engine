@@ -40,7 +40,7 @@ final class AuthorPageWriter
             return 0;
         }
 
-        $renderer = new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest);
+        $renderer = $this->createPageTemplateRenderer($siteConfig);
 
         $this->writeIndex($siteConfig, $authors, $outputDir, $navigation, $noWrite);
         $pageCount = 1;
@@ -65,7 +65,7 @@ final class AuthorPageWriter
         bool $noWrite = false,
     ): void {
         $this->writeIndexPage(
-            new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest),
+            $this->createPageTemplateRenderer($siteConfig),
             $siteConfig,
             $authors,
             $outputDir,
@@ -89,7 +89,7 @@ final class AuthorPageWriter
         bool $noWrite = false,
     ): void {
         $this->writeAuthorPage(
-            $renderer ?? new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest),
+            $renderer ?? $this->createPageTemplateRenderer($siteConfig),
             $siteConfig,
             $author,
             $entries,
@@ -97,6 +97,16 @@ final class AuthorPageWriter
             $outputDir,
             $navigation,
             $noWrite,
+        );
+    }
+
+    private function createPageTemplateRenderer(SiteConfig $siteConfig): PageTemplateRenderer
+    {
+        return new PageTemplateRenderer(
+            $this->templateResolver,
+            $siteConfig->theme,
+            $this->assetManifest,
+            $siteConfig->minify,
         );
     }
 

@@ -552,6 +552,7 @@ PHP);
         ?string $editPageUrl = null,
         ?string $reportIssueUrl = null,
         bool $authorPages = false,
+        bool $minify = true,
     ): SiteConfig
     {
         return new SiteConfig(
@@ -573,6 +574,7 @@ PHP);
             editPageUrl: $editPageUrl,
             reportIssueUrl: $reportIssueUrl,
             authorPages: $authorPages,
+            minify: $minify,
         );
     }
 

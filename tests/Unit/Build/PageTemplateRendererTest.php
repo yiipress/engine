@@ -16,6 +16,7 @@ use RecursiveIteratorIterator;
 use SplFileInfo;
 
 use function PHPUnit\Framework\assertStringContainsString;
+use function PHPUnit\Framework\assertSame;
 
 final class PageTemplateRendererTest extends TestCase
 {
@@ -82,5 +83,35 @@ PHP,
 
         assertStringContainsString('<h1>Поиск</h1>', $html);
         assertStringContainsString('<p>Далее</p>', $html);
+    }
+
+    public function testMinifiesRenderedHtmlByDefault(): void
+    {
+        $registry = new ThemeRegistry();
+        $registry->register(new Theme('test', $this->tempDir));
+        $registry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
+        $resolver = new TemplateResolver($registry);
+        $renderer = new PageTemplateRenderer($resolver, 'test');
+
+        $html = $renderer->render('example', [
+            'ui' => UiText::forTheme('en', $resolver, 'minimal'),
+        ], './');
+
+        assertSame('<h1>Search</h1><p>Next</p>', $html);
+    }
+
+    public function testCanKeepRenderedHtmlUnminified(): void
+    {
+        $registry = new ThemeRegistry();
+        $registry->register(new Theme('test', $this->tempDir));
+        $registry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
+        $resolver = new TemplateResolver($registry);
+        $renderer = new PageTemplateRenderer($resolver, 'test', minify: false);
+
+        $html = $renderer->render('example', [
+            'ui' => UiText::forTheme('en', $resolver, 'minimal'),
+        ], './');
+
+        assertStringContainsString("<h1>Search</h1>\n<p>Next</p>", $html);
     }
 }

@@ -30,7 +30,7 @@ final readonly class DateArchiveWriter
         int $workerCount = 1,
         bool $noWrite = false,
     ): int {
-        $renderer = new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest);
+        $renderer = new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest, $siteConfig->minify);
         $byYear = [];
         $byMonth = [];
 

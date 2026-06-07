@@ -33,7 +33,7 @@ final readonly class CollectionListingWriter
         int $workerCount = 1,
         bool $noWrite = false,
     ): int {
-        $renderer = new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest);
+        $renderer = new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest, $siteConfig->minify);
         $perPage = $collection->entriesPerPage;
         if ($perPage <= 0) {
             $perPage = count($entries) ?: 1;

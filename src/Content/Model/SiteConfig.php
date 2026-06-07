@@ -37,5 +37,6 @@ final readonly class SiteConfig
         public ?string $editPageUrl = null,
         public ?string $reportIssueUrl = null,
         public bool $authorPages = false,
+        public bool $minify = true,
     ) {}
 }

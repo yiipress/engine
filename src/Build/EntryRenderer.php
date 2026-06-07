@@ -67,7 +67,9 @@ final class EntryRenderer
             $cacheContext = $this->cacheContext($siteConfig, $entry, $permalink, $navigation, $crossRefResolver, $navigationPager);
             $cached = $this->cache->get($entry->filePath, $cacheContext);
             if ($cached !== null) {
-                return $this->dispatchRenderFinished($siteConfig, $entry, $permalink, $cached);
+                $html = $this->dispatchRenderFinished($siteConfig, $entry, $permalink, $cached);
+
+                return $siteConfig->minify ? OutputMinifier::html($html) : $html;
             }
         }
 
@@ -91,7 +93,9 @@ final class EntryRenderer
             $this->cache->set($entry->filePath, $html, $cacheContext);
         }
 
-        return $this->dispatchRenderFinished($siteConfig, $entry, $permalink, $html);
+        $html = $this->dispatchRenderFinished($siteConfig, $entry, $permalink, $html);
+
+        return $siteConfig->minify ? OutputMinifier::html($html) : $html;
     }
 
     private function dispatchRenderFinished(SiteConfig $siteConfig, Entry $entry, string $permalink, string $html): string

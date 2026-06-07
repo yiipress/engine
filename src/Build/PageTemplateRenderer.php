@@ -21,6 +21,7 @@ final class PageTemplateRenderer
         private readonly TemplateResolver $templateResolver,
         private readonly string $themeName,
         private readonly ?AssetFingerprintManifest $assetManifest = null,
+        private readonly bool $minify = true,
     ) {}
 
     /**
@@ -54,6 +55,8 @@ final class PageTemplateRenderer
 
         $html = ($this->templateClosures[$templatePath])($variables);
 
-        return $this->templateContexts[$this->themeName]->rewriteHtml($html, $rootPath);
+        $html = $this->templateContexts[$this->themeName]->rewriteHtml($html, $rootPath);
+
+        return $this->minify ? OutputMinifier::html($html) : $html;
     }
 }
