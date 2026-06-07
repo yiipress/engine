@@ -357,6 +357,21 @@ final class ConfigurationPackagingTest extends TestCase
     }
 
     #[Test]
+    public function releaseWorkflowBuildsNotesFromPreviousStableReleaseTag(): void
+    {
+        $workflow = file_get_contents(dirname(__DIR__, 3) . '/.github/workflows/release.yml');
+        self::assertIsString($workflow);
+
+        self::assertStringContainsString("tags:\n      - '*.*.*'", $workflow);
+        self::assertStringContainsString(
+            "git describe --tags --abbrev=0 --match '[0-9]*.[0-9]*.[0-9]*' \"\${tag}^\"",
+            $workflow,
+        );
+        self::assertStringNotContainsString('git describe --tags --abbrev=0 "${tag}^"', $workflow);
+        self::assertStringContainsString('Changes since %s:', $workflow);
+    }
+
+    #[Test]
     public function cloudflareDeploymentVerifiesDownloadedBinaryChecksum(): void
     {
         $documentation = file_get_contents(dirname(__DIR__, 3) . '/docs/deployment.md');
