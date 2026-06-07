@@ -76,6 +76,7 @@
 - [x] Static file copying (fonts, downloads, PDFs from source to output)
 - [x] Root-relative asset URLs stay valid when deploying under a subdirectory
 - [x] Nightly Linux binary published for GitHub Actions preview builds
+- [x] Configurable generated HTML output minification
 
 ## Priority 6: SEO and web standards
 

@@ -30,7 +30,7 @@ final readonly class TaxonomyPageWriter
         ?Navigation $navigation = null,
         bool $noWrite = false,
     ): int {
-        $renderer = new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest);
+        $renderer = new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest, $siteConfig->minify);
         $pageCount = 0;
 
         foreach ($taxonomyData as $taxonomyName => $terms) {

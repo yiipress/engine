@@ -38,6 +38,20 @@ final class SiteConfigParserTest extends TestCase
         assertSame('local', $config->theme);
         assertSame('Solarized (dark)', $config->highlightTheme);
         assertTrue($config->assets->fingerprint);
+        assertTrue($config->minify);
+    }
+
+    public function testParseMinifyConfigCanDisableOutputMinification(): void
+    {
+        $filePath = sys_get_temp_dir() . '/yiipress-site-config-' . uniqid() . '.yaml';
+        file_put_contents($filePath, "title: Test\nlanguages: [en]\nminify: false\n");
+
+        $parser = new SiteConfigParser();
+        $config = $parser->parse($filePath);
+
+        assertFalse($config->minify);
+
+        unlink($filePath);
     }
 
     public function testParseAssetConfigCanDisableFingerprinting(): void

@@ -58,6 +58,10 @@ final class RedirectPageWriter
             </html>
             HTML;
 
+        if ($siteConfig?->minify ?? true) {
+            $html = OutputMinifier::html($html);
+        }
+
         if ($noWrite) {
             return;
         }
