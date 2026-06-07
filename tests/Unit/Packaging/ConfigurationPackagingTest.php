@@ -274,6 +274,14 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString("github.ref == 'refs/heads/master'", $workflow);
         self::assertStringContainsString('type=raw,value=nightly', $workflow);
         self::assertStringContainsString('type=sha,prefix=nightly-', $workflow);
+        self::assertStringContainsString('nightly_tag="nightly-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}-${short_sha}"', $workflow);
+        self::assertStringContainsString('gh release create "${nightly_tag}" assets/*', $workflow);
+        self::assertStringContainsString('--target "${GITHUB_SHA}"', $workflow);
+        self::assertStringContainsString('--latest=false', $workflow);
+        self::assertStringNotContainsString('git/ref/tags/nightly', $workflow);
+        self::assertStringNotContainsString('refs/tags/nightly', $workflow);
+        self::assertStringNotContainsString('gh release create nightly', $workflow);
+        self::assertStringNotContainsString('gh release view nightly', $workflow);
         self::assertStringNotContainsString('type=semver,pattern={{version}}', $workflow);
         self::assertStringNotContainsString("startsWith(github.ref, 'refs/tags/')", $workflow);
         self::assertStringContainsString('yiipress-macos-arm64.tar.gz', $workflow);
@@ -295,6 +303,21 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('binary_path="${RUNNER_TEMP}/yiipress"', $action);
         self::assertStringContainsString('elif [[ "${BINARY_PATH}" = /* ]]; then', $action);
         self::assertStringContainsString('printf \'binary-path=%s\n\' "${binary_path}"', $action);
+    }
+
+    #[Test]
+    public function buildActionResolvesNightlyToLatestImmutablePrerelease(): void
+    {
+        $action = file_get_contents(dirname(__DIR__, 3) . '/.github/actions/build/action.yml');
+        self::assertIsString($action);
+
+        self::assertStringContainsString('elif [ "${version}" = "nightly" ]; then', $action);
+        self::assertStringContainsString('https://api.github.com/repos/${repository}/releases?per_page=100', $action);
+        self::assertStringContainsString('not release.get("draft")', $action);
+        self::assertStringContainsString('release.get("prerelease")', $action);
+        self::assertStringContainsString('tag.startswith("nightly-")', $action);
+        self::assertStringContainsString('{"yiipress-linux-amd64.tar.gz", "SHA256SUMS"}.issubset(assets)', $action);
+        self::assertStringContainsString('Could not find a nightly YiiPress release', $action);
     }
 
     #[Test]

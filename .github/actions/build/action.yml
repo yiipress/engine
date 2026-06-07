@@ -64,13 +64,12 @@ runs:
         version="${VERSION}"
         work_dir="$(mktemp -d)"
         trap 'rm -rf "${work_dir}"' EXIT
+        headers=(-H "Accept: application/vnd.github+json")
+        if [ -n "${GH_TOKEN:-}" ]; then
+          headers+=(-H "Authorization: Bearer ${GH_TOKEN}")
+        fi
 
         if [ "${version}" = "latest" ]; then
-          headers=(-H "Accept: application/vnd.github+json")
-          if [ -n "${GH_TOKEN:-}" ]; then
-            headers+=(-H "Authorization: Bearer ${GH_TOKEN}")
-          fi
-
           latest_release="${work_dir}/latest-release.json"
           if ! curl -fsSL "${headers[@]}" "https://api.github.com/repos/${repository}/releases/latest" -o "${latest_release}"; then
             echo "Could not resolve the latest YiiPress release for ${repository}. Pin the version input to an existing release." >&2
@@ -80,6 +79,39 @@ runs:
           version="$(
             python3 -c 'import json, sys; print(json.load(sys.stdin)["tag_name"])' < "${latest_release}"
           )"
+        elif [ "${version}" = "nightly" ]; then
+          nightly_releases="${work_dir}/nightly-releases.json"
+          if ! curl -fsSL "${headers[@]}" "https://api.github.com/repos/${repository}/releases?per_page=100" -o "${nightly_releases}"; then
+            echo "Could not resolve the latest nightly YiiPress release for ${repository}. Pin the version input to an existing release." >&2
+            exit 1
+          fi
+
+          if ! version="$(
+            python3 - "${nightly_releases}" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as file:
+    releases = json.load(file)
+
+for release in releases:
+    tag = release.get("tag_name", "")
+    assets = {asset.get("name") for asset in release.get("assets", [])}
+    if (
+        not release.get("draft")
+        and release.get("prerelease")
+        and tag.startswith("nightly-")
+        and {"yiipress-linux-amd64.tar.gz", "SHA256SUMS"}.issubset(assets)
+    ):
+        print(tag)
+        sys.exit(0)
+
+sys.exit(1)
+PY
+          )"; then
+            echo "Could not find a nightly YiiPress release for ${repository}. Pin the version input to an existing release." >&2
+            exit 1
+          fi
         fi
 
         if [ -z "${version}" ]; then

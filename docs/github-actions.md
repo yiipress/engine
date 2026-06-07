@@ -22,20 +22,21 @@ jobs:
 ```
 
 For testing unreleased changes from the current `master` branch, use `version: nightly`.
-The nightly binary is mutable and intended for preview builds only; use a fixed release tag
-for production sites.
+YiiPress publishes immutable nightly prereleases tagged as `nightly-*`; the action resolves
+`nightly` to the newest available nightly prerelease with Linux binary and checksum assets.
+Nightlies are intended for preview builds only; use a fixed release tag for production sites.
 
 The action accepts these inputs:
 
 | Input | Default | Description |
 |---|---|---|
-| `version` | `latest` | YiiPress release tag to download. Use a fixed tag such as `1.2.3` for stable builds, or `nightly` to test the current master build. |
+| `version` | `latest` | YiiPress release tag to download. Use a fixed tag such as `1.2.3` for stable builds, `latest` for the latest stable release, or `nightly` for the newest immutable nightly prerelease. |
 | `content-dir` | `content` | Content directory passed to `yiipress build`. |
 | `output-dir` | `_site` | Output directory passed to `yiipress build`. Change it when the host expects a custom output directory. |
 | `working-directory` | `.` | Repository subdirectory where the build runs. |
 | `args` | `--no-cache` | Extra arguments appended to `yiipress build`, one argument per line. |
 | `binary-path` | runner temp directory | Path where the downloaded binary is installed. Leave it unset unless later steps need the binary at a fixed path. |
-| `github-token` | workflow token | Token used when resolving `version: latest` through the GitHub API. |
+| `github-token` | workflow token | Token used when resolving `version: latest` or `version: nightly` through the GitHub API. |
 
 The action exposes `version` and `binary-path` outputs if later workflow steps need to report or reuse the downloaded binary.
 

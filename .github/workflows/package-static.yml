@@ -99,42 +99,23 @@ jobs:
           mkdir -p assets
           tar -C dist/linux-amd64 -czf assets/yiipress-linux-amd64.tar.gz yiipress
           sha256sum assets/yiipress-linux-amd64.tar.gz > assets/SHA256SUMS
+          short_sha="${GITHUB_SHA::12}"
+          nightly_tag="nightly-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}-${short_sha}"
 
           {
-            printf '# Nightly\n\n'
+            printf '# Nightly %s\n\n' "${short_sha}"
             printf 'Built from `%s` on `%s`.\n\n' "${GITHUB_SHA}" "${GITHUB_REF_NAME}"
-            printf '%s\n\n' 'This prerelease is updated after successful package builds on `master`.'
+            printf 'Nightly tag: `%s`.\n\n' "${nightly_tag}"
+            printf '%s\n\n' 'This immutable prerelease is created after a successful package build on `master`.'
             printf '%s\n' 'It is intended for testing unreleased YiiPress changes in site build workflows.'
           } > nightly-release-notes.md
 
-          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/nightly" >/dev/null 2>&1; then
-            gh api \
-              --method PATCH \
-              "repos/${GITHUB_REPOSITORY}/git/refs/tags/nightly" \
-              -f sha="${GITHUB_SHA}" \
-              -F force=true >/dev/null
-          else
-            gh api \
-              --method POST \
-              "repos/${GITHUB_REPOSITORY}/git/refs" \
-              -f ref="refs/tags/nightly" \
-              -f sha="${GITHUB_SHA}" >/dev/null
-          fi
-
-          if gh release view nightly >/dev/null 2>&1; then
-            gh release upload nightly assets/* --clobber
-            gh release edit nightly \
-              --title "Nightly" \
-              --notes-file nightly-release-notes.md \
-              --prerelease
-          else
-            gh release create nightly assets/* \
-              --verify-tag \
-              --title "Nightly" \
-              --notes-file nightly-release-notes.md \
-              --prerelease \
-              --latest=false
-          fi
+          gh release create "${nightly_tag}" assets/* \
+            --target "${GITHUB_SHA}" \
+            --title "Nightly ${short_sha}" \
+            --notes-file nightly-release-notes.md \
+            --prerelease \
+            --latest=false
 
   windows:
     name: Windows static binary
