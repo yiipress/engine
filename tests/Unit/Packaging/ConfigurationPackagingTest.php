@@ -364,7 +364,7 @@ final class ConfigurationPackagingTest extends TestCase
 
         self::assertStringContainsString("tags:\n      - '*.*.*'", $workflow);
         self::assertStringContainsString(
-            "git describe --tags --abbrev=0 --match '[0-9]*.[0-9]*.[0-9]*' \"\${tag}^\"",
+            "git describe --tags --abbrev=0 --match '[0-9]*.[0-9]*.[0-9]*' --exclude '*[!0-9.]*' \"\${tag}^\"",
             $workflow,
         );
         self::assertStringContainsString('release_author() {', $workflow);

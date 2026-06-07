@@ -266,7 +266,7 @@ jobs:
         run: |
           set -euo pipefail
           tag="${GITHUB_REF_NAME}"
-          previous_tag="$(git describe --tags --abbrev=0 --match '[0-9]*.[0-9]*.[0-9]*' "${tag}^" 2>/dev/null || true)"
+          previous_tag="$(git describe --tags --abbrev=0 --match '[0-9]*.[0-9]*.[0-9]*' --exclude '*[!0-9.]*' "${tag}^" 2>/dev/null || true)"
           range="${tag}"
           if [ -n "${previous_tag}" ]; then
             range="${previous_tag}..${tag}"
