@@ -90,6 +90,23 @@ final class ConfigurationPackagingTest extends TestCase
     }
 
     #[Test]
+    public function staticBinaryBuildKeepsOnlyRequiredXmlExtension(): void
+    {
+        $root = dirname(__DIR__, 3);
+        $dockerfile = file_get_contents($root . '/docker/Dockerfile');
+        $macosScript = file_get_contents($root . '/build/package-macos.sh');
+        $windowsScript = file_get_contents($root . '/build/package-windows.ps1');
+        self::assertIsString($dockerfile);
+        self::assertIsString($macosScript);
+        self::assertIsString($windowsScript);
+
+        foreach ([$dockerfile, $macosScript, $windowsScript] as $source) {
+            self::assertStringContainsString('xmlwriter', $source);
+            self::assertStringNotContainsString(',xml,xmlwriter', $source);
+        }
+    }
+
+    #[Test]
     public function makefileExposesAllPackageBuilds(): void
     {
         $makefile = file_get_contents(dirname(__DIR__, 3) . '/Makefile');

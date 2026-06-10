@@ -127,7 +127,7 @@ ARG PHP_VERSION=8.5
 ARG MD4C_VERSION=1.1
 ARG HIGHLIGHTER_VERSION=1.0.1
 ARG STATIC_PHP_CLI_REF=5b5861c366a0d94bc84002db7b3f46144b388fbb
-ARG STATIC_PHP_EXTENSIONS=ctype,dom,filter,highlighter,inotify,mbstring,md4c,opcache,pcntl,phar,posix,xml,xmlwriter,yaml
+ARG STATIC_PHP_EXTENSIONS=ctype,dom,filter,highlighter,inotify,mbstring,md4c,opcache,pcntl,phar,posix,xmlwriter,yaml
 ARG TARGETARCH
 ENV CARGO_HOME=/root/.cargo \
     RUSTUP_HOME=/usr/local/rustup \

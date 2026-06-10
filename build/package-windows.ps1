@@ -4,7 +4,7 @@ param(
     [string] $Md4cVersion = "1.1",
     [string] $HighlighterVersion = "1.0.1",
     [string] $StaticPhpCliRef = "5b5861c366a0d94bc84002db7b3f46144b388fbb",
-    [string] $StaticPhpExtensions = "ctype,dom,filter,highlighter,mbstring,md4c,opcache,phar,xml,xmlwriter,yaml"
+    [string] $StaticPhpExtensions = "ctype,dom,filter,highlighter,mbstring,md4c,opcache,phar,xmlwriter,yaml"
 )
 
 $ErrorActionPreference = "Stop"

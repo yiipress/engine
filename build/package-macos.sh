@@ -7,7 +7,7 @@ PHP_VERSION="${PHP_VERSION:-8.5}"
 MD4C_VERSION="${MD4C_VERSION:-1.1}"
 HIGHLIGHTER_VERSION="${HIGHLIGHTER_VERSION:-1.0.1}"
 STATIC_PHP_CLI_REF="${STATIC_PHP_CLI_REF:-5b5861c366a0d94bc84002db7b3f46144b388fbb}"
-STATIC_PHP_EXTENSIONS="${STATIC_PHP_EXTENSIONS:-ctype,dom,filter,highlighter,mbstring,md4c,opcache,pcntl,phar,posix,xml,xmlwriter,yaml}"
+STATIC_PHP_EXTENSIONS="${STATIC_PHP_EXTENSIONS:-ctype,dom,filter,highlighter,mbstring,md4c,opcache,pcntl,phar,posix,xmlwriter,yaml}"
 
 detect_arch() {
     case "$(uname -m)" in
