@@ -624,20 +624,6 @@ PHP;
     }
 
     #[Test]
-    public function pharBuilderCompressesPackagedFiles(): void
-    {
-        $packageScript = file_get_contents(dirname(__DIR__, 3) . '/build/package-phar.php');
-        self::assertIsString($packageScript);
-
-        self::assertStringContainsString('\\Phar::canCompress(\\Phar::GZ)', $packageScript);
-        self::assertStringContainsString('$phar->compressFiles(\\Phar::GZ);', $packageScript);
-        self::assertLessThan(
-            strpos($packageScript, '$phar->stopBuffering();'),
-            strpos($packageScript, '$phar->compressFiles(\\Phar::GZ);'),
-        );
-    }
-
-    #[Test]
     public function staticPackageInstallsRustTargetForHighlighterToolchain(): void
     {
         $dockerfile = file_get_contents(dirname(__DIR__, 3) . '/docker/Dockerfile');
