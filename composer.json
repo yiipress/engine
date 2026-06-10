@@ -89,6 +89,10 @@
     "suggest": {
         "yiipress/highlighter": "Installs ext-highlighter, which provides YiiPress\\Highlighter for native syntax highlighting."
     },
+    "replace": {
+        "symfony/polyfill-ctype": "*",
+        "symfony/polyfill-mbstring": "*"
+    },
     "autoload": {
         "psr-4": {
             "YiiPress\\": "src"
