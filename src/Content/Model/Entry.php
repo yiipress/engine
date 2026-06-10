@@ -42,6 +42,7 @@ final class Entry
     ) {}
 
     private ?string $bodyCache = null;
+    private ?string $generatedSummaryCache = null;
 
     public function sourceFilePath(): string
     {
@@ -56,19 +57,23 @@ final class Entry
             return $this->summary;
         }
 
+        if ($this->generatedSummaryCache !== null) {
+            return $this->generatedSummaryCache;
+        }
+
         $body = $this->body();
         if ($body === '') {
-            return '';
+            return $this->generatedSummaryCache = '';
         }
 
         // Explicit cut marker takes priority over auto-truncation
         $cutPos = strpos($body, '[cut]');
         if ($cutPos !== false) {
-            return trim(self::stripMarkdown(substr($body, 0, $cutPos)));
+            return $this->generatedSummaryCache = trim(self::stripMarkdown(substr($body, 0, $cutPos)));
         }
 
         $plain = self::stripMarkdown($body);
-        return self::truncate($plain, self::SUMMARY_LENGTH);
+        return $this->generatedSummaryCache = self::truncate($plain, self::SUMMARY_LENGTH);
     }
 
     private static function truncate(string $text, int $maxLength): string

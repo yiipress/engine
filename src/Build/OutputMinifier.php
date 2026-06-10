@@ -8,13 +8,15 @@ use function preg_replace;
 use function preg_split;
 use function preg_match_all;
 use function strlen;
+use function stripos;
 use function str_starts_with;
+use function strtolower;
 use function substr;
 use function trim;
 
 final class OutputMinifier
 {
-    private const string PROTECTED_ELEMENT_PATTERN = '~<(?<tag>pre|textarea|script|style)\b(?:[^>"\']+|"[^"]*"|\'[^\']*\')*>.*?</\k<tag>>~is';
+    private const string PROTECTED_START_TAG_PATTERN = '~<(?<tag>pre|textarea|script|style)\b(?:[^>"\']+|"[^"]*"|\'[^\']*\')*>~i';
     private const string TAG_PATTERN = '~(<(?:[^>"\']+|"[^"]*"|\'[^\']*\')*>)~';
 
     /**
@@ -26,14 +28,18 @@ final class OutputMinifier
             return '';
         }
 
-        $protectedParts = self::splitProtectedParts($html);
-        if ($protectedParts === null) {
+        $matched = preg_match_all(self::PROTECTED_START_TAG_PATTERN, $html, $matches, PREG_OFFSET_CAPTURE);
+        if ($matched === false) {
             return $html;
+        }
+
+        if ($matched === 0) {
+            return trim(self::minifyHtmlFragment($html));
         }
 
         $minified = '';
         $previousPartProtected = false;
-        foreach ($protectedParts as $part) {
+        foreach (self::splitProtectedParts($html, $matches) as $part) {
             if ($part['html'] === '') {
                 continue;
             }
@@ -58,22 +64,32 @@ final class OutputMinifier
     }
 
     /**
-     * @return list<array{html: string, protected: bool}>|null
+     * @param array<array-key, list<array{0: string, 1: int}>> $matches
+     * @return list<array{html: string, protected: bool}>
      */
-    private static function splitProtectedParts(string $html): ?array
+    private static function splitProtectedParts(string $html, array $matches): array
     {
-        $matched = preg_match_all(self::PROTECTED_ELEMENT_PATTERN, $html, $matches, PREG_OFFSET_CAPTURE);
-        if ($matched === false) {
-            return null;
-        }
-
-        if ($matched === 0) {
-            return [['html' => $html, 'protected' => false]];
-        }
-
         $parts = [];
         $offset = 0;
-        foreach ($matches[0] as [$match, $position]) {
+        $length = strlen($html);
+
+        foreach ($matches[0] as $index => $startTag) {
+            /** @var array{0: string, 1: int} $startTag */
+            /** @var array{0: string, 1: int} $tagMatch */
+            $tagMatch = $matches['tag'][$index];
+            $position = $startTag[1];
+            if ($position < $offset) {
+                continue;
+            }
+
+            $contentOffset = $position + strlen($startTag[0]);
+            $closingTag = '</' . strtolower($tagMatch[0]) . '>';
+            $closingPosition = stripos($html, $closingTag, $contentOffset);
+
+            if ($closingPosition === false) {
+                continue;
+            }
+
             if ($position > $offset) {
                 $parts[] = [
                     'html' => substr($html, $offset, $position - $offset),
@@ -81,14 +97,16 @@ final class OutputMinifier
                 ];
             }
 
+            $endOffset = $closingPosition + strlen($closingTag);
             $parts[] = [
-                'html' => $match,
+                'html' => substr($html, $position, $endOffset - $position),
                 'protected' => true,
             ];
-            $offset = $position + strlen($match);
+
+            $offset = $endOffset;
         }
 
-        if ($offset < strlen($html)) {
+        if ($offset < $length) {
             $parts[] = [
                 'html' => substr($html, $offset),
                 'protected' => false,

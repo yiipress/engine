@@ -10,6 +10,7 @@ use function array_is_list;
 use function file_get_contents;
 use function implode;
 use function is_array;
+use function max;
 use function yaml_parse;
 
 final class CollectionConfigParser
@@ -60,6 +61,7 @@ final class CollectionConfigParser
                 ? array_values(array_map(strval(...), $data['order']))
                 : [],
             navigationPager: (bool) ($data['navigation_pager'] ?? false),
+            feedLimit: max(0, (int) ($data['feed_limit'] ?? 20)),
         );
     }
 }

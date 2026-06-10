@@ -529,6 +529,42 @@ PHP);
         assertSame(1, substr_count($cachedHtml, '<span id="hooked"></span>'));
     }
 
+    public function testCachedHtmlIsStoredAfterMinification(): void
+    {
+        mkdir($this->contentDir . '/templates', 0o755, true);
+        file_put_contents($this->contentDir . '/templates/spaced.php', <<<'PHP'
+<html>
+    <body>
+        <main>
+            <?= $content ?>
+        </main>
+    </body>
+</html>
+PHP);
+
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Cached Post\nlayout: spaced\n---\n\nCached body.\n");
+
+        $templateResolver = $this->createTemplateResolver($this->contentDir . '/templates');
+        $cacheDir = $this->contentDir . '/cache';
+        $renderer = new EntryRenderer(
+            $this->createPipeline(),
+            $templateResolver,
+            cache: new BuildCache($cacheDir, $templateResolver->templateDirs()),
+            contentDir: $this->contentDir,
+        );
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Cached Post', layout: 'spaced');
+        $html = $renderer->render($this->createSiteConfig(theme: 'custom'), $entry, '/blog/cached-post/');
+
+        $cacheFiles = array_values(array_filter(scandir($cacheDir), static fn (string $file): bool => $file !== '.' && $file !== '..'));
+
+        $this->assertCount(1, $cacheFiles);
+        assertSame($html, file_get_contents($cacheDir . '/' . $cacheFiles[0]));
+        assertStringContainsString('<html><body><main> Cached body. </main></body></html>', $html);
+        assertStringNotContainsString("\n", (string) file_get_contents($cacheDir . '/' . $cacheFiles[0]));
+    }
+
     private function createPipeline(): ContentProcessorPipeline
     {
         return new ContentProcessorPipeline();

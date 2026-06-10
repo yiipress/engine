@@ -146,6 +146,34 @@ final class BuildManifestTest extends TestCase
         assertSame(['/out/style.old.css'], $staleOutputs);
     }
 
+    public function testRecordReusesStoredHashWhenMtimeAndSizeMatch(): void
+    {
+        $sourceFile = $this->tempDir . '/entry.md';
+        file_put_contents($sourceFile, '# Hello');
+        $manifestPath = $this->tempDir . '/manifest.json';
+
+        file_put_contents($manifestPath, json_encode([
+            'entries' => [
+                $sourceFile => [
+                    'hash' => 'stored-hash',
+                    'mtime' => (int) filemtime($sourceFile),
+                    'size' => (int) filesize($sourceFile),
+                    'outputs' => ['/out/old.html'],
+                ],
+            ],
+            'configFiles' => [],
+            'trackedDirectories' => [],
+        ], JSON_THROW_ON_ERROR));
+
+        $manifest = new BuildManifest($manifestPath);
+        $manifest->load();
+        $manifest->record($sourceFile, ['/out/new.html']);
+
+        $entry = $manifest->entries()[$sourceFile];
+        assertSame('stored-hash', $entry['hash']);
+        assertSame(['/out/new.html'], $entry['outputs']);
+    }
+
     public function testMissingOutputFilesReturnsSourceWithMissingOutputs(): void
     {
         $sourceFile = $this->tempDir . '/entry.md';

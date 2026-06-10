@@ -39,8 +39,9 @@ final class ContentAssetCopier
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $targetDir));
             }
 
-            copy($sourcePath, $targetPath);
-            $copied++;
+            if (FileCopy::copyIfChanged($sourcePath, $targetPath)) {
+                $copied++;
+            }
         }
 
         return $copied;

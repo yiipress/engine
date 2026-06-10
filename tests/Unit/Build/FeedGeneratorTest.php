@@ -20,6 +20,7 @@ use function PHPUnit\Framework\assertStringContainsString;
 use function PHPUnit\Framework\assertStringNotContainsString;
 use function PHPUnit\Framework\assertStringStartsWith;
 use function PHPUnit\Framework\assertFileExists;
+use function substr_count;
 
 final class FeedGeneratorTest extends TestCase
 {
@@ -163,6 +164,46 @@ final class FeedGeneratorTest extends TestCase
 
         assertStringContainsString('<channel>', $rss);
         assertStringNotContainsString('<item>', $rss);
+    }
+
+    public function testDefaultFeedLimitCapsItemsAtTwenty(): void
+    {
+        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())));
+        $entries = $this->createFeedEntries(25);
+
+        $atom = $generator->generateAtom($this->siteConfig, $this->collection, $entries);
+        $rss = $generator->generateRss($this->siteConfig, $this->collection, $entries);
+
+        $this->assertSame(20, substr_count($atom, '<entry>'));
+        $this->assertSame(20, substr_count($rss, '<item>'));
+        assertStringContainsString('<title>Entry 20</title>', $atom);
+        assertStringNotContainsString('<title>Entry 21</title>', $atom);
+    }
+
+    public function testCustomFeedLimitCapsItems(): void
+    {
+        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())));
+        $collection = $this->collectionWithFeedLimit(3);
+
+        $rss = $generator->generateRss($this->siteConfig, $collection, $this->createFeedEntries(5));
+
+        $this->assertSame(3, substr_count($rss, '<item>'));
+        assertStringContainsString('<title>Entry 3</title>', $rss);
+        assertStringNotContainsString('<title>Entry 4</title>', $rss);
+    }
+
+    public function testZeroFeedLimitKeepsAllItems(): void
+    {
+        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())));
+        $collection = $this->collectionWithFeedLimit(0);
+
+        $atom = $generator->generateAtom($this->siteConfig, $collection, $this->createFeedEntries(25));
+        $rss = $generator->generateRss($this->siteConfig, $collection, $this->createFeedEntries(25));
+
+        $this->assertSame(25, substr_count($atom, '<entry>'));
+        $this->assertSame(25, substr_count($rss, '<item>'));
+        assertStringContainsString('<title>Entry 25</title>', $atom);
+        assertStringContainsString('<title>Entry 25</title>', $rss);
     }
 
     public function testFeedFilesCanBeWrittenDirectly(): void
@@ -337,5 +378,56 @@ final class FeedGeneratorTest extends TestCase
                 bodyLength: $bodyLength,
             ),
         ];
+    }
+
+    /**
+     * @return list<Entry>
+     */
+    private function createFeedEntries(int $count): array
+    {
+        $entries = [];
+        $bodyLength = (int) filesize($this->tempFile);
+
+        for ($i = 1; $i <= $count; $i++) {
+            $entries[] = new Entry(
+                filePath: $this->tempFile,
+                collection: 'blog',
+                slug: 'entry-' . $i,
+                title: 'Entry ' . $i,
+                date: new DateTimeImmutable('2024-03-' . str_pad((string) min($i, 28), 2, '0', STR_PAD_LEFT)),
+                draft: false,
+                tags: [],
+                categories: [],
+                authors: [],
+                summary: 'Entry ' . $i . ' summary.',
+                permalink: '',
+                layout: '',
+                theme: '',
+                weight: 0,
+                language: 'en',
+                redirectTo: '',
+                extra: [],
+                bodyOffset: 0,
+                bodyLength: $bodyLength,
+            );
+        }
+
+        return $entries;
+    }
+
+    private function collectionWithFeedLimit(int $feedLimit): Collection
+    {
+        return new Collection(
+            name: 'blog',
+            title: 'Blog',
+            description: 'Latest posts',
+            permalink: '/blog/:slug/',
+            sortBy: 'date',
+            sortOrder: 'desc',
+            entriesPerPage: 10,
+            feed: true,
+            listing: true,
+            feedLimit: $feedLimit,
+        );
     }
 }

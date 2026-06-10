@@ -94,6 +94,7 @@ title: Blog
 sort_by: date
 sort_direction: desc
 feed: true
+feed_limit: 20
 listing: true
 ```
 

@@ -13,6 +13,8 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use XMLWriter;
 
+use function array_slice;
+
 final class FeedGenerator
 {
     /** @var array<string, string> */
@@ -32,7 +34,7 @@ final class FeedGenerator
         array $entries,
     ): string {
         $xml = $this->createInMemoryWriter();
-        $this->writeAtomDocument($xml, $siteConfig, $collection, $entries);
+        $this->writeAtomDocument($xml, $siteConfig, $collection, $this->limitEntries($collection, $entries));
 
         return $xml->outputMemory();
     }
@@ -46,7 +48,7 @@ final class FeedGenerator
         array $entries,
     ): string {
         $xml = $this->createInMemoryWriter();
-        $this->writeRssDocument($xml, $siteConfig, $collection, $entries);
+        $this->writeRssDocument($xml, $siteConfig, $collection, $this->limitEntries($collection, $entries));
 
         return $xml->outputMemory();
     }
@@ -61,7 +63,7 @@ final class FeedGenerator
         array $entries,
     ): void {
         $xml = $this->createFileWriter($path);
-        $this->writeAtomDocument($xml, $siteConfig, $collection, $entries);
+        $this->writeAtomDocument($xml, $siteConfig, $collection, $this->limitEntries($collection, $entries));
         $xml->flush();
     }
 
@@ -75,7 +77,7 @@ final class FeedGenerator
         array $entries,
     ): void {
         $xml = $this->createFileWriter($path);
-        $this->writeRssDocument($xml, $siteConfig, $collection, $entries);
+        $this->writeRssDocument($xml, $siteConfig, $collection, $this->limitEntries($collection, $entries));
         $xml->flush();
     }
 
@@ -257,6 +259,15 @@ final class FeedGenerator
     private function resolveEntryUrl(SiteConfig $siteConfig, Collection $collection, Entry $entry): string
     {
         return rtrim($siteConfig->baseUrl, '/') . PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n);
+    }
+
+    /**
+     * @param list<Entry> $entries
+     * @return list<Entry>
+     */
+    private function limitEntries(Collection $collection, array $entries): array
+    {
+        return $collection->feedLimit <= 0 ? $entries : array_slice($entries, 0, $collection->feedLimit);
     }
 
     /**

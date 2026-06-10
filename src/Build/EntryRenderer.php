@@ -69,7 +69,7 @@ final class EntryRenderer
             if ($cached !== null) {
                 $html = $this->dispatchRenderFinished($siteConfig, $entry, $permalink, $cached);
 
-                return $siteConfig->minify ? OutputMinifier::html($html) : $html;
+                return $html === $cached ? $html : $this->minify($siteConfig, $html);
             }
         }
 
@@ -89,12 +89,19 @@ final class EntryRenderer
         $translations = $this->translationIndex?->forEntry($entry->filePath) ?? [];
         $html = $this->renderTemplate($siteConfig, $entry, $content, $permalink, $navigation, $headAssets, $toc, $related, $translations, $navigationPager);
 
+        $html = $this->minify($siteConfig, $html);
+
         if ($this->cache !== null) {
             $this->cache->set($entry->filePath, $html, $cacheContext);
         }
 
-        $html = $this->dispatchRenderFinished($siteConfig, $entry, $permalink, $html);
+        $finishedHtml = $this->dispatchRenderFinished($siteConfig, $entry, $permalink, $html);
 
+        return $finishedHtml === $html ? $html : $this->minify($siteConfig, $finishedHtml);
+    }
+
+    private function minify(SiteConfig $siteConfig, string $html): string
+    {
         return $siteConfig->minify ? OutputMinifier::html($html) : $html;
     }
 

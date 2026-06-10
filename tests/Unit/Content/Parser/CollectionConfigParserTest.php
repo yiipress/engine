@@ -36,6 +36,7 @@ final class CollectionConfigParserTest extends TestCase
         assertSame('desc', $collection->sortOrder);
         assertSame(10, $collection->entriesPerPage);
         assertTrue($collection->feed);
+        assertSame(20, $collection->feedLimit);
         assertTrue($collection->listing);
     }
 
@@ -65,6 +66,21 @@ final class CollectionConfigParserTest extends TestCase
             $collection = (new CollectionConfigParser())->parse($file, 'docs');
 
             assertTrue($collection->navigationPager);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testParsesFeedLimitOption(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-collection-');
+        self::assertNotFalse($file);
+        file_put_contents($file, "title: Blog\nfeed: true\nfeed_limit: 5\n");
+
+        try {
+            $collection = (new CollectionConfigParser())->parse($file, 'blog');
+
+            assertSame(5, $collection->feedLimit);
         } finally {
             unlink($file);
         }

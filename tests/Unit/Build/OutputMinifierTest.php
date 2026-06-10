@@ -8,6 +8,8 @@ use YiiPress\Build\OutputMinifier;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;
+use function PHPUnit\Framework\assertStringContainsString;
+use function PHPUnit\Framework\assertStringNotContainsString;
 
 final class OutputMinifierTest extends TestCase
 {
@@ -92,5 +94,15 @@ final class OutputMinifierTest extends TestCase
             HTML;
 
         assertSame('<div><a title="1 > 0" data-test=\'x > y\'> Link </a></div>', OutputMinifier::html($html));
+    }
+
+    public function testUnclosedProtectedElementDoesNotCauseBacktracking(): void
+    {
+        $html = '<div><pre>' . str_repeat("Line 1\n    Line 2\n", 5000) . '<span>Done</span></div>';
+
+        $minified = OutputMinifier::html($html);
+
+        assertStringContainsString('<span>Done</span>', $minified);
+        assertStringNotContainsString("\n", $minified);
     }
 }

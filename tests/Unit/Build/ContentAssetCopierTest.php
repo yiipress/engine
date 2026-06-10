@@ -51,6 +51,18 @@ final class ContentAssetCopierTest extends TestCase
         assertStringEqualsFile($this->outputDir . '/blog/assets/banner.svg', '<svg/>');
     }
 
+    public function testSkipsUnchangedOutputAsset(): void
+    {
+        $source = $this->contentDir . '/blog/assets/banner.svg';
+        file_put_contents($source, '<svg/>');
+        touch($source, 1_700_000_000);
+
+        $copier = new ContentAssetCopier();
+
+        assertSame(1, $copier->copy($this->contentDir, $this->outputDir));
+        assertSame(0, $copier->copy($this->contentDir, $this->outputDir));
+    }
+
     public function testSkipsMarkdownFiles(): void
     {
         file_put_contents($this->contentDir . '/blog/post.md', '# Hello');

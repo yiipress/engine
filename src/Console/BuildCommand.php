@@ -20,6 +20,7 @@ use YiiPress\Build\RobotsTxtGenerator;
 use YiiPress\Build\SearchIndexGenerator;
 use YiiPress\Build\ThemeAssetCopier;
 use YiiPress\Build\FeedGenerator;
+use YiiPress\Build\FileCopy;
 use YiiPress\Build\ParallelEntryWriter;
 use YiiPress\Build\ParallelTaskRunner;
 use YiiPress\Build\SitemapGenerator;
@@ -72,8 +73,10 @@ use function array_unique;
 use function array_values;
 use function ctype_digit;
 use function explode;
+use function file_get_contents;
 use function hash;
 use function hrtime;
+use function is_array;
 use function is_file;
 use function is_readable;
 use function max;
@@ -92,6 +95,7 @@ use function strtolower;
 use function substr;
 use function strlen;
 use function trim;
+use function yaml_parse;
 
 #[AsCommand(
     name: 'build',
@@ -263,7 +267,8 @@ final class BuildCommand extends Command
                 ]));
 
                 $assetSourceFileSet = array_fill_keys(array_keys($allAssetMappings), true);
-                if (array_any($changedSourceFiles, static fn (string $sourceFile): bool => isset($assetSourceFileSet[$sourceFile]))) {
+                $assetChanged = array_any($changedSourceFiles, static fn (string $sourceFile): bool => isset($assetSourceFileSet[$sourceFile]));
+                if ($assetChanged && $this->assetFingerprintEnabled($contentDir)) {
                     $changedSourceFiles = null;
                     $fullRebuildReason = 'assets changed';
                 }
@@ -632,8 +637,9 @@ final class BuildCommand extends Command
             if (!is_dir($targetDir) && !mkdir($targetDir, 0o755, true) && !is_dir($targetDir)) {
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $targetDir));
             }
-            copy($source, $targetPath);
-            $assetsCopied++;
+            if (FileCopy::copyIfChanged($source, $targetPath)) {
+                $assetsCopied++;
+            }
         }
 
         if ($manifest !== null) {
@@ -1229,6 +1235,35 @@ final class BuildCommand extends Command
                 unlink($outputFile);
             }
         }
+    }
+
+    private function assetFingerprintEnabled(string $contentDir): bool
+    {
+        $configPath = $contentDir . '/config.yaml';
+        if (!is_file($configPath)) {
+            return true;
+        }
+
+        $content = file_get_contents($configPath);
+        if ($content === false) {
+            return true;
+        }
+
+        $data = yaml_parse($content);
+        if (!is_array($data)) {
+            return true;
+        }
+
+        $assets = $data['assets'] ?? null;
+        if (is_array($assets)) {
+            return (bool) ($assets['fingerprint'] ?? true);
+        }
+
+        if ($assets !== null) {
+            return (bool) $assets;
+        }
+
+        return true;
     }
 
     /**

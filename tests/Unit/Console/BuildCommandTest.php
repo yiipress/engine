@@ -1059,6 +1059,44 @@ PHP,
         assertFalse(is_file($this->outputDir . '/assets/site.' . $firstHash . '.css'));
     }
 
+    public function testNonFingerprintedAssetChangeStaysIncremental(): void
+    {
+        $yii = dirname(__DIR__, 3) . '/yii';
+        $contentDir = $this->copyContentFixture();
+        mkdir($contentDir . '/assets', 0o755, true);
+        file_put_contents($contentDir . '/assets/site.css', 'body{color:red}');
+        file_put_contents($contentDir . '/config.yaml', file_get_contents($contentDir . '/config.yaml') . "\nassets:\n  fingerprint: false\n");
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' 2>&1',
+            $firstOutput,
+            $firstExitCode,
+        );
+
+        assertSame(0, $firstExitCode, 'First build failed: ' . implode("\n", $firstOutput));
+        assertFileExists($this->outputDir . '/assets/site.css');
+
+        file_put_contents($contentDir . '/assets/site.css', 'body{color:blue}');
+
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($this->outputDir)
+            . ' 2>&1',
+            $secondOutput,
+            $secondExitCode,
+        );
+
+        $secondOutputText = implode("\n", $secondOutput);
+        assertSame(0, $secondExitCode, "Second build failed: $secondOutputText");
+        assertStringContainsString('Incremental build', $secondOutputText);
+        assertStringNotContainsString('Full rebuild', $secondOutputText);
+        assertStringContainsString('body{color:blue}', (string) file_get_contents($this->outputDir . '/assets/site.css'));
+    }
+
     public function testI18nEntryPermalinksAreConsistentAcrossGeneratedIndexes(): void
     {
         $contentDir = $this->copyContentFixture();

@@ -101,10 +101,19 @@ final class BuildManifest
     public function record(string $sourceFile, array $outputs): void
     {
         clearstatcache(true, $sourceFile);
+        $mtime = (int) filemtime($sourceFile);
+        $size = (int) filesize($sourceFile);
+        $stored = $this->entries[$sourceFile] ?? null;
+        $hash = $stored !== null
+            && ($stored['mtime'] ?? null) === $mtime
+            && ($stored['size'] ?? null) === $size
+            ? $stored['hash']
+            : hash_file('xxh128', $sourceFile);
+
         $this->entries[$sourceFile] = [
-            'hash' => hash_file('xxh128', $sourceFile),
-            'mtime' => (int) filemtime($sourceFile),
-            'size' => (int) filesize($sourceFile),
+            'hash' => $hash,
+            'mtime' => $mtime,
+            'size' => $size,
             'outputs' => $outputs,
         ];
     }

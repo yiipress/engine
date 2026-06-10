@@ -21,5 +21,6 @@ final readonly class Collection
         public bool $listing,
         public array $order = [],
         public bool $navigationPager = false,
+        public int $feedLimit = 20,
     ) {}
 }

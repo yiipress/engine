@@ -47,6 +47,7 @@ sort_by: date
 sort_order: desc
 entries_per_page: 10
 feed: true
+feed_limit: 20
 ```
 
 ### Collection `_collection.yaml` fields
@@ -58,6 +59,7 @@ feed: true
 - **sort_order** — `desc` (default) or `asc`
 - **entries_per_page** — number of entries per page, `0` for no pagination
 - **feed** — `true` to generate RSS/Atom feed for this collection
+- **feed_limit** — maximum entries rendered into each RSS/Atom feed (default: `20`, `0` for unlimited)
 - **listing** — `true` to generate a collection index page (default: `true`)
 - **navigation_pager** — `true` to render previous/next page links from the configured sidebar navigation (default: `false`)
 

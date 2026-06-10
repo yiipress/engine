@@ -123,6 +123,20 @@ final class EntrySummaryTest extends TestCase
         assertStringNotContainsString('…', $summary);
     }
 
+    public function testGeneratedSummaryIsMemoized(): void
+    {
+        $body = "Original generated summary.\n";
+        file_put_contents($this->tempFile, $body);
+        $entry = $this->createEntry(summary: '', bodyLength: strlen($body));
+
+        assertSame('Original generated summary.', $entry->summary());
+
+        $bodyCache = new \ReflectionProperty($entry, 'bodyCache');
+        $bodyCache->setValue($entry, "Changed generated summary.\n");
+
+        assertSame('Original generated summary.', $entry->summary());
+    }
+
     public function testManualSummaryTakesPriorityOverCutMarker(): void
     {
         $body = "Intro.\n\n[cut]\n\nRest.";
