@@ -26,7 +26,7 @@ if (file_exists($target)) {
     unlink($target);
 }
 
-$phar = new \Phar($target);
+$phar = new Phar($target);
 $phar->startBuffering();
 
 $includeDirectories = [
@@ -86,6 +86,12 @@ require 'phar://yiipress.phar/yii';
 __HALT_COMPILER();
 PHP);
 
+if (!Phar::canCompress(Phar::GZ)) {
+    fwrite(STDERR, "Gzip PHAR compression requires the zlib extension.\n");
+    exit(1);
+}
+
+$phar->compressFiles(Phar::GZ);
 $phar->stopBuffering();
 chmod($target, 0755);
 
