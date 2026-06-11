@@ -46,10 +46,8 @@ final class SiteBuildRunner
 
             return $exitCode === 0;
         } finally {
-            if ($lock !== false) {
-                flock($lock, LOCK_UN);
-                fclose($lock);
-            }
+            flock($lock, LOCK_UN);
+            fclose($lock);
         }
     }
 

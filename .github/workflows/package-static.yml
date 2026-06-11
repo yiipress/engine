@@ -120,7 +120,7 @@ jobs:
   windows:
     name: Windows static binary
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: windows-latest
+    runs-on: windows-2022
     permissions:
       contents: read
 
@@ -177,7 +177,7 @@ jobs:
   macos:
     name: macOS static binary
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: macos-latest
+    runs-on: macos-14
     permissions:
       contents: read
 
