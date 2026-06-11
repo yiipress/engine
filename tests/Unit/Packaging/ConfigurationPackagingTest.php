@@ -274,10 +274,11 @@ final class ConfigurationPackagingTest extends TestCase
         );
         self::assertStringContainsString('Cache Windows package dependencies', $workflow);
         self::assertStringContainsString('runtime\package-windows\yiipress-highlighter', $workflow);
+        self::assertStringContainsString('runs-on: windows-2022', $workflow);
         self::assertStringContainsString('Smoke test Windows binary', $workflow);
         self::assertStringContainsString('./dist/windows-amd64/yiipress.exe --help', $workflow);
         self::assertStringContainsString('path: dist/windows-amd64/yiipress.exe', $workflow);
-        self::assertStringContainsString('runs-on: macos-latest', $workflow);
+        self::assertStringContainsString('runs-on: macos-14', $workflow);
         self::assertStringContainsString('targets: aarch64-apple-darwin', $workflow);
         self::assertStringContainsString('Cache macOS package dependencies', $workflow);
         self::assertStringContainsString('runtime/package-macos/yiipress-highlighter', $workflow);

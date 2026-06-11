@@ -62,9 +62,7 @@ final class FeedGenerator
         Collection $collection,
         array $entries,
     ): void {
-        $xml = $this->createFileWriter($path);
-        $this->writeAtomDocument($xml, $siteConfig, $collection, $this->limitEntries($collection, $entries));
-        $xml->flush();
+        FileWriter::write($path, $this->generateAtom($siteConfig, $collection, $entries));
     }
 
     /**
@@ -76,9 +74,7 @@ final class FeedGenerator
         Collection $collection,
         array $entries,
     ): void {
-        $xml = $this->createFileWriter($path);
-        $this->writeRssDocument($xml, $siteConfig, $collection, $this->limitEntries($collection, $entries));
-        $xml->flush();
+        FileWriter::write($path, $this->generateRss($siteConfig, $collection, $entries));
     }
 
     /**
@@ -289,16 +285,6 @@ final class FeedGenerator
     {
         $xml = new XMLWriter();
         $xml->openMemory();
-        $xml->setIndent(true);
-        $xml->setIndentString('  ');
-
-        return $xml;
-    }
-
-    private function createFileWriter(string $path): XMLWriter
-    {
-        $xml = new XMLWriter();
-        $xml->openUri($path);
         $xml->setIndent(true);
         $xml->setIndentString('  ');
 

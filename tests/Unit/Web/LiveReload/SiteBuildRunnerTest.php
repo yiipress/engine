@@ -67,12 +67,13 @@ final class SiteBuildRunnerTest extends TestCase
     public function testBuildReturnsFalseWhenCommandFails(): void
     {
         $script = $this->tempDir . '/fail-yii';
-        file_put_contents($script, "#!/bin/sh\nexit 1\n");
+        file_put_contents($script, "#!/bin/sh\necho 'broken build'\nexit 1\n");
         chmod($script, 0o755);
 
         $runner = new SiteBuildRunner($script, $this->tempDir . '/content', $this->tempDir . '/output');
 
         assertFalse($runner->build());
+        assertStringContainsString('broken build', $runner->lastOutput());
     }
 
     private function removeDir(string $path): void

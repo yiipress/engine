@@ -64,7 +64,7 @@ final class SearchIndexGenerator
 
         $json = json_encode($items, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if (!$noWrite) {
-            file_put_contents($outputDir . '/search-index.json', $json);
+            FileWriter::write($outputDir . '/search-index.json', $json);
         }
     }
 }

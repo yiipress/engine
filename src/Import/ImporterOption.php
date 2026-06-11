@@ -17,5 +17,6 @@ final readonly class ImporterOption
         public string $description,
         public bool $required = false,
         public ?string $default = null,
+        public bool $path = false,
     ) {}
 }

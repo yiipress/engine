@@ -106,7 +106,7 @@ extra:
 ```
 
 - **title** — entry title; if omitted, inferred from the first `# Heading` in the markdown body. Files with no title (neither in front matter nor as H1) are skipped with a console warning
-- **date** — publication date (`YYYY-MM-DD` or `YYYY-MM-DDTHH:MM:SS+00:00`); entries with a future date are excluded from build by default (scheduling)
+- **date** — publication date (`YYYY-MM-DD` or `YYYY-MM-DDTHH:MM:SS+00:00`); entries with a future date are excluded from build by default (scheduling). Invalid dates fail the build with the source file path.
 - **slug** — URL slug; overrides filename-derived slug
 - **draft** — `true` to exclude from build (default: `false`)
 - **tags** — list of tag slugs
@@ -114,13 +114,15 @@ extra:
 - **authors** — list of author slugs (referencing files in `content/authors/`)
 - **image** — featured image URL (absolute, or root-relative path resolved against `base_url`); used as `og:image` for social sharing. Falls back to the site-level `image` in `config.yaml`
 - **summary** — manual excerpt; if omitted, auto-generated from content
-- **permalink** — per-entry URL override; takes precedence over collection pattern
+- **permalink** — per-entry URL override; takes precedence over collection pattern. Permalinks must be root-relative paths with a trailing slash, must not contain repeated `/`, `.` or `..` path segments, and must be unique across generated entries and standalone pages.
 - **layout** — template layout name (default: collection-specific or `entry`)
 - **theme** — theme name for this entry; overrides the site-level default (see [Templates](templates.md))
 - **weight** — integer for custom sorting in non-blog collections (lower = first)
 - **language** — language code for multilingual content (e.g., `en`, `ru`)
 - **redirect_to** — URL to redirect to; generates a redirect HTML page (with `<meta http-equiv="refresh">`, JS `window.location.replace()`, and `<link rel="canonical">`) instead of rendering content. Redirect entries are excluded from feeds, sitemaps, listings, archives, and taxonomy pages. Root-relative targets such as `/new-url/` are YiiPress site-root paths; when `base_url` includes a deployment path, YiiPress prefixes that path in the generated redirect target. Absolute URLs are emitted unchanged
 - **extra** — arbitrary key-value pairs accessible in templates
+
+Front matter must be valid YAML key-value pairs. Syntax errors fail the build with the affected file path instead of being ignored.
 
 ### Internal links
 

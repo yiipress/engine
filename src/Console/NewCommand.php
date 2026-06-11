@@ -7,6 +7,7 @@ namespace YiiPress\Console;
 use YiiPress\Content\Parser\CollectionConfigParser;
 use YiiPress\Content\Parser\SiteConfigParser;
 use YiiPress\Content\Slugifier;
+use YiiPress\Build\FileWriter;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -130,7 +131,7 @@ final class NewCommand extends Command
 
         FileHelper::ensureDirectory(dirname($filePath), 0o755);
 
-        file_put_contents($filePath, $frontMatter);
+        FileWriter::write($filePath, $frontMatter);
 
         $output->writeln("Created: <info>$filePath</info>");
         return ExitCode::OK;
@@ -156,7 +157,7 @@ final class NewCommand extends Command
         }
         $frontMatter .= "---\n\n";
 
-        file_put_contents($filePath, $frontMatter);
+        FileWriter::write($filePath, $frontMatter);
 
         $output->writeln("Created: <info>$filePath</info>");
         return ExitCode::OK;

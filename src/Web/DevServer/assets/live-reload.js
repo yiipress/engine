@@ -19,6 +19,7 @@
         }
         es = new EventSource("/_live-reload");
         es.addEventListener("reload", function() { es.close(); location.reload(); });
+        es.addEventListener("build-error", function(event) { if (event.data) { console.error(event.data); } });
         es.addEventListener("ping", function() {});
         es.onerror = function() {
             es.close();

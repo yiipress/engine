@@ -37,6 +37,6 @@ final readonly class NotFoundPageWriter
             throw new RuntimeException(sprintf('Directory "%s" was not created', $outputDir));
         }
 
-        file_put_contents($outputDir . '/404.html', $html);
+        FileWriter::write($outputDir . '/404.html', $html);
     }
 }

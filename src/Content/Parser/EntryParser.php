@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiPress\Content\Parser;
 
 use YiiPress\Content\Model\Entry;
+use DateMalformedStringException;
 use DateTimeImmutable;
 
 use function is_array;
@@ -51,9 +52,17 @@ final readonly class EntryParser
 
         $filenameParsed = $this->filenameParser->parse($filePath);
 
-        $date = isset($fields['date'])
-            ? new DateTimeImmutable((string) $fields['date'])
-            : $filenameParsed['date'];
+        try {
+            $date = isset($fields['date'])
+                ? new DateTimeImmutable((string) $fields['date'])
+                : $filenameParsed['date'];
+        } catch (DateMalformedStringException) {
+            throw new InvalidContentConfigException(
+                "Invalid date in front matter: $filePath",
+                $filePath,
+                'Use a date value accepted by PHP DateTimeImmutable, for example: date: 2024-03-15',
+            );
+        }
 
         $slug = (string) ($fields['slug'] ?? $filenameParsed['slug']);
 

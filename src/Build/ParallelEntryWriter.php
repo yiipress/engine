@@ -22,6 +22,7 @@ use function function_exists;
 use function min;
 use function pcntl_fork;
 use function pcntl_wexitstatus;
+use function pcntl_wifexited;
 use function pcntl_waitpid;
 
 final readonly class ParallelEntryWriter
@@ -89,7 +90,7 @@ final readonly class ParallelEntryWriter
         foreach ($tasks as $task) {
             $html = $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver, $task['navigationPager'] ?? null);
             if (!$noWrite) {
-                file_put_contents($task['filePath'], $html);
+                FileWriter::write($task['filePath'], $html);
             }
         }
     }
@@ -115,7 +116,7 @@ final readonly class ParallelEntryWriter
                 foreach ($chunk as $task) {
                     $html = $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver, $task['navigationPager'] ?? null);
                     if (!$noWrite) {
-                        file_put_contents($task['filePath'], $html);
+                        FileWriter::write($task['filePath'], $html);
                     }
                 }
 
@@ -128,7 +129,7 @@ final readonly class ParallelEntryWriter
         $failed = false;
         foreach ($pids as $pid) {
             pcntl_waitpid($pid, $status);
-            if (pcntl_wexitstatus($status) !== 0) {
+            if (!pcntl_wifexited($status) || pcntl_wexitstatus($status) !== 0) {
                 $failed = true;
             }
         }

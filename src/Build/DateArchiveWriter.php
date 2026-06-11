@@ -160,7 +160,7 @@ final readonly class DateArchiveWriter
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
             }
 
-            file_put_contents($dir . '/index.html', $html);
+            FileWriter::write($dir . '/index.html', $html);
         }
     }
 
@@ -216,7 +216,7 @@ final readonly class DateArchiveWriter
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
             }
 
-            file_put_contents($dir . '/index.html', $html);
+            FileWriter::write($dir . '/index.html', $html);
         }
     }
 
@@ -271,7 +271,7 @@ final readonly class DateArchiveWriter
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
             }
 
-            file_put_contents($dir . '/index.html', $html);
+            FileWriter::write($dir . '/index.html', $html);
         }
     }
 }

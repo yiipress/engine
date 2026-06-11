@@ -61,7 +61,7 @@ jobs:
 
   windows:
     name: Windows static binary
-    runs-on: windows-latest
+    runs-on: windows-2022
     permissions:
       contents: read
 
@@ -72,7 +72,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
         with:
           php-version: '8.5'
           coverage: none
@@ -117,7 +117,7 @@ jobs:
 
   macos:
     name: macOS static binary
-    runs-on: macos-latest
+    runs-on: macos-14
     permissions:
       contents: read
 
@@ -128,7 +128,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
         with:
           php-version: '8.5'
           coverage: none
