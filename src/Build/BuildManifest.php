@@ -27,28 +27,24 @@ final class BuildManifest
     public function load(): void
     {
         if (!is_file($this->manifestPath)) {
-            $this->entries = [];
+            $this->clear();
             return;
         }
 
         $json = file_get_contents($this->manifestPath);
         if ($json === false) {
-            $this->entries = [];
+            $this->clear();
             return;
         }
 
         try {
             $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException) {
-            $this->entries = [];
-            $this->configFiles = [];
-            $this->trackedDirectories = [];
+            $this->clear();
             return;
         }
         if (!is_array($data)) {
-            $this->entries = [];
-            $this->configFiles = [];
-            $this->trackedDirectories = [];
+            $this->clear();
             return;
         }
 
@@ -60,6 +56,13 @@ final class BuildManifest
         }
 
         $this->entries = $data;
+        $this->configFiles = [];
+        $this->trackedDirectories = [];
+    }
+
+    private function clear(): void
+    {
+        $this->entries = [];
         $this->configFiles = [];
         $this->trackedDirectories = [];
     }

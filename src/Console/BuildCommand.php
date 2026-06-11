@@ -1401,11 +1401,11 @@ final class BuildCommand extends Command
             );
         }
 
-        if (str_contains($permalink, "\0") || str_contains($permalink, '\\')) {
+        if (str_contains($permalink, "\0") || str_contains($permalink, '\\') || str_contains($permalink, '//')) {
             throw new InvalidContentConfigException(
                 sprintf('Invalid permalink "%s" in %s.', $permalink, $sourcePath),
                 $sourcePath,
-                'Permalinks must use URL path separators and must not contain control characters.',
+                'Permalinks must use single URL path separators and must not contain control characters.',
             );
         }
 

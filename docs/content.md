@@ -114,7 +114,7 @@ extra:
 - **authors** — list of author slugs (referencing files in `content/authors/`)
 - **image** — featured image URL (absolute, or root-relative path resolved against `base_url`); used as `og:image` for social sharing. Falls back to the site-level `image` in `config.yaml`
 - **summary** — manual excerpt; if omitted, auto-generated from content
-- **permalink** — per-entry URL override; takes precedence over collection pattern. Permalinks must be root-relative paths with a trailing slash, must not contain `.` or `..` path segments, and must be unique across generated entries and standalone pages.
+- **permalink** — per-entry URL override; takes precedence over collection pattern. Permalinks must be root-relative paths with a trailing slash, must not contain repeated `/`, `.` or `..` path segments, and must be unique across generated entries and standalone pages.
 - **layout** — template layout name (default: collection-specific or `entry`)
 - **theme** — theme name for this entry; overrides the site-level default (see [Templates](templates.md))
 - **weight** — integer for custom sorting in non-blog collections (lower = first)

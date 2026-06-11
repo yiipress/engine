@@ -1181,6 +1181,19 @@ PHP,
         assertFalse(is_file($this->outputDir . '/aboutindex.html'));
     }
 
+    public function testBuildRejectsPermalinkWithRepeatedSlashes(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'index.md' => "---\ntitle: Home\npermalink: /about//team/\n---\n\nHello.\n",
+        ]);
+
+        $result = $this->runBuildResult($contentDir);
+
+        assertSame(65, $result['exitCode'], $result['output']);
+        assertStringContainsString('Invalid permalink "/about//team/"', $result['output']);
+        assertFalse(is_file($this->outputDir . '/about/team/index.html'));
+    }
+
     public function testFailedNoCacheBuildRemovesTemporaryOutputDirectory(): void
     {
         $contentDir = $this->createMinimalContent([
