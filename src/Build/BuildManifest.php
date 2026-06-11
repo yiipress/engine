@@ -47,6 +47,8 @@ final class BuildManifest
         }
         if (!is_array($data)) {
             $this->entries = [];
+            $this->configFiles = [];
+            $this->trackedDirectories = [];
             return;
         }
 

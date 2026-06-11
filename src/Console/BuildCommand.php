@@ -91,6 +91,7 @@ use function shell_exec;
 use function round;
 use function sort;
 use function sprintf;
+use function str_ends_with;
 use function str_starts_with;
 use function strtolower;
 use function substr;
@@ -322,6 +323,7 @@ final class BuildCommand extends Command
             }
         }
 
+        try {
         if ($manifest !== null && $allSourceFiles === []) {
             $sourceInventory = $this->collectSourceInventory($contentDir, array_keys($allAssetMappings));
             $configFiles = $sourceInventory['configFiles'];
@@ -870,6 +872,11 @@ final class BuildCommand extends Command
         );
 
         return ExitCode::OK;
+        } finally {
+            if ($atomicOutputDir !== null) {
+                $this->removeDirectory($atomicOutputDir);
+            }
+        }
     }
 
     private function formatElapsedTime(float $seconds): string
@@ -1383,6 +1390,14 @@ final class BuildCommand extends Command
                 sprintf('Invalid permalink "%s" in %s.', $permalink, $sourcePath),
                 $sourcePath,
                 'Permalinks must be root-relative paths, for example: permalink: /blog/my-post/',
+            );
+        }
+
+        if ($permalink !== '/' && !str_ends_with($permalink, '/')) {
+            throw new InvalidContentConfigException(
+                sprintf('Invalid permalink "%s" in %s.', $permalink, $sourcePath),
+                $sourcePath,
+                'Permalinks must end with a trailing slash so YiiPress can write an index.html page.',
             );
         }
 

@@ -145,6 +145,30 @@ final class BuildManifestTest extends TestCase
         assertSame([], $manifest->sourceFiles());
     }
 
+    public function testInvalidManifestPayloadClearsPreviouslyLoadedMetadata(): void
+    {
+        $sourceFile = $this->tempDir . '/entry.md';
+        $contentDir = $this->tempDir . '/content';
+        $manifestPath = $this->tempDir . '/manifest.json';
+        file_put_contents($sourceFile, '# Hello');
+        mkdir($contentDir, 0o755, true);
+
+        $manifest = new BuildManifest($manifestPath);
+        $manifest->record($sourceFile, ['/out/entry/index.html']);
+        $manifest->setConfigFiles([$contentDir . '/config.yaml']);
+        $manifest->setTrackedDirectories([$contentDir => (int) filemtime($contentDir)]);
+        $manifest->save();
+        $manifest->load();
+
+        file_put_contents($manifestPath, '"invalid"');
+        $manifest->load();
+
+        assertSame([], $manifest->entries());
+        assertSame([], $manifest->configFiles());
+        assertSame([], $manifest->sourceFiles());
+        assertFalse($manifest->hasTrackedDirectories());
+    }
+
     public function testReplaceReturnsOutputsThatAreNoLongerReferenced(): void
     {
         $sourceFile = $this->tempDir . '/asset.css';

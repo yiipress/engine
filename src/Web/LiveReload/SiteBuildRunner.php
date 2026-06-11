@@ -18,9 +18,20 @@ final class SiteBuildRunner
 
     public function build(): bool
     {
-        $lock = fopen(sys_get_temp_dir() . '/yiipress-build-' . hash('xxh128', $this->outputDir) . '.lock', 'c');
-        if ($lock !== false) {
-            flock($lock, LOCK_EX);
+        $lockId = hash('xxh128', $this->outputDir);
+        $lockPath = sys_get_temp_dir() . '/yiipress-build-' . $lockId . '.lock';
+        $lock = fopen($lockPath, 'c');
+        if ($lock === false) {
+            $this->lastOutput = sprintf('Unable to open build lock "%s" (%s).', $lockPath, $lockId);
+
+            return false;
+        }
+
+        if (!flock($lock, LOCK_EX)) {
+            fclose($lock);
+            $this->lastOutput = sprintf('Unable to acquire build lock "%s" (%s).', $lockPath, $lockId);
+
+            return false;
         }
 
         $command = escapeshellarg($this->yiiBinary)

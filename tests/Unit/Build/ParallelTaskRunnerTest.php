@@ -14,11 +14,14 @@ use function file;
 use function file_put_contents;
 use function getmypid;
 use function is_file;
+use function posix_kill;
 use function PHPUnit\Framework\assertNotFalse;
 use function PHPUnit\Framework\assertSame;
 use function sys_get_temp_dir;
 use function uniqid;
 use function unlink;
+
+use const SIGKILL;
 
 final class ParallelTaskRunnerTest extends TestCase
 {

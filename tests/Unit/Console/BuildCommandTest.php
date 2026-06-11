@@ -1168,6 +1168,40 @@ PHP,
         assertFalse(is_file(dirname($this->outputDir) . '/outside/index.html'));
     }
 
+    public function testBuildRejectsPermalinkWithoutTrailingSlash(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'index.md' => "---\ntitle: Home\npermalink: /about\n---\n\nHello.\n",
+        ]);
+
+        $result = $this->runBuildResult($contentDir);
+
+        assertSame(65, $result['exitCode'], $result['output']);
+        assertStringContainsString('Invalid permalink "/about"', $result['output']);
+        assertFalse(is_file($this->outputDir . '/aboutindex.html'));
+    }
+
+    public function testFailedNoCacheBuildRemovesTemporaryOutputDirectory(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'index.md' => "---\ntitle: Home\npermalink: /broken\n---\n\nHello.\n",
+        ]);
+        mkdir($this->outputDir, 0o755, true);
+        file_put_contents($this->outputDir . '/.yiipress-build', "YiiPress build output\n");
+        file_put_contents($this->outputDir . '/existing.txt', 'keep');
+        $tempPattern = dirname($this->outputDir) . '/.' . basename($this->outputDir) . '.tmp-*';
+
+        foreach (glob($tempPattern) ?: [] as $tempDir) {
+            $this->removeDir($tempDir);
+        }
+
+        $result = $this->runBuildResult($contentDir, '--no-cache');
+
+        assertSame(65, $result['exitCode'], $result['output']);
+        assertSame([], glob($tempPattern) ?: []);
+        assertStringContainsString('keep', (string) file_get_contents($this->outputDir . '/existing.txt'));
+    }
+
     public function testNoCacheBuildRefusesToReplaceUnmarkedOutputDirectory(): void
     {
         $contentDir = $this->createMinimalContent([
