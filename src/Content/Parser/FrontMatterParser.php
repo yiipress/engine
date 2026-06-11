@@ -6,6 +6,7 @@ namespace YiiPress\Content\Parser;
 
 use RuntimeException;
 
+use function array_is_list;
 use function fclose;
 use function fgets;
 use function fopen;
@@ -36,7 +37,7 @@ final class FrontMatterParser
         }
 
         try {
-            return $this->extract($handle, $fileSize);
+            return $this->extract($handle, $fileSize, $filePath);
         } finally {
             fclose($handle);
         }
@@ -46,7 +47,7 @@ final class FrontMatterParser
      * @param resource $handle
      * @return array{frontMatter: array<string, mixed>, bodyOffset: int, bodyLength: int}
      */
-    private function extract($handle, int $fileSize): array
+    private function extract($handle, int $fileSize, string $filePath): array
     {
         $firstLine = fgets($handle);
         if ($firstLine === false || !str_starts_with(trim($firstLine), '---')) {
@@ -68,9 +69,29 @@ final class FrontMatterParser
                 }
 
                 $yaml = implode('', $yamlLines);
-                $parsed = yaml_parse($yaml);
+                $parsed = trim($yaml) === '' ? null : @yaml_parse($yaml);
                 if ($parsed === false) {
+                    throw new InvalidContentConfigException(
+                        "Invalid YAML in front matter: $filePath",
+                        $filePath,
+                        "Fix the YAML front matter between the opening and closing --- markers in $filePath.",
+                    );
+                }
+
+                if ($parsed === null) {
                     $parsed = [];
+                }
+
+                if (!is_array($parsed) || ($parsed !== [] && array_is_list($parsed))) {
+                    throw new InvalidContentConfigException(
+                        "Front matter must contain YAML key-value pairs: $filePath",
+                        $filePath,
+                        implode("\n", [
+                            'Use mappings such as:',
+                            'title: My Post',
+                            'tags: [php, yii]',
+                        ]),
+                    );
                 }
 
                 $result = [

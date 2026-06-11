@@ -37,7 +37,14 @@ final class BuildManifest
             return;
         }
 
-        $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        try {
+            $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            $this->entries = [];
+            $this->configFiles = [];
+            $this->trackedDirectories = [];
+            return;
+        }
         if (!is_array($data)) {
             $this->entries = [];
             return;
@@ -62,7 +69,7 @@ final class BuildManifest
             throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
         }
 
-        file_put_contents(
+        FileWriter::writeAtomic(
             $this->manifestPath,
             json_encode([
                 'entries' => $this->entries,

@@ -132,6 +132,19 @@ final class BuildManifestTest extends TestCase
         assertSame([], $manifest->removedOutputs([$sourceFile]));
     }
 
+    public function testCorruptedManifestLoadsAsEmptyManifest(): void
+    {
+        $manifestPath = $this->tempDir . '/manifest.json';
+        file_put_contents($manifestPath, '{"entries":');
+
+        $manifest = new BuildManifest($manifestPath);
+        $manifest->load();
+
+        assertSame([], $manifest->entries());
+        assertSame([], $manifest->configFiles());
+        assertSame([], $manifest->sourceFiles());
+    }
+
     public function testReplaceReturnsOutputsThatAreNoLongerReferenced(): void
     {
         $sourceFile = $this->tempDir . '/asset.css';

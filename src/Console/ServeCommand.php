@@ -412,8 +412,9 @@ final class ServeCommand extends Command
                 return;
             }
 
-            $this->buildLiveReloadSite();
-            $this->broadcastLiveReloadEvent('reload', 'changed', true);
+            if ($this->buildLiveReloadSite()) {
+                $this->broadcastLiveReloadEvent('reload', 'changed', true);
+            }
         });
     }
 
@@ -429,7 +430,7 @@ final class ServeCommand extends Command
                 $this->finishLiveReloadResponse($client, $event, $data);
                 unset($this->liveReloadClients[$clientId]);
             } else {
-                $client->write("event: {$event}\ndata: {$data}\n\n");
+                $client->write($this->formatServerSentEvent($event, $data));
             }
         }
     }
@@ -461,20 +462,38 @@ final class ServeCommand extends Command
         $this->liveReloadClients = [];
     }
 
-    private function buildLiveReloadSite(): void
+    private function buildLiveReloadSite(): bool
     {
         $now = microtime(true);
         if ($now - $this->lastLiveReloadBuildTime < 1.0) {
-            return;
+            return false;
         }
 
         $this->lastLiveReloadBuildTime = $now;
-        $this->createLiveReloadBuildRunner()->build();
+        $runner = $this->createLiveReloadBuildRunner();
+        if ($runner->build()) {
+            return true;
+        }
+
+        $message = trim($runner->lastOutput());
+        $this->broadcastLiveReloadEvent('build-error', $message !== '' ? $message : 'Build failed.', false);
+
+        return false;
     }
 
     private function finishLiveReloadResponse(ConnectionInterface $connection, string $event, string $data): void
     {
-        $connection->end("event: {$event}\ndata: {$data}\n\n");
+        $connection->end($this->formatServerSentEvent($event, $data));
+    }
+
+    private function formatServerSentEvent(string $event, string $data): string
+    {
+        $message = "event: {$event}\n";
+        foreach (explode("\n", str_replace("\r\n", "\n", $data)) as $line) {
+            $message .= "data: {$line}\n";
+        }
+
+        return $message . "\n";
     }
 
     private function createLiveReloadBuildRunner(): SiteBuildRunner

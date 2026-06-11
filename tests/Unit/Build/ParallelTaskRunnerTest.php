@@ -6,6 +6,7 @@ namespace YiiPress\Tests\Unit\Build;
 
 use YiiPress\Build\ParallelTaskRunner;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 use function array_unique;
 use function count;
@@ -66,5 +67,24 @@ final class ParallelTaskRunnerTest extends TestCase
                 unlink($pidFile);
             }
         }
+    }
+
+    public function testRunTreatsSignaledWorkerAsFailure(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('One or more worker processes failed');
+
+        (new ParallelTaskRunner())->run(
+            [1, 2],
+            2,
+            static function (int $task): int {
+                if ($task === 1) {
+                    posix_kill(getmypid(), SIGKILL);
+                }
+
+                return 1;
+            },
+            minTasksPerWorker: 1,
+        );
     }
 }

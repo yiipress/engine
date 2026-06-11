@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiPress\Tests\Unit\Content\Parser;
 
 use YiiPress\Content\Parser\FrontMatterParser;
+use YiiPress\Content\Parser\InvalidContentConfigException;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertArrayHasKey;
@@ -133,6 +134,19 @@ final class FrontMatterParserTest extends TestCase
         $result = new FrontMatterParser()->parse($tmpFile);
 
         assertSame('Explicit Title', $result['frontMatter']['title']);
+    }
+
+    public function testMalformedFrontMatterThrowsFriendlyExceptionWithFilePath(): void
+    {
+        $tmpFile = $this->createTempFile("---\ntitle: [unterminated\n---\n\nBody.");
+
+        try {
+            new FrontMatterParser()->parse($tmpFile);
+            self::fail('Expected invalid front matter to throw.');
+        } catch (InvalidContentConfigException $e) {
+            assertStringContainsString('Invalid YAML in front matter', $e->getMessage());
+            assertSame($tmpFile, $e->filePath());
+        }
     }
 
     private function createTempFile(string $content): string

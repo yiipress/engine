@@ -15,7 +15,7 @@ Generates static HTML content from source files.
 - `--content-dir`, `-c` — path to the content directory (default: `content`). Absolute or relative to project root.
 - `--output-dir`, `-o` — path to the output directory (default: `output`). Absolute or relative to project root.
 - `--workers`, `-w` — number of parallel workers or `auto` (default: `auto`). Auto mode detects available CPU capacity inside the container, caps it at `4`, and still falls back to sequential work for small task sets.
-- `--no-cache` — disable build cache and incremental builds. Forces a full rebuild, clearing the output directory. By default, rendered HTML is cached and a build manifest tracks source file hashes for incremental builds.
+- `--no-cache` — disable build cache and incremental builds. Forces a full rebuild. Fresh or empty output directories are written directly. Existing non-empty output directories are replaced only if they contain the `.yiipress-build` marker written by previous builds; in that case the rebuild is written to a temporary sibling directory and swapped in after generation succeeds.
 - `--drafts` — include draft entries in the build. By default, entries with `draft: true` in front matter are excluded from HTML output, feeds, and sitemap.
 - `--future` — include future-dated entries in the build. By default, entries with a date in the future are excluded from HTML output, feeds, and sitemap.
 - `--dry-run` — list all files that would be generated without writing anything. The output directory is not created or modified.
@@ -47,7 +47,7 @@ The command:
 
 1. Parses site config, navigation, collections, authors, and entries from the content directory.
 2. Runs build diagnostics and prints warnings.
-3. Cleans the output directory (or skips unchanged entries on incremental builds).
+3. Prepares output writing. Incremental builds skip unchanged entries; full non-incremental builds write directly to fresh or empty output directories, and use a temporary output directory only when replacing existing marked build output.
 4. Renders collection entries — converts markdown to HTML via MD4C, applies the entry template, writes each entry as `index.html` at its resolved permalink path. Drafts and future-dated entries are excluded by default.
 5. Renders standalone pages — markdown files in the content root directory (e.g., `contact.md` → `/contact/`).
 6. Copies content assets (images, SVGs, etc.) to the output directory.
