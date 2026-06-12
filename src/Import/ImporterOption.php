@@ -8,7 +8,8 @@ namespace YiiPress\Import;
  * Declares an option that a content importer accepts.
  *
  * Each importer returns a list of these from {@see ContentImporterInterface::options()}.
- * The `yii import` command registers them as CLI options and passes resolved values to the importer.
+ * The `yii import` command parses matching `--name=value` arguments and passes values to the importer.
+ * Set `$path` to true only for options that represent filesystem paths.
  */
 final readonly class ImporterOption
 {

@@ -140,9 +140,8 @@ final class ImportCommandTest extends TestCase
         assertSame(0, $result['exitCode'], $result['output']);
         assertStringContainsString('ignore_message_ids: 2', $result['output']);
         assertStringContainsString('Imported: 1', $result['output']);
+        assertStringContainsString('Skipped: 1', $result['output']);
     }
-
-
     public function testShowsAvailableImportersOnError(): void
     {
         $result = $this->runImport('wordpress', ['--directory' => $this->sourceDir]);

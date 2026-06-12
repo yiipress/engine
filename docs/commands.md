@@ -185,7 +185,7 @@ Imports content from external sources into a YiiPress collection.
 - `--collection`, `-c` — target collection name (default: `blog`).
 - `--content-dir`, `-d` — path to the content directory (default: `content`).
 
-Each importer declares its own options (see below). The command dynamically registers them based on the selected source.
+Each importer declares its own options (see below). The command parses `--<name>=<value>` arguments matching the selected source.
 
 **Behavior:**
 
@@ -201,6 +201,7 @@ Imports messages from a Telegram Desktop channel export. Export a channel via Te
 **Importer options:**
 
 - `--directory` — path to the Telegram export directory containing `result.json` (required). Absolute or relative to project root.
+- `--ignore_message_ids` — comma-separated message IDs to skip. This is treated as a literal scalar value, not a path.
 
 The importer reads `result.json` from the export directory and converts each message to a markdown file:
 
@@ -215,7 +216,7 @@ The importer reads `result.json` from the export directory and converts each mes
 
 The title is extracted from the first line of the message. The filename is prefixed with the message date (e.g., `2024-03-15-my-post.md`).
 
-Supports both single-chat exports (`result.json` with `messages` array) and full exports (`result.json` with `chats.list` structure).
+Supports Telegram channel exports where `result.json` has `type: public_channel` and a top-level `messages` array.
 
 **Examples:**
 

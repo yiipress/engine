@@ -34,7 +34,7 @@ new ImporterOption(
 ```
 
 - **`name`** — option name, used as `--name` on the CLI and as key in the `$options` array.
-- **`description`** — help text shown in `yii import --help`.
+- **`description`** — help text shown when the command prints importer-specific usage, for example after a validation error.
 - **`required`** — whether the option must be provided. The command validates this before calling `import()`.
 - **`default`** — default value when the option is not provided (only for optional options).
 - **`path`** — whether the option value is a filesystem path. Path options are resolved relative to the project root; non-path options such as comma-separated IDs are passed through unchanged.
