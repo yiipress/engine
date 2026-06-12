@@ -21,9 +21,6 @@ use function dirname;
 use function function_exists;
 use function min;
 use function pcntl_fork;
-use function pcntl_wexitstatus;
-use function pcntl_wifexited;
-use function pcntl_waitpid;
 
 final readonly class ParallelEntryWriter
 {
@@ -127,15 +124,18 @@ final readonly class ParallelEntryWriter
         }
 
         $failed = false;
+        $failure = null;
         foreach ($pids as $pid) {
-            pcntl_waitpid($pid, $status);
-            if (!pcntl_wifexited($status) || pcntl_wexitstatus($status) !== 0) {
+            try {
+                WorkerProcessStatus::waitFor($pid);
+            } catch (RuntimeException $e) {
                 $failed = true;
+                $failure ??= $e;
             }
         }
 
         if ($failed) {
-            throw new RuntimeException('One or more worker processes failed');
+            throw new RuntimeException('One or more worker processes failed.', previous: $failure);
         }
     }
 

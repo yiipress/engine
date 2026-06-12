@@ -15,9 +15,6 @@ use function is_dir;
 use function mkdir;
 use function min;
 use function pcntl_fork;
-use function pcntl_wexitstatus;
-use function pcntl_wifexited;
-use function pcntl_waitpid;
 use function rmdir;
 use function sys_get_temp_dir;
 use function unlink;
@@ -71,10 +68,7 @@ final class ParallelTaskRunner
             }
 
             foreach ($pids as $pid) {
-                pcntl_waitpid($pid, $status);
-                if (!pcntl_wifexited($status) || pcntl_wexitstatus($status) !== 0) {
-                    throw new RuntimeException('One or more worker processes failed');
-                }
+                WorkerProcessStatus::waitFor($pid);
             }
 
             $count = 0;

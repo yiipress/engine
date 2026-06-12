@@ -17,11 +17,17 @@ use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use RuntimeException;
 use SplFileInfo;
 
+use function defined;
+use function function_exists;
 use function PHPUnit\Framework\assertFileExists;
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
+use function getmypid;
+use function posix_kill;
+use function sprintf;
 use function sys_get_temp_dir;
 
 final class ParallelEntryWriterTest extends TestCase
@@ -102,12 +108,59 @@ final class ParallelEntryWriterTest extends TestCase
         assertStringContainsString('Only Post', (string) file_get_contents($tasks[0]['filePath']));
     }
 
-    private function createPipeline(): ContentProcessorPipeline
+    public function testWriteFailsWhenParallelWorkerIsTerminatedBySignal(): void
+    {
+        $this->skipWhenSignalWorkerTestIsUnsupported();
+
+        $tasks = [];
+        for ($i = 0; $i < 128; $i++) {
+            $title = $i === 0 ? 'Kill Worker' : 'Post ' . $i;
+            $entry = $this->createEntry('entry-' . $i, $title);
+            $tasks[] = [
+                'entry' => $entry,
+                'filePath' => $this->outputDir . '/blog/entry-' . $i . '/index.html',
+                'permalink' => '/blog/entry-' . $i . '/',
+            ];
+        }
+
+        $writer = new ParallelEntryWriter($this->createPipeline(killOnTitle: 'Kill Worker'), $this->createTemplateResolver());
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('One or more worker processes failed.');
+
+        try {
+            $writer->write($this->createSiteConfig(), $tasks, $this->contentDir, 2);
+        } catch (RuntimeException $e) {
+            assertStringContainsString('terminated by signal', (string) $e->getPrevious()?->getMessage());
+            throw $e;
+        }
+    }
+
+    private function skipWhenSignalWorkerTestIsUnsupported(): void
+    {
+        foreach (['pcntl_fork', 'pcntl_waitpid', 'pcntl_wifsignaled', 'pcntl_wtermsig', 'posix_kill'] as $function) {
+            if (!function_exists($function)) {
+                self::markTestSkipped(sprintf('%s() is required to test signaled worker failures.', $function));
+            }
+        }
+
+        if (!defined('SIGKILL')) {
+            self::markTestSkipped('SIGKILL is required to test signaled worker failures.');
+        }
+    }
+
+    private function createPipeline(string $killOnTitle = ''): ContentProcessorPipeline
     {
         return new ContentProcessorPipeline(
-            new class () implements ContentProcessorInterface {
+            new readonly class ($killOnTitle) implements ContentProcessorInterface {
+                public function __construct(private string $killOnTitle) {}
+
                 public function process(string $content, Entry $entry): string
                 {
+                    if ($entry->title === $this->killOnTitle) {
+                        posix_kill(getmypid(), \SIGKILL);
+                    }
+
                     return '<p>' . $content . '</p>';
                 }
             },
