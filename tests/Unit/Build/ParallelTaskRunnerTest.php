@@ -6,6 +6,7 @@ namespace YiiPress\Tests\Unit\Build;
 
 use YiiPress\Build\ParallelTaskRunner;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 use function array_unique;
 use function count;
@@ -15,6 +16,7 @@ use function getmypid;
 use function is_file;
 use function PHPUnit\Framework\assertNotFalse;
 use function PHPUnit\Framework\assertSame;
+use function posix_kill;
 use function sys_get_temp_dir;
 use function uniqid;
 use function unlink;
@@ -66,5 +68,26 @@ final class ParallelTaskRunnerTest extends TestCase
                 unlink($pidFile);
             }
         }
+    }
+
+    public function testRunFailsWhenWorkerIsTerminatedBySignal(): void
+    {
+        $runner = new ParallelTaskRunner();
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('terminated by signal');
+
+        $runner->run(
+            [1, 2],
+            2,
+            static function (int $task): int {
+                if ($task === 1) {
+                    posix_kill(getmypid(), \SIGKILL);
+                }
+
+                return 1;
+            },
+            minTasksPerWorker: 1,
+        );
     }
 }
