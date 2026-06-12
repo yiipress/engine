@@ -146,7 +146,7 @@ final class ImportCommand extends Command
         foreach ($importer->options() as $option) {
             $value = $rawOptions[$option->name] ?? $option->default;
 
-            if ($value !== null && $value !== '') {
+            if ($option->resolvePath && $value !== null && $value !== '') {
                 $value = $this->resolvePath($value, $this->rootPath);
             }
 

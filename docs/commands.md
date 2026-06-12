@@ -167,6 +167,7 @@ Imports messages from a Telegram Desktop channel export. Export a channel via Te
 **Importer options:**
 
 - `--directory` — path to the Telegram export directory containing `result.json` (required). Absolute or relative to project root.
+- `--ignore_message_ids` — comma-separated message IDs to skip. This is treated as a literal scalar value, not a path.
 
 The importer reads `result.json` from the export directory and converts each message to a markdown file:
 

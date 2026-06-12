@@ -103,6 +103,45 @@ final class ImportCommandTest extends TestCase
         assertStringContainsString('Imported: 1', $result['output']);
     }
 
+    public function testDoesNotResolveScalarImporterOptionsAsPaths(): void
+    {
+        file_put_contents(
+            $this->sourceDir . '/result.json',
+            json_encode([
+                'type' => 'public_channel',
+                'messages' => [
+                    [
+                        'id' => 1,
+                        'type' => 'message',
+                        'date' => '2024-03-15T10:30:00',
+                        'text' => 'Imported post',
+                        'text_entities' => [
+                            ['type' => 'plain', 'text' => 'Imported post'],
+                        ],
+                    ],
+                    [
+                        'id' => 2,
+                        'type' => 'message',
+                        'date' => '2024-03-16T10:30:00',
+                        'text' => 'Ignored post',
+                        'text_entities' => [
+                            ['type' => 'plain', 'text' => 'Ignored post'],
+                        ],
+                    ],
+                ],
+            ], JSON_THROW_ON_ERROR),
+        );
+
+        $result = $this->runImport('telegram', [
+            '--directory' => $this->sourceDir,
+            '--ignore_message_ids' => '2',
+        ]);
+
+        assertSame(0, $result['exitCode'], $result['output']);
+        assertStringContainsString('Imported: 1', $result['output']);
+        assertStringContainsString('Skipped: 1', $result['output']);
+    }
+
     public function testShowsAvailableImportersOnError(): void
     {
         $result = $this->runImport('wordpress', ['--directory' => $this->sourceDir]);

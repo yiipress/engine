@@ -21,6 +21,7 @@ final class TelegramContentImporter implements ContentImporterInterface
                 name: 'directory',
                 description: 'Path to the Telegram export directory containing result.json',
                 required: true,
+                resolvePath: true,
             ),
             new ImporterOption(
                 name: 'ignore_message_ids',

@@ -9,6 +9,7 @@ namespace YiiPress\Import;
  *
  * Each importer returns a list of these from {@see ContentImporterInterface::options()}.
  * The `yii import` command registers them as CLI options and passes resolved values to the importer.
+ * Set `$resolvePath` to true only for options that represent filesystem paths.
  */
 final readonly class ImporterOption
 {
@@ -17,5 +18,6 @@ final readonly class ImporterOption
         public string $description,
         public bool $required = false,
         public ?string $default = null,
+        public bool $resolvePath = false,
     ) {}
 }
