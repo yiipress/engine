@@ -178,7 +178,7 @@ Imports content from external sources into a YiiPress collection.
 
 **Arguments:**
 
-- `source` — source type to import from (required). Currently supported: `hugo`, `jekyll`, `telegram`.
+- `source` — source type to import from (required). Currently supported: `hugo`, `jekyll`, `telegram`, `wordpress`.
 
 **Common options:**
 
@@ -223,6 +223,29 @@ Supports both single-chat exports (`result.json` with `messages` array) and full
 ./yiipress import telegram --directory=/path/to/telegram-export
 ./yiipress import telegram --directory=/path/to/telegram-export --collection=channel
 ./yiipress import telegram --directory=./telegram-data --content-dir=content
+```
+
+### WordPress import
+
+Imports posts and pages from a WordPress WXR XML export file. Export your site from WordPress via Tools > Export > All content.
+
+**Importer options:**
+
+- `--file` — path to the WordPress WXR `.xml` export file (required). Absolute or relative to project root.
+
+The importer reads `<item>` records from the export and converts:
+
+- WordPress posts (`wp:post_type = post`) into markdown files in the target collection.
+- WordPress pages (`wp:post_type = page`) into standalone markdown files in the content root.
+- `title`, `wp:post_date`, `link`, `excerpt:encoded`, `content:encoded`, `wp:status`, categories, and tags into YiiPress front matter and body content.
+
+Published posts are imported normally. Non-published posts and pages are imported with `draft: true`. Attachments, revisions, menu items, trashed posts, and auto-drafts are skipped. Duplicate output filenames get numeric suffixes so earlier files are not overwritten.
+
+**Examples:**
+
+```bash
+./yiipress import wordpress --file=/path/to/wordpress-export.xml
+./yiipress import wordpress --file=./export.xml --collection=blog
 ```
 
 ### Jekyll import
