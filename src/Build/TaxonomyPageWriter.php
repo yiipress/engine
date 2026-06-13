@@ -69,6 +69,7 @@ final readonly class TaxonomyPageWriter
         $taxonomyLabel = $uiViewData->ui->taxonomyLabel($taxonomyName);
         $html = $renderer->render('taxonomy_index', [
             'siteTitle' => $siteConfig->title,
+            'data' => $siteConfig->data,
             'taxonomyName' => $taxonomyName,
             'terms' => $terms,
             'nav' => $navigation,
@@ -126,6 +127,7 @@ final readonly class TaxonomyPageWriter
 
         $html = $renderer->render('taxonomy_term', [
             'siteTitle' => $siteConfig->title,
+            'data' => $siteConfig->data,
             'taxonomyName' => $taxonomyName,
             'term' => $term,
             'entries' => $entries,

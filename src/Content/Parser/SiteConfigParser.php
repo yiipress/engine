@@ -14,6 +14,8 @@ use YiiPress\Content\Model\SearchConfig;
 use YiiPress\Content\Model\SiteConfig;
 
 use function array_is_list;
+use function basename;
+use function dirname;
 use function file_get_contents;
 use function implode;
 use function is_array;
@@ -89,6 +91,9 @@ final class SiteConfigParser
             reportIssueUrl: self::parseOptionalString($data['report_issue'] ?? null),
             authorPages: (bool) ($data['author_pages'] ?? false),
             minify: (bool) ($data['minify'] ?? true),
+            data: basename($filePath) === 'config.yaml'
+                ? (new SiteDataParser())->parse(dirname($filePath) . '/data')
+                : [],
         );
     }
 
