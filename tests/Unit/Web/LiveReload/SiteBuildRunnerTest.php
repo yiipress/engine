@@ -52,7 +52,7 @@ final class SiteBuildRunnerTest extends TestCase
 
         $runner = new SiteBuildRunner($script, $this->tempDir . '/content', $this->tempDir . '/output');
 
-        self::assertTrue($runner->build());
+        self::assertTrue($runner->build()->succeeded());
 
         $commandLine = file_get_contents($recordFile);
         assertSame(
@@ -64,15 +64,18 @@ final class SiteBuildRunnerTest extends TestCase
         assertStringNotContainsString('--no-cache', $commandLine);
     }
 
-    public function testBuildReturnsFalseWhenCommandFails(): void
+    public function testBuildReturnsFailureResultWhenCommandFails(): void
     {
         $script = $this->tempDir . '/fail-yii';
-        file_put_contents($script, "#!/bin/sh\nexit 1\n");
+        file_put_contents($script, "#!/bin/sh\nprintf 'failed build\n'\nexit 1\n");
         chmod($script, 0o755);
 
         $runner = new SiteBuildRunner($script, $this->tempDir . '/content', $this->tempDir . '/output');
+        $result = $runner->build();
 
-        assertFalse($runner->build());
+        assertFalse($result->succeeded());
+        assertSame(1, $result->exitCode);
+        assertStringContainsString('failed build', $result->output);
     }
 
     private function removeDir(string $path): void

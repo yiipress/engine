@@ -12,7 +12,7 @@ final readonly class SiteBuildRunner
         private string $outputDir,
     ) {}
 
-    public function build(): bool
+    public function build(): SiteBuildResult
     {
         $command = escapeshellarg($this->yiiBinary)
             . ' build'
@@ -22,6 +22,6 @@ final readonly class SiteBuildRunner
 
         exec($command, $output, $exitCode);
 
-        return $exitCode === 0;
+        return new SiteBuildResult($exitCode, implode("\n", $output));
     }
 }
