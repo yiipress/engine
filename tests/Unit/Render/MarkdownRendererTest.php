@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace YiiPress\Tests\Unit\Render;
 
+use YiiPress\Content\Model\MarkdownConfig;
 use YiiPress\Render\MarkdownRenderer;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
+use function PHPUnit\Framework\assertStringNotContainsString;
 
 final class MarkdownRendererTest extends TestCase
 {
@@ -85,6 +87,38 @@ final class MarkdownRendererTest extends TestCase
 <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled>todo</li>
 </ul>
 EXPECTED
-        , $html);
+            , $html);
+    }
+
+    public function testRendersFootnotes(): void
+    {
+        $markdown = "Text with a note.[^note]\n\n[^note]: Footnote text.";
+        $html = $this->renderer->render($markdown);
+
+        assertStringContainsString('<sup id="fnref-note" class="footnote-ref"><a href="#fn-note">1</a></sup>', $html);
+        assertStringContainsString('<section class="footnotes" role="doc-endnotes">', $html);
+        assertStringContainsString('<li id="fn-note">Footnote text. <a href="#fnref-note" class="footnote-backref" aria-label="Back to reference">Back</a></li>', $html);
+        assertStringNotContainsString('[^note]:', $html);
+    }
+
+    public function testLeavesFootnotesAsMarkdownWhenDisabled(): void
+    {
+        $renderer = new MarkdownRenderer(new MarkdownConfig(footnotes: false));
+        $markdown = "Text with a note.[^note]\n\n[^note]: Footnote text.";
+        $html = $renderer->render($markdown);
+
+        assertStringContainsString('[^note]', $html);
+        assertStringContainsString('[^note]: Footnote text.', $html);
+        assertStringNotContainsString('class="footnote-ref"', $html);
+    }
+
+    public function testRendersRepeatedFootnoteReferencesWithUniqueReferenceIds(): void
+    {
+        $markdown = "First.[^note]\n\nSecond.[^note]\n\n[^note]: Footnote text.";
+        $html = $this->renderer->render($markdown);
+
+        assertStringContainsString('<sup id="fnref-note" class="footnote-ref"><a href="#fn-note">1</a></sup>', $html);
+        assertStringContainsString('<sup id="fnref-note-2" class="footnote-ref"><a href="#fn-note">1</a></sup>', $html);
+        assertStringContainsString('<li id="fn-note">Footnote text. <a href="#fnref-note" class="footnote-backref" aria-label="Back to reference">Back</a></li>', $html);
     }
 }

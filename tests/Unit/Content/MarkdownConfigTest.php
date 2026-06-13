@@ -20,6 +20,7 @@ final class MarkdownConfigTest extends TestCase
         $config = new MarkdownConfig();
 
         assertTrue($config->tables);
+        assertTrue($config->footnotes);
         assertTrue($config->strikethrough);
         assertTrue($config->tasklists);
         assertTrue($config->urlAutolinks);
@@ -64,6 +65,7 @@ title: "Test"
 languages: [en]
 markdown:
   tables: false
+  footnotes: false
   strikethrough: false
   latex_math: true
   underline: true
@@ -75,6 +77,7 @@ YAML);
             $config = $parser->parse($tmpFile);
 
             assertFalse($config->markdown->tables, 'tables should be false');
+            assertFalse($config->markdown->footnotes, 'footnotes should be false');
             assertFalse($config->markdown->strikethrough, 'strikethrough should be false');
             assertTrue($config->markdown->tasklists, 'tasklists should be true (default)');
             assertTrue($config->markdown->urlAutolinks, 'urlAutolinks should be true (default)');
@@ -106,6 +109,7 @@ YAML);
             $config = $parser->parse($tmpFile);
 
             assertTrue($config->markdown->tables);
+            assertTrue($config->markdown->footnotes);
             assertTrue($config->markdown->strikethrough);
         } finally {
             unlink($tmpFile);

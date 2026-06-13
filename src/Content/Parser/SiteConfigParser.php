@@ -117,6 +117,9 @@ final class SiteConfigParser
         if (array_key_exists('tables', $data)) {
             $constructorArgs['tables'] = (bool) $data['tables'];
         }
+        if (array_key_exists('footnotes', $data)) {
+            $constructorArgs['footnotes'] = (bool) $data['footnotes'];
+        }
         if (array_key_exists('strikethrough', $data)) {
             $constructorArgs['strikethrough'] = (bool) $data['strikethrough'];
         }
