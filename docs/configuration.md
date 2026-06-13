@@ -74,7 +74,7 @@ editor: code
 - **toc** — generate a table of contents from headings (default: `true`); set to `false` to disable globally. When enabled, heading tags receive `id` attributes and a `$toc` variable is passed to templates
 - **search** — opt-in client-side search (see below)
 - **related** — opt-in related content suggestions (see below)
-- **minify** — minify generated HTML output (default: `true`); set to `false` to keep rendered template whitespace
+- **minify** — minify generated HTML output and copied CSS/JavaScript assets (default: `true`); set to `false` to keep rendered template and asset whitespace
 - **last_updated** — set to `true` to show each entry source file's last modification time below its content (default: `false`)
 - **edit_page** — URL template for an optional "Edit this page" link below entry content (see below)
 - **report_issue** — URL template for an optional "Report an issue" link below entry content (see below)
@@ -216,14 +216,15 @@ the current output page, so they remain valid when `base_url` contains a deploym
 
 ### Output minification
 
-Generated HTML pages are minified by default:
+Generated HTML pages and copied CSS/JavaScript assets are minified by default:
 
 ```yaml
 minify: true
 ```
 
-Set `minify: false` to keep template indentation and line breaks in generated `*.html` files.
-Whitespace inside `pre`, `textarea`, `script`, and `style` elements is preserved either way.
+Set `minify: false` to keep template indentation and line breaks in generated `*.html` files
+and to copy `*.css` / `*.js` assets without rewriting them. Whitespace inside `pre`, `textarea`,
+`script`, and `style` elements is preserved either way.
 
 ### Editor
 
