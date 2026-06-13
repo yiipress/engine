@@ -6,6 +6,8 @@ namespace YiiPress\Build;
 
 use Closure;
 
+use function ltrim;
+
 final class PageTemplateRenderer
 {
     /** @var array<string, Closure> */
@@ -51,6 +53,13 @@ final class PageTemplateRenderer
 
         $variables['partial'] = $this->partialClosures[$this->themeName];
         $variables['assetManifest'] = $this->assetManifest;
+        $variables['themeName'] = $this->themeName;
+        $variables['themeAsset'] = fn (string $path): string => Asset::themeUrl(
+            $path,
+            $this->templateResolver->resolveResourceThemeName('assets/' . ltrim($path, '/'), $this->themeName),
+            $rootPath,
+            $this->assetManifest,
+        );
         $variables = TemplateHelpers::inject($variables);
 
         $html = ($this->templateClosures[$templatePath])($variables);

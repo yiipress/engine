@@ -107,6 +107,25 @@ final class TemplateContextTest extends TestCase
         assertSame('../../' . $fingerprinted, Asset::url('assets/theme/style.css', '../../', $manifest));
     }
 
+    public function testThemeAssetHelperReturnsFingerprintedNamespacedThemeAsset(): void
+    {
+        mkdir($this->tempDir . '/assets', 0o755, true);
+        file_put_contents(
+            $this->tempDir . '/partials/asset.php',
+            '<?= $themeAsset("style.css") ?>',
+        );
+        $source = $this->tempDir . '/assets/style.css';
+        file_put_contents($source, 'body{}');
+
+        $manifest = new AssetFingerprintManifest();
+        $fingerprinted = $manifest->register('assets/themes/test/style.css', $source);
+        $context = $this->createContext($manifest);
+
+        $result = $context->partial('asset', ['rootPath' => '../../']);
+
+        assertSame('../../' . $fingerprinted, $result);
+    }
+
     public function testRewriteHtmlUpdatesReferencedAssets(): void
     {
         $source = $this->tempDir . '/style.css';

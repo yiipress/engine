@@ -75,6 +75,33 @@ final class TemplateResolver
         return $this->resourceCache[$key] = null;
     }
 
+    public function resolveResourceThemeName(string $resourcePath, string $themeName = ''): string
+    {
+        if ($themeName !== '' && $this->themeRegistry->has($themeName)) {
+            $path = $this->themeRegistry->get($themeName)->path . '/' . $resourcePath;
+            if (is_file($path)) {
+                return $themeName;
+            }
+        }
+
+        foreach ($this->themeRegistry->all() as $theme) {
+            if ($theme->name === $themeName) {
+                continue;
+            }
+            $path = $theme->path . '/' . $resourcePath;
+            if (is_file($path)) {
+                return $theme->name;
+            }
+        }
+
+        return $themeName !== '' ? $themeName : $this->defaultThemeName();
+    }
+
+    public function defaultThemeName(): string
+    {
+        return $this->themeRegistry->all()[0]->name ?? '';
+    }
+
     /**
      * @return list<string>
      */
