@@ -19,9 +19,9 @@ use function unlink;
 
 final class FileWriter
 {
-    public static function write(string $path, string $contents): void
+    public static function write(string $path, string $contents, int $flags = 0): void
     {
-        $bytes = file_put_contents($path, $contents);
+        $bytes = @file_put_contents($path, $contents, $flags);
         if ($bytes === false || $bytes !== strlen($contents)) {
             throw new RuntimeException(sprintf('Unable to write file "%s".', $path));
         }
@@ -33,9 +33,9 @@ final class FileWriter
         $tempPath = dirname($path) . '/.' . basename($path) . '.' . ($pid === false ? 0 : $pid) . '.' . uniqid('', true) . '.tmp';
 
         try {
-            self::write($tempPath, $contents);
+            self::write($tempPath, $contents, LOCK_EX);
 
-            if (!rename($tempPath, $path)) {
+            if (!@rename($tempPath, $path)) {
                 throw new RuntimeException(sprintf('Unable to replace file "%s".', $path));
             }
         } finally {

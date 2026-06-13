@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use RuntimeException;
 use SplFileInfo;
 
 use function PHPUnit\Framework\assertFalse;
@@ -193,6 +194,60 @@ final class BuildManifestTest extends TestCase
         assertFalse($manifest->hasTrackedDirectories());
     }
 
+    public function testSaveDoesNotLeaveTemporaryManifestFile(): void
+    {
+        $sourceFile = $this->tempDir . '/entry.md';
+        file_put_contents($sourceFile, '# Hello');
+        $manifestPath = $this->tempDir . '/manifest.json';
+
+        $manifest = new BuildManifest($manifestPath);
+        $manifest->record($sourceFile, ['/out/entry/index.html']);
+        $manifest->save();
+
+        assertTrue(is_file($manifestPath));
+        assertSame([], $this->manifestTemporaryFiles());
+    }
+
+    public function testSaveCleansTemporaryManifestFileWhenWriteFails(): void
+    {
+        $sourceFile = $this->tempDir . '/entry.md';
+        file_put_contents($sourceFile, '# Hello');
+        $manifestPath = $this->tempDir . '/' . str_repeat('a', 240) . '.json';
+
+        $manifest = new BuildManifest($manifestPath);
+        $manifest->record($sourceFile, ['/out/entry/index.html']);
+
+        try {
+            $manifest->save();
+            self::fail('Expected manifest save to fail.');
+        } catch (RuntimeException $exception) {
+            assertTrue(str_starts_with($exception->getMessage(), 'Unable to write file "'));
+        }
+
+        assertSame([], $this->manifestTemporaryFiles());
+    }
+
+    public function testSaveCleansTemporaryManifestFileWhenRenameFails(): void
+    {
+        $sourceFile = $this->tempDir . '/entry.md';
+        file_put_contents($sourceFile, '# Hello');
+        $manifestPath = $this->tempDir . '/manifest.json';
+        mkdir($manifestPath, 0o755);
+
+        $manifest = new BuildManifest($manifestPath);
+        $manifest->record($sourceFile, ['/out/entry/index.html']);
+
+        try {
+            $manifest->save();
+            self::fail('Expected manifest save to fail.');
+        } catch (RuntimeException $exception) {
+            assertSame(sprintf('Unable to replace file "%s".', $manifestPath), $exception->getMessage());
+        }
+
+        assertTrue(is_dir($manifestPath));
+        assertSame([], $this->manifestTemporaryFiles());
+    }
+
     public function testReplaceReturnsOutputsThatAreNoLongerReferenced(): void
     {
         $sourceFile = $this->tempDir . '/asset.css';
@@ -308,5 +363,15 @@ final class BuildManifestTest extends TestCase
         }
 
         rmdir($path);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function manifestTemporaryFiles(): array
+    {
+        $files = glob($this->tempDir . '/.*.tmp');
+
+        return $files === false ? [] : array_values($files);
     }
 }
