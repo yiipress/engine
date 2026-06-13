@@ -274,6 +274,61 @@ final class FeedGeneratorTest extends TestCase
         $this->assertSame(1, $processor->calls);
     }
 
+    public function testSiteFeedsUseSiteMetadataAndEntryCollections(): void
+    {
+        $news = new Collection(
+            name: 'news',
+            title: 'News',
+            description: 'News posts',
+            permalink: '/news/:slug/',
+            sortBy: 'date',
+            sortOrder: 'desc',
+            entriesPerPage: 10,
+            feed: true,
+            listing: true,
+        );
+        $entries = $this->createEntries();
+        $bodyLength = (int) filesize($this->tempFile);
+        $entries[] = new Entry(
+            filePath: $this->tempFile,
+            collection: 'news',
+            slug: 'release',
+            title: 'Release',
+            date: new DateTimeImmutable('2024-04-01'),
+            draft: false,
+            tags: [],
+            categories: [],
+            authors: [],
+            summary: 'Release summary.',
+            permalink: '',
+            layout: '',
+            theme: '',
+            weight: 0,
+            language: 'en',
+            redirectTo: '',
+            extra: [],
+            bodyOffset: 0,
+            bodyLength: $bodyLength,
+        );
+
+        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())));
+        $collections = ['blog' => $this->collection, 'news' => $news];
+
+        $atom = $generator->generateSiteAtom($this->siteConfig, $collections, $entries);
+        $rss = $generator->generateSiteRss($this->siteConfig, $collections, $entries);
+
+        assertStringContainsString('<title>Test Site</title>', $atom);
+        assertStringContainsString('<link href="https://test.example.com/"/>', $atom);
+        assertStringContainsString('<link href="https://test.example.com/feed.xml" rel="self" type="application/atom+xml"/>', $atom);
+        assertStringContainsString('<link href="https://test.example.com/blog/first-post/"/>', $atom);
+        assertStringContainsString('<link href="https://test.example.com/news/release/"/>', $atom);
+
+        assertStringContainsString('<title>Test Site</title>', $rss);
+        assertStringContainsString('<link>https://test.example.com/</link>', $rss);
+        assertStringContainsString('<atom:link href="https://test.example.com/rss.xml" rel="self" type="application/rss+xml"/>', $rss);
+        assertStringContainsString('<link>https://test.example.com/news/release/</link>', $rss);
+    }
+
     public function testInlineTagLinksUseAbsolutePublicRootInFeedContent(): void
     {
         $siteConfig = new SiteConfig(
