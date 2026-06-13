@@ -62,6 +62,18 @@ Imports messages from a Telegram Desktop channel export (JSON format).
 
 See [commands.md](commands.md#yii-import) for usage details.
 
+### MediumContentImporter
+
+Imports Markdown files from a Medium Markdown export directory.
+
+**Options:**
+
+- `--directory` — Path to the Medium Markdown export directory (required)
+
+The importer scans `posts/` first when present, otherwise the provided directory, and converts `.md` files into the selected YiiPress collection. It supports YAML front matter, preserves common metadata (`title`, date, origin URL, draft status, tags, and categories), infers missing titles/dates from headings and filenames, and avoids overwriting duplicate output filenames.
+
+See [commands.md](commands.md#medium-markdown-import) for usage details.
+
 ### GhostContentImporter
 
 Imports posts and pages from a Ghost JSON export.

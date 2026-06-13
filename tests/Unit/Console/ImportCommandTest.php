@@ -228,6 +228,21 @@ final class ImportCommandTest extends TestCase
         assertStringContainsString('Imported: 1', $result['output']);
     }
 
+    public function testImportsMediumMarkdownExport(): void
+    {
+        mkdir($this->sourceDir . '/posts', 0o755, true);
+        file_put_contents(
+            $this->sourceDir . '/posts/hello-medium.md',
+            "---\ntitle: Hello Medium\n---\n\nBody.\n",
+        );
+
+        $result = $this->runImport('medium', ['--directory' => $this->sourceDir]);
+
+        assertSame(0, $result['exitCode'], $result['output']);
+        assertStringContainsString('Importing from medium', $result['output']);
+        assertStringContainsString('Imported: 1', $result['output']);
+    }
+
     public function testShowsAvailableImportersOnError(): void
     {
         $result = $this->runImport('unknown', ['--directory' => $this->sourceDir]);
@@ -236,6 +251,7 @@ final class ImportCommandTest extends TestCase
         assertStringContainsString('ghost', $result['output']);
         assertStringContainsString('hugo', $result['output']);
         assertStringContainsString('jekyll', $result['output']);
+        assertStringContainsString('medium', $result['output']);
         assertStringContainsString('telegram', $result['output']);
         assertStringContainsString('wordpress', $result['output']);
     }
