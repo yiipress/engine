@@ -177,6 +177,67 @@ final class BuildCommandTest extends TestCase
         assertStringNotContainsString('#0 ', $outputText);
     }
 
+    public function testBuildFailsForDuplicatePermalinks(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/yiipress-build-duplicate-permalink-test-' . uniqid();
+        $contentDir = $tempDir . '/content';
+        $outputDir = $tempDir . '/output';
+        mkdir($contentDir . '/blog', 0o755, true);
+        $this->tempContentDirs[] = $tempDir;
+
+        file_put_contents($contentDir . '/config.yaml', "title: Duplicate Site\nlanguages: [en]\n");
+        file_put_contents($contentDir . '/blog/_collection.yaml', "title: Blog\npermalink: /blog/:slug/\n");
+        file_put_contents($contentDir . '/blog/first.md', "---\ntitle: First\npermalink: /same/\n---\n\nFirst.\n");
+        file_put_contents($contentDir . '/blog/second.md', "---\ntitle: Second\npermalink: /same/\n---\n\nSecond.\n");
+
+        $yii = dirname(__DIR__, 3) . '/yii';
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($outputDir)
+            . ' --no-cache'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        $outputText = implode("\n", $output);
+
+        assertSame(ExitCode::DATAERR, $exitCode, $outputText);
+        assertStringContainsString('Duplicate permalink "/same/"', $outputText);
+        assertFalse(is_file($outputDir . '/same/index.html'));
+    }
+
+    public function testBuildFailsForUnsafePermalinkPathSegments(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/yiipress-build-unsafe-permalink-test-' . uniqid();
+        $contentDir = $tempDir . '/content';
+        $outputDir = $tempDir . '/output';
+        mkdir($contentDir . '/blog', 0o755, true);
+        $this->tempContentDirs[] = $tempDir;
+
+        file_put_contents($contentDir . '/config.yaml', "title: Unsafe Site\nlanguages: [en]\n");
+        file_put_contents($contentDir . '/blog/_collection.yaml', "title: Blog\npermalink: /blog/:slug/\n");
+        file_put_contents($contentDir . '/blog/post.md', "---\ntitle: Escape\npermalink: /../../outside/\n---\n\nEscape.\n");
+
+        $yii = dirname(__DIR__, 3) . '/yii';
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($outputDir)
+            . ' --no-cache'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        $outputText = implode("\n", $output);
+
+        assertSame(ExitCode::DATAERR, $exitCode, $outputText);
+        assertStringContainsString('contains an unsafe path segment', $outputText);
+        assertFalse(is_file($tempDir . '/outside/index.html'));
+    }
+
     public function testBuildOutputContainsRenderedHtml(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';

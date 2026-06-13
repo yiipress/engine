@@ -397,6 +397,20 @@ final class BuildCommand extends Command
             $fileToPermalink[$relativePath] = PermalinkResolver::applyLanguagePrefix($basePermalink, $page->language, $siteConfig->i18n);
         }
 
+        $duplicatePermalinks = $this->duplicatePermalinks($fileToPermalink);
+        if ($duplicatePermalinks !== []) {
+            foreach ($duplicatePermalinks as $permalink => $sources) {
+                $output->writeln(sprintf(
+                    '<error>Duplicate permalink "%s" is used by: %s</error>',
+                    OutputFormatter::escape($permalink),
+                    OutputFormatter::escape(implode(', ', $sources)),
+                ));
+            }
+
+            $this->writeProfile($output, $profile);
+            return ExitCode::DATAERR;
+        }
+
         $crossRefResolver = new CrossReferenceResolver($fileToPermalink);
 
         $profile->switchTo('diagnostics');
@@ -441,7 +455,13 @@ final class BuildCommand extends Command
                 $sourcePath = $entry->filePath;
                 $relativePath = substr($sourcePath, strlen($contentDir) + 1);
                 $permalink = $fileToPermalink[$relativePath];
-                $filePath = $outputDir . $permalink . 'index.html';
+                try {
+                    $filePath = $this->outputFilePath($outputDir, $permalink);
+                } catch (RuntimeException $e) {
+                    $output->writeln('<error>' . OutputFormatter::escape($e->getMessage()) . '</error>');
+                    $this->writeProfile($output, $profile);
+                    return ExitCode::DATAERR;
+                }
 
                 if ($entry->redirectTo !== '') {
                     $redirectTasks[] = ['entry' => $entry, 'filePath' => $filePath, 'permalink' => $permalink, 'sourcePath' => $sourcePath];
@@ -558,7 +578,13 @@ final class BuildCommand extends Command
             $sourcePath = $page->filePath;
             $basePermalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
             $permalink = PermalinkResolver::applyLanguagePrefix($basePermalink, $page->language, $siteConfig->i18n);
-            $filePath = $outputDir . $permalink . 'index.html';
+            try {
+                $filePath = $this->outputFilePath($outputDir, $permalink);
+            } catch (RuntimeException $e) {
+                $output->writeln('<error>' . OutputFormatter::escape($e->getMessage()) . '</error>');
+                $this->writeProfile($output, $profile);
+                return ExitCode::DATAERR;
+            }
 
             if ($changedSet !== null && !isset($changedSet[$sourcePath])) {
                 $manifest?->record($sourcePath, [$filePath]);
@@ -1214,6 +1240,48 @@ final class BuildCommand extends Command
         if (!mkdir($outputDir, 0o755, true) && !is_dir($outputDir)) {
             throw new RuntimeException(sprintf('Directory "%s" was not created', $outputDir));
         }
+    }
+
+    /**
+     * @param array<string, string> $fileToPermalink
+     * @return array<string, list<string>>
+     */
+    private function duplicatePermalinks(array $fileToPermalink): array
+    {
+        $sourcesByPermalink = [];
+        foreach ($fileToPermalink as $source => $permalink) {
+            $sourcesByPermalink[$permalink][] = $source;
+        }
+
+        return array_filter(
+            $sourcesByPermalink,
+            static fn (array $sources): bool => count($sources) > 1,
+        );
+    }
+
+    private function outputFilePath(string $outputDir, string $permalink): string
+    {
+        return $outputDir . '/' . $this->permalinkOutputPath($permalink) . 'index.html';
+    }
+
+    private function permalinkOutputPath(string $permalink): string
+    {
+        if (!str_starts_with($permalink, '/')) {
+            throw new RuntimeException(sprintf('Permalink "%s" must start with "/".', $permalink));
+        }
+
+        if ($permalink === '/') {
+            return '';
+        }
+
+        $segments = explode('/', trim($permalink, '/'));
+        foreach ($segments as $segment) {
+            if ($segment === '' || $segment === '.' || $segment === '..') {
+                throw new RuntimeException(sprintf('Permalink "%s" contains an unsafe path segment.', $permalink));
+            }
+        }
+
+        return implode('/', $segments) . '/';
     }
 
     private function resolvePath(string $path, string $rootPath): string
