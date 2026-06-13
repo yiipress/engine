@@ -16,7 +16,7 @@ final class SiteBuildRunner
         $this->lastOutput = '';
     }
 
-    public function build(): bool
+    public function build(): SiteBuildResult
     {
         $lockId = hash('xxh128', $this->outputDir);
         $lockPath = sys_get_temp_dir() . '/yiipress-build-' . $lockId . '.lock';
@@ -24,14 +24,14 @@ final class SiteBuildRunner
         if ($lock === false) {
             $this->lastOutput = sprintf('Unable to open build lock "%s" (%s).', $lockPath, $lockId);
 
-            return false;
+            return new SiteBuildResult(1, $this->lastOutput);
         }
 
         if (!flock($lock, LOCK_EX)) {
             fclose($lock);
             $this->lastOutput = sprintf('Unable to acquire build lock "%s" (%s).', $lockPath, $lockId);
 
-            return false;
+            return new SiteBuildResult(1, $this->lastOutput);
         }
 
         $command = escapeshellarg($this->yiiBinary)
@@ -44,7 +44,7 @@ final class SiteBuildRunner
             exec($command, $output, $exitCode);
             $this->lastOutput = implode("\n", $output);
 
-            return $exitCode === 0;
+            return new SiteBuildResult($exitCode, $this->lastOutput);
         } finally {
             flock($lock, LOCK_UN);
             fclose($lock);

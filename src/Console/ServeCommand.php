@@ -7,6 +7,7 @@ namespace YiiPress\Console;
 use YiiPress\Environment;
 use YiiPress\RuntimePaths;
 use YiiPress\Web\DevServer\DevHtmlInjector;
+use YiiPress\Web\LiveReload\SiteBuildResult;
 use YiiPress\Web\LiveReload\SiteBuildRunner;
 use FilesystemIterator;
 use HttpSoft\Message\ServerRequest;
@@ -412,9 +413,21 @@ final class ServeCommand extends Command
                 return;
             }
 
-            if ($this->buildLiveReloadSite()) {
-                $this->broadcastLiveReloadEvent('reload', 'changed', true);
+            $result = $this->buildLiveReloadSite();
+            if ($result === null) {
+                return;
             }
+
+            if ($result->succeeded()) {
+                $this->broadcastLiveReloadEvent('reload', 'changed', true);
+                return;
+            }
+
+            $this->broadcastLiveReloadEvent(
+                'build-error',
+                json_encode(['output' => $result->output], JSON_THROW_ON_ERROR),
+                true,
+            );
         });
     }
 
@@ -462,23 +475,15 @@ final class ServeCommand extends Command
         $this->liveReloadClients = [];
     }
 
-    private function buildLiveReloadSite(): bool
+    private function buildLiveReloadSite(): ?SiteBuildResult
     {
         $now = microtime(true);
         if ($now - $this->lastLiveReloadBuildTime < 1.0) {
-            return false;
+            return null;
         }
 
         $this->lastLiveReloadBuildTime = $now;
-        $runner = $this->createLiveReloadBuildRunner();
-        if ($runner->build()) {
-            return true;
-        }
-
-        $message = trim($runner->lastOutput());
-        $this->broadcastLiveReloadEvent('build-error', $message !== '' ? $message : 'Build failed.', false);
-
-        return false;
+        return $this->createLiveReloadBuildRunner()->build();
     }
 
     private function finishLiveReloadResponse(ConnectionInterface $connection, string $event, string $data): void
