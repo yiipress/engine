@@ -91,6 +91,7 @@
 ## Priority 7: Content extensions
 
 - [x] Built-in shortcodes (YouTube, Vimeo, figure, etc.) as a plugin
+- [x] Project-level shortcodes from `content/shortcodes` for binary users
 - [x] Table of contents generation from headings as a plugin
 - [x] Diagram support (Mermaid) as a plugin
 - [x] oEmbed support (auto-expanding URLs to embeds) as a plugin
