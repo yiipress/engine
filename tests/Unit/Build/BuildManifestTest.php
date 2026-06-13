@@ -132,6 +132,37 @@ final class BuildManifestTest extends TestCase
         assertSame([], $manifest->removedOutputs([$sourceFile]));
     }
 
+    public function testCorruptManifestLoadsAsEmptyCache(): void
+    {
+        $manifestPath = $this->tempDir . '/manifest.json';
+        file_put_contents($manifestPath, '{"entries":');
+
+        $manifest = new BuildManifest($manifestPath);
+        $manifest->load();
+
+        $sourceFile = $this->tempDir . '/entry.md';
+        file_put_contents($sourceFile, '# Hello');
+
+        assertTrue($manifest->isChanged($sourceFile));
+        assertSame([], $manifest->sourceFiles());
+        assertSame([], $manifest->configFiles());
+        assertFalse($manifest->hasTrackedDirectories());
+    }
+
+    public function testSaveDoesNotLeaveTemporaryManifestFile(): void
+    {
+        $sourceFile = $this->tempDir . '/entry.md';
+        file_put_contents($sourceFile, '# Hello');
+        $manifestPath = $this->tempDir . '/manifest.json';
+
+        $manifest = new BuildManifest($manifestPath);
+        $manifest->record($sourceFile, ['/out/entry/index.html']);
+        $manifest->save();
+
+        assertTrue(is_file($manifestPath));
+        assertFalse(is_file($manifestPath . '.tmp'));
+    }
+
     public function testReplaceReturnsOutputsThatAreNoLongerReferenced(): void
     {
         $sourceFile = $this->tempDir . '/asset.css';

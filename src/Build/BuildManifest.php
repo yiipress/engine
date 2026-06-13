@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiPress\Build;
 
+use JsonException;
 use RuntimeException;
 
 use function dirname;
@@ -33,13 +34,19 @@ final class BuildManifest
 
         $json = file_get_contents($this->manifestPath);
         if ($json === false) {
-            $this->entries = [];
+            $this->reset();
             return;
         }
 
-        $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        try {
+            $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            $this->reset();
+            return;
+        }
+
         if (!is_array($data)) {
-            $this->entries = [];
+            $this->reset();
             return;
         }
 
@@ -62,14 +69,30 @@ final class BuildManifest
             throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
         }
 
-        file_put_contents(
-            $this->manifestPath,
-            json_encode([
-                'entries' => $this->entries,
-                'configFiles' => $this->configFiles,
-                'trackedDirectories' => $this->trackedDirectories,
-            ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
-        );
+        $json = json_encode([
+            'entries' => $this->entries,
+            'configFiles' => $this->configFiles,
+            'trackedDirectories' => $this->trackedDirectories,
+        ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+        $temporaryPath = $this->manifestPath . '.tmp';
+        if (file_put_contents($temporaryPath, $json) === false) {
+            throw new RuntimeException(sprintf('Unable to write build manifest temporary file "%s".', $temporaryPath));
+        }
+
+        if (!rename($temporaryPath, $this->manifestPath)) {
+            if (is_file($temporaryPath)) {
+                unlink($temporaryPath);
+            }
+            throw new RuntimeException(sprintf('Unable to replace build manifest "%s".', $this->manifestPath));
+        }
+    }
+
+    private function reset(): void
+    {
+        $this->entries = [];
+        $this->configFiles = [];
+        $this->trackedDirectories = [];
     }
 
     public function isChanged(string $sourceFile): bool
