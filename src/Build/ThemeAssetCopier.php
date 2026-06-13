@@ -18,9 +18,10 @@ final class ThemeAssetCopier
     /**
      * @return int number of assets copied
      */
-    public function copy(ThemeRegistry $themeRegistry, string $outputDir, ?AssetFingerprintManifest $assetManifest = null, bool $noWrite = false): int
+    public function copy(ThemeRegistry $themeRegistry, string $outputDir, ?AssetFingerprintManifest $assetManifest = null, bool $noWrite = false, bool $minify = true): int
     {
         $copied = 0;
+        $writer = new AssetFileWriter();
 
         foreach ($this->mappings($themeRegistry) as $sourcePath => $targetRelativePath) {
             $resolvedTarget = $assetManifest?->resolve($targetRelativePath) ?? $targetRelativePath;
@@ -36,7 +37,7 @@ final class ThemeAssetCopier
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $targetDir));
             }
 
-            if (FileCopy::copyIfChanged($sourcePath, $targetPath)) {
+            if ($writer->writeIfChanged($sourcePath, $targetPath, $minify)) {
                 $copied++;
             }
         }

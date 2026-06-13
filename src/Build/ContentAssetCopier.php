@@ -21,9 +21,10 @@ final class ContentAssetCopier
     /**
      * @return int number of assets copied
      */
-    public function copy(string $contentDir, string $outputDir, ?AssetFingerprintManifest $assetManifest = null, bool $noWrite = false): int
+    public function copy(string $contentDir, string $outputDir, ?AssetFingerprintManifest $assetManifest = null, bool $noWrite = false, bool $minify = true): int
     {
         $copied = 0;
+        $writer = new AssetFileWriter();
 
         foreach ($this->mappings($contentDir) as $sourcePath => $targetRelativePath) {
             $resolvedTarget = $assetManifest?->resolve($targetRelativePath) ?? $targetRelativePath;
@@ -39,7 +40,7 @@ final class ContentAssetCopier
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $targetDir));
             }
 
-            if (FileCopy::copyIfChanged($sourcePath, $targetPath)) {
+            if ($writer->writeIfChanged($sourcePath, $targetPath, $minify)) {
                 $copied++;
             }
         }

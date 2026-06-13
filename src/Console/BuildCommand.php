@@ -10,6 +10,7 @@ use YiiPress\Build\BuildCache;
 use YiiPress\Build\BuildManifest;
 use YiiPress\Build\BuildDiagnostics;
 use YiiPress\Build\BuildProfile;
+use YiiPress\Build\AssetFileWriter;
 use YiiPress\Build\CollectionListingWriter;
 use YiiPress\Build\ContentAssetCopier;
 use YiiPress\Build\DateArchiveWriter;
@@ -668,8 +669,9 @@ final class BuildCommand extends Command
         }
 
         $profile->switchTo('copy assets');
-        $assetsCopied = $contentAssetCopier->copy($contentDir, $outputDir, $assetManifest, $noWrite);
-        $assetsCopied += $themeAssetCopier->copy($this->themeRegistry, $outputDir, $assetManifest, $noWrite);
+        $assetsCopied = $contentAssetCopier->copy($contentDir, $outputDir, $assetManifest, $noWrite, $siteConfig->minify);
+        $assetsCopied += $themeAssetCopier->copy($this->themeRegistry, $outputDir, $assetManifest, $noWrite, $siteConfig->minify);
+        $assetWriter = new AssetFileWriter();
 
         foreach ($pipelineAssetMappings as $source => $target) {
             $resolvedTarget = $assetManifest?->resolve($target) ?? $target;
@@ -682,7 +684,7 @@ final class BuildCommand extends Command
             if (!is_dir($targetDir) && !mkdir($targetDir, 0o755, true) && !is_dir($targetDir)) {
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $targetDir));
             }
-            if (FileCopy::copyIfChanged($source, $targetPath)) {
+            if ($assetWriter->writeIfChanged($source, $targetPath, $siteConfig->minify)) {
                 $assetsCopied++;
             }
         }

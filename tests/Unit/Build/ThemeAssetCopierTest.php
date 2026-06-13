@@ -16,7 +16,7 @@ use RecursiveIteratorIterator;
 
 use function PHPUnit\Framework\assertFileExists;
 use function PHPUnit\Framework\assertSame;
-use function PHPUnit\Framework\assertStringContainsString;
+use function PHPUnit\Framework\assertStringEqualsFile;
 
 final class ThemeAssetCopierTest extends TestCase
 {
@@ -46,7 +46,22 @@ final class ThemeAssetCopierTest extends TestCase
 
         assertSame(1, $copied);
         assertFileExists($this->tempDir . '/output/assets/theme/style.css');
-        assertStringContainsString('color: red', file_get_contents($this->tempDir . '/output/assets/theme/style.css'));
+        assertStringEqualsFile($this->tempDir . '/output/assets/theme/style.css', 'body{color:red}');
+    }
+
+    public function testCanCopyThemeAssetsWithoutMinifying(): void
+    {
+        $css = 'body { color: red; }';
+        file_put_contents($this->tempDir . '/theme/assets/style.css', $css);
+
+        $registry = new ThemeRegistry();
+        $registry->register(new Theme('test', $this->tempDir . '/theme'));
+
+        $copier = new ThemeAssetCopier();
+        $copied = $copier->copy($registry, $this->tempDir . '/output', minify: false);
+
+        assertSame(1, $copied);
+        assertStringEqualsFile($this->tempDir . '/output/assets/theme/style.css', $css);
     }
 
     public function testReturnsZeroWhenNoAssetsDir(): void
