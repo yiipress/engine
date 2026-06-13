@@ -115,6 +115,9 @@ authors:
 image: /blog/assets/hero.jpg
 summary: A brief introduction to YiiPress.
 permalink: /custom/path/
+aliases:
+  - /old-path/
+  - /legacy/path/
 layout: post
 theme: custom
 weight: 10
@@ -135,6 +138,7 @@ extra:
 - **image** — featured image URL (absolute, or root-relative path resolved against `base_url`); used as `og:image` for social sharing. Falls back to the site-level `image` in `config.yaml`
 - **summary** — manual excerpt; if omitted, auto-generated from content
 - **permalink** — per-entry URL override; takes precedence over collection pattern. Permalinks must be root-relative paths with a trailing slash, must not contain repeated `/`, `.` or `..` path segments, and must be unique across generated entries and standalone pages.
+- **aliases** — old URLs for this entry. YiiPress writes redirect pages from each alias to the entry permalink, or to `redirect_to` when the entry is itself a redirect. Aliases are site-root paths, must be unique across aliases and generated page permalinks, and are not added to feeds, listings, or sitemap
 - **layout** — template layout name (default: collection-specific or `entry`)
 - **theme** — theme name for this entry; overrides the site-level default (see [Templates](templates.md))
 - **weight** — integer for custom sorting in non-blog collections (lower = first)

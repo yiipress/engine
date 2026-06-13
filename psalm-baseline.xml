@@ -137,9 +137,6 @@
     <MixedArrayOffset>
       <code><![CDATA[$entriesByAuthor[$authorSlug]]]></code>
     </MixedArrayOffset>
-    <MixedMethodCall>
-      <code><![CDATA[write]]></code>
-    </MixedMethodCall>
     <MixedPropertyFetch>
       <code><![CDATA[$entry->authors]]></code>
     </MixedPropertyFetch>
