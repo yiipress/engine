@@ -143,6 +143,7 @@ final readonly class DateArchiveWriter
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
         $html = $renderer->render('archive_index', [
             'siteTitle' => $siteConfig->title,
+            'data' => $siteConfig->data,
             'collectionName' => $collection->name,
             'collectionTitle' => $collection->title,
             'years' => $years,
@@ -197,6 +198,7 @@ final readonly class DateArchiveWriter
 
         $html = $renderer->render('archive_yearly', [
             'siteTitle' => $siteConfig->title,
+            'data' => $siteConfig->data,
             'collectionName' => $collection->name,
             'collectionTitle' => $collection->title,
             'year' => $year,
@@ -251,6 +253,7 @@ final readonly class DateArchiveWriter
 
         $html = $renderer->render('archive_monthly', [
             'siteTitle' => $siteConfig->title,
+            'data' => $siteConfig->data,
             'collectionName' => $collection->name,
             'collectionTitle' => $collection->title,
             'year' => $year,

@@ -135,6 +135,7 @@ final class AuthorPageWriter
 
         $html = $renderer->render('author_index', [
             'siteTitle' => $siteConfig->title,
+            'data' => $siteConfig->data,
             'authorList' => $authorList,
             'nav' => $navigation,
             'rootPath' => $rootPath,
@@ -198,6 +199,7 @@ final class AuthorPageWriter
 
         $html = $renderer->render('author', [
             'siteTitle' => $siteConfig->title,
+            'data' => $siteConfig->data,
             'authorTitle' => $authorTitle,
             'authorEmail' => $authorEmail,
             'authorUrl' => $authorUrl,

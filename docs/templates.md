@@ -111,6 +111,7 @@ All built-in page templates receive these additional variables:
 | `$uiLanguages` | `list<string>`       | Available UI languages exposed by the site                    |
 | `$uiCatalogs` | `array<string, array<string, string>>` | Theme UI catalogs for client-side switching |
 | `$ui`       | `YiiPress\I18n\UiText`       | Injected localized UI-text helper for bundled theme labels    |
+| `$data`     | `array<string, mixed>`       | Site data loaded from `content/data/*.yaml`                   |
 | `$h`        | `Closure(string, int, ?string, bool): string` | Injected alias for `htmlspecialchars()` |
 | `$t`        | `Closure(string, array): string` | Injected shortcut for `$ui->get()` in templates      |
 
@@ -119,6 +120,7 @@ Example:
 ```php
 <html lang="<?= $h($language) ?>">
 <button aria-label="<?= $h($t('search')) ?>">
+<span><?= $h($data['company']['name'] ?? '') ?></span>
 ```
 
 In the bundled `minimal` theme, `$language` is the content language of the current page, while the remembered UI language can differ and is applied client-side after load.

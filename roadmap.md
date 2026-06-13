@@ -66,6 +66,7 @@
 - [x] Theme system — installable/distributable themes
 - [x] Template partials/includes support
 - [x] Template helper functions documentation
+- [x] Site data files exposed to templates (`content/data/*.yaml` as `$data`)
 - [x] Multiple layout support (per-entry layout selection via front matter)
 - [x] Beautiful default theme
 - [x] VuePress-style documentation layout with left sidebar navigation and right document table of contents
