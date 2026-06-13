@@ -15,7 +15,7 @@ Generates static HTML content from source files.
 - `--content-dir`, `-c` — path to the content directory (default: `content`). Absolute or relative to project root.
 - `--output-dir`, `-o` — path to the output directory (default: `output`). Absolute or relative to project root.
 - `--workers`, `-w` — number of parallel workers or `auto` (default: `auto`). Auto mode detects available CPU capacity inside the container, caps it at `4`, and still falls back to sequential work for small task sets.
-- `--no-cache` — disable build cache and incremental builds. Forces a full rebuild, clearing the output directory. By default, rendered HTML is cached and a build manifest tracks source file hashes for incremental builds.
+- `--no-cache` — disable build cache and incremental builds. Forces a full rebuild, clearing the output directory only when it is empty or contains YiiPress' build marker. By default, rendered HTML is cached and a build manifest tracks source file hashes for incremental builds.
 - `--drafts` — include draft entries in the build. By default, entries with `draft: true` in front matter are excluded from HTML output, feeds, and sitemap.
 - `--future` — include future-dated entries in the build. By default, entries with a date in the future are excluded from HTML output, feeds, and sitemap.
 - `--dry-run` — list all files that would be generated without writing anything. The output directory is not created or modified.

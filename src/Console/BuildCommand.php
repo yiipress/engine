@@ -62,6 +62,7 @@ use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Yiisoft\Files\FileHelper;
 use Yiisoft\FriendlyException\FriendlyExceptionInterface;
 use Yiisoft\Yii\Console\ExitCode;
 
@@ -104,6 +105,7 @@ use function yaml_parse;
 final class BuildCommand extends Command
 {
     private const int MAX_AUTO_WORKERS = 4;
+    private const string BUILD_MARKER = '.yiipress-build';
 
     public function __construct(
         private readonly string $rootPath,
@@ -200,17 +202,6 @@ final class BuildCommand extends Command
         $includeFuture = $input->getOption('future') !== false ? (bool) $input->getOption('future') : Environment::isDev();
         $dryRun = (bool) $input->getOption('dry-run');
         $noWrite = (bool) $input->getOption('no-write');
-        $buildContext = new BuildContext(
-            rootPath: $rootPath,
-            contentDir: $contentDir,
-            outputDir: $outputDir,
-            workerCount: $workerCount,
-            noCache: $noCache,
-            includeDrafts: $includeDrafts,
-            includeFuture: $includeFuture,
-            dryRun: $dryRun,
-            noWrite: $noWrite,
-        );
         $profile = new BuildProfile((bool) $input->getOption('profile'));
         $profile->start('prepare');
 
@@ -312,9 +303,6 @@ final class BuildCommand extends Command
                 : '<info>Rendering and writing output' . $this->workerMessageSuffix($workerCount, false) . '...</info>',
             );
 
-            if (!$noWrite) {
-                $this->prepareOutputDir($outputDir);
-            }
         }
 
         if ($manifest !== null && $allSourceFiles === []) {
@@ -362,6 +350,28 @@ final class BuildCommand extends Command
             $this->writeProfile($output, $profile);
             return $exitCode;
         }
+
+        if (!$noWrite && $noCache) {
+            try {
+                $this->prepareOutputDir($outputDir);
+            } catch (RuntimeException $e) {
+                $output->writeln('<error>' . OutputFormatter::escape($e->getMessage()) . '</error>');
+                $this->writeProfile($output, $profile);
+                return ExitCode::DATAERR;
+            }
+        }
+
+        $buildContext = new BuildContext(
+            rootPath: $rootPath,
+            contentDir: $contentDir,
+            outputDir: $outputDir,
+            workerCount: $workerCount,
+            noCache: $noCache,
+            includeDrafts: $includeDrafts,
+            includeFuture: $includeFuture,
+            dryRun: $dryRun,
+            noWrite: $noWrite,
+        );
 
         $this->eventDispatcher?->dispatch(new BuildStartedEvent($buildContext, $siteConfig, $navigation, $collections, $authors));
 
@@ -823,6 +833,10 @@ final class BuildCommand extends Command
             $manifest->save();
         }
 
+        if (!$noWrite) {
+            $this->writeBuildMarker($outputDir);
+        }
+
         $this->eventDispatcher?->dispatch(new BuildFinishedEvent($buildContext, $siteConfig));
 
         $profile->stop();
@@ -1208,11 +1222,45 @@ final class BuildCommand extends Command
 
     private function prepareOutputDir(string $outputDir): void
     {
+        if (is_file($outputDir)) {
+            throw new RuntimeException(sprintf('Output path "%s" exists and is not a directory.', $outputDir));
+        }
+
         if (is_dir($outputDir)) {
-            exec('rm -rf ' . escapeshellarg($outputDir));
+            if (!$this->canReplaceOutputDir($outputDir)) {
+                throw new RuntimeException(sprintf(
+                    'Refusing to clear "%s" because it is not marked as a YiiPress build output directory.',
+                    $outputDir,
+                ));
+            }
+
+            FileHelper::removeDirectory($outputDir);
         }
         if (!mkdir($outputDir, 0o755, true) && !is_dir($outputDir)) {
             throw new RuntimeException(sprintf('Directory "%s" was not created', $outputDir));
+        }
+    }
+
+    private function canReplaceOutputDir(string $outputDir): bool
+    {
+        if (is_file($outputDir . '/' . self::BUILD_MARKER)) {
+            return true;
+        }
+
+        return $this->isDirectoryEmpty($outputDir);
+    }
+
+    private function isDirectoryEmpty(string $directory): bool
+    {
+        $iterator = new FilesystemIterator($directory, FilesystemIterator::SKIP_DOTS);
+
+        return !$iterator->valid();
+    }
+
+    private function writeBuildMarker(string $outputDir): void
+    {
+        if (file_put_contents($outputDir . '/' . self::BUILD_MARKER, "generated-by: yiipress\n") === false) {
+            throw new RuntimeException(sprintf('Unable to write build marker in "%s".', $outputDir));
         }
     }
 

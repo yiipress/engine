@@ -94,6 +94,7 @@ final class BuildCommandTest extends TestCase
         assertSame(0, $exitCode, "Build failed: $outputText");
         assertMatchesRegularExpression('/Build complete in \d+(?:\.\d+)?(?:ms|s)\. Peak memory: \d+(?:\.\d+)? MiB\./', $outputText);
         assertDirectoryExists($this->outputDir);
+        assertFileExists($this->outputDir . '/.yiipress-build');
     }
 
     public function testBuildHooksAreDispatched(): void
@@ -149,10 +150,12 @@ final class BuildCommandTest extends TestCase
         $contentDir = $tempDir . '/content';
         $outputDir = $tempDir . '/output';
         mkdir($contentDir, 0o755, true);
+        mkdir($outputDir, 0o755, true);
         $this->tempContentDirs[] = $tempDir;
 
         file_put_contents($contentDir . '/config.yaml', "title: Broken Site\n");
         file_put_contents($contentDir . '/index.md', "---\ntitle: Home\n---\n\nHello.\n");
+        file_put_contents($outputDir . '/existing.html', 'existing output');
 
         $yii = dirname(__DIR__, 3) . '/yii';
         exec(
@@ -175,6 +178,38 @@ final class BuildCommandTest extends TestCase
         assertStringNotContainsString('Stack trace:', $outputText);
         assertStringNotContainsString('RuntimeException:', $outputText);
         assertStringNotContainsString('#0 ', $outputText);
+        assertFileExists($outputDir . '/existing.html');
+    }
+
+    public function testNoCacheBuildRefusesToClearUnmarkedNonEmptyOutputDirectory(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/yiipress-build-output-safety-test-' . uniqid();
+        $contentDir = $tempDir . '/content';
+        $outputDir = $tempDir . '/public_html';
+        mkdir($contentDir, 0o755, true);
+        mkdir($outputDir, 0o755, true);
+        $this->tempContentDirs[] = $tempDir;
+
+        file_put_contents($contentDir . '/config.yaml', "title: Safe Site\nlanguages: [en]\n");
+        file_put_contents($contentDir . '/index.md', "---\ntitle: Home\n---\n\nHello.\n");
+        file_put_contents($outputDir . '/do-not-delete.html', 'important');
+
+        $yii = dirname(__DIR__, 3) . '/yii';
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($outputDir)
+            . ' --no-cache'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        $outputText = implode("\n", $output);
+
+        assertSame(ExitCode::DATAERR, $exitCode, $outputText);
+        assertStringContainsString('Refusing to clear', $outputText);
+        assertFileExists($outputDir . '/do-not-delete.html');
     }
 
     public function testBuildOutputContainsRenderedHtml(): void
