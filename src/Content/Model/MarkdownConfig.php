@@ -8,6 +8,7 @@ final readonly class MarkdownConfig
 {
     /**
      * @param bool $tables Enable tables extension.
+     * @param bool $footnotes Enable footnotes.
      * @param bool $strikethrough Enable strikethrough extension.
      * @param bool $tasklists Enable task list extension.
      * @param bool $urlAutolinks Recognize URLs as auto-links even without '<', '>'.
@@ -25,6 +26,7 @@ final readonly class MarkdownConfig
      */
     public function __construct(
         public bool $tables = true,
+        public bool $footnotes = true,
         public bool $strikethrough = true,
         public bool $tasklists = true,
         public bool $urlAutolinks = true,

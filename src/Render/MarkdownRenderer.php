@@ -55,10 +55,12 @@ final class MarkdownRenderer
     /** Force all soft breaks to act as hard breaks. */
     private const int MD_FLAG_HARD_SOFT_BREAKS = 0x8000;
     private int $flags;
+    private bool $footnotes;
 
     public function __construct(MarkdownConfig $config = new MarkdownConfig())
     {
         $this->flags = self::buildFlags($config);
+        $this->footnotes = $config->footnotes;
     }
 
     public function render(string $markdown): string
@@ -67,7 +69,108 @@ final class MarkdownRenderer
             return '';
         }
 
-        return md4c_toHtml($markdown, $this->flags);
+        if (!$this->footnotes || !str_contains($markdown, '[^')) {
+            return $this->toHtml($markdown);
+        }
+
+        return $this->renderWithFootnotes($markdown);
+    }
+
+    private function renderWithFootnotes(string $markdown): string
+    {
+        [$markdown, $definitions] = $this->extractFootnotes($markdown);
+        if ($definitions === []) {
+            return $this->toHtml($markdown);
+        }
+
+        /** @var array<string, int> $used */
+        $used = [];
+        /** @var array<int, array{id: string, number: int}> $references */
+        $references = [];
+        $markdown = preg_replace_callback(
+            '/\[\^([A-Za-z0-9_-]+)]/',
+            static function (array $matches) use ($definitions, &$used, &$references): string {
+                $id = $matches[1];
+                if (!isset($definitions[$id])) {
+                    return $matches[0];
+                }
+
+                $used[$id] ??= count($used) + 1;
+                $reference = count($references) + 1;
+                $references[$reference] = ['id' => $id, 'number' => $used[$id]];
+
+                return "\x1FFOOTNOTE_REF:" . $reference . "\x1F";
+            },
+            $markdown,
+        ) ?? $markdown;
+
+        $html = $this->toHtml($markdown);
+        foreach ($references as $reference => $data) {
+            $id = $data['id'];
+            $number = $data['number'];
+            $escapedId = htmlspecialchars($id, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $escapedReferenceId = $this->referenceId($id, $reference);
+            $html = str_replace(
+                "\x1FFOOTNOTE_REF:" . $reference . "\x1F",
+                '<sup id="' . $escapedReferenceId . '" class="footnote-ref"><a href="#fn-' . $escapedId . '">' . $number . '</a></sup>',
+                $html,
+            );
+        }
+
+        if ($used === []) {
+            return $html;
+        }
+
+        return $html . $this->renderFootnoteList($definitions, $used);
+    }
+
+    private function toHtml(string $markdown): string
+    {
+        return (string) md4c_toHtml($markdown, $this->flags);
+    }
+
+    private function referenceId(string $id, int $reference): string
+    {
+        $escapedId = htmlspecialchars($id, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
+        return $reference === 1 ? 'fnref-' . $escapedId : 'fnref-' . $escapedId . '-' . $reference;
+    }
+
+    /**
+     * @return array{0: string, 1: array<string, string>}
+     */
+    private function extractFootnotes(string $markdown): array
+    {
+        $definitions = [];
+        $bodyLines = [];
+
+        foreach (explode("\n", $markdown) as $line) {
+            if (preg_match('/^\[\^([A-Za-z0-9_-]+)]:[ \t]*(.*)$/', $line, $matches) === 1) {
+                $definitions[$matches[1]] = $matches[2];
+                continue;
+            }
+
+            $bodyLines[] = $line;
+        }
+
+        return [implode("\n", $bodyLines), $definitions];
+    }
+
+    /**
+     * @param array<string, string> $definitions
+     * @param array<string, int> $used
+     */
+    private function renderFootnoteList(array $definitions, array $used): string
+    {
+        $html = "\n<section class=\"footnotes\" role=\"doc-endnotes\">\n<ol>\n";
+        foreach ($used as $id => $_number) {
+            $content = trim($this->toHtml($definitions[$id]));
+            $content = preg_replace('/^<p>(.*)<\/p>$/s', '$1', $content) ?? $content;
+            $escapedId = htmlspecialchars($id, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $html .= '<li id="fn-' . $escapedId . '">' . $content . ' <a href="#' . $this->referenceId($id, 1) . '" class="footnote-backref" aria-label="Back to reference">Back</a></li>' . "\n";
+        }
+
+        return $html . "</ol>\n</section>\n";
     }
 
     private static function buildFlags(MarkdownConfig $config): int

@@ -286,6 +286,7 @@ The `markdown` section controls which Markdown extensions are enabled. All optio
 ```yaml
 markdown:
   tables: true
+  footnotes: true
   strikethrough: true
   tasklists: true
   url_autolinks: true
@@ -303,6 +304,7 @@ markdown:
 ```
 
 - **tables** — GitHub-style tables (default: `true`)
+- **footnotes** — Markdown footnotes using `[^id]` references and `[^id]: text` definitions (default: `true`)
 - **strikethrough** — strikethrough with `~text~` (default: `true`)
 - **tasklists** — GitHub-style task lists (default: `true`)
 - **url_autolinks** — recognize URLs as auto-links even without `<>` (default: `true`)
