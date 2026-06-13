@@ -6,6 +6,7 @@ use YiiPress\Console;
 
 return [
     'build' => Console\BuildCommand::class,
+    'check' => Console\CheckCommand::class,
     'clean|clear' => Console\CleanCommand::class,
     'init' => Console\InitCommand::class,
     'import' => Console\ImportCommand::class,
