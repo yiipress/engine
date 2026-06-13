@@ -114,7 +114,7 @@
 ## Priority 9: Data importers
 
 - [ ] WordPress
-- [ ] Jekyll
+- [x] Jekyll
 - [ ] Hugo
 - [ ] Medium exported Markdown
 - [ ] Ghost

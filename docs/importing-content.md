@@ -62,6 +62,18 @@ Imports messages from a Telegram Desktop channel export (JSON format).
 
 See [commands.md](commands.md#yii-import) for usage details.
 
+### JekyllContentImporter
+
+Imports Markdown posts from a Jekyll site `_posts/` directory.
+
+**Options:**
+
+- `--directory` — Path to the Jekyll site directory containing `_posts` (required)
+
+The importer accepts `.md` and `.markdown` posts named `YYYY-MM-DD-slug`, preserves common front matter (`title`, `date`, `permalink`, `tags`, `categories`), and creates a default collection config when one does not exist.
+
+See [commands.md](commands.md#jekyll-import) for usage details.
+
 ## Writing a custom importer
 
 Create a class implementing `ContentImporterInterface`. Each importer declares its own options — a file-based importer might need a `directory`, while an API-based importer might need `url` and `api-key`.
