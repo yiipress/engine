@@ -58,6 +58,7 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
 use SplFileInfo;
+use UnexpectedValueException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Formatter\OutputFormatter;
@@ -206,17 +207,6 @@ final class BuildCommand extends Command
         $includeFuture = $input->getOption('future') !== false ? (bool) $input->getOption('future') : Environment::isDev();
         $dryRun = (bool) $input->getOption('dry-run');
         $noWrite = (bool) $input->getOption('no-write');
-        $buildContext = new BuildContext(
-            rootPath: $rootPath,
-            contentDir: $contentDir,
-            outputDir: $outputDir,
-            workerCount: $workerCount,
-            noCache: $noCache,
-            includeDrafts: $includeDrafts,
-            includeFuture: $includeFuture,
-            dryRun: $dryRun,
-            noWrite: $noWrite,
-        );
         $profile = new BuildProfile((bool) $input->getOption('profile'));
         $profile->start('prepare');
 
@@ -290,6 +280,14 @@ final class BuildCommand extends Command
 
             if ($changedSourceFiles === [] && $staleOutputs === []) {
                 $output->writeln('<info>No changes detected, nothing to build.</info>');
+                try {
+                    $this->writeOutputMarker($outputDir);
+                } catch (RuntimeException $e) {
+                    $output->writeln('<error>' . OutputFormatter::escape($e->getMessage()) . '</error>');
+                    $this->writeProfile($output, $profile);
+
+                    return ExitCode::DATAERR;
+                }
                 $this->writeProfile($output, $profile);
                 return ExitCode::OK;
             }
@@ -317,13 +315,6 @@ final class BuildCommand extends Command
                 ? '<info>Rendering without writing output' . $this->workerMessageSuffix($workerCount, false) . '...</info>'
                 : '<info>Rendering and writing output' . $this->workerMessageSuffix($workerCount, false) . '...</info>',
             );
-
-            if (!$noWrite) {
-                $atomicOutputDir = $this->prepareOutputDir($outputDir);
-                if ($atomicOutputDir !== null) {
-                    $outputDir = $atomicOutputDir;
-                }
-            }
         }
 
         try {
@@ -379,6 +370,31 @@ final class BuildCommand extends Command
             $this->writeProfile($output, $profile);
             return $exitCode;
         }
+
+        if (!$noWrite && $noCache) {
+            try {
+                $atomicOutputDir = $this->prepareOutputDir($outputDir);
+                if ($atomicOutputDir !== null) {
+                    $outputDir = $atomicOutputDir;
+                }
+            } catch (RuntimeException $e) {
+                $output->writeln('<error>' . OutputFormatter::escape($e->getMessage()) . '</error>');
+                $this->writeProfile($output, $profile);
+                return ExitCode::DATAERR;
+            }
+        }
+
+        $buildContext = new BuildContext(
+            rootPath: $rootPath,
+            contentDir: $contentDir,
+            outputDir: $outputDir,
+            workerCount: $workerCount,
+            noCache: $noCache,
+            includeDrafts: $includeDrafts,
+            includeFuture: $includeFuture,
+            dryRun: $dryRun,
+            noWrite: $noWrite,
+        );
 
         $this->eventDispatcher?->dispatch(new BuildStartedEvent($buildContext, $siteConfig, $navigation, $collections, $authors));
 
@@ -860,13 +876,20 @@ final class BuildCommand extends Command
         }
 
         if (!$noWrite) {
-            $this->writeOutputMarker($outputDir);
-        }
+            try {
+                $this->writeOutputMarker($outputDir);
 
-        if ($atomicOutputDir !== null) {
-            $this->replaceOutputDir($atomicOutputDir, $finalOutputDir);
-            $outputDir = $finalOutputDir;
-            $atomicOutputDir = null;
+                if ($atomicOutputDir !== null) {
+                    $this->replaceOutputDir($atomicOutputDir, $finalOutputDir);
+                    $outputDir = $finalOutputDir;
+                    $atomicOutputDir = null;
+                }
+            } catch (RuntimeException $e) {
+                $output->writeln('<error>' . OutputFormatter::escape($e->getMessage()) . '</error>');
+                $this->writeProfile($output, $profile);
+
+                return ExitCode::DATAERR;
+            }
         }
 
         $this->eventDispatcher?->dispatch(new BuildFinishedEvent($buildContext, $siteConfig));
@@ -1341,7 +1364,11 @@ final class BuildCommand extends Command
 
     private function isEmptyDirectory(string $directory): bool
     {
-        $iterator = new FilesystemIterator($directory, FilesystemIterator::SKIP_DOTS);
+        try {
+            $iterator = new FilesystemIterator($directory, FilesystemIterator::SKIP_DOTS);
+        } catch (UnexpectedValueException $e) {
+            throw new RuntimeException(sprintf('Unable to inspect output directory "%s".', $directory), 0, $e);
+        }
 
         return !$iterator->valid();
     }

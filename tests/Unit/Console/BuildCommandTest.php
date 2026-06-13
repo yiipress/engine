@@ -94,6 +94,7 @@ final class BuildCommandTest extends TestCase
         assertSame(0, $exitCode, "Build failed: $outputText");
         assertMatchesRegularExpression('/Build complete in \d+(?:\.\d+)?(?:ms|s)\. Peak memory: \d+(?:\.\d+)? MiB\./', $outputText);
         assertDirectoryExists($this->outputDir);
+        assertFileExists($this->outputDir . '/.yiipress-build');
     }
 
     public function testBuildHooksAreDispatched(): void
@@ -198,10 +199,12 @@ PHP,
         $contentDir = $tempDir . '/content';
         $outputDir = $tempDir . '/output';
         mkdir($contentDir, 0o755, true);
+        mkdir($outputDir, 0o755, true);
         $this->tempContentDirs[] = $tempDir;
 
         file_put_contents($contentDir . '/config.yaml', "title: Broken Site\n");
         file_put_contents($contentDir . '/index.md', "---\ntitle: Home\n---\n\nHello.\n");
+        file_put_contents($outputDir . '/existing.html', 'existing output');
 
         $yii = dirname(__DIR__, 3) . '/yii';
         exec(
@@ -224,6 +227,38 @@ PHP,
         assertStringNotContainsString('Stack trace:', $outputText);
         assertStringNotContainsString('RuntimeException:', $outputText);
         assertStringNotContainsString('#0 ', $outputText);
+        assertFileExists($outputDir . '/existing.html');
+    }
+
+    public function testNoCacheBuildRefusesToClearUnmarkedNonEmptyOutputDirectory(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/yiipress-build-output-safety-test-' . uniqid();
+        $contentDir = $tempDir . '/content';
+        $outputDir = $tempDir . '/public_html';
+        mkdir($contentDir, 0o755, true);
+        mkdir($outputDir, 0o755, true);
+        $this->tempContentDirs[] = $tempDir;
+
+        file_put_contents($contentDir . '/config.yaml', "title: Safe Site\nlanguages: [en]\n");
+        file_put_contents($contentDir . '/index.md', "---\ntitle: Home\n---\n\nHello.\n");
+        file_put_contents($outputDir . '/do-not-delete.html', 'important');
+
+        $yii = dirname(__DIR__, 3) . '/yii';
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($outputDir)
+            . ' --no-cache'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        $outputText = implode("\n", $output);
+
+        assertSame(ExitCode::DATAERR, $exitCode, $outputText);
+        assertStringContainsString('Refusing to replace output directory', $outputText);
+        assertFileExists($outputDir . '/do-not-delete.html');
     }
 
     public function testBuildOutputContainsRenderedHtml(): void
@@ -935,6 +970,7 @@ PHP,
         $firstOutputText = implode("\n", $firstOutput);
         assertSame(0, $firstExitCode, "First build failed: $firstOutputText");
         assertStringContainsString('Build complete', $firstOutputText);
+        unlink($this->outputDir . '/.yiipress-build');
 
         $secondOutput = [];
         exec(
@@ -949,6 +985,7 @@ PHP,
         $secondOutputText = implode("\n", $secondOutput);
         assertSame(0, $secondExitCode, "Second build failed: $secondOutputText");
         assertStringContainsString('No changes detected', $secondOutputText);
+        assertFileExists($this->outputDir . '/.yiipress-build');
 
         if (is_file($manifestPath)) {
             unlink($manifestPath);
@@ -1282,7 +1319,7 @@ PHP,
 
         $result = $this->runBuildResult($contentDir, '--no-cache');
 
-        assertSame(1, $result['exitCode'], $result['output']);
+        assertSame(65, $result['exitCode'], $result['output']);
         assertStringContainsString('Refusing to replace output directory', $result['output']);
         assertStringContainsString('keep', (string) file_get_contents($this->outputDir . '/existing.txt'));
     }
