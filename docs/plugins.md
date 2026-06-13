@@ -219,6 +219,45 @@ Both shortcode processors support:
 - Double quotes, single quotes, or no quotes for attribute values (no spaces)
 - Case-insensitive shortcode names
 
+### Project Shortcodes
+
+Static binary users can define site-level shortcodes without editing Yii3 DI configuration. Create PHP templates in `content/shortcodes/` and call them from Markdown with Hugo-style syntax:
+
+```markdown
+{{< badge label="Stable" >}}
+
+{{< callout title="Note" >}}
+Markdown **inside** the shortcode stays available to the template.
+{{< /callout >}}
+```
+
+Template files are named after the shortcode:
+
+```php
+<?php
+// content/shortcodes/badge.php
+return '**' . ($attributes['label'] ?? '') . '**';
+```
+
+```php
+<?php
+// content/shortcodes/callout.php
+?>
+<aside class="callout">
+    <strong><?= htmlspecialchars($attributes['title'] ?? '', ENT_QUOTES | ENT_SUBSTITUTE) ?></strong>
+    <?= $content ?>
+</aside>
+```
+
+Shortcode templates receive:
+
+- `$name` — shortcode name
+- `$attributes` — parsed key/value attributes
+- `$content` — block shortcode inner content, or an empty string for inline shortcodes
+- `$entry` — current `YiiPress\Content\Model\Entry`
+
+Templates may return a string or echo output. The result is inserted before Markdown rendering, so templates can emit either Markdown or HTML. Unknown shortcodes are left unchanged.
+
 ### TweetProcessor
 
 Expands tweet shortcodes into Twitter embed HTML before markdown processing.
