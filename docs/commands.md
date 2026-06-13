@@ -144,7 +144,7 @@ Imports content from external sources into a YiiPress collection.
 
 **Arguments:**
 
-- `source` — source type to import from (required). Currently supported: `telegram`.
+- `source` — source type to import from (required). Currently supported: `ghost`, `telegram`.
 
 **Common options:**
 
@@ -189,6 +189,29 @@ Supports both single-chat exports (`result.json` with `messages` array) and full
 ./yiipress import telegram --directory=/path/to/telegram-export
 ./yiipress import telegram --directory=/path/to/telegram-export --collection=channel
 ./yiipress import telegram --directory=./telegram-data --content-dir=content
+```
+
+### Ghost import
+
+Imports posts and pages from a Ghost JSON export file. Export your site from Ghost Admin via Settings > Labs > Export your content.
+
+**Importer options:**
+
+- `--file` — path to the Ghost `.json` export file (required). Absolute or relative to project root.
+
+The importer reads the standard `db[0].data` export structure and converts:
+
+- Ghost posts (`type = post`) into markdown files in the target collection.
+- Ghost pages (`type = page`) into standalone markdown files in the content root.
+- `title`, `slug`, `published_at`, `status`, `custom_excerpt`, `feature_image`, tags, authors, and `html` into YiiPress front matter and body content.
+
+Published posts are imported normally. Non-published posts and pages are imported with `draft: true`. Unsupported post types are skipped. Duplicate output filenames get numeric suffixes so earlier files are not overwritten.
+
+**Examples:**
+
+```bash
+./yiipress import ghost --file=/path/to/ghost-export.json
+./yiipress import ghost --file=./ghost.json --collection=blog
 ```
 
 ### Adding custom importers
