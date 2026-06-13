@@ -18,6 +18,46 @@ final class ContentProcessorPipeline
         $this->processors = array_values($processors);
     }
 
+    /**
+     * @param class-string<ContentProcessorInterface> $processorClass
+     */
+    public function insertBefore(string $processorClass, ContentProcessorInterface ...$processors): void
+    {
+        if ($processors === []) {
+            return;
+        }
+
+        $position = $this->positionOf($processorClass);
+        if ($position === null) {
+            $this->processors = array_values([...$processors, ...$this->processors]);
+            return;
+        }
+
+        $updated = $this->processors;
+        array_splice($updated, $position, 0, $processors);
+        $this->processors = array_values($updated);
+    }
+
+    /**
+     * @param class-string<ContentProcessorInterface> $processorClass
+     */
+    public function insertAfter(string $processorClass, ContentProcessorInterface ...$processors): void
+    {
+        if ($processors === []) {
+            return;
+        }
+
+        $position = $this->positionOf($processorClass);
+        if ($position === null) {
+            $this->processors = array_values([...$this->processors, ...$processors]);
+            return;
+        }
+
+        $updated = $this->processors;
+        array_splice($updated, $position + 1, 0, $processors);
+        $this->processors = array_values($updated);
+    }
+
     public function process(string $content, Entry $entry, ?string $rootPath = null): string
     {
         foreach ($this->processors as $processor) {
@@ -77,5 +117,19 @@ final class ContentProcessorPipeline
             }
         }
         return $files;
+    }
+
+    /**
+     * @param class-string<ContentProcessorInterface> $processorClass
+     */
+    private function positionOf(string $processorClass): ?int
+    {
+        foreach ($this->processors as $index => $processor) {
+            if ($processor instanceof $processorClass) {
+                return $index;
+            }
+        }
+
+        return null;
     }
 }

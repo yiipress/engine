@@ -11,26 +11,29 @@ use PhpBench\Attributes\Iterations;
 use PhpBench\Attributes\Revs;
 use PhpBench\Attributes\Warmup;
 use YiiPress\Content\Model\Entry;
-use YiiPress\Processor\Shortcode\ProjectShortcodeProcessor;
+use YiiPress\Content\Model\ProcessorConfig;
+use YiiPress\Processor\ContentProcessorPipeline;
+use YiiPress\Processor\ProjectProcessorLoader;
 
 #[BeforeMethods('setUp')]
 #[AfterMethods('tearDown')]
-final class ProjectShortcodeProcessorBench
+final class ProjectProcessorBench
 {
     private string $contentDir;
     private Entry $entry;
-    private ProjectShortcodeProcessor $processor;
-    private string $content;
+    private ContentProcessorPipeline $pipeline;
 
     public function setUp(): void
     {
-        $this->contentDir = sys_get_temp_dir() . '/yiipress-shortcode-bench-' . uniqid();
-        mkdir($this->contentDir . '/blog', 0o755, true);
-        mkdir($this->contentDir . '/shortcodes', 0o755, true);
-        file_put_contents($this->contentDir . '/config.yaml', "title: Test\n");
-        file_put_contents($this->contentDir . '/shortcodes/badge.php', '<?php return "**" . ($attributes["label"] ?? "") . "**";');
+        $this->contentDir = sys_get_temp_dir() . '/yiipress-project-processor-bench-' . uniqid() . '/content';
+        mkdir($this->contentDir . '/processors', 0o755, true);
+        file_put_contents($this->contentDir . '/config.yaml', "title: Test\nlanguages: [en]\n");
+        file_put_contents(
+            $this->contentDir . '/processors/badge.php',
+            '<?php return static fn(string $content): string => str_replace("[badge]", "**Stable**", $content);',
+        );
 
-        $file = $this->contentDir . '/blog/post.md';
+        $file = $this->contentDir . '/post.md';
         file_put_contents($file, "---\ntitle: Test\n---\nBody.");
         $this->entry = new Entry(
             filePath: $file,
@@ -54,26 +57,22 @@ final class ProjectShortcodeProcessorBench
             bodyLength: 0,
         );
 
-        $parts = [];
-        for ($i = 1; $i <= 100; $i++) {
-            $parts[] = 'Item ' . $i . ': {{< badge label="Stable" >}}';
-        }
-
-        $this->content = implode("\n", $parts);
-        $this->processor = new ProjectShortcodeProcessor();
+        $processors = (new ProjectProcessorLoader($this->contentDir, $this->contentDir . '/config.yaml'))
+            ->load(new ProcessorConfig());
+        $this->pipeline = new ContentProcessorPipeline(...$processors->contentBeforeMarkdown);
     }
 
     public function tearDown(): void
     {
-        $this->removeDir($this->contentDir);
+        $this->removeDir(dirname($this->contentDir));
     }
 
-    #[Revs(100)]
+    #[Revs(1000)]
     #[Iterations(3)]
     #[Warmup(1)]
-    public function benchExpandProjectShortcodes(): void
+    public function benchProcessProjectProcessor(): void
     {
-        $this->processor->process($this->content, $this->entry);
+        $this->pipeline->process('Status: [badge]', $this->entry);
     }
 
     private function removeDir(string $path): void

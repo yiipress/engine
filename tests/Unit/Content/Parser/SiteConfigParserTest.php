@@ -105,6 +105,46 @@ final class SiteConfigParserTest extends TestCase
         }
     }
 
+    public function testParsesProcessorConfig(): void
+    {
+        $filePath = sys_get_temp_dir() . '/yiipress-site-config-' . uniqid() . '.yaml';
+        file_put_contents(
+            $filePath,
+            "title: Test\n"
+            . "languages: [en]\n"
+            . "processors:\n"
+            . "  content:\n"
+            . "    before_markdown:\n"
+            . "      - processors/before.php\n"
+            . "    after_markdown: processors/after.php\n"
+            . "  feed:\n"
+            . "    before_markdown:\n"
+            . "      - processors/feed-before.php\n",
+        );
+
+        $config = (new SiteConfigParser())->parse($filePath);
+
+        assertFalse($config->processors->discover);
+        assertSame(['processors/before.php'], $config->processors->contentBeforeMarkdown);
+        assertSame(['processors/after.php'], $config->processors->contentAfterMarkdown);
+        assertSame(['processors/feed-before.php'], $config->processors->feedBeforeMarkdown);
+        assertSame([], $config->processors->feedAfterMarkdown);
+
+        unlink($filePath);
+    }
+
+    public function testCanDisableProjectProcessors(): void
+    {
+        $filePath = sys_get_temp_dir() . '/yiipress-site-config-' . uniqid() . '.yaml';
+        file_put_contents($filePath, "title: Test\nlanguages: [en]\nprocessors: false\n");
+
+        $config = (new SiteConfigParser())->parse($filePath);
+
+        assertFalse($config->processors->discover);
+
+        unlink($filePath);
+    }
+
     public function testParseAssetConfigCanDisableFingerprinting(): void
     {
         $filePath = sys_get_temp_dir() . '/yiipress-site-config-' . uniqid() . '.yaml';

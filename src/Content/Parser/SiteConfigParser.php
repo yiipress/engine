@@ -7,6 +7,7 @@ namespace YiiPress\Content\Parser;
 use YiiPress\Content\Model\AssetConfig;
 use YiiPress\Content\Model\I18nConfig;
 use YiiPress\Content\Model\MarkdownConfig;
+use YiiPress\Content\Model\ProcessorConfig;
 use YiiPress\Content\Model\RelatedConfig;
 use YiiPress\Content\Model\RobotsTxtConfig;
 use YiiPress\Content\Model\RobotsTxtRule;
@@ -20,6 +21,7 @@ use function file_get_contents;
 use function implode;
 use function is_array;
 use function is_string;
+use function array_values;
 use function trim;
 use function yaml_parse;
 
@@ -94,6 +96,7 @@ final class SiteConfigParser
             data: basename($filePath) === 'config.yaml'
                 ? (new SiteDataParser())->parse(dirname($filePath) . '/data')
                 : [],
+            processors: self::parseProcessorConfig($data['processors'] ?? null),
         );
     }
 
@@ -105,6 +108,65 @@ final class SiteConfigParser
 
         $value = trim($value);
         return $value === '' ? null : $value;
+    }
+
+    private static function parseProcessorConfig(mixed $data): ProcessorConfig
+    {
+        if ($data === false) {
+            return new ProcessorConfig(discover: false);
+        }
+
+        if ($data === null || $data === true) {
+            return new ProcessorConfig();
+        }
+
+        if (!is_array($data)) {
+            return new ProcessorConfig();
+        }
+
+        if (array_is_list($data)) {
+            $paths = self::parseProcessorPathList($data);
+
+            return new ProcessorConfig(
+                discover: false,
+                contentBeforeMarkdown: $paths,
+                feedBeforeMarkdown: $paths,
+            );
+        }
+
+        $content = isset($data['content']) && is_array($data['content']) ? $data['content'] : [];
+        $feed = isset($data['feed']) && is_array($data['feed']) ? $data['feed'] : [];
+
+        return new ProcessorConfig(
+            discover: false,
+            contentBeforeMarkdown: self::parseProcessorPathList($content['before_markdown'] ?? []),
+            contentAfterMarkdown: self::parseProcessorPathList($content['after_markdown'] ?? []),
+            feedBeforeMarkdown: self::parseProcessorPathList($feed['before_markdown'] ?? []),
+            feedAfterMarkdown: self::parseProcessorPathList($feed['after_markdown'] ?? []),
+        );
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function parseProcessorPathList(mixed $data): array
+    {
+        if (is_string($data)) {
+            $data = [$data];
+        }
+
+        if (!is_array($data)) {
+            return [];
+        }
+
+        $paths = [];
+        foreach ($data as $path) {
+            if (is_string($path) && trim($path) !== '') {
+                $paths[] = trim($path);
+            }
+        }
+
+        return $paths;
     }
 
     /**

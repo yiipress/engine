@@ -40,5 +40,6 @@ final readonly class SiteConfig
         public bool $authorPages = false,
         public bool $minify = true,
         public array $data = [],
+        public ProcessorConfig $processors = new ProcessorConfig(),
     ) {}
 }

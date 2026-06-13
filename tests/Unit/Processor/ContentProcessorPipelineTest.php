@@ -49,6 +49,36 @@ final class ContentProcessorPipelineTest extends TestCase
         assertSame('<p>baz</p>', $result);
     }
 
+    public function testCanInsertProcessorsBeforeMarkerProcessor(): void
+    {
+        $marker = new class implements ContentProcessorInterface {
+            public function process(string $content, Entry $entry): string
+            {
+                return $content . ' [marker]';
+            }
+        };
+
+        $pipeline = new ContentProcessorPipeline($marker);
+        $pipeline->insertBefore($marker::class, $this->createProcessor(fn(string $c) => $c . ' [before]'));
+
+        assertSame('start [before] [marker]', $pipeline->process('start', $this->createEntry()));
+    }
+
+    public function testCanInsertProcessorsAfterMarkerProcessor(): void
+    {
+        $marker = new class implements ContentProcessorInterface {
+            public function process(string $content, Entry $entry): string
+            {
+                return $content . ' [marker]';
+            }
+        };
+
+        $pipeline = new ContentProcessorPipeline($marker);
+        $pipeline->insertAfter($marker::class, $this->createProcessor(fn(string $c) => $c . ' [after]'));
+
+        assertSame('start [marker] [after]', $pipeline->process('start', $this->createEntry()));
+    }
+
     public function testCollectHeadAssetsFromAssetAwareProcessors(): void
     {
         $assetProcessor = new class implements ContentProcessorInterface, AssetProcessorInterface {

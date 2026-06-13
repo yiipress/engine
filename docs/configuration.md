@@ -74,6 +74,7 @@ editor: code
 - **toc** — generate a table of contents from headings (default: `true`); set to `false` to disable globally. When enabled, heading tags receive `id` attributes and a `$toc` variable is passed to templates
 - **search** — opt-in client-side search (see below)
 - **related** — opt-in related content suggestions (see below)
+- **processors** — project-level content processor loading (see [Plugins](plugins.md#project-processors))
 - **minify** — minify generated HTML output and copied CSS/JavaScript assets (default: `true`); set to `false` to keep rendered template and asset whitespace
 - **last_updated** — set to `true` to show each entry source file's last modification time below its content (default: `false`)
 - **edit_page** — URL template for an optional "Edit this page" link below entry content (see below)

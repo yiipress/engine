@@ -219,44 +219,37 @@ Both shortcode processors support:
 - Double quotes, single quotes, or no quotes for attribute values (no spaces)
 - Case-insensitive shortcode names
 
-### Project Shortcodes
+### Project Processors
 
-Static binary users can define site-level shortcodes without editing Yii3 DI configuration. Create PHP templates in `content/shortcodes/` and call them from Markdown with Hugo-style syntax:
+Static binary users can add site-level content processors without editing Yii3 DI configuration. Put PHP processor files in `content/processors/`; files matching `*.php` are discovered automatically, sorted by filename, and inserted before Markdown rendering in both the page and feed pipelines.
 
-```markdown
-{{< badge label="Stable" >}}
-
-{{< callout title="Note" >}}
-Markdown **inside** the shortcode stays available to the template.
-{{< /callout >}}
-```
-
-Template files are named after the shortcode:
+Each file must return either a `YiiPress\Processor\ContentProcessorInterface` instance or a callable with the same shape:
 
 ```php
 <?php
-// content/shortcodes/badge.php
-return '**' . ($attributes['label'] ?? '') . '**';
+
+use YiiPress\Content\Model\Entry;
+
+return static function (string $content, Entry $entry): string {
+    return str_replace('[badge:stable]', '**Stable**', $content);
+};
 ```
 
-```php
-<?php
-// content/shortcodes/callout.php
-?>
-<aside class="callout">
-    <strong><?= htmlspecialchars($attributes['title'] ?? '', ENT_QUOTES | ENT_SUBSTITUTE) ?></strong>
-    <?= $content ?>
-</aside>
+For more control, configure processors explicitly in `content/config.yaml`:
+
+```yaml
+processors:
+  content:
+    before_markdown:
+      - processors/badge.php
+    after_markdown:
+      - processors/html-postprocess.php
+  feed:
+    before_markdown:
+      - processors/badge.php
 ```
 
-Shortcode templates receive:
-
-- `$name` — shortcode name
-- `$attributes` — parsed key/value attributes
-- `$content` — block shortcode inner content, or an empty string for inline shortcodes
-- `$entry` — current `YiiPress\Content\Model\Entry`
-
-Templates may return a string or echo output. The result is inserted before Markdown rendering, so templates can emit either Markdown or HTML. Unknown shortcodes are left unchanged.
+Use `before_markdown` for processors that transform Markdown syntax. Use `after_markdown` for processors that transform rendered HTML. Processor paths are resolved from the content directory and must stay inside it. If the `processors` config key is omitted, YiiPress discovers `content/processors/*.php`; if `processors` contains a list or structured config, YiiPress uses only those files. Set `processors: false` to disable project processors.
 
 ### TweetProcessor
 

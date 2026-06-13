@@ -37,6 +37,7 @@ use YiiPress\Content\Model\Author;
 use YiiPress\Content\Model\Collection;
 use YiiPress\Content\Model\Entry;
 use YiiPress\Content\Model\Navigation;
+use YiiPress\Content\Model\ProcessorConfig;
 use YiiPress\Content\Model\SiteConfig;
 use YiiPress\Content\I18n\TranslationIndex;
 use YiiPress\Content\Parser\ContentParser;
@@ -50,6 +51,8 @@ use YiiPress\Hook\BuildFinishedEvent;
 use YiiPress\Hook\BuildStartedEvent;
 use YiiPress\I18n\UiText;
 use YiiPress\Processor\ContentProcessorPipeline;
+use YiiPress\Processor\MarkdownProcessor;
+use YiiPress\Processor\ProjectProcessorLoader;
 use YiiPress\RuntimePaths;
 use DateTimeImmutable;
 use FilesystemIterator;
@@ -78,6 +81,7 @@ use function array_values;
 use function ctype_digit;
 use function explode;
 use function file_get_contents;
+use function glob;
 use function hash;
 use function hrtime;
 use function implode;
@@ -91,6 +95,7 @@ use function number_format;
 use function pathinfo;
 use function preg_match;
 use function range;
+use function realpath;
 use function shell_exec;
 use function round;
 use function sort;
@@ -225,6 +230,19 @@ final class BuildCommand extends Command
             $this->themeRegistry->register(new Theme('local', $localTemplatesDir));
         }
 
+        $parser = new ContentParser();
+        try {
+            $siteConfig = $parser->parseSiteConfig($contentDir);
+            $this->configureProjectProcessors($contentDir, $siteConfig);
+            $this->contentPipeline->applySiteConfig($siteConfig);
+            $this->feedPipeline->applySiteConfig($siteConfig);
+        } catch (FriendlyExceptionInterface $e) {
+            $this->writeFriendlyException($output, $e);
+            $this->writeProfile($output, $profile);
+
+            return ExitCode::DATAERR;
+        }
+
         $contentAssetCopier = new ContentAssetCopier();
         $themeAssetCopier = new ThemeAssetCopier();
         $contentAssetMappings = $contentAssetCopier->mappings($contentDir);
@@ -253,7 +271,11 @@ final class BuildCommand extends Command
                 $configFiles = $manifest->configFiles();
                 $allSourceFiles = $manifest->sourceFiles();
             } else {
-                $sourceInventory = $this->collectSourceInventory($contentDir, array_keys($allAssetMappings));
+                $sourceInventory = $this->collectSourceInventory(
+                    $contentDir,
+                    array_keys($allAssetMappings),
+                    $siteConfig->processors,
+                );
                 $configFiles = $sourceInventory['configFiles'];
                 $allSourceFiles = $sourceInventory['allSourceFiles'];
             }
@@ -322,7 +344,11 @@ final class BuildCommand extends Command
 
         try {
         if ($manifest !== null && $allSourceFiles === []) {
-            $sourceInventory = $this->collectSourceInventory($contentDir, array_keys($allAssetMappings));
+            $sourceInventory = $this->collectSourceInventory(
+                $contentDir,
+                array_keys($allAssetMappings),
+                $siteConfig->processors,
+            );
             $configFiles = $sourceInventory['configFiles'];
             $allSourceFiles = $sourceInventory['allSourceFiles'];
         }
@@ -330,11 +356,7 @@ final class BuildCommand extends Command
         $output->writeln('<info>Parsing content...</info>');
         $profile->switchTo('parse content');
 
-        $parser = new ContentParser();
         try {
-            $siteConfig = $parser->parseSiteConfig($contentDir);
-            $this->contentPipeline->applySiteConfig($siteConfig);
-            $this->feedPipeline->applySiteConfig($siteConfig);
             $navigation = $parser->parseNavigation($contentDir);
             $collections = $parser->parseCollections($contentDir);
             $rootCollection = $parser->parseRootCollection($contentDir);
@@ -1795,12 +1817,25 @@ final class BuildCommand extends Command
         return true;
     }
 
+    private function configureProjectProcessors(string $contentDir, SiteConfig $siteConfig): void
+    {
+        $processors = (new ProjectProcessorLoader($contentDir, $contentDir . '/config.yaml'))->load($siteConfig->processors);
+
+        $this->contentPipeline->insertBefore(MarkdownProcessor::class, ...$processors->contentBeforeMarkdown);
+        $this->contentPipeline->insertAfter(MarkdownProcessor::class, ...$processors->contentAfterMarkdown);
+        $this->feedPipeline->insertBefore(MarkdownProcessor::class, ...$processors->feedBeforeMarkdown);
+        $this->feedPipeline->insertAfter(MarkdownProcessor::class, ...$processors->feedAfterMarkdown);
+    }
+
     /**
      * @param list<string> $assetSourceFiles
      * @return array{allSourceFiles: list<string>, configFiles: list<string>}
      */
-    private function collectSourceInventory(string $contentDir, array $assetSourceFiles): array
-    {
+    private function collectSourceInventory(
+        string $contentDir,
+        array $assetSourceFiles,
+        ProcessorConfig $processorConfig,
+    ): array {
         $configFiles = array_filter([
             $contentDir . '/config.yaml',
             $contentDir . '/_collection.yaml',
@@ -1845,7 +1880,8 @@ final class BuildCommand extends Command
         }
 
         $templateFiles = $this->collectTemplateFiles();
-        $configFiles = array_values(array_unique([...$configFiles, ...$templateFiles]));
+        $processorFiles = $this->collectProjectProcessorFiles($contentDir, $processorConfig);
+        $configFiles = array_values(array_unique([...$configFiles, ...$templateFiles, ...$processorFiles]));
         sort($configFiles);
         sort($contentFiles);
         sort($assetSourceFiles);
@@ -1980,6 +2016,46 @@ final class BuildCommand extends Command
         sort($files);
 
         return $files;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function collectProjectProcessorFiles(string $contentDir, ProcessorConfig $processorConfig): array
+    {
+        $files = [];
+
+        if ($processorConfig->discover) {
+            $discoveredFiles = glob($contentDir . '/processors/*.php', GLOB_NOSORT);
+            if ($discoveredFiles !== false) {
+                $files = [...$files, ...$discoveredFiles];
+            }
+        }
+
+        foreach ($this->configuredProjectProcessorPaths($processorConfig) as $path) {
+            $realPath = realpath(str_starts_with($path, '/') ? $path : $contentDir . '/' . $path);
+            if ($realPath !== false && is_file($realPath)) {
+                $files[] = $realPath;
+            }
+        }
+
+        $files = array_values(array_unique($files));
+        sort($files);
+
+        return $files;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function configuredProjectProcessorPaths(ProcessorConfig $processorConfig): array
+    {
+        return [
+            ...$processorConfig->contentBeforeMarkdown,
+            ...$processorConfig->contentAfterMarkdown,
+            ...$processorConfig->feedBeforeMarkdown,
+            ...$processorConfig->feedAfterMarkdown,
+        ];
     }
 
     /**

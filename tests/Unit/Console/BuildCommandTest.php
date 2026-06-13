@@ -35,6 +35,7 @@ use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertMatchesRegularExpression;
 use function PHPUnit\Framework\assertStringContainsString;
 use function PHPUnit\Framework\assertStringNotContainsString;
+use function substr_count;
 
 final class BuildCommandTest extends TestCase
 {
@@ -191,6 +192,56 @@ PHP,
         assertNotFalse($html);
         assertStringContainsString('class="brand-theme"', $html);
         assertStringContainsString('Project theme content.', $html);
+    }
+
+    public function testBuildAppliesProjectProcessors(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/yiipress-build-project-processor-test-' . uniqid();
+        $contentDir = $tempDir . '/content';
+        $outputDir = $tempDir . '/output';
+        mkdir($contentDir . '/processors', 0o755, true);
+        $this->tempContentDirs[] = $tempDir;
+
+        file_put_contents($contentDir . '/config.yaml', "title: Processor Site\nbase_url: https://example.com\nlanguages: [en]\n");
+        file_put_contents($contentDir . '/index.md', "---\ntitle: Home\n---\n\nStatus: [badge]\n");
+        file_put_contents(
+            $contentDir . '/processors/badge.php',
+            '<?php return static fn(string $content): string => str_replace("[badge]", "**Stable**", $content) . "\n\nProcessor marker.";',
+        );
+
+        $themeRegistry = new ThemeRegistry();
+        $themeRegistry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
+        $templateResolver = new TemplateResolver($themeRegistry);
+        $command = new BuildCommand(
+            rootPath: $tempDir,
+            contentPipeline: new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())),
+            feedPipeline: new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())),
+            themeRegistry: $themeRegistry,
+            templateResolver: $templateResolver,
+        );
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--content-dir' => $contentDir,
+            '--output-dir' => $outputDir,
+            '--workers' => '1',
+            '--no-cache' => true,
+        ]);
+
+        assertSame(0, $exitCode, $tester->getDisplay());
+
+        $exitCode = $tester->execute([
+            '--content-dir' => $contentDir,
+            '--output-dir' => $outputDir,
+            '--workers' => '1',
+            '--no-cache' => true,
+        ]);
+
+        assertSame(0, $exitCode, $tester->getDisplay());
+        $html = file_get_contents($outputDir . '/index/index.html');
+        assertNotFalse($html);
+        assertStringContainsString('<p>Status: <strong>Stable</strong></p>', $html);
+        assertSame(1, substr_count($html, '<p>Processor marker.</p>'));
     }
 
     public function testBuildReportsInvalidSiteConfigWithoutTrace(): void
