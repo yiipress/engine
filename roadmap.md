@@ -109,6 +109,6 @@
 - [ ] WordPress
 - [ ] Jekyll
 - [ ] Hugo
-- [ ] Medium exported Markdown
+- [x] Medium exported Markdown
 - [ ] Ghost
 - [x] Telegram export
