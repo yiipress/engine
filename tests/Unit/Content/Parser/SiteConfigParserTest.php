@@ -54,6 +54,19 @@ final class SiteConfigParserTest extends TestCase
         unlink($filePath);
     }
 
+    public function testParseLlmsTxtConfigCanDisableGeneration(): void
+    {
+        $filePath = sys_get_temp_dir() . '/yiipress-site-config-' . uniqid() . '.yaml';
+        file_put_contents($filePath, "title: Test\nlanguages: [en]\nllms_txt: false\n");
+
+        $parser = new SiteConfigParser();
+        $config = $parser->parse($filePath);
+
+        assertFalse($config->llmsTxt);
+
+        unlink($filePath);
+    }
+
     public function testParseAssetConfigCanDisableFingerprinting(): void
     {
         $filePath = sys_get_temp_dir() . '/yiipress-site-config-' . uniqid() . '.yaml';

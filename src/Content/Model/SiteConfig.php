@@ -38,5 +38,6 @@ final readonly class SiteConfig
         public ?string $reportIssueUrl = null,
         public bool $authorPages = false,
         public bool $minify = true,
+        public bool $llmsTxt = true,
     ) {}
 }

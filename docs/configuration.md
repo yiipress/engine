@@ -45,6 +45,7 @@ assets:
   fingerprint: true
 
 minify: true
+llms_txt: true
 
 last_updated: true
 edit_page: https://github.com/example/mysite/edit/main/content/{path}
@@ -75,6 +76,7 @@ editor: code
 - **search** — opt-in client-side search (see below)
 - **related** — opt-in related content suggestions (see below)
 - **minify** — minify generated HTML output (default: `true`); set to `false` to keep rendered template whitespace
+- **llms_txt** — generate `llms.txt`, an LLM-friendly Markdown index of site content (default: `true`)
 - **last_updated** — set to `true` to show each entry source file's last modification time below its content (default: `false`)
 - **edit_page** — URL template for an optional "Edit this page" link below entry content (see below)
 - **report_issue** — URL template for an optional "Report an issue" link below entry content (see below)

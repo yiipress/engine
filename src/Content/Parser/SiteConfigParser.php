@@ -89,6 +89,7 @@ final class SiteConfigParser
             reportIssueUrl: self::parseOptionalString($data['report_issue'] ?? null),
             authorPages: (bool) ($data['author_pages'] ?? false),
             minify: (bool) ($data['minify'] ?? true),
+            llmsTxt: (bool) ($data['llms_txt'] ?? true),
         );
     }
 

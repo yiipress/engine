@@ -13,6 +13,7 @@ use YiiPress\Build\BuildProfile;
 use YiiPress\Build\CollectionListingWriter;
 use YiiPress\Build\ContentAssetCopier;
 use YiiPress\Build\DateArchiveWriter;
+use YiiPress\Build\LlmsTxtGenerator;
 use YiiPress\Build\NotFoundPageWriter;
 use YiiPress\Build\NavigationPager;
 use YiiPress\Build\RedirectPageWriter;
@@ -790,6 +791,12 @@ final class BuildCommand extends Command
             $output->writeln('  Search index generated.');
         }
 
+        if ($siteConfig->llmsTxt) {
+            $llmsTxtGenerator = new LlmsTxtGenerator();
+            $llmsTxtGenerator->generate($siteConfig, $collections, $entriesByCollection, $outputDir, $standalonePages, $noWrite);
+            $output->writeln('  llms.txt generated.');
+        }
+
         if ($siteConfig->taxonomies !== []) {
             $profile->switchTo('write taxonomy pages');
             $allEntries = array_merge(...array_values($entriesByCollection));
@@ -1161,6 +1168,10 @@ final class BuildCommand extends Command
 
         if ($siteConfig->search !== null) {
             $files[] = $outputDir . '/search-index.json';
+        }
+
+        if ($siteConfig->llmsTxt) {
+            $files[] = $outputDir . '/llms.txt';
         }
 
         if ($siteConfig->taxonomies !== []) {
