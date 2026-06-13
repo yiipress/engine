@@ -25,6 +25,18 @@ final class TemplateHelpers
             $variables['url'] = static fn (string $path): string => UrlResolver::sitePath($path, $rootPath);
         }
 
+        if (!isset($variables['themeAsset'])) {
+            $themeName = (string) ($variables['themeName'] ?? '');
+            $rootPath = (string) ($variables['rootPath'] ?? '');
+            $assetManifest = $variables['assetManifest'] ?? null;
+            $variables['themeAsset'] = static fn (string $path): string => Asset::themeUrl(
+                $path,
+                $themeName,
+                $rootPath,
+                $assetManifest instanceof AssetFingerprintManifest ? $assetManifest : null,
+            );
+        }
+
         $ui = $variables['ui'] ?? null;
         if ($ui instanceof UiText && !isset($variables['t'])) {
             $variables['t'] = static fn (string $key, array $params = []): string => $ui->get($key, $params);

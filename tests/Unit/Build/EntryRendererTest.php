@@ -486,8 +486,8 @@ PHP);
         assertStringContainsString('id="search-close"', $html);
         assertStringContainsString('data-ui-attr-aria-label="search_close"', $html);
         assertStringContainsString('<span class="search-hint" aria-hidden="true">ESC</span>', $html);
-        assertStringContainsString('assets/theme/search.css', $html);
-        assertStringContainsString('assets/theme/search.js', $html);
+        assertStringContainsString('assets/themes/minimal/search.css', $html);
+        assertStringContainsString('assets/themes/minimal/search.js', $html);
     }
 
     public function testRenderHooksCanObserveAndModifyRenderedHtml(): void
