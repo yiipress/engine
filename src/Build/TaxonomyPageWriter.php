@@ -11,6 +11,10 @@ use YiiPress\Content\Model\SiteConfig;
 use YiiPress\Content\PermalinkResolver;
 use RuntimeException;
 
+use function array_chunk;
+use function count;
+use function rtrim;
+
 final readonly class TaxonomyPageWriter
 {
     public function __construct(
@@ -44,8 +48,7 @@ final readonly class TaxonomyPageWriter
             $pageCount++;
 
             foreach ($terms as $term => $entries) {
-                $this->writeTermPage($renderer, $siteConfig, $taxonomyName, (string) $term, $entries, $collections, $outputDir, $navigation, $noWrite);
-                $pageCount++;
+                $pageCount += $this->writeTermPages($renderer, $siteConfig, $taxonomyName, (string) $term, $entries, $collections, $outputDir, $navigation, $noWrite);
             }
         }
 
@@ -93,7 +96,7 @@ final readonly class TaxonomyPageWriter
      * @param list<Entry> $entries
      * @param array<string, Collection> $collections
      */
-    private function writeTermPage(
+    private function writeTermPages(
         PageTemplateRenderer $renderer,
         SiteConfig $siteConfig,
         string $taxonomyName,
@@ -103,47 +106,88 @@ final readonly class TaxonomyPageWriter
         string $outputDir,
         ?Navigation $navigation,
         bool $noWrite,
-    ): void {
-        $rootPath = UrlResolver::rootPath('/' . $taxonomyName . '/' . $term . '/');
+    ): int {
+        $perPage = $siteConfig->entriesPerPage;
+        if ($perPage <= 0) {
+            $perPage = count($entries) ?: 1;
+        }
+
+        $pages = array_chunk($entries, $perPage);
+        $totalPages = count($pages);
+        $pageCount = 0;
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
         $taxonomyLabel = $uiViewData->ui->taxonomyLabel($taxonomyName);
 
-        $entryData = [];
-        foreach ($entries as $entry) {
-            $collection = $collections[$entry->collection] ?? null;
-            $url = $collection !== null
-                ? UrlResolver::sitePath(PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n), $rootPath)
-                : '#';
+        foreach ($pages as $pageIndex => $pageEntries) {
+            $pageNumber = $pageIndex + 1;
+            $permalink = $this->termPagePermalink($taxonomyName, $term, $pageNumber);
+            $rootPath = UrlResolver::rootPath($permalink);
 
-            $entryData[] = [
-                'title' => $entry->title,
-                'url' => $url,
-                'date' => $entry->date?->format($siteConfig->dateFormat) ?? '',
-            ];
-        }
+            $entryData = [];
+            foreach ($pageEntries as $entry) {
+                $collection = $collections[$entry->collection] ?? null;
+                $url = $collection !== null
+                    ? UrlResolver::sitePath(PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n), $rootPath)
+                    : '#';
 
-        $entries = $entryData;
-
-        $html = $renderer->render('taxonomy_term', [
-            'siteTitle' => $siteConfig->title,
-            'taxonomyName' => $taxonomyName,
-            'term' => $term,
-            'entries' => $entries,
-            'nav' => $navigation,
-            'rootPath' => $rootPath,
-            'language' => $siteConfig->defaultLanguage,
-            'metaTags' => MetaTagsBuilder::forPage($siteConfig, $term . ' — ' . $taxonomyLabel, $siteConfig->description, '/' . $taxonomyName . '/' . $term . '/'),
-            'search' => $siteConfig->search !== null,
-            'searchResults' => $siteConfig->search?->results ?? 10,
-        ] + $uiViewData->toArray(), $rootPath);
-
-        if (!$noWrite) {
-            $dir = $outputDir . '/' . $taxonomyName . '/' . $term;
-            if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
-                throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
+                $entryData[] = [
+                    'title' => $entry->title,
+                    'url' => $url,
+                    'date' => $entry->date?->format($siteConfig->dateFormat) ?? '',
+                ];
             }
 
-            file_put_contents($dir . '/index.html', $html);
+            $pagination = [
+                'currentPage' => $pageNumber,
+                'totalPages' => $totalPages,
+                'previousUrl' => $this->resolveTermPageUrl($taxonomyName, $term, $pageNumber - 1, $totalPages, $rootPath),
+                'nextUrl' => $this->resolveTermPageUrl($taxonomyName, $term, $pageNumber + 1, $totalPages, $rootPath),
+            ];
+
+            $html = $renderer->render('taxonomy_term', [
+                'siteTitle' => $siteConfig->title,
+                'taxonomyName' => $taxonomyName,
+                'term' => $term,
+                'entries' => $entryData,
+                'pagination' => $pagination,
+                'nav' => $navigation,
+                'rootPath' => $rootPath,
+                'language' => $siteConfig->defaultLanguage,
+                'metaTags' => MetaTagsBuilder::forPage($siteConfig, $term . ' — ' . $taxonomyLabel, $siteConfig->description, $permalink),
+                'search' => $siteConfig->search !== null,
+                'searchResults' => $siteConfig->search?->results ?? 10,
+            ] + $uiViewData->toArray(), $rootPath);
+
+            if (!$noWrite) {
+                $dir = $outputDir . rtrim($permalink, '/');
+                if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
+                    throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
+                }
+
+                file_put_contents($dir . '/index.html', $html);
+            }
+
+            $pageCount++;
         }
+
+        return $pageCount;
+    }
+
+    private function termPagePermalink(string $taxonomyName, string $term, int $pageNumber): string
+    {
+        if ($pageNumber === 1) {
+            return '/' . $taxonomyName . '/' . $term . '/';
+        }
+
+        return '/' . $taxonomyName . '/' . $term . '/page/' . $pageNumber . '/';
+    }
+
+    private function resolveTermPageUrl(string $taxonomyName, string $term, int $pageNumber, int $totalPages, string $rootPath): string
+    {
+        if ($pageNumber < 1 || $pageNumber > $totalPages) {
+            return '';
+        }
+
+        return UrlResolver::sitePath($this->termPagePermalink($taxonomyName, $term, $pageNumber), $rootPath);
     }
 }

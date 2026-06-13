@@ -856,6 +856,38 @@ final class BuildCommandTest extends TestCase
         assertFalse(is_dir($this->outputDir));
     }
 
+    public function testDryRunListsPaginatedTaxonomyFiles(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/yiipress-dry-run-taxonomy-test-' . uniqid();
+        $contentDir = $tempDir . '/content';
+        $outputDir = $tempDir . '/output';
+        mkdir($contentDir . '/blog', 0o755, true);
+        $this->tempContentDirs[] = $tempDir;
+
+        file_put_contents($contentDir . '/config.yaml', "title: Taxonomy Site\nlanguages: [en]\nentries_per_page: 2\ntaxonomies: [tags]\n");
+        file_put_contents($contentDir . '/blog/_collection.yaml', "title: Blog\npermalink: /blog/:slug/\n");
+        file_put_contents($contentDir . '/blog/first.md', "---\ntitle: First\ntags: [php]\n---\n\nFirst.\n");
+        file_put_contents($contentDir . '/blog/second.md', "---\ntitle: Second\ntags: [php]\n---\n\nSecond.\n");
+        file_put_contents($contentDir . '/blog/third.md', "---\ntitle: Third\ntags: [php]\n---\n\nThird.\n");
+
+        $yii = dirname(__DIR__, 3) . '/yii';
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($outputDir)
+            . ' --dry-run'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+        $outputText = implode("\n", $output);
+
+        assertSame(0, $exitCode, "Dry run failed: $outputText");
+        assertStringContainsString('/tags/php/index.html', $outputText);
+        assertStringContainsString('/tags/php/page/2/index.html', $outputText);
+        assertFalse(is_dir($outputDir));
+    }
+
     public function testIncrementalBuildSkipsUnchangedEntries(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';

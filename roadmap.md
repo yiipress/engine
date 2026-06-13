@@ -31,6 +31,7 @@
 - [x] Date-based archive pages (yearly, monthly)
 - [x] Cross-references / internal linking helpers (shorthand syntax to link between entries, prevents broken links on permalink changes)
 - [x] Markdown extensions configuration (enable/disable footnotes, definition lists, strikethrough, tables, etc.)
+- [x] Taxonomy term pagination
 
 ## Priority 2: Documentation
 
