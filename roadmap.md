@@ -64,6 +64,7 @@
 ## Priority 4: Templates and theming
 
 - [x] Theme system — installable/distributable themes
+- [x] Auto-register project themes from `themes/<name>/` for binary users
 - [x] Template partials/includes support
 - [x] Template helper functions documentation
 - [x] Multiple layout support (per-entry layout selection via front matter)

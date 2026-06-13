@@ -15,6 +15,7 @@ use YiiPress\Build\ContentAssetCopier;
 use YiiPress\Build\DateArchiveWriter;
 use YiiPress\Build\NotFoundPageWriter;
 use YiiPress\Build\NavigationPager;
+use YiiPress\Build\ProjectThemeDiscovery;
 use YiiPress\Build\RedirectPageWriter;
 use YiiPress\Build\RobotsTxtGenerator;
 use YiiPress\Build\SearchIndexGenerator;
@@ -218,6 +219,8 @@ final class BuildCommand extends Command
             $output->writeln("<error>Content directory not found: $contentDir</error>");
             return ExitCode::DATAERR;
         }
+
+        (new ProjectThemeDiscovery())->register($this->themeRegistry, $rootPath . '/themes');
 
         $localTemplatesDir = $contentDir . '/templates';
         if (is_dir($localTemplatesDir)) {

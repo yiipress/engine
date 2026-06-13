@@ -143,6 +143,55 @@ final class BuildCommandTest extends TestCase
         assertFileExists($outputDir . '/index/index.html');
     }
 
+    public function testBuildAutoRegistersProjectThemes(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/yiipress-build-project-theme-test-' . uniqid();
+        $contentDir = $tempDir . '/content';
+        $outputDir = $tempDir . '/output';
+        $themeDir = $tempDir . '/themes/docs';
+        mkdir($contentDir, 0o755, true);
+        mkdir($themeDir, 0o755, true);
+        $this->tempContentDirs[] = $tempDir;
+
+        file_put_contents($contentDir . '/config.yaml', "title: Themed Site\nbase_url: https://example.com\nlanguages: [en]\ntheme: docs\n");
+        file_put_contents($contentDir . '/index.md', "---\ntitle: Home\npermalink: /\n---\n\nProject theme content.\n");
+        file_put_contents(
+            $themeDir . '/entry.php',
+            <<<'PHP'
+<?php
+declare(strict_types=1);
+?>
+<html><body class="docs-theme"><?= $content ?></body></html>
+PHP,
+        );
+
+        $themeRegistry = new ThemeRegistry();
+        $themeRegistry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
+        $templateResolver = new TemplateResolver($themeRegistry);
+        $pipeline = new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer()));
+        $command = new BuildCommand(
+            rootPath: $tempDir,
+            contentPipeline: $pipeline,
+            feedPipeline: new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())),
+            themeRegistry: $themeRegistry,
+            templateResolver: $templateResolver,
+        );
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--content-dir' => $contentDir,
+            '--output-dir' => $outputDir,
+            '--workers' => '1',
+            '--no-cache' => true,
+        ]);
+
+        assertSame(0, $exitCode, $tester->getDisplay());
+        $html = file_get_contents($outputDir . '/index.html');
+        assertNotFalse($html);
+        assertStringContainsString('class="docs-theme"', $html);
+        assertStringContainsString('Project theme content.', $html);
+    }
+
     public function testBuildReportsInvalidSiteConfigWithoutTrace(): void
     {
         $tempDir = sys_get_temp_dir() . '/yiipress-build-invalid-config-test-' . uniqid();
