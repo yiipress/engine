@@ -343,6 +343,20 @@ final class BuildCommandTest extends TestCase
         assertStringContainsString('<rss version="2.0"', $rss);
         assertStringContainsString('<title>Test Post</title>', $rss);
         assertStringContainsString('<content:encoded>', $rss);
+
+        $siteAtomFile = $this->outputDir . '/feed.xml';
+        assertFileExists($siteAtomFile);
+        $siteAtom = file_get_contents($siteAtomFile);
+        assertStringContainsString('<title>Test Site</title>', $siteAtom);
+        assertStringContainsString('<link href="https://test.example.com/feed.xml" rel="self" type="application/atom+xml"/>', $siteAtom);
+        assertStringContainsString('<title>Test Post</title>', $siteAtom);
+
+        $siteRssFile = $this->outputDir . '/rss.xml';
+        assertFileExists($siteRssFile);
+        $siteRss = file_get_contents($siteRssFile);
+        assertStringContainsString('<title>Test Site</title>', $siteRss);
+        assertStringContainsString('<atom:link href="https://test.example.com/rss.xml" rel="self" type="application/rss+xml"/>', $siteRss);
+        assertStringContainsString('<title>Test Post</title>', $siteRss);
     }
 
     public function testFeedEntriesAreSortedChronologically(): void
@@ -851,6 +865,8 @@ final class BuildCommandTest extends TestCase
         assertSame(0, $exitCode, "Dry run failed: $outputText");
         assertStringContainsString('Dry run', $outputText);
         assertStringContainsString('index.html', $outputText);
+        assertStringContainsString('/feed.xml', $outputText);
+        assertStringContainsString('/rss.xml', $outputText);
         assertStringContainsString('sitemap.xml', $outputText);
         assertStringContainsString('Total:', $outputText);
         assertFalse(is_dir($this->outputDir));
