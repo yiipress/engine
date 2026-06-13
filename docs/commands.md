@@ -178,7 +178,7 @@ Imports content from external sources into a YiiPress collection.
 
 **Arguments:**
 
-- `source` — source type to import from (required). Currently supported: `jekyll`, `telegram`.
+- `source` — source type to import from (required). Currently supported: `hugo`, `jekyll`, `telegram`.
 
 **Common options:**
 
@@ -248,6 +248,32 @@ If `title` is missing, it is inferred from the first `# Heading` in the post bod
 ```bash
 ./yiipress import jekyll --directory=/path/to/jekyll-site
 ./yiipress import jekyll --directory=../old-blog --collection=blog
+```
+
+### Hugo import
+
+Imports Markdown content from a Hugo site directory. The importer scans `content/posts/`, then `content/post/`, then `content/`, reads `.md` files recursively, and writes YiiPress markdown files into the target collection.
+
+**Importer options:**
+
+- `--directory` — path to the Hugo site directory (required). Absolute or relative to project root.
+
+The importer supports YAML (`---`) and simple TOML (`+++`) front matter and preserves:
+
+- `title`
+- `date`
+- `url` / `permalink`
+- `draft`
+- `tags`
+- `categories`
+
+If `title` is missing, it is inferred from the first `# Heading` in the post body and then from the filename slug. If `date` is missing, filenames starting with `YYYY-MM-DD-` provide the date.
+
+**Examples:**
+
+```bash
+./yiipress import hugo --directory=/path/to/hugo-site
+./yiipress import hugo --directory=../old-hugo-site --collection=blog
 ```
 
 ### Adding custom importers
