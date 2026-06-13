@@ -128,6 +128,7 @@ This generates static HTML in the `output/` directory:
 output/
 ├── blog/
 │   ├── feed.xml
+│   ├── feed.json
 │   ├── hello-world/
 │   │   └── index.html
 │   ├── rss.xml
