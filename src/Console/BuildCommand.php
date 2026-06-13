@@ -101,6 +101,7 @@ use function strtolower;
 use function substr;
 use function strlen;
 use function trim;
+use function usort;
 use function yaml_parse;
 
 #[AsCommand(
@@ -848,16 +849,19 @@ final class BuildCommand extends Command
         /** @var list<array{collectionName: string, collection: Collection, entries: list<Entry>}> $feedTasks */
         $profile->switchTo('write feeds');
         $feedTasks = [];
+        $siteFeedEntries = [];
         foreach ($collections as $collectionName => $collection) {
             if (!$collection->feed) {
                 continue;
             }
 
+            $collectionEntries = $entriesByCollection[$collectionName] ?? [];
             $feedTasks[] = [
                 'collectionName' => $collectionName,
                 'collection' => $collection,
-                'entries' => $entriesByCollection[$collectionName] ?? [],
+                'entries' => $collectionEntries,
             ];
+            array_push($siteFeedEntries, ...$collectionEntries);
         }
 
         $feedCount = (new ParallelTaskRunner())->run(
@@ -905,6 +909,26 @@ final class BuildCommand extends Command
             },
             minTasksPerWorker: 1,
         );
+
+        if ($feedTasks !== []) {
+            usort(
+                $siteFeedEntries,
+                static fn (Entry $a, Entry $b): int => ($b->date?->getTimestamp() ?? -PHP_INT_MAX)
+                    <=> ($a->date?->getTimestamp() ?? -PHP_INT_MAX),
+            );
+
+            $feedGenerator = new FeedGenerator($this->feedPipeline, $authors);
+            if ($noWrite) {
+                $feedGenerator->generateSiteAtom($siteConfig, $collections, $siteFeedEntries);
+                $feedGenerator->generateSiteRss($siteConfig, $collections, $siteFeedEntries);
+                $feedGenerator->generateSiteJson($siteConfig, $collections, $siteFeedEntries);
+            } else {
+                $feedGenerator->writeSiteAtomFile($outputDir . '/feed.xml', $siteConfig, $collections, $siteFeedEntries);
+                $feedGenerator->writeSiteRssFile($outputDir . '/rss.xml', $siteConfig, $collections, $siteFeedEntries);
+                $feedGenerator->writeSiteJsonFile($outputDir . '/feed.json', $siteConfig, $collections, $siteFeedEntries);
+            }
+            $feedCount++;
+        }
 
         if ($feedCount > 0) {
             $output->writeln("  Feeds generated: <comment>$feedCount</comment> (Atom + RSS + JSON)");
@@ -1278,6 +1302,7 @@ final class BuildCommand extends Command
         $output->writeln('<info>Dry run — files that would be generated:</info>');
         $now = new DateTimeImmutable();
         $files = [];
+        $hasFeeds = false;
 
         foreach ($collections as $collectionName => $collection) {
             $entries = [];
@@ -1302,6 +1327,7 @@ final class BuildCommand extends Command
             }
 
             if ($collection->feed) {
+                $hasFeeds = true;
                 $files[] = $outputDir . '/' . $collectionName . '/feed.xml';
                 $files[] = $outputDir . '/' . $collectionName . '/rss.xml';
                 $files[] = $outputDir . '/' . $collectionName . '/feed.json';
@@ -1338,6 +1364,11 @@ final class BuildCommand extends Command
                     $files[] = $outputDir . '/' . $collectionName . '/' . $yearMonth . '/index.html';
                 }
             }
+        }
+        if ($hasFeeds) {
+            $files[] = $outputDir . '/feed.xml';
+            $files[] = $outputDir . '/rss.xml';
+            $files[] = $outputDir . '/feed.json';
         }
 
         foreach ($parser->parseStandalonePages($contentDir) as $page) {

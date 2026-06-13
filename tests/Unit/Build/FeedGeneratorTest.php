@@ -322,6 +322,154 @@ final class FeedGeneratorTest extends TestCase
         $this->assertSame(1, $processor->calls);
     }
 
+    public function testSiteFeedsUseSiteMetadataAndEntryCollections(): void
+    {
+        $news = new Collection(
+            name: 'news',
+            title: 'News',
+            description: 'News posts',
+            permalink: '/news/:slug/',
+            sortBy: 'date',
+            sortOrder: 'desc',
+            entriesPerPage: 10,
+            feed: true,
+            listing: true,
+        );
+        $entries = $this->createEntries();
+        $bodyLength = (int) filesize($this->tempFile);
+        $entries[] = new Entry(
+            filePath: $this->tempFile,
+            collection: 'news',
+            slug: 'release',
+            title: 'Release',
+            date: new DateTimeImmutable('2024-04-01'),
+            draft: false,
+            tags: [],
+            categories: [],
+            authors: [],
+            summary: 'Release summary.',
+            permalink: '',
+            layout: '',
+            theme: '',
+            weight: 0,
+            language: 'en',
+            redirectTo: '',
+            extra: [],
+            bodyOffset: 0,
+            bodyLength: $bodyLength,
+        );
+
+        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())));
+        $collections = ['blog' => $this->collection, 'news' => $news];
+
+        $atom = $generator->generateSiteAtom($this->siteConfig, $collections, $entries);
+        $rss = $generator->generateSiteRss($this->siteConfig, $collections, $entries);
+        $json = $generator->generateSiteJson($this->siteConfig, $collections, $entries);
+        $feed = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+
+        assertStringContainsString('<title>Test Site</title>', $atom);
+        assertStringContainsString('<link href="https://test.example.com/"/>', $atom);
+        assertStringContainsString('<link href="https://test.example.com/feed.xml" rel="self" type="application/atom+xml"/>', $atom);
+        assertStringContainsString('<link href="https://test.example.com/blog/first-post/"/>', $atom);
+        assertStringContainsString('<link href="https://test.example.com/news/release/"/>', $atom);
+
+        assertStringContainsString('<title>Test Site</title>', $rss);
+        assertStringContainsString('<link>https://test.example.com/</link>', $rss);
+        assertStringContainsString('<atom:link href="https://test.example.com/rss.xml" rel="self" type="application/rss+xml"/>', $rss);
+        assertStringContainsString('<link>https://test.example.com/news/release/</link>', $rss);
+
+        $this->assertSame('Test Site', $feed['title']);
+        $this->assertSame('https://test.example.com/', $feed['home_page_url']);
+        $this->assertSame('https://test.example.com/feed.json', $feed['feed_url']);
+        $this->assertSame('https://test.example.com/blog/first-post/', $feed['items'][0]['url']);
+        $this->assertSame('https://test.example.com/news/release/', $feed['items'][2]['url']);
+    }
+
+    public function testSiteFeedFilesCanBeWrittenDirectly(): void
+    {
+        $news = new Collection(
+            name: 'news',
+            title: 'News',
+            description: 'News posts',
+            permalink: '/news/:slug/',
+            sortBy: 'date',
+            sortOrder: 'desc',
+            entriesPerPage: 10,
+            feed: true,
+            listing: true,
+        );
+        $entries = $this->createEntries();
+        $bodyLength = (int) filesize($this->tempFile);
+        $entries[] = new Entry(
+            filePath: $this->tempFile,
+            collection: 'news',
+            slug: 'release',
+            title: 'Release',
+            date: new DateTimeImmutable('2024-04-01'),
+            draft: false,
+            tags: [],
+            categories: [],
+            authors: [],
+            summary: 'Release summary.',
+            permalink: '',
+            layout: '',
+            theme: '',
+            weight: 0,
+            language: 'en',
+            redirectTo: '',
+            extra: [],
+            bodyOffset: 0,
+            bodyLength: $bodyLength,
+        );
+
+        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())));
+        $collections = ['blog' => $this->collection, 'news' => $news];
+        $atomPath = sys_get_temp_dir() . '/yiipress-site-feed-atom-' . uniqid() . '.xml';
+        $rssPath = sys_get_temp_dir() . '/yiipress-site-feed-rss-' . uniqid() . '.xml';
+        $jsonPath = sys_get_temp_dir() . '/yiipress-site-feed-json-' . uniqid() . '.json';
+
+        try {
+            $generator->writeSiteAtomFile($atomPath, $this->siteConfig, $collections, $entries);
+            $generator->writeSiteRssFile($rssPath, $this->siteConfig, $collections, $entries);
+            $generator->writeSiteJsonFile($jsonPath, $this->siteConfig, $collections, $entries);
+
+            assertFileExists($atomPath);
+            assertFileExists($rssPath);
+            assertFileExists($jsonPath);
+
+            $atom = (string) file_get_contents($atomPath);
+            assertStringContainsString('<title>Test Site</title>', $atom);
+            assertStringContainsString('<link href="https://test.example.com/"/>', $atom);
+            assertStringContainsString('<link href="https://test.example.com/feed.xml" rel="self" type="application/atom+xml"/>', $atom);
+            assertStringContainsString('<link href="https://test.example.com/blog/first-post/"/>', $atom);
+            assertStringContainsString('<link href="https://test.example.com/news/release/"/>', $atom);
+
+            $rss = (string) file_get_contents($rssPath);
+            assertStringContainsString('<title>Test Site</title>', $rss);
+            assertStringContainsString('<link>https://test.example.com/</link>', $rss);
+            assertStringContainsString('<atom:link href="https://test.example.com/rss.xml" rel="self" type="application/rss+xml"/>', $rss);
+            assertStringContainsString('<link>https://test.example.com/news/release/</link>', $rss);
+
+            $feed = json_decode((string) file_get_contents($jsonPath), true, 512, JSON_THROW_ON_ERROR);
+            $this->assertSame('Test Site', $feed['title']);
+            $this->assertSame('https://test.example.com/', $feed['home_page_url']);
+            $this->assertSame('https://test.example.com/feed.json', $feed['feed_url']);
+            $this->assertSame('https://test.example.com/news/release/', $feed['items'][2]['url']);
+        } finally {
+            if (is_file($atomPath)) {
+                unlink($atomPath);
+            }
+
+            if (is_file($rssPath)) {
+                unlink($rssPath);
+            }
+
+            if (is_file($jsonPath)) {
+                unlink($jsonPath);
+            }
+        }
+    }
+
     public function testInlineTagLinksUseAbsolutePublicRootInFeedContent(): void
     {
         $siteConfig = new SiteConfig(

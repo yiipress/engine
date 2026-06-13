@@ -60,6 +60,55 @@ final class FeedGenerator
     }
 
     /**
+     * @param array<string, Collection> $collections
+     * @param list<Entry> $entries
+     */
+    public function generateSiteAtom(
+        SiteConfig $siteConfig,
+        array $collections,
+        array $entries,
+    ): string {
+        $xml = $this->createInMemoryWriter();
+        $collection = $this->siteFeedCollection($siteConfig);
+        $this->writeAtomDocument($xml, $siteConfig, $collection, $this->limitEntries($collection, $entries), $collections);
+
+        return $xml->outputMemory();
+    }
+
+    /**
+     * @param array<string, Collection> $collections
+     * @param list<Entry> $entries
+     */
+    public function generateSiteRss(
+        SiteConfig $siteConfig,
+        array $collections,
+        array $entries,
+    ): string {
+        $xml = $this->createInMemoryWriter();
+        $collection = $this->siteFeedCollection($siteConfig);
+        $this->writeRssDocument($xml, $siteConfig, $collection, $this->limitEntries($collection, $entries), $collections);
+
+        return $xml->outputMemory();
+    }
+
+    /**
+     * @param array<string, Collection> $collections
+     * @param list<Entry> $entries
+     */
+    public function generateSiteJson(
+        SiteConfig $siteConfig,
+        array $collections,
+        array $entries,
+    ): string {
+        $collection = $this->siteFeedCollection($siteConfig);
+
+        return json_encode(
+            $this->jsonDocument($siteConfig, $collection, $this->limitEntries($collection, $entries), $collections),
+            JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
+        );
+    }
+
+    /**
      * @param list<Entry> $entries
      */
     public function generateJson(
@@ -110,20 +159,61 @@ final class FeedGenerator
     }
 
     /**
+     * @param array<string, Collection> $collections
      * @param list<Entry> $entries
+     */
+    public function writeSiteAtomFile(
+        string $path,
+        SiteConfig $siteConfig,
+        array $collections,
+        array $entries,
+    ): void {
+        FileWriter::write($path, $this->generateSiteAtom($siteConfig, $collections, $entries));
+    }
+
+    /**
+     * @param array<string, Collection> $collections
+     * @param list<Entry> $entries
+     */
+    public function writeSiteRssFile(
+        string $path,
+        SiteConfig $siteConfig,
+        array $collections,
+        array $entries,
+    ): void {
+        FileWriter::write($path, $this->generateSiteRss($siteConfig, $collections, $entries));
+    }
+
+    /**
+     * @param array<string, Collection> $collections
+     * @param list<Entry> $entries
+     */
+    public function writeSiteJsonFile(
+        string $path,
+        SiteConfig $siteConfig,
+        array $collections,
+        array $entries,
+    ): void {
+        file_put_contents($path, $this->generateSiteJson($siteConfig, $collections, $entries));
+    }
+
+    /**
+     * @param list<Entry> $entries
+     * @param array<string, Collection>|null $entryCollections
      */
     private function writeAtomDocument(
         XMLWriter $xml,
         SiteConfig $siteConfig,
         Collection $collection,
         array $entries,
+        ?array $entryCollections = null,
     ): void {
         $xml->startDocument('1.0', 'UTF-8');
         $xml->startElement('feed');
         $xml->writeAttribute('xmlns', 'http://www.w3.org/2005/Atom');
 
-        $feedUrl = rtrim($siteConfig->baseUrl, '/') . '/' . $collection->name . '/feed.xml';
-        $collectionUrl = rtrim($siteConfig->baseUrl, '/') . '/' . $collection->name . '/';
+        $feedUrl = rtrim($siteConfig->baseUrl, '/') . $this->feedPath($collection, 'feed.xml');
+        $collectionUrl = rtrim($siteConfig->baseUrl, '/') . $this->collectionPath($collection);
 
         $xml->writeElement('title', $collection->title);
         if ($collection->description !== '') {
@@ -155,7 +245,7 @@ final class FeedGenerator
         }
 
         foreach ($entries as $entry) {
-            $this->writeAtomEntry($xml, $siteConfig, $collection, $entry);
+            $this->writeAtomEntry($xml, $siteConfig, $entryCollections[$entry->collection] ?? $collection, $entry);
         }
 
         $xml->endElement();
@@ -164,12 +254,14 @@ final class FeedGenerator
 
     /**
      * @param list<Entry> $entries
+     * @param array<string, Collection>|null $entryCollections
      */
     private function writeRssDocument(
         XMLWriter $xml,
         SiteConfig $siteConfig,
         Collection $collection,
         array $entries,
+        ?array $entryCollections = null,
     ): void {
         $xml->startDocument('1.0', 'UTF-8');
         $xml->startElement('rss');
@@ -177,8 +269,8 @@ final class FeedGenerator
         $xml->writeAttribute('xmlns:atom', 'http://www.w3.org/2005/Atom');
         $xml->writeAttribute('xmlns:content', 'http://purl.org/rss/1.0/modules/content/');
 
-        $feedUrl = rtrim($siteConfig->baseUrl, '/') . '/' . $collection->name . '/rss.xml';
-        $collectionUrl = rtrim($siteConfig->baseUrl, '/') . '/' . $collection->name . '/';
+        $feedUrl = rtrim($siteConfig->baseUrl, '/') . $this->feedPath($collection, 'rss.xml');
+        $collectionUrl = rtrim($siteConfig->baseUrl, '/') . $this->collectionPath($collection);
 
         $xml->startElement('channel');
         $xml->writeElement('title', $collection->title);
@@ -201,7 +293,7 @@ final class FeedGenerator
         }
 
         foreach ($entries as $entry) {
-            $this->writeRssItem($xml, $siteConfig, $collection, $entry);
+            $this->writeRssItem($xml, $siteConfig, $entryCollections[$entry->collection] ?? $collection, $entry);
         }
 
         $xml->endElement();
@@ -286,18 +378,24 @@ final class FeedGenerator
 
     /**
      * @param list<Entry> $entries
+     * @param array<string, Collection>|null $entryCollections
      * @return array<string, mixed>
      */
-    private function jsonDocument(SiteConfig $siteConfig, Collection $collection, array $entries): array
+    private function jsonDocument(
+        SiteConfig $siteConfig,
+        Collection $collection,
+        array $entries,
+        ?array $entryCollections = null,
+    ): array
     {
-        $collectionUrl = rtrim($siteConfig->baseUrl, '/') . '/' . $collection->name . '/';
+        $collectionUrl = rtrim($siteConfig->baseUrl, '/') . $this->collectionPath($collection);
         $document = [
             'version' => 'https://jsonfeed.org/version/1.1',
             'title' => $collection->title,
             'home_page_url' => $collectionUrl,
-            'feed_url' => rtrim($siteConfig->baseUrl, '/') . '/' . $collection->name . '/feed.json',
+            'feed_url' => rtrim($siteConfig->baseUrl, '/') . $this->feedPath($collection, 'feed.json'),
             'items' => array_map(
-                fn (Entry $entry): array => $this->jsonItem($siteConfig, $collection, $entry),
+                fn (Entry $entry): array => $this->jsonItem($siteConfig, $entryCollections[$entry->collection] ?? $collection, $entry),
                 $entries,
             ),
         ];
@@ -358,6 +456,31 @@ final class FeedGenerator
     private function resolveEntryUrl(SiteConfig $siteConfig, Collection $collection, Entry $entry): string
     {
         return rtrim($siteConfig->baseUrl, '/') . PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n);
+    }
+
+    private function collectionPath(Collection $collection): string
+    {
+        return $collection->name === '' ? '/' : '/' . $collection->name . '/';
+    }
+
+    private function feedPath(Collection $collection, string $feedFile): string
+    {
+        return $collection->name === '' ? '/' . $feedFile : '/' . $collection->name . '/' . $feedFile;
+    }
+
+    private function siteFeedCollection(SiteConfig $siteConfig): Collection
+    {
+        return new Collection(
+            name: '',
+            title: $siteConfig->title,
+            description: $siteConfig->description,
+            permalink: $siteConfig->permalink,
+            sortBy: 'date',
+            sortOrder: 'desc',
+            entriesPerPage: $siteConfig->entriesPerPage,
+            feed: true,
+            listing: false,
+        );
     }
 
     /**

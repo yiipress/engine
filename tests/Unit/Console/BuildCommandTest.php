@@ -527,6 +527,28 @@ PHP,
         assertSame('https://jsonfeed.org/version/1.1', $feed['version']);
         assertStringContainsString('"title":"Test Post"', $json);
         assertStringContainsString('This is the body of the test post.', $json);
+
+        $siteAtomFile = $this->outputDir . '/feed.xml';
+        assertFileExists($siteAtomFile);
+        $siteAtom = file_get_contents($siteAtomFile);
+        assertStringContainsString('<title>Test Site</title>', $siteAtom);
+        assertStringContainsString('<link href="https://test.example.com/feed.xml" rel="self" type="application/atom+xml"/>', $siteAtom);
+        assertStringContainsString('<title>Test Post</title>', $siteAtom);
+
+        $siteRssFile = $this->outputDir . '/rss.xml';
+        assertFileExists($siteRssFile);
+        $siteRss = file_get_contents($siteRssFile);
+        assertStringContainsString('<title>Test Site</title>', $siteRss);
+        assertStringContainsString('<atom:link href="https://test.example.com/rss.xml" rel="self" type="application/rss+xml"/>', $siteRss);
+        assertStringContainsString('<title>Test Post</title>', $siteRss);
+
+        $siteJsonFile = $this->outputDir . '/feed.json';
+        assertFileExists($siteJsonFile);
+        $siteJson = (string) file_get_contents($siteJsonFile);
+        $siteFeed = json_decode($siteJson, true, 512, JSON_THROW_ON_ERROR);
+        assertSame('Test Site', $siteFeed['title']);
+        assertSame('https://test.example.com/feed.json', $siteFeed['feed_url']);
+        assertStringContainsString('"title":"Test Post"', $siteJson);
     }
 
     public function testFeedEntriesAreSortedChronologically(): void
@@ -1112,6 +1134,9 @@ PHP,
         assertSame(0, $exitCode, "Dry run failed: $outputText");
         assertStringContainsString('Dry run', $outputText);
         assertStringContainsString('index.html', $outputText);
+        assertStringContainsString('/feed.xml', $outputText);
+        assertStringContainsString('/rss.xml', $outputText);
+        assertStringContainsString('/feed.json', $outputText);
         assertStringContainsString('sitemap.xml', $outputText);
         assertStringContainsString('Total:', $outputText);
         assertFalse(is_dir($this->outputDir));
