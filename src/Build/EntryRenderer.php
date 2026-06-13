@@ -192,6 +192,7 @@ final class EntryRenderer
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $themeName);
         $variables = [
             'siteTitle' => $siteConfig->title,
+            'data' => $siteConfig->data,
             'entryTitle' => $entry->title,
             'content' => $content,
             'date' => $entry->date?->format($siteConfig->dateFormat) ?? '',

@@ -27,9 +27,29 @@ content/
 │   │   └── john-doe.svg
 │   ├── john-doe.md
 │   └── jane-smith.md
+├── data/                          # Site data files exposed to templates
+│   └── company.yaml
 ├── config.yaml                    # Site-wide settings (see docs/configuration.md)
 ├── navigation.yaml                # Menu definitions
 └── standalone-page.md             # Standalone page (not in any collection)
+```
+
+## Site Data
+
+Put YAML files in `content/data/` to expose structured site data to templates. Each `.yaml` or `.yml` file becomes one key in the `$data` template variable using the file name without the extension.
+
+For example, `content/data/company.yaml`:
+
+```yaml
+name: Acme
+links:
+  - /about/
+```
+
+is available in templates as:
+
+```php
+<?= $h($data['company']['name']) ?>
 ```
 
 ## Collections

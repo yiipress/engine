@@ -105,7 +105,7 @@ final class ContentParser
             }
 
             $name = $item->getFilename();
-            if ($name === 'assets' || $name === 'authors') {
+            if ($name === 'assets' || $name === 'authors' || $name === 'data') {
                 continue;
             }
 
@@ -153,7 +153,7 @@ final class ContentParser
             }
 
             $name = $item->getFilename();
-            if ($name === 'assets' || $name === 'authors') {
+            if ($name === 'assets' || $name === 'authors' || $name === 'data') {
                 continue;
             }
 

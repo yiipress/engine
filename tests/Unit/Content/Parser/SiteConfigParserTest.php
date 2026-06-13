@@ -54,6 +54,57 @@ final class SiteConfigParserTest extends TestCase
         unlink($filePath);
     }
 
+    public function testParsesSiteDataFilesFromDataDirectory(): void
+    {
+        $contentDir = sys_get_temp_dir() . '/yiipress-site-data-' . uniqid();
+        mkdir($contentDir . '/data', 0o755, true);
+        file_put_contents($contentDir . '/config.yaml', "title: Test\nlanguages: [en]\n");
+        file_put_contents($contentDir . '/data/company.YAML', "name: Acme\nlinks:\n  - /about/\n");
+        file_put_contents($contentDir . '/data/metrics.yml', "posts: 12\n");
+        file_put_contents($contentDir . '/data/active.yaml', "false\n");
+        file_put_contents($contentDir . '/data/ignored.txt', "name: Ignored\n");
+
+        try {
+            $config = (new SiteConfigParser())->parse($contentDir . '/config.yaml');
+
+            assertSame([
+                'active' => false,
+                'company' => ['name' => 'Acme', 'links' => ['/about/']],
+                'metrics' => ['posts' => 12],
+            ], $config->data);
+        } finally {
+            unlink($contentDir . '/data/ignored.txt');
+            unlink($contentDir . '/data/active.yaml');
+            unlink($contentDir . '/data/metrics.yml');
+            unlink($contentDir . '/data/company.YAML');
+            rmdir($contentDir . '/data');
+            unlink($contentDir . '/config.yaml');
+            rmdir($contentDir);
+        }
+    }
+
+    public function testThrowsFriendlyExceptionForInvalidSiteDataYaml(): void
+    {
+        $contentDir = sys_get_temp_dir() . '/yiipress-site-data-' . uniqid();
+        mkdir($contentDir . '/data', 0o755, true);
+        file_put_contents($contentDir . '/config.yaml', "title: Test\nlanguages: [en]\n");
+        $dataFile = $contentDir . '/data/broken.yaml';
+        file_put_contents($dataFile, "name: [broken\n");
+
+        try {
+            (new SiteConfigParser())->parse($contentDir . '/config.yaml');
+            $this->fail('Expected invalid content configuration exception.');
+        } catch (InvalidContentConfigException $e) {
+            assertSame($dataFile, $e->filePath());
+            assertStringContainsString('Invalid YAML in site data file', $e->getMessage());
+        } finally {
+            unlink($dataFile);
+            rmdir($contentDir . '/data');
+            unlink($contentDir . '/config.yaml');
+            rmdir($contentDir);
+        }
+    }
+
     public function testParseAssetConfigCanDisableFingerprinting(): void
     {
         $filePath = sys_get_temp_dir() . '/yiipress-site-config-' . uniqid() . '.yaml';
