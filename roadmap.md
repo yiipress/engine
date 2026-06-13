@@ -117,5 +117,5 @@
 - [x] Jekyll
 - [x] Hugo
 - [ ] Medium exported Markdown
-- [ ] Ghost
+- [x] Ghost
 - [x] Telegram export
