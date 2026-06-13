@@ -103,11 +103,27 @@ final class ImportCommandTest extends TestCase
         assertStringContainsString('Imported: 1', $result['output']);
     }
 
+    public function testImportsHugoSite(): void
+    {
+        mkdir($this->sourceDir . '/content/posts', 0o755, true);
+        file_put_contents(
+            $this->sourceDir . '/content/posts/hello-hugo.md',
+            "+++\ntitle = \"Hello Hugo\"\n+++\n\nBody.\n",
+        );
+
+        $result = $this->runImport('hugo', ['--directory' => $this->sourceDir]);
+
+        assertSame(0, $result['exitCode'], $result['output']);
+        assertStringContainsString('Importing from hugo', $result['output']);
+        assertStringContainsString('Imported: 1', $result['output']);
+    }
+
     public function testShowsAvailableImportersOnError(): void
     {
         $result = $this->runImport('wordpress', ['--directory' => $this->sourceDir]);
 
         assertSame(65, $result['exitCode']);
+        assertStringContainsString('hugo', $result['output']);
         assertStringContainsString('telegram', $result['output']);
     }
 

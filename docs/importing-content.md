@@ -60,6 +60,18 @@ Imports messages from a Telegram Desktop channel export (JSON format).
 
 See [commands.md](commands.md#yii-import) for usage details.
 
+### HugoContentImporter
+
+Imports Markdown content from a Hugo site.
+
+**Options:**
+
+- `--directory` — Path to the Hugo site directory (required)
+
+The importer scans `content/posts/`, then `content/post/`, then `content/`, accepts `.md` files, supports YAML (`---`) and simple TOML (`+++`) front matter, preserves common fields (`title`, `date`, `url` / `permalink`, `draft`, `tags`, `categories`), and creates a default collection config when one does not exist.
+
+See [commands.md](commands.md#hugo-import) for usage details.
+
 ## Writing a custom importer
 
 Create a class implementing `ContentImporterInterface`. Each importer declares its own options — a file-based importer might need a `directory`, while an API-based importer might need `url` and `api-key`.

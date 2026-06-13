@@ -144,7 +144,7 @@ Imports content from external sources into a YiiPress collection.
 
 **Arguments:**
 
-- `source` — source type to import from (required). Currently supported: `telegram`.
+- `source` — source type to import from (required). Currently supported: `hugo`, `telegram`.
 
 **Common options:**
 
@@ -189,6 +189,32 @@ Supports both single-chat exports (`result.json` with `messages` array) and full
 ./yiipress import telegram --directory=/path/to/telegram-export
 ./yiipress import telegram --directory=/path/to/telegram-export --collection=channel
 ./yiipress import telegram --directory=./telegram-data --content-dir=content
+```
+
+### Hugo import
+
+Imports Markdown content from a Hugo site directory. The importer scans `content/posts/`, then `content/post/`, then `content/`, reads `.md` files recursively, and writes YiiPress markdown files into the target collection.
+
+**Importer options:**
+
+- `--directory` — path to the Hugo site directory (required). Absolute or relative to project root.
+
+The importer supports YAML (`---`) and simple TOML (`+++`) front matter and preserves:
+
+- `title`
+- `date`
+- `url` / `permalink`
+- `draft`
+- `tags`
+- `categories`
+
+If `title` is missing, it is inferred from the first `# Heading` in the post body and then from the filename slug. If `date` is missing, filenames starting with `YYYY-MM-DD-` provide the date.
+
+**Examples:**
+
+```bash
+./yiipress import hugo --directory=/path/to/hugo-site
+./yiipress import hugo --directory=../old-hugo-site --collection=blog
 ```
 
 ### Adding custom importers
