@@ -76,6 +76,7 @@ use function explode;
 use function file_get_contents;
 use function hash;
 use function hrtime;
+use function implode;
 use function is_array;
 use function is_file;
 use function is_readable;
@@ -428,6 +429,7 @@ final class BuildCommand extends Command
         $allTasks = [];
         $redirectTasks = [];
         $entriesByCollection = [];
+        $outputClaims = [];
         foreach ($collections as $collectionName => $collection) {
             $filtered = [];
             foreach ($rawEntriesByCollection[$collectionName] as $entry) {
@@ -442,6 +444,7 @@ final class BuildCommand extends Command
                 $relativePath = substr($sourcePath, strlen($contentDir) + 1);
                 $permalink = $fileToPermalink[$relativePath];
                 $filePath = $outputDir . $permalink . 'index.html';
+                $outputClaims[] = ['filePath' => $filePath, 'permalink' => $permalink, 'sourcePath' => $sourcePath];
 
                 if ($entry->redirectTo !== '') {
                     $redirectTasks[] = ['entry' => $entry, 'filePath' => $filePath, 'permalink' => $permalink, 'sourcePath' => $sourcePath];
@@ -457,6 +460,32 @@ final class BuildCommand extends Command
                 ];
             }
             $entriesByCollection[$collectionName] = EntrySorter::sort($filtered, $collection);
+        }
+
+        foreach ($standalonePages as $page) {
+            if (!$includeDrafts && $page->draft) {
+                continue;
+            }
+            if (!$includeFuture && $page->date !== null && $page->date > $now) {
+                continue;
+            }
+
+            $basePermalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
+            $permalink = PermalinkResolver::applyLanguagePrefix($basePermalink, $page->language, $siteConfig->i18n);
+            $outputClaims[] = [
+                'filePath' => $outputDir . $permalink . 'index.html',
+                'permalink' => $permalink,
+                'sourcePath' => $page->filePath,
+            ];
+        }
+
+        $duplicateOutputClaims = $this->duplicateOutputClaims($outputClaims, $contentDir);
+        foreach ($duplicateOutputClaims as $message) {
+            $output->writeln('<error>  ' . OutputFormatter::escape($message) . '</error>');
+        }
+        if ($duplicateOutputClaims !== []) {
+            $this->writeProfile($output, $profile);
+            return ExitCode::DATAERR;
         }
 
         foreach ($allTasks as $index => $task) {
@@ -1350,6 +1379,51 @@ final class BuildCommand extends Command
         return $task;
     }
 
+    /**
+     * @param list<array{filePath: string, permalink: string, sourcePath: string}> $claims
+     * @return list<string>
+     */
+    private function duplicateOutputClaims(array $claims, string $contentDir): array
+    {
+        $claimsByOutput = [];
+        foreach ($claims as $claim) {
+            $claimsByOutput[$claim['filePath']][] = $claim;
+        }
+
+        $messages = [];
+        foreach ($claimsByOutput as $filePath => $outputClaims) {
+            if (count($outputClaims) < 2) {
+                continue;
+            }
+
+            $sources = [];
+            foreach ($outputClaims as $claim) {
+                $sources[] = sprintf(
+                    '%s (%s)',
+                    $this->contentRelativePath($claim['sourcePath'], $contentDir),
+                    $claim['permalink'],
+                );
+            }
+
+            $messages[] = sprintf(
+                'Duplicate output path "%s" is claimed by %s.',
+                $filePath,
+                implode(' and ', $sources),
+            );
+        }
+
+        return $messages;
+    }
+
+    private function contentRelativePath(string $sourcePath, string $contentDir): string
+    {
+        $prefix = $contentDir . '/';
+        if (str_starts_with($sourcePath, $prefix)) {
+            return substr($sourcePath, strlen($prefix));
+        }
+
+        return $sourcePath;
+    }
 
     /**
      * @return list<string>
