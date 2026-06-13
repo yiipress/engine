@@ -206,7 +206,7 @@ assets:
 
 When enabled, YiiPress renames copied assets to include a content hash, for example:
 
-- `assets/theme/style.css` → `assets/theme/style.4f8d2d5b1c3a.css`
+- `assets/themes/minimal/style.css` → `assets/themes/minimal/style.4f8d2d5b1c3a.css`
 - `blog/assets/hero.png` → `blog/assets/hero.a12b34c56d78.png`
 
 Built-in templates use the fingerprinted URLs automatically, and existing hardcoded `src` / `href`

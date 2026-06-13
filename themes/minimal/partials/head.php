@@ -14,11 +14,11 @@
  * @var YiiPress\I18n\UiText $ui
  * @var Closure(string, int, ?string, bool): string $h
  * @var Closure(string): string $url
+ * @var Closure(string): string $themeAsset
  * @var Closure(string, array): string $t
  */
 
 use YiiPress\Build\AssetFingerprintManifest;
-use YiiPress\Build\Asset;
 use YiiPress\Build\MetaTags;
 
 $headAssets ??= '';
@@ -178,18 +178,18 @@ $uiCatalogs ??= [$uiLanguage => []];
         })();
     </script>
     <script id="yiipress-ui-catalogs" type="application/json" data-default-language="<?= $h($uiLanguage) ?>"><?= json_encode($uiCatalogs, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
-    <link rel="stylesheet" href="<?= $h(Asset::url('assets/theme/style.css', $rootPath, $assetManifest)) ?>">
+    <link rel="stylesheet" href="<?= $h($themeAsset('style.css')) ?>">
 <?php if ($collectionName !== null): ?>
     <link rel="alternate" type="application/rss+xml" title="<?= $h($t('rss_feed')) ?>" data-ui-attr-title="rss_feed" href="<?= $h($url($collectionName . '/rss.xml')) ?>">
     <link rel="alternate" type="application/atom+xml" title="<?= $h($t('atom_feed')) ?>" data-ui-attr-title="atom_feed" href="<?= $h($url($collectionName . '/feed.xml')) ?>">
     <link rel="alternate" type="application/feed+json" title="JSON Feed" href="<?= $h($url($collectionName . '/feed.json')) ?>">
 <?php endif; ?>
-    <script src="<?= $h(Asset::url('assets/theme/image-zoom.js', $rootPath, $assetManifest)) ?>" defer></script>
-    <script src="<?= $h(Asset::url('assets/theme/code-copy.js', $rootPath, $assetManifest)) ?>" defer></script>
-    <script src="<?= $h(Asset::url('assets/theme/toc-highlight.js', $rootPath, $assetManifest)) ?>" defer></script>
-    <script src="<?= $h(Asset::url('assets/theme/ui-language.js', $rootPath, $assetManifest)) ?>" defer></script>
+    <script src="<?= $h($themeAsset('image-zoom.js')) ?>" defer></script>
+    <script src="<?= $h($themeAsset('code-copy.js')) ?>" defer></script>
+    <script src="<?= $h($themeAsset('toc-highlight.js')) ?>" defer></script>
+    <script src="<?= $h($themeAsset('ui-language.js')) ?>" defer></script>
 <?php if ($search): ?>
-    <link rel="stylesheet" href="<?= $h(Asset::url('assets/theme/search.css', $rootPath, $assetManifest)) ?>">
-    <script src="<?= $h(Asset::url('assets/theme/search.js', $rootPath, $assetManifest)) ?>" defer></script>
+    <link rel="stylesheet" href="<?= $h($themeAsset('search.css')) ?>">
+    <script src="<?= $h($themeAsset('search.js')) ?>" defer></script>
 <?php endif; ?>
 <?= $headAssets ?>

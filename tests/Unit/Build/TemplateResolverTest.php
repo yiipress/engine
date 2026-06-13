@@ -83,6 +83,43 @@ final class TemplateResolverTest extends TestCase
         assertSame(['/a', '/b'], $resolver->templateDirs());
     }
 
+    public function testResolveResourceThemeNameReturnsOwningTheme(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/yiipress-theme-test-' . uniqid();
+        mkdir($tempDir . '/assets', 0o755, true);
+        file_put_contents($tempDir . '/assets/style.css', 'body{}');
+
+        try {
+            $registry = new ThemeRegistry();
+            $registry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
+            $registry->register(new Theme('custom', $tempDir));
+            $resolver = new TemplateResolver($registry);
+
+            assertSame('custom', $resolver->resolveResourceThemeName('assets/style.css', 'custom'));
+        } finally {
+            unlink($tempDir . '/assets/style.css');
+            rmdir($tempDir . '/assets');
+            rmdir($tempDir);
+        }
+    }
+
+    public function testResolveResourceThemeNameFallsBackToDefaultTheme(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/yiipress-theme-test-' . uniqid();
+        mkdir($tempDir, 0o755, true);
+
+        try {
+            $registry = new ThemeRegistry();
+            $registry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
+            $registry->register(new Theme('custom', $tempDir));
+            $resolver = new TemplateResolver($registry);
+
+            assertSame('minimal', $resolver->resolveResourceThemeName('assets/style.css', 'custom'));
+        } finally {
+            rmdir($tempDir);
+        }
+    }
+
     private function createResolver(): TemplateResolver
     {
         $registry = new ThemeRegistry();

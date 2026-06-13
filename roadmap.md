@@ -66,6 +66,7 @@
 
 - [x] Theme system — installable/distributable themes
 - [x] Auto-register project themes from `themes/<name>/` for binary users
+- [x] Namespaced theme assets for installable themes
 - [x] Template partials/includes support
 - [x] Template helper functions documentation
 - [x] Site data files exposed to templates (`content/data/*.yaml` or `.yml` as `$data`)

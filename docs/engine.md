@@ -212,4 +212,4 @@ return [
 ];
 ```
 
-For binary users, install a reusable theme as `themes/fancy/` and set `theme: fancy` in `content/config.yaml`. Template resolution checks the active theme first, then falls back through registered themes. This lets a project override one template while keeping the rest of the bundled theme.
+For binary users, install a reusable theme as `themes/fancy/` and set `theme: fancy` in `content/config.yaml`. Template resolution checks the active theme first, then falls back through registered themes. This lets a project override one template while keeping the rest of the bundled theme. Theme assets are copied under `assets/themes/<theme>/`, and templates should use `$themeAsset('file.css')` so installed themes do not overwrite each other's files.
