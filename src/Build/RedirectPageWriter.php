@@ -71,6 +71,6 @@ final class RedirectPageWriter
             throw new RuntimeException(sprintf('Directory "%s" was not created', $dirPath));
         }
 
-        file_put_contents($filePath, $html);
+        FileWriter::write($filePath, $html);
     }
 }

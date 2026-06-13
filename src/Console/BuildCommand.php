@@ -17,6 +17,7 @@ use YiiPress\Build\NotFoundPageWriter;
 use YiiPress\Build\NavigationPager;
 use YiiPress\Build\RedirectPageWriter;
 use YiiPress\Build\RobotsTxtGenerator;
+use YiiPress\Build\FileWriter;
 use YiiPress\Build\SearchIndexGenerator;
 use YiiPress\Build\ThemeAssetCopier;
 use YiiPress\Build\FeedGenerator;
@@ -772,13 +773,13 @@ final class BuildCommand extends Command
 
         $profile->switchTo('write support files');
         $robotsGenerator = new RobotsTxtGenerator();
-        $robots = $robotsGenerator->generate($siteConfig);
-        if ($robots !== '') {
-            if (!$noWrite) {
-                file_put_contents($outputDir . '/robots.txt', $robots);
+            $robots = $robotsGenerator->generate($siteConfig);
+            if ($robots !== '') {
+                if (!$noWrite) {
+                    FileWriter::write($outputDir . '/robots.txt', $robots);
+                }
+                $output->writeln('  robots.txt generated.');
             }
-            $output->writeln('  robots.txt generated.');
-        }
 
         $notFoundWriter = new NotFoundPageWriter($this->templateResolver, $assetManifest);
         $notFoundWriter->write($siteConfig, $outputDir, $navigation, $noWrite);

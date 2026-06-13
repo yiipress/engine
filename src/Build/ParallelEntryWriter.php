@@ -89,7 +89,7 @@ final readonly class ParallelEntryWriter
         foreach ($tasks as $task) {
             $html = $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver, $task['navigationPager'] ?? null);
             if (!$noWrite) {
-                file_put_contents($task['filePath'], $html);
+                FileWriter::write($task['filePath'], $html);
             }
         }
     }
@@ -115,7 +115,7 @@ final readonly class ParallelEntryWriter
                 foreach ($chunk as $task) {
                     $html = $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver, $task['navigationPager'] ?? null);
                     if (!$noWrite) {
-                        file_put_contents($task['filePath'], $html);
+                        FileWriter::write($task['filePath'], $html);
                     }
                 }
 

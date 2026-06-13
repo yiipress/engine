@@ -62,14 +62,11 @@ final class BuildManifest
             throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
         }
 
-        file_put_contents(
-            $this->manifestPath,
-            json_encode([
-                'entries' => $this->entries,
-                'configFiles' => $this->configFiles,
-                'trackedDirectories' => $this->trackedDirectories,
-            ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
-        );
+        FileWriter::write($this->manifestPath, json_encode([
+            'entries' => $this->entries,
+            'configFiles' => $this->configFiles,
+            'trackedDirectories' => $this->trackedDirectories,
+        ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
     }
 
     public function isChanged(string $sourceFile): bool

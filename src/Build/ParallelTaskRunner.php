@@ -62,7 +62,7 @@ final class ParallelTaskRunner
 
                 if ($pid === 0) {
                     $count = $this->runSequential($chunk, $taskRunner);
-                    file_put_contents($resultFile, (string) $count);
+                    FileWriter::write($resultFile, (string) $count);
                     exit(0);
                 }
 
