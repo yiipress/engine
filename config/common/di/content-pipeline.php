@@ -5,6 +5,7 @@ declare(strict_types=1);
 use YiiPress\Build\TemplateResolver;
 use YiiPress\Build\ThemeRegistry;
 use YiiPress\Console\BuildCommand;
+use YiiPress\Console\CheckCommand;
 use YiiPress\Console\CleanCommand;
 use YiiPress\Console\InitCommand;
 use YiiPress\Console\NewCommand;
@@ -61,6 +62,11 @@ return [
             'themeRegistry' => Reference::to(ThemeRegistry::class),
             'templateResolver' => Reference::to(TemplateResolver::class),
             'eventDispatcher' => Reference::to(EventDispatcherInterface::class),
+        ],
+    ],
+    CheckCommand::class => [
+        '__construct()' => [
+            'rootPath' => $workingDirectory,
         ],
     ],
     CleanCommand::class => [
