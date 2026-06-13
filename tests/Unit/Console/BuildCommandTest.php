@@ -343,6 +343,14 @@ final class BuildCommandTest extends TestCase
         assertStringContainsString('<rss version="2.0"', $rss);
         assertStringContainsString('<title>Test Post</title>', $rss);
         assertStringContainsString('<content:encoded>', $rss);
+
+        $jsonFile = $this->outputDir . '/blog/feed.json';
+        assertFileExists($jsonFile);
+        $json = (string) file_get_contents($jsonFile);
+        $feed = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        assertSame('https://jsonfeed.org/version/1.1', $feed['version']);
+        assertStringContainsString('"title":"Test Post"', $json);
+        assertStringContainsString('This is the body of the test post.', $json);
     }
 
     public function testFeedEntriesAreSortedChronologically(): void

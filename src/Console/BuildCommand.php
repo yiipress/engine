@@ -687,6 +687,7 @@ final class BuildCommand extends Command
                 if ($noWrite) {
                     $feedGenerator->generateAtom($siteConfig, $collection, $entries);
                     $feedGenerator->generateRss($siteConfig, $collection, $entries);
+                    $feedGenerator->generateJson($siteConfig, $collection, $entries);
                 } else {
                     $feedDir = $outputDir . '/' . $collectionName;
                     if (!is_dir($feedDir) && !mkdir($feedDir, 0o755, true) && !is_dir($feedDir)) {
@@ -705,6 +706,12 @@ final class BuildCommand extends Command
                         $collection,
                         $entries,
                     );
+                    $feedGenerator->writeJsonFile(
+                        $feedDir . '/feed.json',
+                        $siteConfig,
+                        $collection,
+                        $entries,
+                    );
                 }
                 return 1;
             },
@@ -712,7 +719,7 @@ final class BuildCommand extends Command
         );
 
         if ($feedCount > 0) {
-            $output->writeln("  Feeds generated: <comment>$feedCount</comment> (Atom + RSS)");
+            $output->writeln("  Feeds generated: <comment>$feedCount</comment> (Atom + RSS + JSON)");
         }
 
         $profile->switchTo('write listings');
@@ -1084,6 +1091,7 @@ final class BuildCommand extends Command
             if ($collection->feed) {
                 $files[] = $outputDir . '/' . $collectionName . '/feed.xml';
                 $files[] = $outputDir . '/' . $collectionName . '/rss.xml';
+                $files[] = $outputDir . '/' . $collectionName . '/feed.json';
             }
 
             if ($collection->listing) {

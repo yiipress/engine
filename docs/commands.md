@@ -51,7 +51,7 @@ The command:
 4. Renders collection entries — converts markdown to HTML via MD4C, applies the entry template, writes each entry as `index.html` at its resolved permalink path. Drafts and future-dated entries are excluded by default.
 5. Renders standalone pages — markdown files in the content root directory (e.g., `contact.md` → `/contact/`).
 6. Copies content assets (images, SVGs, etc.) to the output directory.
-7. Generates Atom (`feed.xml`) and RSS 2.0 (`rss.xml`) feeds for each collection with `feed: true`, capped by collection `feed_limit` (`20` by default, `0` for unlimited).
+7. Generates Atom (`feed.xml`), RSS 2.0 (`rss.xml`), and JSON Feed (`feed.json`) feeds for each collection with `feed: true`, capped by collection `feed_limit` (`20` by default, `0` for unlimited).
 8. Generates paginated collection listing pages (e.g., `/blog/`, `/blog/page/2/`) for collections with `listing: true`.
 9. Generates `sitemap.xml` containing all entry URLs, standalone page URLs, collection listing URLs, and the home page.
 10. Generates taxonomy pages for each taxonomy defined in `config.yaml` (e.g., `/tags/`, `/tags/php/`, `/categories/`).
