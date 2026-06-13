@@ -94,6 +94,9 @@ final readonly class EntryParser
             image: (string) ($fields['image'] ?? ''),
             translationKey: (string) ($fields['translation_key'] ?? ''),
             showTitle: (bool) ($fields['showTitle'] ?? true),
+            aliases: isset($fields['aliases']) && is_array($fields['aliases'])
+                ? array_values(array_map(strval(...), $fields['aliases']))
+                : [],
         );
     }
 

@@ -368,6 +368,8 @@ final class BuildCommand extends Command
         /** @var array<string, list<Entry>> $rawEntriesByCollection */
         $rawEntriesByCollection = [];
         $fileToPermalink = [];
+        $aliasRedirectTasks = [];
+        $aliasOutputsBySource = [];
 
         foreach ($collections as $collectionName => $collection) {
             $collectionEntries = [];
@@ -449,6 +451,17 @@ final class BuildCommand extends Command
                 }
 
                 $filtered[] = $entry;
+                foreach ($entry->aliases as $alias) {
+                    $aliasPermalink = $this->normalizeAliasPermalink($alias);
+                    $aliasFilePath = $this->aliasFilePath($outputDir, $aliasPermalink);
+                    $aliasRedirectTasks[] = [
+                        'entry' => $entry->withRedirectTo($permalink),
+                        'filePath' => $aliasFilePath,
+                        'permalink' => $aliasPermalink,
+                        'sourcePath' => $sourcePath,
+                    ];
+                    $aliasOutputsBySource[$sourcePath][] = $aliasFilePath;
+                }
                 $allTasks[] = [
                     'entry' => $entry,
                     'filePath' => $filePath,
@@ -511,6 +524,8 @@ final class BuildCommand extends Command
         );
 
         $profile->switchTo('write redirects');
+        /** @var RedirectPageWriter|null $redirectWriter */
+        $redirectWriter = null;
         if ($redirectTasks !== []) {
             $redirectWriter = new RedirectPageWriter();
             foreach ($redirectTasks as $task) {
@@ -525,12 +540,33 @@ final class BuildCommand extends Command
                     $task['permalink'],
                 );
             }
-            $output->writeln('  Redirects ' . ($noWrite ? 'rendered' : 'written') . ': <comment>' . count($redirectTasks) . '</comment>');
+        }
+
+        if ($aliasRedirectTasks !== []) {
+            $redirectWriter ??= new RedirectPageWriter();
+            foreach ($aliasRedirectTasks as $task) {
+                $language = $task['entry']->language !== '' ? $task['entry']->language : $siteConfig->defaultLanguage;
+                $redirectWriter->write(
+                    $task['entry'],
+                    $task['filePath'],
+                    $language,
+                    UiText::forTheme($siteConfig->defaultLanguage, $this->templateResolver, $siteConfig->theme, $siteConfig->defaultLanguage),
+                    $noWrite,
+                    $siteConfig,
+                    $task['permalink'],
+                );
+            }
+        }
+
+        $redirectCount = count($redirectTasks) + count($aliasRedirectTasks);
+        if ($redirectCount > 0) {
+            $output->writeln('  Redirects ' . ($noWrite ? 'rendered' : 'written') . ': <comment>' . $redirectCount . '</comment>');
         }
 
         if ($manifest !== null) {
             foreach ($allTasks as $task) {
-                $this->removeStaleOutputs($manifest->replace($task['sourcePath'], [$task['filePath']]));
+                $outputs = [$task['filePath'], ...($aliasOutputsBySource[$task['sourcePath']] ?? [])];
+                $this->removeStaleOutputs($manifest->replace($task['sourcePath'], $outputs));
             }
             foreach ($redirectTasks as $task) {
                 $this->removeStaleOutputs($manifest->replace($task['sourcePath'], [$task['filePath']]));
@@ -554,6 +590,7 @@ final class BuildCommand extends Command
         $profile->switchTo('write standalone pages');
         $standaloneTasks = [];
         $standaloneRedirectTasks = [];
+        $standaloneAliasRedirectTasks = [];
         foreach ($standalonePages as $page) {
             $sourcePath = $page->filePath;
             $basePermalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
@@ -568,6 +605,17 @@ final class BuildCommand extends Command
             if ($page->redirectTo !== '') {
                 $standaloneRedirectTasks[] = ['entry' => $page, 'filePath' => $filePath, 'permalink' => $permalink, 'sourcePath' => $sourcePath];
             } else {
+                foreach ($page->aliases as $alias) {
+                    $aliasPermalink = $this->normalizeAliasPermalink($alias);
+                    $aliasFilePath = $this->aliasFilePath($outputDir, $aliasPermalink);
+                    $standaloneAliasRedirectTasks[] = [
+                        'entry' => $page->withRedirectTo($permalink),
+                        'filePath' => $aliasFilePath,
+                        'permalink' => $aliasPermalink,
+                        'sourcePath' => $sourcePath,
+                    ];
+                    $aliasOutputsBySource[$sourcePath][] = $aliasFilePath;
+                }
                 $standaloneTask = [
                     'entry' => $page,
                     'filePath' => $filePath,
@@ -607,11 +655,24 @@ final class BuildCommand extends Command
                 $task['permalink'],
             );
         }
-        $standalonePagesWritten += count($standaloneRedirectTasks);
+        foreach ($standaloneAliasRedirectTasks as $task) {
+            $language = $task['entry']->language !== '' ? $task['entry']->language : $siteConfig->defaultLanguage;
+            $redirectWriter->write(
+                $task['entry'],
+                $task['filePath'],
+                $language,
+                UiText::forTheme($siteConfig->defaultLanguage, $this->templateResolver, $siteConfig->theme, $siteConfig->defaultLanguage),
+                $noWrite,
+                $siteConfig,
+                $task['permalink'],
+            );
+        }
+        $standalonePagesWritten += count($standaloneRedirectTasks) + count($standaloneAliasRedirectTasks);
 
         if ($manifest !== null) {
             foreach ($standaloneTasks as $task) {
-                $this->removeStaleOutputs($manifest->replace($task['sourcePath'], [$task['filePath']]));
+                $outputs = [$task['filePath'], ...($aliasOutputsBySource[$task['sourcePath']] ?? [])];
+                $this->removeStaleOutputs($manifest->replace($task['sourcePath'], $outputs));
             }
             foreach ($standaloneRedirectTasks as $task) {
                 $this->removeStaleOutputs($manifest->replace($task['sourcePath'], [$task['filePath']]));
@@ -1077,6 +1138,9 @@ final class BuildCommand extends Command
                 $permalink = PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n);
                 $files[] = $outputDir . $permalink . 'index.html';
                 if ($entry->redirectTo === '') {
+                    foreach ($entry->aliases as $alias) {
+                        $files[] = $this->aliasFilePath($outputDir, $this->normalizeAliasPermalink($alias));
+                    }
                     $entries[] = $entry;
                 }
             }
@@ -1131,6 +1195,11 @@ final class BuildCommand extends Command
             }
             $permalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
             $files[] = $outputDir . $permalink . 'index.html';
+            if ($page->redirectTo === '') {
+                foreach ($page->aliases as $alias) {
+                    $files[] = $this->aliasFilePath($outputDir, $this->normalizeAliasPermalink($alias));
+                }
+            }
         }
 
         $contentAssetCopier = new ContentAssetCopier();
@@ -1235,6 +1304,37 @@ final class BuildCommand extends Command
                 unlink($outputFile);
             }
         }
+    }
+
+    private function normalizeAliasPermalink(string $alias): string
+    {
+        $alias = trim($alias);
+        if ($alias === '') {
+            throw new RuntimeException('Entry aliases must not be empty.');
+        }
+
+        if (str_contains($alias, '://') || str_starts_with($alias, '//') || str_contains($alias, '?') || str_contains($alias, '#')) {
+            throw new RuntimeException(sprintf('Entry alias "%s" must be a site-root path.', $alias));
+        }
+
+        $alias = '/' . trim($alias, '/') . '/';
+        $segments = explode('/', trim($alias, '/'));
+        foreach ($segments as $segment) {
+            if ($segment === '.' || $segment === '..') {
+                throw new RuntimeException(sprintf('Entry alias "%s" must not contain "." or ".." path segments.', $alias));
+            }
+        }
+
+        return $alias === '//' ? '/' : preg_replace('#/+#', '/', $alias) ?? $alias;
+    }
+
+    private function aliasFilePath(string $outputDir, string $aliasPermalink): string
+    {
+        if ($aliasPermalink === '/') {
+            return $outputDir . '/index.html';
+        }
+
+        return $outputDir . rtrim($aliasPermalink, '/') . '/index.html';
     }
 
     private function assetFingerprintEnabled(string $contentDir): bool

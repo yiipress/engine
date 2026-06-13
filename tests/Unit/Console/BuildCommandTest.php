@@ -477,6 +477,47 @@ final class BuildCommandTest extends TestCase
         assertStringNotContainsString('No Date Post', $atom);
     }
 
+    public function testBuildGeneratesRedirectsForEntryAliases(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/yiipress-build-alias-test-' . uniqid();
+        $contentDir = $tempDir . '/content';
+        $outputDir = $tempDir . '/output';
+        mkdir($contentDir . '/blog', 0o755, true);
+        $this->tempContentDirs[] = $tempDir;
+
+        file_put_contents($contentDir . '/config.yaml', "title: Alias Site\nbase_url: https://example.com\nlanguages: [en]\n");
+        file_put_contents($contentDir . '/blog/_collection.yaml', "title: Blog\npermalink: /blog/:slug/\n");
+        file_put_contents($contentDir . '/blog/post.md', "---\ntitle: Post\naliases:\n  - /old-post/\n  - legacy/post\n---\n\nBody.\n");
+
+        $yii = dirname(__DIR__, 3) . '/yii';
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($outputDir)
+            . ' --no-cache'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        assertSame(0, $exitCode, implode("\n", $output));
+
+        $oldPost = file_get_contents($outputDir . '/old-post/index.html');
+        assertNotFalse($oldPost);
+        assertStringContainsString('http-equiv="refresh"', $oldPost);
+        assertStringContainsString('href="/blog/post/"', $oldPost);
+
+        $legacy = file_get_contents($outputDir . '/legacy/post/index.html');
+        assertNotFalse($legacy);
+        assertStringContainsString('href="/blog/post/"', $legacy);
+
+        $sitemap = file_get_contents($outputDir . '/sitemap.xml');
+        assertNotFalse($sitemap);
+        assertStringContainsString('/blog/post/', $sitemap);
+        assertStringNotContainsString('/old-post/', $sitemap);
+        assertStringNotContainsString('/legacy/post/', $sitemap);
+    }
+
     public function testBuildExcludesFutureDatedEntriesByDefault(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';
