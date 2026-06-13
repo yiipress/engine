@@ -60,6 +60,18 @@ Imports messages from a Telegram Desktop channel export (JSON format).
 
 See [commands.md](commands.md#yii-import) for usage details.
 
+### WordPressContentImporter
+
+Imports posts and pages from a WordPress WXR XML export.
+
+**Options:**
+
+- `--file` — Path to the WordPress WXR `.xml` export file (required)
+
+The importer converts WordPress posts into the selected YiiPress collection and WordPress pages into standalone content root markdown files. It preserves common metadata (`title`, date, permalink path, draft status, excerpt summary, tags, and categories), keeps `content:encoded` as the markdown body, skips unsupported WordPress item types, and avoids overwriting duplicate output filenames.
+
+See [commands.md](commands.md#wordpress-import) for usage details.
+
 ## Writing a custom importer
 
 Create a class implementing `ContentImporterInterface`. Each importer declares its own options — a file-based importer might need a `directory`, while an API-based importer might need `url` and `api-key`.
