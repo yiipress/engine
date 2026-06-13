@@ -83,6 +83,7 @@
 - [x] Open Graph / meta tag helpers
 - [x] Canonical URL support
 - [x] Configurable `robots.txt` generation
+- [x] Generate `llms.txt` for LLM-friendly site indexes
 - [x] Redirect support (e.g., when changing permalinks, output redirect HTML or config)
 - [x] Root-relative redirects resolve against deployment paths from `base_url`
 - [x] 404 page in static build output for static hosting providers (Netlify, GitHub Pages, etc.)
