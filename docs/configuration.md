@@ -63,7 +63,7 @@ editor: code
 - **default_author** — author slug (referencing a file in `content/authors/`), used when entries have no explicit `authors` field
 - **author_pages** — set to `true` to generate `/authors/` and `/authors/:slug/` pages and link known entry authors to them (default: `false`)
 - **date_format** — PHP date format string for displaying dates in templates (e.g., `Y.m.d` for "2026.03.23", `F j, Y` for "March 23, 2026"). See [PHP date format](https://www.php.net/manual/en/datetime.format.php) for all available format characters
-- **entries_per_page** — default pagination size (overridden by collection `_collection.yaml`)
+- **entries_per_page** — default pagination size for taxonomy term pages and collection listings (overridden by collection `_collection.yaml` for collection listings)
 - **permalink** — default permalink pattern (overridden by collection or entry)
 - **taxonomies** — list of enabled taxonomy types
 - **theme** — default theme name for the site (see [Templates](templates.md))
