@@ -67,14 +67,6 @@
       <code><![CDATA[require $templatePath]]></code>
     </UnresolvableInclude>
   </file>
-  <file src="src/Build/FeedGenerator.php">
-    <MixedArgument>
-      <code><![CDATA[$authorName]]></code>
-    </MixedArgument>
-    <MixedPropertyFetch>
-      <code><![CDATA[$this->authors[$authorSlug]->title]]></code>
-    </MixedPropertyFetch>
-  </file>
   <file src="src/Build/NavigationPager.php">
     <InvalidArrayOffset>
       <code><![CDATA[$items[$index - 1]]]></code>

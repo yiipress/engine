@@ -182,6 +182,7 @@ $uiCatalogs ??= [$uiLanguage => []];
 <?php if ($collectionName !== null): ?>
     <link rel="alternate" type="application/rss+xml" title="<?= $h($t('rss_feed')) ?>" data-ui-attr-title="rss_feed" href="<?= $h($url($collectionName . '/rss.xml')) ?>">
     <link rel="alternate" type="application/atom+xml" title="<?= $h($t('atom_feed')) ?>" data-ui-attr-title="atom_feed" href="<?= $h($url($collectionName . '/feed.xml')) ?>">
+    <link rel="alternate" type="application/feed+json" title="JSON Feed" href="<?= $h($url($collectionName . '/feed.json')) ?>">
 <?php endif; ?>
     <script src="<?= $h(Asset::url('assets/theme/image-zoom.js', $rootPath, $assetManifest)) ?>" defer></script>
     <script src="<?= $h(Asset::url('assets/theme/code-copy.js', $rootPath, $assetManifest)) ?>" defer></script>

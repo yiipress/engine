@@ -152,18 +152,45 @@ final class FeedGeneratorTest extends TestCase
         assertStringContainsString('<content:encoded>', $rss);
     }
 
+    public function testJsonFeedContainsValidStructureAndItems(): void
+    {
+        $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())));
+        $entries = $this->createEntries();
+
+        $json = $generator->generateJson($this->siteConfig, $this->collection, $entries);
+        $feed = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame('https://jsonfeed.org/version/1.1', $feed['version']);
+        $this->assertSame('Blog', $feed['title']);
+        $this->assertSame('Latest posts', $feed['description']);
+        $this->assertSame('https://test.example.com/blog/', $feed['home_page_url']);
+        $this->assertSame('https://test.example.com/blog/feed.json', $feed['feed_url']);
+        $this->assertSame('en', $feed['language']);
+        $this->assertSame('First Post', $feed['items'][0]['title']);
+        $this->assertSame('https://test.example.com/blog/first-post/', $feed['items'][0]['url']);
+        $this->assertSame('First post summary.', $feed['items'][0]['summary']);
+        $this->assertSame('2024-03-15T00:00:00+00:00', $feed['items'][0]['date_published']);
+        $this->assertSame([['name' => 'john-doe']], $feed['items'][0]['authors']);
+        $this->assertSame(['php'], $feed['items'][0]['tags']);
+        assertStringContainsString('<p>First post body.</p>', $feed['items'][0]['content_html']);
+    }
+
     public function testEmptyEntriesProducesValidFeed(): void
     {
         $generator = new FeedGenerator(new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())));
 
         $atom = $generator->generateAtom($this->siteConfig, $this->collection, []);
         $rss = $generator->generateRss($this->siteConfig, $this->collection, []);
+        $json = $generator->generateJson($this->siteConfig, $this->collection, []);
+        $feed = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
 
         assertStringContainsString('<feed xmlns="http://www.w3.org/2005/Atom">', $atom);
         assertStringNotContainsString('<entry>', $atom);
 
         assertStringContainsString('<channel>', $rss);
         assertStringNotContainsString('<item>', $rss);
+
+        $this->assertSame([], $feed['items']);
     }
 
     public function testDefaultFeedLimitCapsItemsAtTwenty(): void
@@ -173,11 +200,15 @@ final class FeedGeneratorTest extends TestCase
 
         $atom = $generator->generateAtom($this->siteConfig, $this->collection, $entries);
         $rss = $generator->generateRss($this->siteConfig, $this->collection, $entries);
+        $json = $generator->generateJson($this->siteConfig, $this->collection, $entries);
+        $feed = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
 
         $this->assertSame(20, substr_count($atom, '<entry>'));
         $this->assertSame(20, substr_count($rss, '<item>'));
+        $this->assertSame(20, count($feed['items']));
         assertStringContainsString('<title>Entry 20</title>', $atom);
         assertStringNotContainsString('<title>Entry 21</title>', $atom);
+        $this->assertSame('Entry 20', $feed['items'][19]['title']);
     }
 
     public function testCustomFeedLimitCapsItems(): void
@@ -186,10 +217,14 @@ final class FeedGeneratorTest extends TestCase
         $collection = $this->collectionWithFeedLimit(3);
 
         $rss = $generator->generateRss($this->siteConfig, $collection, $this->createFeedEntries(5));
+        $json = $generator->generateJson($this->siteConfig, $collection, $this->createFeedEntries(5));
+        $feed = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
 
         $this->assertSame(3, substr_count($rss, '<item>'));
+        $this->assertSame(3, count($feed['items']));
         assertStringContainsString('<title>Entry 3</title>', $rss);
         assertStringNotContainsString('<title>Entry 4</title>', $rss);
+        $this->assertSame('Entry 3', $feed['items'][2]['title']);
     }
 
     public function testZeroFeedLimitKeepsAllItems(): void
@@ -199,11 +234,15 @@ final class FeedGeneratorTest extends TestCase
 
         $atom = $generator->generateAtom($this->siteConfig, $collection, $this->createFeedEntries(25));
         $rss = $generator->generateRss($this->siteConfig, $collection, $this->createFeedEntries(25));
+        $json = $generator->generateJson($this->siteConfig, $collection, $this->createFeedEntries(25));
+        $feed = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
 
         $this->assertSame(25, substr_count($atom, '<entry>'));
         $this->assertSame(25, substr_count($rss, '<item>'));
+        $this->assertSame(25, count($feed['items']));
         assertStringContainsString('<title>Entry 25</title>', $atom);
         assertStringContainsString('<title>Entry 25</title>', $rss);
+        $this->assertSame('Entry 25', $feed['items'][24]['title']);
     }
 
     public function testFeedFilesCanBeWrittenDirectly(): void
@@ -212,15 +251,19 @@ final class FeedGeneratorTest extends TestCase
         $entries = $this->createEntries();
         $atomPath = sys_get_temp_dir() . '/yiipress-feed-atom-' . uniqid() . '.xml';
         $rssPath = sys_get_temp_dir() . '/yiipress-feed-rss-' . uniqid() . '.xml';
+        $jsonPath = sys_get_temp_dir() . '/yiipress-feed-json-' . uniqid() . '.json';
 
         try {
             $generator->writeAtomFile($atomPath, $this->siteConfig, $this->collection, $entries);
             $generator->writeRssFile($rssPath, $this->siteConfig, $this->collection, $entries);
+            $generator->writeJsonFile($jsonPath, $this->siteConfig, $this->collection, $entries);
 
             assertFileExists($atomPath);
             assertFileExists($rssPath);
+            assertFileExists($jsonPath);
             assertStringContainsString('<feed xmlns="http://www.w3.org/2005/Atom">', (string) file_get_contents($atomPath));
             assertStringContainsString('<rss version="2.0"', (string) file_get_contents($rssPath));
+            assertStringContainsString('"version":"https://jsonfeed.org/version/1.1"', (string) file_get_contents($jsonPath));
         } finally {
             if (is_file($atomPath)) {
                 unlink($atomPath);
@@ -228,6 +271,10 @@ final class FeedGeneratorTest extends TestCase
 
             if (is_file($rssPath)) {
                 unlink($rssPath);
+            }
+
+            if (is_file($jsonPath)) {
+                unlink($jsonPath);
             }
         }
     }
@@ -270,6 +317,7 @@ final class FeedGeneratorTest extends TestCase
 
         $generator->generateAtom($this->siteConfig, $this->collection, $entries);
         $generator->generateRss($this->siteConfig, $this->collection, $entries);
+        $generator->generateJson($this->siteConfig, $this->collection, $entries);
 
         $this->assertSame(1, $processor->calls);
     }
