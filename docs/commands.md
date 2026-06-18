@@ -48,7 +48,7 @@ The command:
 1. Parses site config, navigation, collections, authors, and entries from the content directory.
 2. Runs build diagnostics and prints warnings.
 3. Prepares output writing. Incremental builds skip unchanged entries; full non-incremental builds write directly to fresh or empty output directories, and use a temporary output directory only when replacing existing marked build output.
-4. Renders collection entries — converts markdown to HTML via MD4C, applies the entry template, writes each entry as `index.html` at its resolved permalink path. Drafts and future-dated entries are excluded by default.
+4. Renders collection entries — converts markdown to HTML via `ext-markdown`, applies the entry template, writes each entry as `index.html` at its resolved permalink path. Drafts and future-dated entries are excluded by default.
 5. Renders standalone pages — markdown files in the content root directory (e.g., `contact.md` → `/contact/`).
 6. Copies content assets (images, SVGs, etc.) to the output directory.
 7. Generates Atom (`feed.xml`), RSS 2.0 (`rss.xml`), and JSON Feed (`feed.json`) feeds for each collection with `feed: true`, capped by collection `feed_limit` (`20` by default, `0` for unlimited).

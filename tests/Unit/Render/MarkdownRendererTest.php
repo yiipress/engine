@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace YiiPress\Tests\Unit\Render;
 
+use YiiPress\Content\Model\MarkdownConfig;
 use YiiPress\Render\MarkdownRenderer;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
+use function PHPUnit\Framework\assertStringNotContainsString;
 
 final class MarkdownRendererTest extends TestCase
 {
@@ -86,5 +88,28 @@ final class MarkdownRendererTest extends TestCase
 </ul>
 EXPECTED
         , $html);
+    }
+
+    public function testEscapesRawHtmlByDefault(): void
+    {
+        $html = $this->renderer->render("<section>block</section>\n\nA <span>span</span>.");
+
+        assertStringContainsString('&lt;section&gt;block&lt;/section&gt;', $html);
+        assertStringContainsString('&lt;span&gt;span&lt;/span&gt;', $html);
+        assertStringNotContainsString('<section>block</section>', $html);
+        assertStringNotContainsString('<span>span</span>', $html);
+    }
+
+    public function testAllowsRawHtmlWhenConfigured(): void
+    {
+        $renderer = new MarkdownRenderer(new MarkdownConfig(
+            noHtmlBlocks: false,
+            noHtmlSpans: false,
+        ));
+
+        $html = $renderer->render("<section>block</section>\n\nA <span>span</span>.");
+
+        assertStringContainsString('<section>block</section>', $html);
+        assertStringContainsString('<span>span</span>', $html);
     }
 }

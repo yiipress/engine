@@ -1,5 +1,15 @@
 # Performance Profiling Findings
 
+## Markdown Package Replacement
+
+Benchmarked with `BENCH_FILTER=MarkdownRendererBench make bench` on PHP 8.5.7
+inside the Docker dev image.
+
+| Subject                    | Before `ext-md4c` | After `yiipress/markdown` |
+|----------------------------|-------------------|---------------------------|
+| Short Markdown render mode | 1.484us           | 1.479us                   |
+| Long Markdown render mode  | 77.560us          | 67.529us                  |
+
 ## Initial Profile (before optimizations, opcache off)
 
 Profiled with XDebug + phpbench on `benchFullBuildSequential` (10k entries, sequential, no cache).

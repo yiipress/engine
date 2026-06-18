@@ -38,9 +38,9 @@ C;
 #include "ext/xmlwriter/php_xmlwriter.h"
 {$processExtensionIncludes}
 
-extern zend_module_entry md4c_module_entry;
-#ifndef phpext_md4c_ptr
-# define phpext_md4c_ptr &md4c_module_entry
+extern zend_module_entry markdown_module_entry;
+#ifndef phpext_markdown_ptr
+# define phpext_markdown_ptr &markdown_module_entry
 #endif
 
 extern zend_module_entry yaml_module_entry;
@@ -159,36 +159,34 @@ $highlighterConfigContents = str_replace(
 
 file_put_contents($highlighterConfig, $highlighterConfigContents);
 
-$md4cSource = getenv('YIIPRESS_MD4C_SOURCE');
-if ($md4cSource === false || $md4cSource === '') {
-    throw new RuntimeException('YIIPRESS_MD4C_SOURCE is required.');
+$markdownSource = getenv('MARKDOWN_SOURCE');
+if ($markdownSource === false || $markdownSource === '') {
+    throw new RuntimeException('MARKDOWN_SOURCE is required.');
 }
 
-FileSystem::copyDir($md4cSource, SOURCE_PATH . '/php-src/ext/md4c');
+FileSystem::copyDir($markdownSource, SOURCE_PATH . '/php-src/ext/markdown');
 
-$md4cWindowsConfig = SOURCE_PATH . '/php-src/ext/md4c/config.w32';
-if (!is_file($md4cWindowsConfig)) {
-    throw new RuntimeException('md4c config.w32 was not found.');
+$markdownWindowsConfig = SOURCE_PATH . '/php-src/ext/markdown/config.w32';
+if (!is_file($markdownWindowsConfig)) {
+    throw new RuntimeException('markdown config.w32 was not found.');
 }
 
-$md4cWindowsConfigContents = <<<'JS'
-ARG_ENABLE("md4c", "Enable the md4c extension", "no");
-
-if (PHP_MD4C != "no") {
-    EXTENSION("md4c", "md4c.c", false);
+$markdownWindowsConfigContents = file_get_contents($markdownWindowsConfig);
+if ($markdownWindowsConfigContents === false) {
+    throw new RuntimeException('Unable to read markdown config.w32.');
 }
-JS;
 
-file_put_contents($md4cWindowsConfig, $md4cWindowsConfigContents);
+$markdownWindowsConfigContents = str_replace(
+    'EXTENSION("markdown", "markdown.c");',
+    'EXTENSION("markdown", "markdown.c", false);',
+    $markdownWindowsConfigContents,
+    $markdownWindowsConfigReplacementCount,
+);
 
-$md4cHeader = <<<'C'
-#ifndef PHP_MD4C_H
-#define PHP_MD4C_H
+if ($markdownWindowsConfigReplacementCount !== 1) {
+    if (!str_contains($markdownWindowsConfigContents, 'EXTENSION("markdown", "markdown.c", false);')) {
+        throw new RuntimeException('Unable to patch markdown config.w32 extension mode.');
+    }
+}
 
-extern zend_module_entry md4c_module_entry;
-#define phpext_md4c_ptr &md4c_module_entry
-
-#endif
-C;
-
-file_put_contents(SOURCE_PATH . '/php-src/ext/md4c/php_md4c.h', $md4cHeader);
+file_put_contents($markdownWindowsConfig, $markdownWindowsConfigContents);
