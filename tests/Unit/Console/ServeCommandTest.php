@@ -6,6 +6,7 @@ namespace YiiPress\Tests\Unit\Console;
 
 use YiiPress\Console\ServeCommand;
 use YiiPress\RuntimePaths;
+use YiiPress\Web\LiveReload\SiteBuildResult;
 use Evenement\EventEmitter;
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
@@ -412,6 +413,17 @@ final class ServeCommandTest extends TestCase
         } finally {
             $closeMethod->invoke($command);
         }
+    }
+
+    #[Test]
+    public function serveEncodesLiveReloadBuildErrorWithInvalidUtf8Output(): void
+    {
+        $command = new ServeCommand();
+        $method = new ReflectionMethod($command, 'liveReloadBuildErrorData');
+
+        $data = $method->invoke($command, new SiteBuildResult(1, "failed \xB1 build"));
+
+        self::assertSame('{"output":"failed \ufffd build"}', $data);
     }
 
     #[Test]

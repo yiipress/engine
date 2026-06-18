@@ -425,10 +425,20 @@ final class ServeCommand extends Command
 
             $this->broadcastLiveReloadEvent(
                 'build-error',
-                json_encode(['output' => $result->output], JSON_THROW_ON_ERROR),
+                $this->liveReloadBuildErrorData($result),
                 true,
             );
         });
+    }
+
+    private function liveReloadBuildErrorData(SiteBuildResult $result): string
+    {
+        $payload = json_encode(['output' => $result->output], JSON_INVALID_UTF8_SUBSTITUTE);
+        if ($payload === false) {
+            return '{"output":"Build failed, but output could not be encoded."}';
+        }
+
+        return $payload;
     }
 
     private function broadcastLiveReloadEvent(string $event, string $data, bool $close): void

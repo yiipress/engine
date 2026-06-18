@@ -20,7 +20,6 @@
         es = new EventSource("/_live-reload");
         es.addEventListener("reload", function() { es.close(); location.reload(); });
         es.addEventListener("build-error", function(event) {
-            es.close();
             try {
                 var payload = JSON.parse(event.data);
                 if (payload.output) {
