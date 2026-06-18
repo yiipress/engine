@@ -38,9 +38,9 @@ C;
 #include "ext/xmlwriter/php_xmlwriter.h"
 {$processExtensionIncludes}
 
-extern zend_module_entry markdown_module_entry;
-#ifndef phpext_markdown_ptr
-# define phpext_markdown_ptr &markdown_module_entry
+extern zend_module_entry mdparser_module_entry;
+#ifndef phpext_mdparser_ptr
+# define phpext_mdparser_ptr &mdparser_module_entry
 #endif
 
 extern zend_module_entry yaml_module_entry;
@@ -159,34 +159,34 @@ $highlighterConfigContents = str_replace(
 
 file_put_contents($highlighterConfig, $highlighterConfigContents);
 
-$markdownSource = getenv('MARKDOWN_SOURCE');
-if ($markdownSource === false || $markdownSource === '') {
-    throw new RuntimeException('MARKDOWN_SOURCE is required.');
+$mdparserSource = getenv('MDPARSER_SOURCE');
+if ($mdparserSource === false || $mdparserSource === '') {
+    throw new RuntimeException('MDPARSER_SOURCE is required.');
 }
 
-FileSystem::copyDir($markdownSource, SOURCE_PATH . '/php-src/ext/markdown');
+FileSystem::copyDir($mdparserSource, SOURCE_PATH . '/php-src/ext/mdparser');
 
-$markdownWindowsConfig = SOURCE_PATH . '/php-src/ext/markdown/config.w32';
-if (!is_file($markdownWindowsConfig)) {
-    throw new RuntimeException('markdown config.w32 was not found.');
+$mdparserWindowsConfig = SOURCE_PATH . '/php-src/ext/mdparser/config.w32';
+if (!is_file($mdparserWindowsConfig)) {
+    throw new RuntimeException('mdparser config.w32 was not found.');
 }
 
-$markdownWindowsConfigContents = file_get_contents($markdownWindowsConfig);
-if ($markdownWindowsConfigContents === false) {
-    throw new RuntimeException('Unable to read markdown config.w32.');
+$mdparserWindowsConfigContents = file_get_contents($mdparserWindowsConfig);
+if ($mdparserWindowsConfigContents === false) {
+    throw new RuntimeException('Unable to read mdparser config.w32.');
 }
 
-$markdownWindowsConfigContents = str_replace(
-    'EXTENSION("markdown", "markdown.c");',
-    'EXTENSION("markdown", "markdown.c", false);',
-    $markdownWindowsConfigContents,
-    $markdownWindowsConfigReplacementCount,
+$mdparserWindowsConfigContents = str_replace(
+    'EXTENSION("mdparser", wrapper_sources);',
+    'EXTENSION("mdparser", wrapper_sources, false);',
+    $mdparserWindowsConfigContents,
+    $mdparserWindowsConfigReplacementCount,
 );
 
-if ($markdownWindowsConfigReplacementCount !== 1) {
-    if (!str_contains($markdownWindowsConfigContents, 'EXTENSION("markdown", "markdown.c", false);')) {
-        throw new RuntimeException('Unable to patch markdown config.w32 extension mode.');
+if ($mdparserWindowsConfigReplacementCount !== 1) {
+    if (!str_contains($mdparserWindowsConfigContents, 'EXTENSION("mdparser", wrapper_sources, false);')) {
+        throw new RuntimeException('Unable to patch mdparser config.w32 extension mode.');
     }
 }
 
-file_put_contents($markdownWindowsConfig, $markdownWindowsConfigContents);
+file_put_contents($mdparserWindowsConfig, $mdparserWindowsConfigContents);

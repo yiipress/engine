@@ -25,14 +25,13 @@ RUN install-php-extensions \
     pcntl \
     posix
 
-FROM base AS markdown-extension-builder
+FROM base AS mdparser-extension-builder
 COPY --from=composer /composer /usr/bin/composer
-ADD https://repo.packagist.org/p2/yiipress/markdown.json /tmp/yiipress-markdown.json
 RUN --mount=type=cache,target=/tmp/composer-cache \
-    COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project --no-dev --no-progress --no-interaction yiipress/markdown /build/markdown-extension
-RUN cd /build/markdown-extension \
+    COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project --no-dev --no-progress --no-interaction iliaal/mdparser /build/mdparser-extension
+RUN cd /build/mdparser-extension \
     && phpize \
-    && MARKDOWN_VERSION="$(php -r '$package = "yiipress/markdown"; $data = json_decode(file_get_contents("/tmp/yiipress-markdown.json"), true, 512, JSON_THROW_ON_ERROR); foreach ($data["packages"][$package] as $release) { $version = $release["version"]; if (!preg_match("/(?:^dev-|dev$|alpha|beta|RC)/i", $version)) { echo $version; exit(0); } } exit(1);')" ./configure \
+    && ./configure --enable-mdparser \
     && make -j"$(nproc)" \
     && make install
 
@@ -55,9 +54,9 @@ RUN --mount=type=cache,target=/root/.cargo/git \
     && make install
 
 FROM base AS app-base
-COPY --from=markdown-extension-builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
+COPY --from=mdparser-extension-builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
 COPY --from=highlighter-extension-builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
-RUN docker-php-ext-enable highlighter markdown
+RUN docker-php-ext-enable highlighter mdparser
 
 LABEL org.opencontainers.image.licenses="BSD-3-Clause" \
     org.opencontainers.image.title="YiiPress" \
@@ -136,14 +135,14 @@ RUN --mount=type=cache,target=/tmp/composer-cache \
 FROM app-base AS static-package
 ARG PHP_VERSION=8.5
 ARG STATIC_PHP_CLI_REF=5b5861c366a0d94bc84002db7b3f46144b388fbb
-ARG STATIC_PHP_EXTENSIONS=ctype,dom,filter,highlighter,inotify,markdown,mbstring,opcache,pcntl,phar,posix,xmlwriter,yaml
+ARG STATIC_PHP_EXTENSIONS=ctype,dom,filter,highlighter,inotify,mdparser,mbstring,opcache,pcntl,phar,posix,xmlwriter,yaml
 ARG TARGETARCH
 ENV CARGO_HOME=/root/.cargo \
     RUSTUP_HOME=/usr/local/rustup \
     PATH="/usr/local/musl/bin:/root/.cargo/bin:${PATH}" \
     CARGO_BUILD_TARGET=x86_64-unknown-linux-musl \
     HIGHLIGHTER_SOURCE=/opt/yiipress-highlighter \
-    MARKDOWN_SOURCE=/opt/yiipress-markdown
+    MDPARSER_SOURCE=/opt/mdparser
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         autoconf \
@@ -173,14 +172,13 @@ COPY --from=rust:bookworm /usr/local/cargo /root/.cargo
 COPY --from=rust:bookworm /usr/local/rustup /usr/local/rustup
 RUN rustup target add x86_64-unknown-linux-musl
 WORKDIR /static-php
-ADD https://repo.packagist.org/p2/yiipress/markdown.json /tmp/static-yiipress-markdown.json
 ADD https://repo.packagist.org/p2/yiipress/highlighter.json /tmp/static-yiipress-highlighter.json
 RUN --mount=type=cache,target=/tmp/composer-cache \
     curl -fsSL "https://github.com/crazywhalecc/static-php-cli/archive/${STATIC_PHP_CLI_REF}.tar.gz" \
     | tar -xz --strip-components=1 -C /static-php \
     && COMPOSER_CACHE_DIR=/tmp/composer-cache composer install --no-dev --no-progress --no-interaction --classmap-authoritative
 RUN --mount=type=cache,target=/tmp/composer-cache \
-    COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project --no-dev --no-progress --no-interaction yiipress/markdown /opt/yiipress-markdown
+    COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project --no-dev --no-progress --no-interaction iliaal/mdparser /opt/mdparser
 RUN --mount=type=cache,target=/tmp/composer-cache \
     COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project --no-dev --no-progress --no-interaction yiipress/highlighter /opt/yiipress-highlighter
 RUN cd /opt/yiipress-highlighter && rustup target add x86_64-unknown-linux-musl
@@ -197,8 +195,7 @@ RUN --mount=type=cache,target=/root/.cargo/git \
     && mkdir -p buildroot/bin \
     && ln -sf /usr/bin/pkg-config buildroot/bin/pkg-config \
     && SPC_TOOLCHAIN='SPC\toolchain\MuslToolchain' SPC_TARGET=x86_64-linux-musl bin/spc doctor --auto-fix \
-    && (MARKDOWN_VERSION="$(php -r '$package = "yiipress/markdown"; $data = json_decode(file_get_contents("/tmp/static-yiipress-markdown.json"), true, 512, JSON_THROW_ON_ERROR); foreach ($data["packages"][$package] as $release) { $version = $release["version"]; if (!preg_match("/(?:^dev-|dev$|alpha|beta|RC)/i", $version)) { echo $version; exit(0); } } exit(1);')" \
-        HIGHLIGHTER_VERSION="$(php -r '$package = "yiipress/highlighter"; $data = json_decode(file_get_contents("/tmp/static-yiipress-highlighter.json"), true, 512, JSON_THROW_ON_ERROR); foreach ($data["packages"][$package] as $release) { $version = $release["version"]; if (!preg_match("/(?:^dev-|dev$|alpha|beta|RC)/i", $version)) { echo $version; exit(0); } } exit(1);')" \
+    && (HIGHLIGHTER_VERSION="$(php -r '$package = "yiipress/highlighter"; $data = json_decode(file_get_contents("/tmp/static-yiipress-highlighter.json"), true, 512, JSON_THROW_ON_ERROR); foreach ($data["packages"][$package] as $release) { $version = $release["version"]; if (!preg_match("/(?:^dev-|dev$|alpha|beta|RC)/i", $version)) { echo $version; exit(0); } } exit(1);')" \
         bin/spc build "${STATIC_PHP_EXTENSIONS}" --build-micro --with-micro-fake-cli --with-upx-pack -P /opt/register-yiipress-highlighter.php \
         || (tail -n 200 /static-php/log/spc.shell.log && false))
 COPY --from=phar-builder /app/dist/yiipress.phar /artifacts/yiipress.phar

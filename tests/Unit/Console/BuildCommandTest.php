@@ -1378,7 +1378,7 @@ PHP,
 
         $html = file_get_contents($outputDir . '/blog/post/index.html');
         assertNotFalse($html);
-        assertMatchesRegularExpression('~<img src="../../blog/assets/photo\.[a-f0-9]{12}\.jpg" alt="">~', $html);
+        assertMatchesRegularExpression('~<img src="../../blog/assets/photo\.[a-f0-9]{12}\.jpg" alt="" ?/>~', $html);
         assertStringContainsString('content="https://samdark.github.io/blog/blog/assets/photo.jpg"', $html);
     }
 

@@ -17,7 +17,7 @@ final class LatexMathProcessorBench
     public function __construct()
     {
         $this->processor = new LatexMathProcessor();
-        $this->content = str_repeat('<p>Inline <x-equation>x + y</x-equation>.</p>', 100);
+        $this->content = str_repeat('<p>Inline <span class="math">x + y</span>.</p>', 100);
     }
 
     #[Revs(1_000)]

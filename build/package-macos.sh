@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PHP_VERSION="${PHP_VERSION:-8.5}"
 STATIC_PHP_CLI_REF="${STATIC_PHP_CLI_REF:-5b5861c366a0d94bc84002db7b3f46144b388fbb}"
-STATIC_PHP_EXTENSIONS="${STATIC_PHP_EXTENSIONS:-ctype,dom,filter,highlighter,markdown,mbstring,opcache,pcntl,phar,posix,xmlwriter,yaml}"
+STATIC_PHP_EXTENSIONS="${STATIC_PHP_EXTENSIONS:-ctype,dom,filter,highlighter,mdparser,mbstring,opcache,pcntl,phar,posix,xmlwriter,yaml}"
 
 detect_arch() {
     case "$(uname -m)" in
@@ -70,7 +70,7 @@ DIST_PATH="${ROOT}/${DIST_DIR}"
 WORK_PATH="${ROOT}/runtime/package-macos"
 APP_PATH="${WORK_PATH}/app"
 STATIC_PHP_PATH="${WORK_PATH}/static-php-cli"
-MARKDOWN_PATH="${WORK_PATH}/yiipress-markdown"
+MDPARSER_PATH="${WORK_PATH}/mdparser"
 HIGHLIGHTER_PATH="${WORK_PATH}/yiipress-highlighter"
 PHAR_PATH="${WORK_PATH}/yiipress.phar"
 BIN_PATH="${DIST_PATH}/yiipress"
@@ -164,7 +164,7 @@ invoke composer install \
     --no-interaction \
     --classmap-authoritative \
     --ignore-platform-req=ext-inotify \
-    --ignore-platform-req=ext-markdown \
+    --ignore-platform-req=ext-mdparser \
     --ignore-platform-req=ext-yaml \
     --ignore-platform-req=ext-highlighter
 invoke php -d phar.readonly=0 build/package-phar.php "$PHAR_PATH"
@@ -176,13 +176,13 @@ if [ ! -d "$STATIC_PHP_PATH" ]; then
         "$STATIC_PHP_PATH"
 fi
 
-rm -rf "$MARKDOWN_PATH" "$HIGHLIGHTER_PATH"
+rm -rf "$MDPARSER_PATH" "$HIGHLIGHTER_PATH"
 invoke composer create-project \
     --no-dev \
     --no-progress \
     --no-interaction \
-    yiipress/markdown \
-    "$MARKDOWN_PATH"
+    iliaal/mdparser \
+    "$MDPARSER_PATH"
 invoke composer create-project \
     --no-dev \
     --no-progress \
@@ -199,9 +199,8 @@ invoke composer install \
 
 export CARGO_BUILD_TARGET
 export HIGHLIGHTER_SOURCE="$HIGHLIGHTER_PATH"
-export MARKDOWN_SOURCE="$MARKDOWN_PATH"
+export MDPARSER_SOURCE="$MDPARSER_PATH"
 export HIGHLIGHTER_VERSION="$(packagist_latest_stable_version yiipress/highlighter)"
-export MARKDOWN_VERSION="$(packagist_latest_stable_version yiipress/markdown)"
 export YIIPRESS_STATIC_INCLUDE_PROCESS_EXTENSIONS=1
 
 pushd "$HIGHLIGHTER_PATH" >/dev/null

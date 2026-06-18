@@ -4,39 +4,35 @@ declare(strict_types=1);
 
 namespace YiiPress\Render;
 
+use MdParser\Options;
+use MdParser\Parser;
 use YiiPress\Content\Model\MarkdownConfig;
-use YiiPress\Markdown\MarkdownOptions;
-use YiiPress\Markdown\MarkdownRenderer as NativeMarkdownRenderer;
 
 final class MarkdownRenderer
 {
-    private NativeMarkdownRenderer $renderer;
+    private Parser $renderer;
 
     public function __construct(MarkdownConfig $config = new MarkdownConfig())
     {
-        $this->renderer = new NativeMarkdownRenderer(new MarkdownOptions(
+        $this->renderer = new Parser(new Options(
             tables: $config->tables,
             strikethrough: $config->strikethrough,
-            tasklists: $config->tasklists,
-            urlAutolinks: $config->urlAutolinks,
-            emailAutolinks: $config->emailAutolinks,
-            wwwAutolinks: $config->wwwAutolinks,
+            tasklist: $config->tasklists,
+            autolink: $config->urlAutolinks || $config->emailAutolinks || $config->wwwAutolinks,
             collapseWhitespace: $config->collapseWhitespace,
             latexMath: $config->latexMath,
-            wikilinks: $config->wikilinks,
+            wikiLinks: $config->wikilinks,
             underline: $config->underline,
-            htmlBlocks: !$config->noHtmlBlocks,
-            htmlSpans: !$config->noHtmlSpans,
-            permissiveAtxHeaders: $config->permissiveAtxHeaders,
+            unsafe: !$config->noHtmlBlocks || !$config->noHtmlSpans,
+            permissiveAtxHeadings: $config->permissiveAtxHeaders,
             noIndentedCodeBlocks: $config->noIndentedCodeBlocks,
-            hardSoftBreaks: $config->hardSoftBreaks,
-            admonitions: false,
+            hardbreaks: $config->hardSoftBreaks,
             footnotes: false,
         ));
     }
 
     public function render(string $markdown): string
     {
-        return $this->renderer->render($markdown);
+        return $this->renderer->toHtml($markdown);
     }
 }

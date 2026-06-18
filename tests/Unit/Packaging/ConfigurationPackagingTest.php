@@ -213,11 +213,12 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringNotContainsString('[string] $MarkdownVersion', $script);
         self::assertStringContainsString('function Get-PackagistLatestStableVersion', $script);
         self::assertStringContainsString('$env:HIGHLIGHTER_VERSION = Get-PackagistLatestStableVersion "yiipress/highlighter"', $script);
-        self::assertStringContainsString('$env:MARKDOWN_VERSION = Get-PackagistLatestStableVersion "yiipress/markdown"', $script);
+        self::assertStringNotContainsString('$env:MARKDOWN_VERSION', $script);
         self::assertStringNotContainsString('"dev-master"', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-inotify', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-pcntl', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-posix', $script);
+        self::assertStringContainsString('--ignore-platform-req=ext-mdparser', $script);
         self::assertStringContainsString('function Write-LogTail', $script);
         self::assertStringContainsString('log/spc.output.log', $script);
         self::assertStringContainsString('log/spc.shell.log', $script);
@@ -249,10 +250,10 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringNotContainsString('MARKDOWN_VERSION="${MARKDOWN_VERSION:-', $script);
         self::assertStringContainsString('packagist_latest_stable_version()', $script);
         self::assertStringContainsString('export HIGHLIGHTER_VERSION="$(packagist_latest_stable_version yiipress/highlighter)"', $script);
-        self::assertStringContainsString('export MARKDOWN_VERSION="$(packagist_latest_stable_version yiipress/markdown)"', $script);
+        self::assertStringNotContainsString('export MARKDOWN_VERSION', $script);
         self::assertStringNotContainsString('dev-master', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-inotify', $script);
-        self::assertStringContainsString('--ignore-platform-req=ext-markdown', $script);
+        self::assertStringContainsString('--ignore-platform-req=ext-mdparser', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-yaml', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-highlighter', $script);
         self::assertStringContainsString('write_log_tail "${STATIC_PHP_PATH}/log/spc.output.log"', $script);
@@ -710,21 +711,21 @@ PHP;
         self::assertIsString($registrationPatch);
 
         self::assertStringContainsString("'highlighter'", $extensionConfigPatch);
-        self::assertStringContainsString("'markdown'", $extensionConfigPatch);
+        self::assertStringContainsString("'mdparser'", $extensionConfigPatch);
         self::assertStringNotContainsString("'unix-only' => true", $extensionConfigPatch);
         self::assertStringContainsString("patch_point() !== 'after-exts-extract'", $registrationPatch);
         self::assertStringContainsString('ARG_ENABLE("highlighter"', $registrationPatch);
-        self::assertStringContainsString('MARKDOWN_SOURCE is required.', $registrationPatch);
-        self::assertStringContainsString('/php-src/ext/markdown/config.w32', $registrationPatch);
+        self::assertStringContainsString('MDPARSER_SOURCE is required.', $registrationPatch);
+        self::assertStringContainsString('/php-src/ext/mdparser/config.w32', $registrationPatch);
         self::assertStringContainsString('EXTENSION("highlighter", "highlighter.c", false);', $registrationPatch);
         self::assertStringContainsString('$highlighterWindowsConfigReplacementCount !== 1', $registrationPatch);
         self::assertStringContainsString(
             'str_contains($highlighterWindowsConfigContents, \'EXTENSION("highlighter", "highlighter.c", false);\')',
             $registrationPatch,
         );
-        self::assertStringContainsString('EXTENSION("markdown", "markdown.c", false);', $registrationPatch);
-        self::assertStringContainsString('markdown config.w32 was not found.', $registrationPatch);
-        self::assertStringContainsString('phpext_markdown_ptr', $registrationPatch);
+        self::assertStringContainsString('EXTENSION("mdparser", wrapper_sources, false);', $registrationPatch);
+        self::assertStringContainsString('mdparser config.w32 was not found.', $registrationPatch);
+        self::assertStringContainsString('phpext_mdparser_ptr', $registrationPatch);
     }
 
     #[Test]
@@ -791,13 +792,13 @@ PHP;
     }
 
     #[Test]
-    public function dockerBuildsMarkdownExtensionFromPackagistPackage(): void
+    public function dockerBuildsMdParserExtensionFromPackagistPackage(): void
     {
         $dockerfile = file_get_contents(dirname(__DIR__, 3) . '/docker/Dockerfile');
         self::assertIsString($dockerfile);
 
-        self::assertStringContainsString('composer create-project --no-dev --no-progress --no-interaction yiipress/markdown', $dockerfile);
-        self::assertStringContainsString('docker-php-ext-enable highlighter markdown', $dockerfile);
+        self::assertStringContainsString('composer create-project --no-dev --no-progress --no-interaction iliaal/mdparser', $dockerfile);
+        self::assertStringContainsString('docker-php-ext-enable highlighter mdparser', $dockerfile);
         self::assertStringNotContainsString('md4c \\', $dockerfile);
         self::assertStringNotContainsString('pecl.php.net/get/md4c', $dockerfile);
     }
