@@ -10,6 +10,7 @@ use YiiPress\Content\Model\Entry;
 use YiiPress\Processor\LatexMath\LatexMathProcessor;
 
 use function PHPUnit\Framework\assertSame;
+use function str_replace;
 
 final class LatexMathProcessorTest extends TestCase
 {
@@ -33,6 +34,9 @@ final class LatexMathProcessorTest extends TestCase
 
         $this->assertStringContainsString('katex.min.css', $assets);
         $this->assertStringContainsString('katex.min.js', $assets);
+        $this->assertStringContainsString('sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+', $assets);
+        $this->assertStringContainsString('sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg', $assets);
+        $this->assertStringContainsString('crossorigin="anonymous"', $assets);
         $this->assertStringContainsString('assets/plugins/latex-math.js', $assets);
     }
 
@@ -47,7 +51,9 @@ final class LatexMathProcessorTest extends TestCase
 
         $this->assertCount(1, $files);
         $sourceFile = array_key_first($files);
-        $this->assertStringEndsWith('/Processor/LatexMath/assets/latex-math.js', $sourceFile);
+        $this->assertNotNull($sourceFile);
+        $normalizedSourceFile = str_replace('\\', '/', $sourceFile);
+        $this->assertStringEndsWith('/Processor/LatexMath/assets/latex-math.js', $normalizedSourceFile);
         assertSame('assets/plugins/latex-math.js', $files[$sourceFile]);
 
         $script = file_get_contents($sourceFile);
