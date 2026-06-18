@@ -1,10 +1,8 @@
 param(
     [string] $DistDir = "dist/windows-amd64",
     [string] $PhpVersion = "8.5",
-    [string] $Md4cVersion = "1.1",
-    [string] $HighlighterVersion = "1.0.1",
     [string] $StaticPhpCliRef = "5b5861c366a0d94bc84002db7b3f46144b388fbb",
-    [string] $StaticPhpExtensions = "ctype,dom,filter,highlighter,mbstring,md4c,opcache,phar,xmlwriter,yaml"
+    [string] $StaticPhpExtensions = "ctype,dom,filter,highlighter,markdown,mbstring,opcache,phar,xmlwriter,yaml"
 )
 
 $ErrorActionPreference = "Stop"
@@ -15,7 +13,7 @@ $distPath = Join-Path $root $DistDir
 $workPath = Join-Path $root "runtime/package-windows"
 $appPath = Join-Path $workPath "app"
 $staticPhpPath = Join-Path $workPath "static-php-cli"
-$md4cPath = Join-Path $workPath "md4c-extension"
+$markdownPath = Join-Path $workPath "yiipress-markdown"
 $highlighterPath = Join-Path $workPath "yiipress-highlighter"
 $pharPath = Join-Path $workPath "yiipress.phar"
 $exePath = Join-Path $distPath "yiipress.exe"
@@ -85,6 +83,23 @@ function Copy-CleanPath {
     Copy-Item $Source $Destination -Recurse -Force
 }
 
+function Get-PackagistLatestStableVersion {
+    param(
+        [string] $Package
+    )
+
+    $metadata = Invoke-RestMethod -Uri "https://repo.packagist.org/p2/${Package}.json"
+    $releases = $metadata.packages.PSObject.Properties[$Package].Value
+    foreach ($release in $releases) {
+        $version = [string] $release.version
+        if ($version -notmatch "(?i)(^dev-|dev$|alpha|beta|RC)") {
+            return $version
+        }
+    }
+
+    throw "Unable to determine latest stable Packagist version for $Package."
+}
+
 foreach ($command in @("php", "composer", "tar", "rustup", "cargo")) {
     Test-NativeCommand $command
 }
@@ -122,7 +137,7 @@ try {
         "--ignore-platform-req=ext-inotify",
         "--ignore-platform-req=ext-pcntl",
         "--ignore-platform-req=ext-posix",
-        "--ignore-platform-req=ext-md4c",
+        "--ignore-platform-req=ext-markdown",
         "--ignore-platform-req=ext-yaml",
         "--ignore-platform-req=ext-highlighter"
     )
@@ -137,21 +152,28 @@ if (!(Test-Path $staticPhpPath)) {
         $staticPhpPath
 }
 
-if (!(Test-Path $md4cPath)) {
-    Expand-TarGzArchive "https://pecl.php.net/get/md4c-${Md4cVersion}.tgz" $md4cPath
+foreach ($path in @($markdownPath, $highlighterPath)) {
+    if (Test-Path $path) {
+        Remove-Item $path -Recurse -Force
+    }
 }
 
-if (!(Test-Path $highlighterPath)) {
-    Invoke-NativeCommand "composer" @(
-        "create-project",
-        "--no-dev",
-        "--no-progress",
-        "--no-interaction",
-        "yiipress/highlighter",
-        $highlighterPath,
-        $HighlighterVersion
-    )
-}
+Invoke-NativeCommand "composer" @(
+    "create-project",
+    "--no-dev",
+    "--no-progress",
+    "--no-interaction",
+    "yiipress/markdown",
+    $markdownPath
+)
+Invoke-NativeCommand "composer" @(
+    "create-project",
+    "--no-dev",
+    "--no-progress",
+    "--no-interaction",
+    "yiipress/highlighter",
+    $highlighterPath
+)
 
 Push-Location $staticPhpPath
 try {
@@ -165,7 +187,9 @@ try {
 
     $env:CARGO_BUILD_TARGET = "x86_64-pc-windows-msvc"
     $env:HIGHLIGHTER_SOURCE = $highlighterPath
-    $env:YIIPRESS_MD4C_SOURCE = $md4cPath
+    $env:MARKDOWN_SOURCE = $markdownPath
+    $env:HIGHLIGHTER_VERSION = Get-PackagistLatestStableVersion "yiipress/highlighter"
+    $env:MARKDOWN_VERSION = Get-PackagistLatestStableVersion "yiipress/markdown"
     $env:YIIPRESS_STATIC_INCLUDE_PROCESS_EXTENSIONS = "0"
     $env:RUSTFLAGS = "-C target-feature=+crt-static"
 

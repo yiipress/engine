@@ -21,6 +21,7 @@
     </projectFiles>
     <stubs>
         <file name="stubs/highlighter.stub.php" />
+        <file name="stubs/markdown.stub.php" />
     </stubs>
     <issueHandlers>
         <MixedAssignment errorLevel="suppress" />

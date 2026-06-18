@@ -343,6 +343,14 @@ final class BuildCommandTest extends TestCase
         assertStringContainsString('<rss version="2.0"', $rss);
         assertStringContainsString('<title>Test Post</title>', $rss);
         assertStringContainsString('<content:encoded>', $rss);
+
+        $jsonFile = $this->outputDir . '/blog/feed.json';
+        assertFileExists($jsonFile);
+        $json = (string) file_get_contents($jsonFile);
+        $feed = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        assertSame('https://jsonfeed.org/version/1.1', $feed['version']);
+        assertStringContainsString('"title":"Test Post"', $json);
+        assertStringContainsString('This is the body of the test post.', $json);
     }
 
     public function testFeedEntriesAreSortedChronologically(): void
@@ -1127,6 +1135,109 @@ PHP,
         assertStringContainsString('https://test.example.com/ru/blog/test-post/', $sitemap);
     }
 
+    public function testBuildReportsInvalidEntryDateWithFilePath(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'index.md' => "---\ntitle: Home\ndate: not-a-real-date\n---\n\nHello.\n",
+        ]);
+
+        $result = $this->runBuildResult($contentDir);
+
+        assertSame(65, $result['exitCode'], $result['output']);
+        assertStringContainsString('Invalid content configuration', $result['output']);
+        assertStringContainsString('File:', $result['output']);
+        assertStringContainsString($contentDir . '/index.md', $result['output']);
+        assertStringContainsString('Invalid date in front matter', $result['output']);
+    }
+
+    public function testBuildRejectsDuplicatePermalinks(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'index.md' => "---\ntitle: Home\npermalink: /same/\n---\n\nHello.\n",
+            'about.md' => "---\ntitle: About\npermalink: /same/\n---\n\nAbout.\n",
+        ]);
+
+        $result = $this->runBuildResult($contentDir);
+
+        assertSame(65, $result['exitCode'], $result['output']);
+        assertStringContainsString('Duplicate permalink "/same/"', $result['output']);
+    }
+
+    public function testBuildRejectsTraversingPermalink(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'index.md' => "---\ntitle: Home\npermalink: /../../outside/\n---\n\nHello.\n",
+        ]);
+
+        $result = $this->runBuildResult($contentDir);
+
+        assertSame(65, $result['exitCode'], $result['output']);
+        assertStringContainsString('Invalid permalink "/../../outside/"', $result['output']);
+        assertFalse(is_file(dirname($this->outputDir) . '/outside/index.html'));
+    }
+
+    public function testBuildRejectsPermalinkWithoutTrailingSlash(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'index.md' => "---\ntitle: Home\npermalink: /about\n---\n\nHello.\n",
+        ]);
+
+        $result = $this->runBuildResult($contentDir);
+
+        assertSame(65, $result['exitCode'], $result['output']);
+        assertStringContainsString('Invalid permalink "/about"', $result['output']);
+        assertFalse(is_file($this->outputDir . '/aboutindex.html'));
+    }
+
+    public function testBuildRejectsPermalinkWithRepeatedSlashes(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'index.md' => "---\ntitle: Home\npermalink: /about//team/\n---\n\nHello.\n",
+        ]);
+
+        $result = $this->runBuildResult($contentDir);
+
+        assertSame(65, $result['exitCode'], $result['output']);
+        assertStringContainsString('Invalid permalink "/about//team/"', $result['output']);
+        assertFalse(is_file($this->outputDir . '/about/team/index.html'));
+    }
+
+    public function testFailedNoCacheBuildRemovesTemporaryOutputDirectory(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'index.md' => "---\ntitle: Home\npermalink: /broken\n---\n\nHello.\n",
+        ]);
+        mkdir($this->outputDir, 0o755, true);
+        file_put_contents($this->outputDir . '/.yiipress-build', "YiiPress build output\n");
+        file_put_contents($this->outputDir . '/existing.txt', 'keep');
+        $tempPattern = dirname($this->outputDir) . '/.' . basename($this->outputDir) . '.tmp-*';
+
+        foreach (glob($tempPattern) ?: [] as $tempDir) {
+            $this->removeDir($tempDir);
+        }
+
+        $result = $this->runBuildResult($contentDir, '--no-cache');
+
+        assertSame(65, $result['exitCode'], $result['output']);
+        assertSame([], glob($tempPattern) ?: []);
+        assertStringContainsString('keep', (string) file_get_contents($this->outputDir . '/existing.txt'));
+    }
+
+    public function testNoCacheBuildRefusesToReplaceUnmarkedOutputDirectory(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'index.md' => "---\ntitle: Home\n---\n\nHello.\n",
+        ]);
+        mkdir($this->outputDir, 0o755, true);
+        file_put_contents($this->outputDir . '/existing.txt', 'keep');
+
+        $result = $this->runBuildResult($contentDir, '--no-cache');
+
+        assertSame(1, $result['exitCode'], $result['output']);
+        assertStringContainsString('Refusing to replace output directory', $result['output']);
+        assertStringContainsString('keep', (string) file_get_contents($this->outputDir . '/existing.txt'));
+    }
+
     public function testBuildUsesCustomLayoutFromFrontMatter(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';
@@ -1364,6 +1475,16 @@ PHP,
 
     private function runBuild(string $contentDir, string $extraOptions = ''): void
     {
+        $result = $this->runBuildResult($contentDir, $extraOptions);
+
+        assertSame(0, $result['exitCode'], 'Build failed: ' . $result['output']);
+    }
+
+    /**
+     * @return array{exitCode: int, output: string}
+     */
+    private function runBuildResult(string $contentDir, string $extraOptions = ''): array
+    {
         $yii = dirname(__DIR__, 3) . '/yii';
         exec(
             $yii . ' build'
@@ -1375,7 +1496,31 @@ PHP,
             $exitCode,
         );
 
-        assertSame(0, $exitCode, 'Build failed: ' . implode("\n", $output));
+        return [
+            'exitCode' => $exitCode,
+            'output' => implode("\n", $output),
+        ];
+    }
+
+    /**
+     * @param array<string, string> $files
+     */
+    private function createMinimalContent(array $files): string
+    {
+        $contentDir = sys_get_temp_dir() . '/yiipress-minimal-content-' . uniqid();
+        mkdir($contentDir, 0o755, true);
+        file_put_contents($contentDir . '/config.yaml', "title: Test Site\nbase_url: https://example.com\nlanguages: [en]\n");
+        foreach ($files as $relativePath => $contents) {
+            $filePath = $contentDir . '/' . $relativePath;
+            $dir = dirname($filePath);
+            if (!is_dir($dir)) {
+                mkdir($dir, 0o755, true);
+            }
+            file_put_contents($filePath, $contents);
+        }
+        $this->tempContentDirs[] = $contentDir;
+
+        return $contentDir;
     }
 
     private function copyContentFixture(): string

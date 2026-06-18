@@ -29,6 +29,7 @@ new ImporterOption(
     description: 'Path to the export directory',
     required: true,
     default: null,
+    path: true,
 )
 ```
 
@@ -36,6 +37,7 @@ new ImporterOption(
 - **`description`** — help text shown in `yii import --help`.
 - **`required`** — whether the option must be provided. The command validates this before calling `import()`.
 - **`default`** — default value when the option is not provided (only for optional options).
+- **`path`** — whether the option value is a filesystem path. Path options are resolved relative to the project root; non-path options such as comma-separated IDs are passed through unchanged.
 
 ### ImportResult
 

@@ -7,6 +7,7 @@ namespace YiiPress\Tests\Unit\Content\Parser;
 use YiiPress\Content\Parser\EntryParser;
 use YiiPress\Content\Parser\FilenameParser;
 use YiiPress\Content\Parser\FrontMatterParser;
+use YiiPress\Content\Parser\InvalidContentConfigException;
 use PHPUnit\Framework\TestCase;
 
 use function file_put_contents;
@@ -129,6 +130,24 @@ final class EntryParserTest extends TestCase
             assertSame([], $entry->tags);
             assertSame([], $entry->categories);
             assertSame([], $entry->authors);
+        } finally {
+            unlink($filePath);
+        }
+    }
+
+    public function testInvalidFrontMatterDateThrowsFriendlyExceptionWithFilePath(): void
+    {
+        $filePath = tempnam(sys_get_temp_dir(), 'yiipress-entry-');
+        self::assertNotFalse($filePath);
+
+        file_put_contents($filePath, "---\ntitle: Bad Date\ndate: not-a-real-date\n---\n\nBody.\n");
+
+        try {
+            $this->parser->parse($filePath, 'blog');
+            self::fail('Expected invalid date to throw.');
+        } catch (InvalidContentConfigException $e) {
+            assertStringContainsString('Invalid date in front matter', $e->getMessage());
+            assertSame($filePath, $e->filePath());
         } finally {
             unlink($filePath);
         }

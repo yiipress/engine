@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiPress\Import\Telegram;
 
+use YiiPress\Build\FileWriter;
 use YiiPress\Import\ContentImporterInterface;
 use YiiPress\Import\ImporterOption;
 use YiiPress\Import\ImportResult;
@@ -21,6 +22,7 @@ final class TelegramContentImporter implements ContentImporterInterface
                 name: 'directory',
                 description: 'Path to the Telegram export directory containing result.json',
                 required: true,
+                path: true,
             ),
             new ImporterOption(
                 name: 'ignore_message_ids',
@@ -150,7 +152,7 @@ final class TelegramContentImporter implements ContentImporterInterface
             }
 
             $content = $this->buildMarkdownFile($message, $mediaPath, $collection);
-            file_put_contents($filePath, $content);
+            FileWriter::write($filePath, $content);
             $importedFiles[] = $filePath;
         }
 
@@ -250,7 +252,7 @@ final class TelegramContentImporter implements ContentImporterInterface
         $config .= "entries_per_page: 10\n";
         $config .= "feed: true\n";
 
-        file_put_contents($configPath, $config);
+        FileWriter::write($configPath, $config);
     }
 
     private function parseIgnoredIds(string $ignoreMessageIds): array

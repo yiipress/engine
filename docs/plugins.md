@@ -40,8 +40,13 @@ Two separate pipelines are configured via the [Yii3 DI container](https://yiisof
 
 ### MarkdownProcessor
 
-Converts Markdown to HTML using md4c. Accepts `MarkdownConfig` via constructor for feature toggles 
+Converts Markdown to HTML using the reusable native PHP extension package, `yiipress/markdown`. Accepts `MarkdownConfig` via constructor for feature toggles
 (tables, strikethrough, tasklists, etc.).
+
+The extension exposes the PHP API as `YiiPress\Markdown\MarkdownRenderer` and
+`YiiPress\Markdown\MarkdownOptions`, backed by bundled MD4C sources. YiiPress
+downloads the package from Packagist during image and binary builds, compiles it,
+and enables it as `ext-markdown`.
 
 ### SyntaxHighlightProcessor
 

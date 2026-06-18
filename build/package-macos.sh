@@ -4,10 +4,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PHP_VERSION="${PHP_VERSION:-8.5}"
-MD4C_VERSION="${MD4C_VERSION:-1.1}"
-HIGHLIGHTER_VERSION="${HIGHLIGHTER_VERSION:-1.0.1}"
 STATIC_PHP_CLI_REF="${STATIC_PHP_CLI_REF:-5b5861c366a0d94bc84002db7b3f46144b388fbb}"
-STATIC_PHP_EXTENSIONS="${STATIC_PHP_EXTENSIONS:-ctype,dom,filter,highlighter,mbstring,md4c,opcache,pcntl,phar,posix,xmlwriter,yaml}"
+STATIC_PHP_EXTENSIONS="${STATIC_PHP_EXTENSIONS:-ctype,dom,filter,highlighter,markdown,mbstring,opcache,pcntl,phar,posix,xmlwriter,yaml}"
 
 detect_arch() {
     case "$(uname -m)" in
@@ -72,7 +70,7 @@ DIST_PATH="${ROOT}/${DIST_DIR}"
 WORK_PATH="${ROOT}/runtime/package-macos"
 APP_PATH="${WORK_PATH}/app"
 STATIC_PHP_PATH="${WORK_PATH}/static-php-cli"
-MD4C_PATH="${WORK_PATH}/md4c-extension"
+MARKDOWN_PATH="${WORK_PATH}/yiipress-markdown"
 HIGHLIGHTER_PATH="${WORK_PATH}/yiipress-highlighter"
 PHAR_PATH="${WORK_PATH}/yiipress.phar"
 BIN_PATH="${DIST_PATH}/yiipress"
@@ -116,6 +114,30 @@ copy_clean_path() {
     cp -R "$source" "$destination"
 }
 
+packagist_latest_stable_version() {
+    local package="$1"
+    local version
+
+    version="$(php -r '
+$package = $argv[1];
+$data = json_decode(file_get_contents("https://repo.packagist.org/p2/" . $package . ".json"), true, 512, JSON_THROW_ON_ERROR);
+foreach ($data["packages"][$package] as $release) {
+    $version = $release["version"];
+    if (!preg_match("/(?:^dev-|dev$|alpha|beta|RC)/i", $version)) {
+        echo $version;
+        exit(0);
+    }
+}
+exit(1);
+' "$package")"
+    if [ -z "$version" ]; then
+        printf 'Unable to determine latest stable Packagist version for %s.\n' "$package" >&2
+        exit 1
+    fi
+
+    printf '%s' "$version"
+}
+
 for command in php composer tar curl rustup cargo make; do
     require_command "$command"
 done
@@ -142,7 +164,7 @@ invoke composer install \
     --no-interaction \
     --classmap-authoritative \
     --ignore-platform-req=ext-inotify \
-    --ignore-platform-req=ext-md4c \
+    --ignore-platform-req=ext-markdown \
     --ignore-platform-req=ext-yaml \
     --ignore-platform-req=ext-highlighter
 invoke php -d phar.readonly=0 build/package-phar.php "$PHAR_PATH"
@@ -154,19 +176,19 @@ if [ ! -d "$STATIC_PHP_PATH" ]; then
         "$STATIC_PHP_PATH"
 fi
 
-if [ ! -d "$MD4C_PATH" ]; then
-    expand_tar_gz_archive "https://pecl.php.net/get/md4c-${MD4C_VERSION}.tgz" "$MD4C_PATH"
-fi
-
-if [ ! -d "$HIGHLIGHTER_PATH" ]; then
-    invoke composer create-project \
-        --no-dev \
-        --no-progress \
-        --no-interaction \
-        yiipress/highlighter \
-        "$HIGHLIGHTER_PATH" \
-        "$HIGHLIGHTER_VERSION"
-fi
+rm -rf "$MARKDOWN_PATH" "$HIGHLIGHTER_PATH"
+invoke composer create-project \
+    --no-dev \
+    --no-progress \
+    --no-interaction \
+    yiipress/markdown \
+    "$MARKDOWN_PATH"
+invoke composer create-project \
+    --no-dev \
+    --no-progress \
+    --no-interaction \
+    yiipress/highlighter \
+    "$HIGHLIGHTER_PATH"
 
 pushd "$STATIC_PHP_PATH" >/dev/null
 invoke composer install \
@@ -177,7 +199,9 @@ invoke composer install \
 
 export CARGO_BUILD_TARGET
 export HIGHLIGHTER_SOURCE="$HIGHLIGHTER_PATH"
-export YIIPRESS_MD4C_SOURCE="$MD4C_PATH"
+export MARKDOWN_SOURCE="$MARKDOWN_PATH"
+export HIGHLIGHTER_VERSION="$(packagist_latest_stable_version yiipress/highlighter)"
+export MARKDOWN_VERSION="$(packagist_latest_stable_version yiipress/markdown)"
 export YIIPRESS_STATIC_INCLUDE_PROCESS_EXTENSIONS=1
 
 pushd "$HIGHLIGHTER_PATH" >/dev/null

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiPress\Console;
 
-use RuntimeException;
+use YiiPress\Build\FileWriter;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -16,8 +16,6 @@ use Yiisoft\Yii\Console\ExitCode;
 use function array_keys;
 use function dirname;
 use function file_exists;
-use function file_put_contents;
-use function sprintf;
 use function str_starts_with;
 
 #[AsCommand(
@@ -65,10 +63,7 @@ final class InitCommand extends Command
 
         foreach ($files as $filePath => $contents) {
             FileHelper::ensureDirectory(dirname($filePath), 0o755);
-
-            if (file_put_contents($filePath, $contents) === false) {
-                throw new RuntimeException(sprintf('File "%s" was not written', $filePath));
-            }
+            FileWriter::write($filePath, $contents);
 
             $output->writeln("Created: <info>$filePath</info>");
         }

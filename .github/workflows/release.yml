@@ -61,7 +61,7 @@ jobs:
 
   windows:
     name: Windows static binary
-    runs-on: windows-latest
+    runs-on: windows-2022
     permissions:
       contents: read
 
@@ -72,7 +72,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
         with:
           php-version: '8.5'
           coverage: none
@@ -94,8 +94,6 @@ jobs:
             ~\.cargo\registry
             runtime\package-windows\app\vendor
             runtime\package-windows\static-php-cli
-            runtime\package-windows\md4c-extension
-            runtime\package-windows\yiipress-highlighter
           key: release-windows-package-${{ runner.os }}-${{ hashFiles('composer.lock', 'build/package-windows.ps1') }}
           restore-keys: |
             release-windows-package-${{ runner.os }}-
@@ -117,7 +115,7 @@ jobs:
 
   macos:
     name: macOS static binary
-    runs-on: macos-latest
+    runs-on: macos-14
     permissions:
       contents: read
 
@@ -128,7 +126,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
         with:
           php-version: '8.5'
           coverage: none
@@ -152,8 +150,6 @@ jobs:
             ~/.cargo/registry
             runtime/package-macos/app/vendor
             runtime/package-macos/static-php-cli
-            runtime/package-macos/md4c-extension
-            runtime/package-macos/yiipress-highlighter
           key: release-macos-package-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('composer.lock', 'build/package-macos.sh', 'build/static-php/*.php') }}
           restore-keys: |
             release-macos-package-${{ runner.os }}-${{ runner.arch }}-

@@ -21,6 +21,7 @@ use YiiPress\Build\SearchIndexGenerator;
 use YiiPress\Build\ThemeAssetCopier;
 use YiiPress\Build\FeedGenerator;
 use YiiPress\Build\FileCopy;
+use YiiPress\Build\FileWriter;
 use YiiPress\Build\ParallelEntryWriter;
 use YiiPress\Build\ParallelTaskRunner;
 use YiiPress\Build\SitemapGenerator;
@@ -90,6 +91,7 @@ use function shell_exec;
 use function round;
 use function sort;
 use function sprintf;
+use function str_ends_with;
 use function str_starts_with;
 use function strtolower;
 use function substr;
@@ -104,6 +106,7 @@ use function yaml_parse;
 final class BuildCommand extends Command
 {
     private const int MAX_AUTO_WORKERS = 4;
+    private const string OUTPUT_MARKER_FILE = '.yiipress-build';
 
     public function __construct(
         private readonly string $rootPath,
@@ -190,6 +193,8 @@ final class BuildCommand extends Command
         /** @var string $outputDirOption */
         $outputDirOption = $input->getOption('output-dir');
         $outputDir = $this->resolvePath($outputDirOption, $rootPath);
+        $finalOutputDir = $outputDir;
+        $atomicOutputDir = null;
 
         /** @var string $workersOption */
         $workersOption = $input->getOption('workers');
@@ -277,9 +282,7 @@ final class BuildCommand extends Command
             $staleOutputs = $manifest->removedOutputs($allSourceFiles);
 
             foreach ($staleOutputs as $staleFile) {
-                if (is_file($staleFile)) {
-                    unlink($staleFile);
-                }
+                $this->removeOutputFile($staleFile, $outputDir);
             }
 
             if ($changedSourceFiles === [] && $staleOutputs === []) {
@@ -313,10 +316,14 @@ final class BuildCommand extends Command
             );
 
             if (!$noWrite) {
-                $this->prepareOutputDir($outputDir);
+                $atomicOutputDir = $this->prepareOutputDir($outputDir);
+                if ($atomicOutputDir !== null) {
+                    $outputDir = $atomicOutputDir;
+                }
             }
         }
 
+        try {
         if ($manifest !== null && $allSourceFiles === []) {
             $sourceInventory = $this->collectSourceInventory($contentDir, array_keys($allAssetMappings));
             $configFiles = $sourceInventory['configFiles'];
@@ -358,7 +365,14 @@ final class BuildCommand extends Command
         $output->writeln('  Menus: <comment>' . count($navigation->menuNames()) . '</comment>');
 
         if ($dryRun) {
-            $exitCode = $this->dryRun($output, $parser, $siteConfig, $collections, $authors, $contentDir, $outputDir, $includeDrafts, $includeFuture);
+            try {
+                $exitCode = $this->dryRun($output, $parser, $siteConfig, $collections, $authors, $contentDir, $outputDir, $includeDrafts, $includeFuture);
+            } catch (FriendlyExceptionInterface $e) {
+                $this->writeFriendlyException($output, $e);
+                $this->writeProfile($output, $profile);
+
+                return ExitCode::DATAERR;
+            }
             $this->writeProfile($output, $profile);
             return $exitCode;
         }
@@ -368,33 +382,45 @@ final class BuildCommand extends Command
         /** @var array<string, list<Entry>> $rawEntriesByCollection */
         $rawEntriesByCollection = [];
         $fileToPermalink = [];
+        $permalinkSources = [];
 
-        foreach ($collections as $collectionName => $collection) {
-            $collectionEntries = [];
-            foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
-                $sourcePath = $entry->filePath;
-                if ($entry->title === '') {
+        try {
+            foreach ($collections as $collectionName => $collection) {
+                $collectionEntries = [];
+                foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
+                    $sourcePath = $entry->filePath;
+                    if ($entry->title === '') {
+                        $output->writeln('<error>  Skipping ' . $sourcePath . ': no title found</error>');
+                        continue;
+                    }
+                    $collectionEntries[] = $entry;
+                    $relativePath = substr($sourcePath, strlen($contentDir) + 1);
+                    $permalink = PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n);
+                    $this->registerPermalink($permalinkSources, $permalink, $sourcePath);
+                    $fileToPermalink[$relativePath] = $permalink;
+                }
+                $rawEntriesByCollection[$collectionName] = $collectionEntries;
+            }
+
+            $standalonePages = [];
+            foreach ($parser->parseStandalonePages($contentDir) as $page) {
+                $sourcePath = $page->filePath;
+                if ($page->title === '') {
                     $output->writeln('<error>  Skipping ' . $sourcePath . ': no title found</error>');
                     continue;
                 }
-                $collectionEntries[] = $entry;
+                $standalonePages[] = $page;
                 $relativePath = substr($sourcePath, strlen($contentDir) + 1);
-                $fileToPermalink[$relativePath] = PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n);
+                $basePermalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
+                $permalink = PermalinkResolver::applyLanguagePrefix($basePermalink, $page->language, $siteConfig->i18n);
+                $this->registerPermalink($permalinkSources, $permalink, $sourcePath);
+                $fileToPermalink[$relativePath] = $permalink;
             }
-            $rawEntriesByCollection[$collectionName] = $collectionEntries;
-        }
+        } catch (FriendlyExceptionInterface $e) {
+            $this->writeFriendlyException($output, $e);
+            $this->writeProfile($output, $profile);
 
-        $standalonePages = [];
-        foreach ($parser->parseStandalonePages($contentDir) as $page) {
-            $sourcePath = $page->filePath;
-            if ($page->title === '') {
-                $output->writeln('<error>  Skipping ' . $sourcePath . ': no title found</error>');
-                continue;
-            }
-            $standalonePages[] = $page;
-            $relativePath = substr($sourcePath, strlen($contentDir) + 1);
-            $basePermalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
-            $fileToPermalink[$relativePath] = PermalinkResolver::applyLanguagePrefix($basePermalink, $page->language, $siteConfig->i18n);
+            return ExitCode::DATAERR;
         }
 
         $crossRefResolver = new CrossReferenceResolver($fileToPermalink);
@@ -530,16 +556,16 @@ final class BuildCommand extends Command
 
         if ($manifest !== null) {
             foreach ($allTasks as $task) {
-                $this->removeStaleOutputs($manifest->replace($task['sourcePath'], [$task['filePath']]));
+                $this->removeStaleOutputs($manifest->replace($task['sourcePath'], [$task['filePath']]), $outputDir);
             }
             foreach ($redirectTasks as $task) {
-                $this->removeStaleOutputs($manifest->replace($task['sourcePath'], [$task['filePath']]));
+                $this->removeStaleOutputs($manifest->replace($task['sourcePath'], [$task['filePath']]), $outputDir);
             }
             foreach ($rawEntriesByCollection as $entries) {
                 foreach ($entries as $entry) {
                     $sourcePath = $entry->filePath;
                     if (!isset($manifest->entries()[$sourcePath])) {
-                        $this->removeStaleOutputs($manifest->replace($sourcePath, []));
+                        $this->removeStaleOutputs($manifest->replace($sourcePath, []), $outputDir);
                     }
                 }
             }
@@ -611,10 +637,10 @@ final class BuildCommand extends Command
 
         if ($manifest !== null) {
             foreach ($standaloneTasks as $task) {
-                $this->removeStaleOutputs($manifest->replace($task['sourcePath'], [$task['filePath']]));
+                $this->removeStaleOutputs($manifest->replace($task['sourcePath'], [$task['filePath']]), $outputDir);
             }
             foreach ($standaloneRedirectTasks as $task) {
-                $this->removeStaleOutputs($manifest->replace($task['sourcePath'], [$task['filePath']]));
+                $this->removeStaleOutputs($manifest->replace($task['sourcePath'], [$task['filePath']]), $outputDir);
             }
         }
 
@@ -645,7 +671,7 @@ final class BuildCommand extends Command
         if ($manifest !== null) {
             foreach ($allAssetMappings as $sourcePath => $logicalPath) {
                 $resolvedTarget = $assetManifest?->resolve($logicalPath) ?? $logicalPath;
-                $this->removeStaleOutputs($manifest->replace($sourcePath, [$outputDir . '/' . $resolvedTarget]));
+                $this->removeStaleOutputs($manifest->replace($sourcePath, [$outputDir . '/' . $resolvedTarget]), $outputDir);
             }
         }
 
@@ -687,6 +713,7 @@ final class BuildCommand extends Command
                 if ($noWrite) {
                     $feedGenerator->generateAtom($siteConfig, $collection, $entries);
                     $feedGenerator->generateRss($siteConfig, $collection, $entries);
+                    $feedGenerator->generateJson($siteConfig, $collection, $entries);
                 } else {
                     $feedDir = $outputDir . '/' . $collectionName;
                     if (!is_dir($feedDir) && !mkdir($feedDir, 0o755, true) && !is_dir($feedDir)) {
@@ -705,6 +732,12 @@ final class BuildCommand extends Command
                         $collection,
                         $entries,
                     );
+                    $feedGenerator->writeJsonFile(
+                        $feedDir . '/feed.json',
+                        $siteConfig,
+                        $collection,
+                        $entries,
+                    );
                 }
                 return 1;
             },
@@ -712,7 +745,7 @@ final class BuildCommand extends Command
         );
 
         if ($feedCount > 0) {
-            $output->writeln("  Feeds generated: <comment>$feedCount</comment> (Atom + RSS)");
+            $output->writeln("  Feeds generated: <comment>$feedCount</comment> (Atom + RSS + JSON)");
         }
 
         $profile->switchTo('write listings');
@@ -775,7 +808,7 @@ final class BuildCommand extends Command
         $robots = $robotsGenerator->generate($siteConfig);
         if ($robots !== '') {
             if (!$noWrite) {
-                file_put_contents($outputDir . '/robots.txt', $robots);
+                FileWriter::write($outputDir . '/robots.txt', $robots);
             }
             $output->writeln('  robots.txt generated.');
         }
@@ -818,9 +851,19 @@ final class BuildCommand extends Command
             $manifest->setConfigFiles($configFiles);
             $manifest->setTrackedDirectories($trackedDirectories);
             foreach ($configFiles as $configFile) {
-                $this->removeStaleOutputs($manifest->replace($configFile, []));
+                $this->removeStaleOutputs($manifest->replace($configFile, []), $outputDir);
             }
             $manifest->save();
+        }
+
+        if (!$noWrite) {
+            $this->writeOutputMarker($outputDir);
+        }
+
+        if ($atomicOutputDir !== null) {
+            $this->replaceOutputDir($atomicOutputDir, $finalOutputDir);
+            $outputDir = $finalOutputDir;
+            $atomicOutputDir = null;
         }
 
         $this->eventDispatcher?->dispatch(new BuildFinishedEvent($buildContext, $siteConfig));
@@ -836,6 +879,11 @@ final class BuildCommand extends Command
         );
 
         return ExitCode::OK;
+        } finally {
+            if ($atomicOutputDir !== null) {
+                $this->removeDirectory($atomicOutputDir);
+            }
+        }
     }
 
     private function formatElapsedTime(float $seconds): string
@@ -1084,6 +1132,7 @@ final class BuildCommand extends Command
             if ($collection->feed) {
                 $files[] = $outputDir . '/' . $collectionName . '/feed.xml';
                 $files[] = $outputDir . '/' . $collectionName . '/rss.xml';
+                $files[] = $outputDir . '/' . $collectionName . '/feed.json';
             }
 
             if ($collection->listing) {
@@ -1206,13 +1255,176 @@ final class BuildCommand extends Command
         return ExitCode::OK;
     }
 
-    private function prepareOutputDir(string $outputDir): void
+    private function prepareOutputDir(string $outputDir): ?string
     {
-        if (is_dir($outputDir)) {
-            exec('rm -rf ' . escapeshellarg($outputDir));
+        $this->assertReplaceableOutputDir($outputDir);
+
+        if (!file_exists($outputDir)) {
+            if (!mkdir($outputDir, 0o755, true) && !is_dir($outputDir)) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $outputDir));
+            }
+
+            return null;
         }
-        if (!mkdir($outputDir, 0o755, true) && !is_dir($outputDir)) {
-            throw new RuntimeException(sprintf('Directory "%s" was not created', $outputDir));
+
+        if ($this->isEmptyDirectory($outputDir)) {
+            return null;
+        }
+
+        $parentDir = dirname($outputDir);
+        if (!is_dir($parentDir) && !mkdir($parentDir, 0o755, true) && !is_dir($parentDir)) {
+            throw new RuntimeException(sprintf('Directory "%s" was not created', $parentDir));
+        }
+
+        $tempDir = $parentDir . '/.' . basename($outputDir) . '.tmp-' . bin2hex(random_bytes(6));
+        if (!mkdir($tempDir, 0o755, true) && !is_dir($tempDir)) {
+            throw new RuntimeException(sprintf('Directory "%s" was not created', $tempDir));
+        }
+
+        return $tempDir;
+    }
+
+    private function assertReplaceableOutputDir(string $outputDir): void
+    {
+        if (!file_exists($outputDir)) {
+            return;
+        }
+
+        if (!is_dir($outputDir)) {
+            throw new RuntimeException(sprintf('Output path exists and is not a directory: "%s".', $outputDir));
+        }
+
+        if ($this->isEmptyDirectory($outputDir) || is_file($outputDir . '/' . self::OUTPUT_MARKER_FILE)) {
+            return;
+        }
+
+        throw new RuntimeException(sprintf(
+            'Refusing to replace output directory "%s" because it does not contain a %s marker.',
+            $outputDir,
+            self::OUTPUT_MARKER_FILE,
+        ));
+    }
+
+    private function replaceOutputDir(string $sourceDir, string $targetDir): void
+    {
+        if (!is_dir($sourceDir)) {
+            throw new RuntimeException(sprintf('Output directory "%s" was not built.', $sourceDir));
+        }
+
+        if (!file_exists($targetDir)) {
+            if (!rename($sourceDir, $targetDir)) {
+                throw new RuntimeException(sprintf('Unable to move "%s" to "%s".', $sourceDir, $targetDir));
+            }
+            return;
+        }
+
+        $backupDir = dirname($targetDir) . '/.' . basename($targetDir) . '.old-' . bin2hex(random_bytes(6));
+        if (!rename($targetDir, $backupDir)) {
+            throw new RuntimeException(sprintf('Unable to move existing output directory "%s".', $targetDir));
+        }
+
+        if (!rename($sourceDir, $targetDir)) {
+            rename($backupDir, $targetDir);
+            throw new RuntimeException(sprintf('Unable to move "%s" to "%s".', $sourceDir, $targetDir));
+        }
+
+        $this->removeDirectory($backupDir);
+    }
+
+    private function writeOutputMarker(string $outputDir): void
+    {
+        FileWriter::write($outputDir . '/' . self::OUTPUT_MARKER_FILE, "YiiPress build output\n");
+    }
+
+    private function isEmptyDirectory(string $directory): bool
+    {
+        $iterator = new FilesystemIterator($directory, FilesystemIterator::SKIP_DOTS);
+
+        return !$iterator->valid();
+    }
+
+    private function removeDirectory(string $directory): void
+    {
+        if (!is_dir($directory)) {
+            return;
+        }
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
+        );
+
+        foreach ($iterator as $item) {
+            /** @var SplFileInfo $item */
+            if ($item->isDir() && !$item->isLink()) {
+                rmdir($item->getPathname());
+                continue;
+            }
+
+            unlink($item->getPathname());
+        }
+
+        rmdir($directory);
+    }
+
+    /**
+     * @param array<string, string> $permalinkSources
+     */
+    private function registerPermalink(array &$permalinkSources, string $permalink, string $sourcePath): void
+    {
+        $this->validatePermalink($permalink, $sourcePath);
+
+        $normalized = $permalink === '/' ? '/' : rtrim($permalink, '/');
+        if (isset($permalinkSources[$normalized])) {
+            throw new InvalidContentConfigException(
+                sprintf(
+                    'Duplicate permalink "%s" in %s and %s.',
+                    $permalink,
+                    $permalinkSources[$normalized],
+                    $sourcePath,
+                ),
+                $sourcePath,
+                'Change one of the permalink values so each generated page has a unique output path.',
+            );
+        }
+
+        $permalinkSources[$normalized] = $sourcePath;
+    }
+
+    private function validatePermalink(string $permalink, string $sourcePath): void
+    {
+        if ($permalink === '' || !str_starts_with($permalink, '/')) {
+            throw new InvalidContentConfigException(
+                sprintf('Invalid permalink "%s" in %s.', $permalink, $sourcePath),
+                $sourcePath,
+                'Permalinks must be root-relative paths, for example: permalink: /blog/my-post/',
+            );
+        }
+
+        if ($permalink !== '/' && !str_ends_with($permalink, '/')) {
+            throw new InvalidContentConfigException(
+                sprintf('Invalid permalink "%s" in %s.', $permalink, $sourcePath),
+                $sourcePath,
+                'Permalinks must end with a trailing slash so YiiPress can write an index.html page.',
+            );
+        }
+
+        if (str_contains($permalink, "\0") || str_contains($permalink, '\\') || str_contains($permalink, '//')) {
+            throw new InvalidContentConfigException(
+                sprintf('Invalid permalink "%s" in %s.', $permalink, $sourcePath),
+                $sourcePath,
+                'Permalinks must use single URL path separators and must not contain control characters.',
+            );
+        }
+
+        foreach (explode('/', trim($permalink, '/')) as $segment) {
+            if ($segment === '.' || $segment === '..') {
+                throw new InvalidContentConfigException(
+                    sprintf('Invalid permalink "%s" in %s.', $permalink, $sourcePath),
+                    $sourcePath,
+                    'Permalinks must stay inside the output directory and cannot contain "." or ".." path segments.',
+                );
+            }
         }
     }
 
@@ -1228,12 +1440,22 @@ final class BuildCommand extends Command
     /**
      * @param list<string> $outputFiles
      */
-    private function removeStaleOutputs(array $outputFiles): void
+    private function removeStaleOutputs(array $outputFiles, string $outputDir): void
     {
         foreach ($outputFiles as $outputFile) {
-            if (is_file($outputFile)) {
-                unlink($outputFile);
-            }
+            $this->removeOutputFile($outputFile, $outputDir);
+        }
+    }
+
+    private function removeOutputFile(string $outputFile, string $outputDir): void
+    {
+        $outputRoot = rtrim($outputDir, '/');
+        if ($outputFile !== $outputRoot && !str_starts_with($outputFile, $outputRoot . '/')) {
+            return;
+        }
+
+        if (is_file($outputFile)) {
+            unlink($outputFile);
         }
     }
 
