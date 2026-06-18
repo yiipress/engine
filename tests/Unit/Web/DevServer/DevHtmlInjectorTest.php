@@ -34,6 +34,17 @@ final class DevHtmlInjectorTest extends TestCase
         self::assertStringNotContainsString('es.addEventListener("ping", function() { es.close(); connect(); });', $body);
     }
 
+    public function testLiveReloadShowsBuildErrorsOnPage(): void
+    {
+        $body = LiveReloadHtmlInjector::inject('<html><body><p>Hello</p></body></html>');
+
+        self::assertStringContainsString('errorPanel.id = "yiipress-build-error";', $body);
+        self::assertStringContainsString('title.textContent = "Build failed";', $body);
+        self::assertStringContainsString('showBuildError(output);', $body);
+        self::assertStringContainsString('hideBuildError(); es.close(); location.reload();', $body);
+        self::assertStringNotContainsString('console.error', $body);
+    }
+
     public function testLiveReloadClosesEventSourceWhenPageIsLeaving(): void
     {
         $body = LiveReloadHtmlInjector::inject('<html><body><p>Hello</p></body></html>');
