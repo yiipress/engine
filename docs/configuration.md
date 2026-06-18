@@ -309,7 +309,7 @@ markdown:
 - **email_autolinks** — recognize e-mails as auto-links even without `<>` and `mailto:` (default: `true`)
 - **www_autolinks** — enable WWW auto-links (even without any scheme prefix, if they begin with 'www.') (default: `true`)
 - **collapse_whitespace** — collapse non-trivial whitespace into single space (default: `true`)
-- **latex_math** — enable LaTeX math spans `$...$` and `$$...$$` (default: `false`)
+- **latex_math** — enable LaTeX math spans `$...$` and `$$...$$` (default: `false`). Pages that contain math automatically include KaTeX CSS/JS and the shipped YiiPress math enhancer script.
 - **wikilinks** — enable wiki-style links `[[link]]` (default: `false`)
 - **underline** — underscore `_` denotes underline instead of emphasis (default: `false`)
 - **no_html_blocks** — disable raw HTML blocks (default: `true`)
