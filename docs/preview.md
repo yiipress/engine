@@ -28,4 +28,4 @@ How it works:
 2. The snippet opens an SSE (Server-Sent Events) connection to `/_live-reload`.
 3. The ReactPHP server handles this endpoint directly and attaches all EventSource clients in the same worker to a shared inotify read stream.
 4. When a change is detected, `SiteBuildRunner` triggers a normal build, so live reload benefits from the same incremental build pipeline as manual builds. Rebuilds are serialized with a lock so multiple preview workers do not write the same output concurrently.
-5. After a successful build, the server sends a `reload` event and the browser refreshes. If the build fails, the page is not reloaded and the build output is sent to the browser console as a `build-error` event.
+5. After a successful build, the server sends a `reload` event and the browser refreshes. If the build fails, the page is not reloaded and the build output is shown in a fixed on-page error panel.
