@@ -67,8 +67,17 @@ final class ParallelTaskRunner
                 $pids[] = $pid;
             }
 
+            $failure = null;
             foreach ($pids as $pid) {
-                WorkerProcessStatus::waitFor($pid);
+                try {
+                    WorkerProcessStatus::waitFor($pid);
+                } catch (RuntimeException $e) {
+                    $failure ??= $e;
+                }
+            }
+
+            if ($failure !== null) {
+                throw $failure;
             }
 
             $count = 0;
