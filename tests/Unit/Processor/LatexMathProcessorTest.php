@@ -23,14 +23,14 @@ final class LatexMathProcessorTest extends TestCase
 
     public function testProcessLeavesRenderedContentUnchanged(): void
     {
-        $content = '<p>Inline <x-equation>x</x-equation>.</p>';
+        $content = '<p>Inline <span class="math">x</span>.</p>';
 
         assertSame($content, $this->processor->process($content, $this->createEntry()));
     }
 
     public function testHeadAssetsReturnsKaTexAssetsWhenMathIsPresent(): void
     {
-        $assets = $this->processor->headAssets('<p><x-equation type="display">x</x-equation></p>');
+        $assets = $this->processor->headAssets('<p><span class="math display">x</span></p>');
 
         $this->assertStringContainsString('katex.min.css', $assets);
         $this->assertStringContainsString('katex.min.js', $assets);
@@ -58,7 +58,7 @@ final class LatexMathProcessorTest extends TestCase
 
         $script = file_get_contents($sourceFile);
         $this->assertNotFalse($script);
-        $this->assertStringContainsString("document.querySelectorAll('x-equation')", $script);
+        $this->assertStringContainsString("document.querySelectorAll('span.math')", $script);
         $this->assertStringContainsString('window.katex.render', $script);
         $this->assertStringContainsString('throwOnError: false', $script);
     }

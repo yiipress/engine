@@ -2,7 +2,7 @@ param(
     [string] $DistDir = "dist/windows-amd64",
     [string] $PhpVersion = "8.5",
     [string] $StaticPhpCliRef = "5b5861c366a0d94bc84002db7b3f46144b388fbb",
-    [string] $StaticPhpExtensions = "ctype,dom,filter,highlighter,markdown,mbstring,opcache,phar,xmlwriter,yaml"
+    [string] $StaticPhpExtensions = "ctype,dom,filter,highlighter,mdparser,mbstring,opcache,phar,xmlwriter,yaml"
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,7 +13,7 @@ $distPath = Join-Path $root $DistDir
 $workPath = Join-Path $root "runtime/package-windows"
 $appPath = Join-Path $workPath "app"
 $staticPhpPath = Join-Path $workPath "static-php-cli"
-$markdownPath = Join-Path $workPath "yiipress-markdown"
+$mdparserPath = Join-Path $workPath "mdparser"
 $highlighterPath = Join-Path $workPath "yiipress-highlighter"
 $pharPath = Join-Path $workPath "yiipress.phar"
 $exePath = Join-Path $distPath "yiipress.exe"
@@ -137,7 +137,7 @@ try {
         "--ignore-platform-req=ext-inotify",
         "--ignore-platform-req=ext-pcntl",
         "--ignore-platform-req=ext-posix",
-        "--ignore-platform-req=ext-markdown",
+        "--ignore-platform-req=ext-mdparser",
         "--ignore-platform-req=ext-yaml",
         "--ignore-platform-req=ext-highlighter"
     )
@@ -152,7 +152,7 @@ if (!(Test-Path $staticPhpPath)) {
         $staticPhpPath
 }
 
-foreach ($path in @($markdownPath, $highlighterPath)) {
+foreach ($path in @($mdparserPath, $highlighterPath)) {
     if (Test-Path $path) {
         Remove-Item $path -Recurse -Force
     }
@@ -163,8 +163,8 @@ Invoke-NativeCommand "composer" @(
     "--no-dev",
     "--no-progress",
     "--no-interaction",
-    "yiipress/markdown",
-    $markdownPath
+    "iliaal/mdparser",
+    $mdparserPath
 )
 Invoke-NativeCommand "composer" @(
     "create-project",
@@ -187,9 +187,8 @@ try {
 
     $env:CARGO_BUILD_TARGET = "x86_64-pc-windows-msvc"
     $env:HIGHLIGHTER_SOURCE = $highlighterPath
-    $env:MARKDOWN_SOURCE = $markdownPath
+    $env:MDPARSER_SOURCE = $mdparserPath
     $env:HIGHLIGHTER_VERSION = Get-PackagistLatestStableVersion "yiipress/highlighter"
-    $env:MARKDOWN_VERSION = Get-PackagistLatestStableVersion "yiipress/markdown"
     $env:YIIPRESS_STATIC_INCLUDE_PROCESS_EXTENSIONS = "0"
     $env:RUSTFLAGS = "-C target-feature=+crt-static"
 

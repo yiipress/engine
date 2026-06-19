@@ -18,11 +18,9 @@ use function str_repeat;
 #[BeforeMethods('setUp')]
 final class MarkdownParserComparisonBench
 {
-    private const string PARSER_YIIPRESS_MARKDOWN = 'yiipress-markdown';
     private const string PARSER_MDPARSER = 'mdparser';
 
     private MarkdownRenderer $markdownRenderer;
-    private ?object $mdParser = null;
     private string $shortMarkdown;
     private string $mediumMarkdown;
     private string $largeMarkdown;
@@ -33,16 +31,6 @@ final class MarkdownParserComparisonBench
     public function setUp(array $params = []): void
     {
         $this->markdownRenderer = new MarkdownRenderer();
-        $this->mdParser = null;
-
-        if (($params['parser'] ?? null) === self::PARSER_MDPARSER) {
-            if (!class_exists('MdParser\\Parser')) {
-                throw new RuntimeException('The MdParser\\Parser class is not available. Install and enable ext-mdparser.');
-            }
-
-            $parserClass = 'MdParser\\Parser';
-            $this->mdParser = new $parserClass();
-        }
 
         $this->shortMarkdown = "# Hello\n\nA short paragraph with **bold** and `code`.\n";
 
@@ -52,11 +40,7 @@ final class MarkdownParserComparisonBench
 
     public function provideParsers(): iterable
     {
-        yield self::PARSER_YIIPRESS_MARKDOWN => ['parser' => self::PARSER_YIIPRESS_MARKDOWN];
-
-        if (class_exists('MdParser\\Parser')) {
-            yield self::PARSER_MDPARSER => ['parser' => self::PARSER_MDPARSER];
-        }
+        yield self::PARSER_MDPARSER => ['parser' => self::PARSER_MDPARSER];
     }
 
     /**
@@ -97,13 +81,8 @@ final class MarkdownParserComparisonBench
 
     private function render(string $parser, string $markdown): void
     {
-        if ($parser === self::PARSER_YIIPRESS_MARKDOWN) {
+        if ($parser === self::PARSER_MDPARSER) {
             $this->markdownRenderer->render($markdown);
-            return;
-        }
-
-        if ($parser === self::PARSER_MDPARSER && $this->mdParser !== null) {
-            $this->mdParser->toHtml($markdown);
             return;
         }
 

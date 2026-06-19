@@ -1,6 +1,6 @@
 (function () {
     function renderEquation(element) {
-        var displayMode = element.getAttribute('type') === 'display';
+        var displayMode = element.classList.contains('display');
         var replacement = document.createElement(displayMode ? 'div' : 'span');
         var source = element.textContent || '';
 
@@ -25,6 +25,6 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('x-equation').forEach(renderEquation);
+        document.querySelectorAll('span.math').forEach(renderEquation);
     });
 })();

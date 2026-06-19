@@ -83,8 +83,8 @@ final class MarkdownRendererTest extends TestCase
 
         assertStringContainsString(<<<EXPECTED
 <ul>
-<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled checked>done</li>
-<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled>todo</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled checked />done</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled />todo</li>
 </ul>
 EXPECTED
         , $html);
@@ -111,5 +111,22 @@ EXPECTED
 
         assertStringContainsString('<section>block</section>', $html);
         assertStringContainsString('<span>span</span>', $html);
+    }
+
+    public function testRendersLatexMathWhenConfigured(): void
+    {
+        $renderer = new MarkdownRenderer(new MarkdownConfig(latexMath: true));
+
+        $html = $renderer->render(<<<'MARKDOWN'
+Inline $x$.
+
+$$
+y
+$$
+MARKDOWN);
+
+        assertStringContainsString('<span class="math">x</span>', $html);
+        assertStringContainsString('<span class="math display">', $html);
+        assertStringContainsString('y', $html);
     }
 }
