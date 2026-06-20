@@ -129,7 +129,7 @@ Two pipelines are configured in `config/common/di/content-pipeline.php`:
 - **contentPipeline** — used by entry rendering, typically Markdown conversion followed by syntax highlighting and post-processing.
 - **feedPipeline** — used by feed generation, usually Markdown conversion without syntax highlighting.
 
-Built-in processors include Markdown conversion through `ext-markdown`, oEmbed expansion, Mermaid block handling, server-side syntax highlighting, table of contents extraction, and related-content data preparation.
+Built-in processors include Markdown conversion through `ext-mdparser`, oEmbed expansion, Mermaid block handling, server-side syntax highlighting, table of contents extraction, and related-content data preparation.
 
 Lifecycle hooks are separate from processors. They expose build-level and final-render PSR-14 events through `yiisoft/yii-event`, so plugins can react to `BuildStartedEvent`, `BuildFinishedEvent`, `RenderStartedEvent`, and `RenderFinishedEvent` without replacing writers or commands.
 
@@ -155,7 +155,7 @@ Scaffolding commands, cleanup commands, and importer media copying use `yiisoft/
 Performance is handled by doing less work, keeping expensive work native, and letting PHP orchestrate the pipeline:
 
 - YAML front matter uses `yaml_parse()`.
-- Markdown uses `ext-markdown` from `yiipress/markdown`, backed by bundled MD4C sources.
+- Markdown uses `ext-mdparser` from `iliaal/mdparser`, backed by bundled MD4C sources.
 - Syntax highlighting uses `ext-highlighter`, backed by syntect and Rust.
 - Incremental builds reuse the build manifest and content hashes.
 - `--workers=auto` detects CPU capacity and caps user-facing defaults to avoid over-forking small builds.

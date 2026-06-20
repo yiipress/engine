@@ -38,7 +38,7 @@
         "ext-filter": "*",
         "ext-highlighter": "*",
         "ext-inotify": "*",
-        "ext-markdown": "*",
+        "ext-mdparser": "*",
         "ext-mbstring": "*",
         "ext-pcntl": "*",
         "ext-posix": "*",
@@ -88,7 +88,7 @@
     },
     "suggest": {
         "yiipress/highlighter": "Installs ext-highlighter, which provides YiiPress\\Highlighter for native syntax highlighting.",
-        "yiipress/markdown": "Installs ext-markdown, which provides YiiPress\\Markdown for native Markdown rendering."
+        "iliaal/mdparser": "Installs ext-mdparser, which provides MdParser\\Parser for native Markdown rendering."
     },
     "replace": {
         "symfony/polyfill-ctype": "*",

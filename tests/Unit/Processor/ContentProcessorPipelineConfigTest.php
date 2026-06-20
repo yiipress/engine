@@ -30,7 +30,7 @@ final class ContentProcessorPipelineConfigTest extends TestCase
         $pipeline = new ContentProcessorPipeline(new LatexMathProcessor());
         self::assertStringContainsString(
             'assets/plugins/latex-math.js',
-            $pipeline->collectHeadAssets('<p><x-equation>x</x-equation></p>'),
+            $pipeline->collectHeadAssets('<p><span class="math">x</span></p>'),
         );
     }
 }

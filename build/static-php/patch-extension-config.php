@@ -11,7 +11,7 @@ if ($configPath === null) {
 $json = json_decode(file_get_contents($configPath) ?: '', true, flags: JSON_THROW_ON_ERROR);
 $externalExtensions = [
     'highlighter',
-    'markdown',
+    'mdparser',
 ];
 
 foreach ($externalExtensions as $extension) {

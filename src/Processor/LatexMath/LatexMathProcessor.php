@@ -19,7 +19,7 @@ final readonly class LatexMathProcessor implements ContentProcessorInterface, As
 
     public function headAssets(string $processedContent): string
     {
-        if (!str_contains($processedContent, '<x-equation')) {
+        if (!str_contains($processedContent, '<span class="math')) {
             return '';
         }
 
