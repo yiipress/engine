@@ -176,6 +176,8 @@ The cache stores:
 - rendered Markdown HTML keyed by content hash;
 - incremental build manifests keyed by source and output paths.
 
+Build manifests are treated as disposable cache metadata: missing, unreadable, corrupt, or structurally invalid manifests reset incremental state and trigger normal rebuild work instead of failing the build. Manifest saves write a uniquely named temporary file in the target directory and replace the manifest atomically after the full JSON payload is written.
+
 `yiipress clean` removes both configured output and the relevant build cache.
 
 ## Serve Mode
