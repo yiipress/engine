@@ -58,7 +58,7 @@
 - [x] Smaller static package by removing unused runtime extension dependencies
 - [x] Build diagnostics (warn on broken internal links, missing images, invalid front matter)
 - [x] `yiipress clean` command — clear build output and caches
-- [x] `yiipress check` command — validate generated links and anchors
+- [x] `yiipress check:links` command — validate generated links and anchors
 - [x] Dry run mode for build — show what would be generated without writing files
 - [x] No-write build mode for render-vs-filesystem performance diagnostics
 - [x] `serve` overlay button to open the current markdown source in a configured editor

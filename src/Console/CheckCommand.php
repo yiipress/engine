@@ -20,7 +20,7 @@ use function strlen;
 use function substr;
 
 #[AsCommand(
-    name: 'check',
+    name: 'check:links',
     description: 'Checks generated site links and anchors',
 )]
 final class CheckCommand extends Command

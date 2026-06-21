@@ -68,7 +68,7 @@ final class CheckCommandTest extends TestCase
     {
         $yii = dirname(__DIR__, 3) . '/yii';
         exec(
-            $yii . ' check'
+            $yii . ' check:links'
             . ' --output-dir=' . escapeshellarg($this->outputDir)
             . ' 2>&1',
             $output,

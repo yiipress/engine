@@ -58,12 +58,12 @@ The command:
 
 With `--workers=N` (N > 1), entry rendering and writing is parallelized across N forked processes. With `--workers=auto`, YiiPress uses up to the detected worker count and lets page writers clamp back to sequential mode for smaller workloads. Feeds are generated after entry writing and can be split per collection across workers. Sitemap generation remains serial.
 
-## `check`
+## `check:links`
 
 Checks generated HTML output for broken local links, missing `src` targets, and missing anchor fragments.
 
 ```
-./yiipress check [--output-dir=output] [--external]
+./yiipress check:links [--output-dir=output] [--external]
 ```
 
 **Options:**
@@ -71,7 +71,7 @@ Checks generated HTML output for broken local links, missing `src` targets, and 
 - `--output-dir`, `-o` — path to the generated output directory (default: `output`). Absolute or relative to project root.
 - `--external` — also validate external `http://` and `https://` links. This performs network requests, so it is opt-in.
 
-Run `build` first, then `check` against the generated output. Local checks are filesystem-only and validate links such as `./guide/`, `/assets/site.css`, and `#heading-id`.
+Run `build` first, then `check:links` against the generated output. Local checks are filesystem-only and validate links such as `./guide/`, `/assets/site.css`, and `#heading-id`.
 
 ## `serve`
 
