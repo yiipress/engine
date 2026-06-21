@@ -38,8 +38,8 @@
         "ext-filter": "*",
         "ext-highlighter": "*",
         "ext-inotify": "*",
+        "ext-mdparser": "*",
         "ext-mbstring": "*",
-        "ext-md4c": "*",
         "ext-pcntl": "*",
         "ext-posix": "*",
         "ext-xmlwriter": "*",
@@ -87,7 +87,8 @@
         "yiisoft/event-dispatcher": "^1.1"
     },
     "suggest": {
-        "yiipress/highlighter": "Installs ext-highlighter, which provides YiiPress\\Highlighter for native syntax highlighting."
+        "yiipress/highlighter": "Installs ext-highlighter, which provides YiiPress\\Highlighter for native syntax highlighting.",
+        "iliaal/mdparser": "Installs ext-mdparser, which provides MdParser\\Parser for native Markdown rendering."
     },
     "replace": {
         "symfony/polyfill-ctype": "*",
@@ -100,6 +101,7 @@
     },
     "autoload-dev": {
         "classmap": [
+            "benchmarks/MarkdownParserComparisonBench.php",
             "build/PharArchiveFilter.php",
             "build/PhpDocStripper.php"
         ],

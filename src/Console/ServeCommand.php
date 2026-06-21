@@ -7,6 +7,7 @@ namespace YiiPress\Console;
 use YiiPress\Environment;
 use YiiPress\RuntimePaths;
 use YiiPress\Web\DevServer\DevHtmlInjector;
+use YiiPress\Web\LiveReload\SiteBuildResult;
 use YiiPress\Web\LiveReload\SiteBuildRunner;
 use FilesystemIterator;
 use HttpSoft\Message\ServerRequest;
@@ -412,9 +413,32 @@ final class ServeCommand extends Command
                 return;
             }
 
-            $this->buildLiveReloadSite();
-            $this->broadcastLiveReloadEvent('reload', 'changed', true);
+            $result = $this->buildLiveReloadSite();
+            if ($result === null) {
+                return;
+            }
+
+            if ($result->succeeded()) {
+                $this->broadcastLiveReloadEvent('reload', 'changed', true);
+                return;
+            }
+
+            $this->broadcastLiveReloadEvent(
+                'build-error',
+                $this->liveReloadBuildErrorData($result),
+                true,
+            );
         });
+    }
+
+    private function liveReloadBuildErrorData(SiteBuildResult $result): string
+    {
+        $payload = json_encode(['output' => $result->output], JSON_INVALID_UTF8_SUBSTITUTE);
+        if ($payload === false) {
+            return '{"output":"Build failed, but output could not be encoded."}';
+        }
+
+        return $payload;
     }
 
     private function broadcastLiveReloadEvent(string $event, string $data, bool $close): void
@@ -429,7 +453,7 @@ final class ServeCommand extends Command
                 $this->finishLiveReloadResponse($client, $event, $data);
                 unset($this->liveReloadClients[$clientId]);
             } else {
-                $client->write("event: {$event}\ndata: {$data}\n\n");
+                $client->write($this->formatServerSentEvent($event, $data));
             }
         }
     }
@@ -461,20 +485,30 @@ final class ServeCommand extends Command
         $this->liveReloadClients = [];
     }
 
-    private function buildLiveReloadSite(): void
+    private function buildLiveReloadSite(): ?SiteBuildResult
     {
         $now = microtime(true);
         if ($now - $this->lastLiveReloadBuildTime < 1.0) {
-            return;
+            return null;
         }
 
         $this->lastLiveReloadBuildTime = $now;
-        $this->createLiveReloadBuildRunner()->build();
+        return $this->createLiveReloadBuildRunner()->build();
     }
 
     private function finishLiveReloadResponse(ConnectionInterface $connection, string $event, string $data): void
     {
-        $connection->end("event: {$event}\ndata: {$data}\n\n");
+        $connection->end($this->formatServerSentEvent($event, $data));
+    }
+
+    private function formatServerSentEvent(string $event, string $data): string
+    {
+        $message = "event: {$event}\n";
+        foreach (explode("\n", str_replace("\r\n", "\n", $data)) as $line) {
+            $message .= "data: {$line}\n";
+        }
+
+        return $message . "\n";
     }
 
     private function createLiveReloadBuildRunner(): SiteBuildRunner

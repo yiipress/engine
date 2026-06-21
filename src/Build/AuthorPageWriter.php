@@ -135,6 +135,7 @@ final class AuthorPageWriter
 
         $html = $renderer->render('author_index', [
             'siteTitle' => $siteConfig->title,
+            'data' => $siteConfig->data,
             'authorList' => $authorList,
             'nav' => $navigation,
             'rootPath' => $rootPath,
@@ -150,7 +151,7 @@ final class AuthorPageWriter
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
             }
 
-            file_put_contents($dir . '/index.html', $html);
+            FileWriter::write($dir . '/index.html', $html);
         }
     }
 
@@ -198,6 +199,7 @@ final class AuthorPageWriter
 
         $html = $renderer->render('author', [
             'siteTitle' => $siteConfig->title,
+            'data' => $siteConfig->data,
             'authorTitle' => $authorTitle,
             'authorEmail' => $authorEmail,
             'authorUrl' => $authorUrl,
@@ -218,7 +220,7 @@ final class AuthorPageWriter
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
             }
 
-            file_put_contents($dir . '/index.html', $html);
+            FileWriter::write($dir . '/index.html', $html);
         }
     }
 }

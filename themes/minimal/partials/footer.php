@@ -2,15 +2,13 @@
 
 use YiiPress\Content\Model\Navigation;
 use YiiPress\Render\NavigationRenderer;
-use YiiPress\Build\AssetFingerprintManifest;
-use YiiPress\Build\Asset;
 
 /**
  * @var ?Navigation $nav
  * @var string $rootPath
- * @var AssetFingerprintManifest|null $assetManifest
  * @var string $uiLanguage
  * @var Closure(string, int, ?string, bool): string $h
+ * @var Closure(string): string $themeAsset
  */
 $uiLanguage ??= 'en';
 ?>
@@ -30,4 +28,4 @@ $uiLanguage ??= 'en';
     </div>
 </footer>
 <?php endif; ?>
-<script src="<?= $h(Asset::url('assets/theme/dark-mode.js', $rootPath, $assetManifest)) ?>"></script>
+<script src="<?= $h($themeAsset('dark-mode.js')) ?>"></script>

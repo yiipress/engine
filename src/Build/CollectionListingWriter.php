@@ -90,7 +90,7 @@ final readonly class CollectionListingWriter
                     throw new RuntimeException(sprintf('Directory "%s" was not created', $task['dir']));
                 }
 
-                file_put_contents($task['dir'] . '/index.html', $html);
+                FileWriter::write($task['dir'] . '/index.html', $html);
             }
 
             return 1;
@@ -127,6 +127,7 @@ final readonly class CollectionListingWriter
 
         return $renderer->render('collection_listing', [
             'siteTitle' => $siteConfig->title,
+            'data' => $siteConfig->data,
             'collectionTitle' => $collection->title,
             'collectionName' => $collection->name,
             'entries' => $entryData,

@@ -40,8 +40,13 @@ Two separate pipelines are configured via the [Yii3 DI container](https://yiisof
 
 ### MarkdownProcessor
 
-Converts Markdown to HTML using md4c. Accepts `MarkdownConfig` via constructor for feature toggles 
+Converts Markdown to HTML using the reusable native PHP extension package, `iliaal/mdparser`. Accepts `MarkdownConfig` via constructor for feature toggles
 (tables, strikethrough, tasklists, etc.).
+
+The extension exposes the PHP API as `MdParser\Parser` and
+`MdParser\Options`, backed by bundled MD4C sources. YiiPress
+downloads the package from Packagist during image and binary builds, compiles it,
+and enables it as `ext-mdparser`.
 
 ### SyntaxHighlightProcessor
 
@@ -63,6 +68,22 @@ then statically links that library into `ext-highlighter`. It processes all
 inline-styled highlighted output.
 
 The bundled `minimal` theme adds a client-side **Copy** button to rendered code blocks.
+
+## LaTeX math
+
+When `markdown.latex_math` is enabled, mdparser emits math spans as `<span class="math">` elements. Display math adds the `display` class. YiiPress detects those elements and injects KaTeX rendering assets only on pages that contain math.
+
+Inline math uses `$...$`, and display math uses `$$...$$`:
+
+```markdown
+Euler: $e^{i\pi} + 1 = 0$
+
+$$
+\int_0^1 x^2\,dx
+$$
+```
+
+YiiPress ships a small browser enhancer at `assets/plugins/latex-math.js` and loads fixed-version KaTeX CSS/JS from jsDelivr for the renderer itself.
 
 The native extension passes explicit input and output lengths so repeated highlighting calls avoid
 extra C-string scans at the PHP/Rust boundary.

@@ -143,6 +143,7 @@ final readonly class DateArchiveWriter
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
         $html = $renderer->render('archive_index', [
             'siteTitle' => $siteConfig->title,
+            'data' => $siteConfig->data,
             'collectionName' => $collection->name,
             'collectionTitle' => $collection->title,
             'years' => $years,
@@ -160,7 +161,7 @@ final readonly class DateArchiveWriter
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
             }
 
-            file_put_contents($dir . '/index.html', $html);
+            FileWriter::write($dir . '/index.html', $html);
         }
     }
 
@@ -197,6 +198,7 @@ final readonly class DateArchiveWriter
 
         $html = $renderer->render('archive_yearly', [
             'siteTitle' => $siteConfig->title,
+            'data' => $siteConfig->data,
             'collectionName' => $collection->name,
             'collectionTitle' => $collection->title,
             'year' => $year,
@@ -216,7 +218,7 @@ final readonly class DateArchiveWriter
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
             }
 
-            file_put_contents($dir . '/index.html', $html);
+            FileWriter::write($dir . '/index.html', $html);
         }
     }
 
@@ -251,6 +253,7 @@ final readonly class DateArchiveWriter
 
         $html = $renderer->render('archive_monthly', [
             'siteTitle' => $siteConfig->title,
+            'data' => $siteConfig->data,
             'collectionName' => $collection->name,
             'collectionTitle' => $collection->title,
             'year' => $year,
@@ -271,7 +274,7 @@ final readonly class DateArchiveWriter
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
             }
 
-            file_put_contents($dir . '/index.html', $html);
+            FileWriter::write($dir . '/index.html', $html);
         }
     }
 }

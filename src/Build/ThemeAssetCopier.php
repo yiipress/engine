@@ -11,16 +11,20 @@ use RuntimeException;
 use SplFileInfo;
 
 use function dirname;
+use function ltrim;
+use function preg_replace;
 use function strlen;
+use function trim;
 
 final class ThemeAssetCopier
 {
     /**
      * @return int number of assets copied
      */
-    public function copy(ThemeRegistry $themeRegistry, string $outputDir, ?AssetFingerprintManifest $assetManifest = null, bool $noWrite = false): int
+    public function copy(ThemeRegistry $themeRegistry, string $outputDir, ?AssetFingerprintManifest $assetManifest = null, bool $noWrite = false, bool $minify = true): int
     {
         $copied = 0;
+        $writer = new AssetFileWriter();
 
         foreach ($this->mappings($themeRegistry) as $sourcePath => $targetRelativePath) {
             $resolvedTarget = $assetManifest?->resolve($targetRelativePath) ?? $targetRelativePath;
@@ -36,7 +40,25 @@ final class ThemeAssetCopier
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $targetDir));
             }
 
-            if (FileCopy::copyIfChanged($sourcePath, $targetPath)) {
+            if ($writer->writeIfChanged($sourcePath, $targetPath, $minify)) {
+                $copied++;
+            }
+        }
+
+        foreach ($this->legacyMappings($themeRegistry) as $sourcePath => $targetRelativePath) {
+            if ($noWrite) {
+                $copied++;
+                continue;
+            }
+
+            $targetPath = $outputDir . '/' . $targetRelativePath;
+            $targetDir = dirname($targetPath);
+
+            if (!is_dir($targetDir) && !mkdir($targetDir, 0o755, true) && !is_dir($targetDir)) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $targetDir));
+            }
+
+            if ($writer->writeIfChanged($sourcePath, $targetPath, $minify)) {
                 $copied++;
             }
         }
@@ -68,10 +90,60 @@ final class ThemeAssetCopier
                 }
 
                 $relativePath = substr($item->getPathname(), strlen($assetsDir) + 1);
-                $assets[$item->getPathname()] = 'assets/theme/' . $relativePath;
+                $assets[$item->getPathname()] = self::logicalPath($theme->name, $relativePath);
             }
         }
 
         return $assets;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function legacyMappings(ThemeRegistry $themeRegistry): array
+    {
+        $theme = $themeRegistry->all()[0] ?? null;
+        if ($theme === null) {
+            return [];
+        }
+
+        $assetsDir = $theme->path . '/assets';
+        if (!is_dir($assetsDir)) {
+            return [];
+        }
+
+        $assets = [];
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($assetsDir, FilesystemIterator::SKIP_DOTS),
+        );
+
+        foreach ($iterator as $item) {
+            /** @var SplFileInfo $item */
+            if (!$item->isFile()) {
+                continue;
+            }
+
+            $relativePath = substr($item->getPathname(), strlen($assetsDir) + 1);
+            $assets[$item->getPathname()] = self::legacyLogicalPath($relativePath);
+        }
+
+        return $assets;
+    }
+
+    public static function logicalPath(string $themeName, string $relativePath): string
+    {
+        return 'assets/themes/' . self::safeThemeName($themeName) . '/' . ltrim($relativePath, '/');
+    }
+
+    public static function legacyLogicalPath(string $relativePath): string
+    {
+        return 'assets/theme/' . ltrim($relativePath, '/');
+    }
+
+    private static function safeThemeName(string $themeName): string
+    {
+        $safeName = trim((string) preg_replace('/[^A-Za-z0-9_-]+/', '-', $themeName), '-');
+
+        return $safeName !== '' ? $safeName : 'theme';
     }
 }

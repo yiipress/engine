@@ -52,7 +52,7 @@ final class BuildCache
     public function set(string $sourceFilePath, string $html, string $context = ''): void
     {
         $key = $this->buildKey($sourceFilePath, $context);
-        file_put_contents($this->cacheDir . '/' . $key, $html);
+        FileWriter::write($this->cacheDir . '/' . $key, $html);
     }
 
     public function clear(): void

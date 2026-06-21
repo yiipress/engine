@@ -51,6 +51,34 @@ final class ContentAssetCopierTest extends TestCase
         assertStringEqualsFile($this->outputDir . '/blog/assets/banner.svg', '<svg/>');
     }
 
+    public function testMinifiesCssAndJavaScriptAssetsByDefault(): void
+    {
+        file_put_contents($this->contentDir . '/blog/assets/app.css', "/* theme */\nbody { color: red; }\n");
+        file_put_contents($this->contentDir . '/blog/assets/app.js', "const value = 1; // keep code\nconsole.log(value);\n");
+
+        $copier = new ContentAssetCopier();
+        $copied = $copier->copy($this->contentDir, $this->outputDir);
+
+        assertSame(2, $copied);
+        assertStringEqualsFile($this->outputDir . '/blog/assets/app.css', 'body{color:red}');
+        assertStringEqualsFile($this->outputDir . '/blog/assets/app.js', "const value = 1; \nconsole.log(value);");
+    }
+
+    public function testCanCopyCssAndJavaScriptAssetsWithoutMinifying(): void
+    {
+        $css = "/* theme */\nbody { color: red; }\n";
+        $js = "const value = 1; // keep code\nconsole.log(value);\n";
+        file_put_contents($this->contentDir . '/blog/assets/app.css', $css);
+        file_put_contents($this->contentDir . '/blog/assets/app.js', $js);
+
+        $copier = new ContentAssetCopier();
+        $copied = $copier->copy($this->contentDir, $this->outputDir, minify: false);
+
+        assertSame(2, $copied);
+        assertStringEqualsFile($this->outputDir . '/blog/assets/app.css', $css);
+        assertStringEqualsFile($this->outputDir . '/blog/assets/app.js', $js);
+    }
+
     public function testSkipsUnchangedOutputAsset(): void
     {
         $source = $this->contentDir . '/blog/assets/banner.svg';

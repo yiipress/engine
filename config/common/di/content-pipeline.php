@@ -9,7 +9,9 @@ use YiiPress\Console\CheckCommand;
 use YiiPress\Console\CleanCommand;
 use YiiPress\Console\InitCommand;
 use YiiPress\Console\NewCommand;
+use YiiPress\Console\ThemeInitCommand;
 use YiiPress\Processor\ContentProcessorPipeline;
+use YiiPress\Processor\LatexMath\LatexMathProcessor;
 use YiiPress\Processor\Mermaid\MermaidProcessor;
 use YiiPress\Processor\OEmbed\OEmbedProcessor;
 use YiiPress\Processor\Shortcode\TweetProcessor;
@@ -41,6 +43,7 @@ return [
             Reference::to(TweetProcessor::class),
             Reference::to(OEmbedProcessor::class),
             Reference::to(MarkdownProcessor::class),
+            Reference::to(LatexMathProcessor::class),
             Reference::to(TagLinkProcessor::class),
             Reference::to(MermaidProcessor::class),
             Reference::to(SyntaxHighlightProcessor::class),
@@ -82,6 +85,12 @@ return [
     NewCommand::class => [
         '__construct()' => [
             'rootPath' => $workingDirectory,
+        ],
+    ],
+    ThemeInitCommand::class => [
+        '__construct()' => [
+            'rootPath' => $workingDirectory,
+            'themeRegistry' => Reference::to(ThemeRegistry::class),
         ],
     ],
 ];

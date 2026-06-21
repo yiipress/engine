@@ -6,15 +6,20 @@ namespace YiiPress\Tests\Unit\Build;
 
 use YiiPress\Build\ParallelTaskRunner;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 use function array_unique;
 use function count;
+use function defined;
 use function file;
 use function file_put_contents;
+use function function_exists;
 use function getmypid;
 use function is_file;
 use function PHPUnit\Framework\assertNotFalse;
 use function PHPUnit\Framework\assertSame;
+use function posix_kill;
+use function sprintf;
 use function sys_get_temp_dir;
 use function uniqid;
 use function unlink;
@@ -65,6 +70,42 @@ final class ParallelTaskRunnerTest extends TestCase
             if (is_file($pidFile)) {
                 unlink($pidFile);
             }
+        }
+    }
+
+    public function testRunFailsWhenWorkerIsTerminatedBySignal(): void
+    {
+        $this->skipWhenSignalWorkerTestIsUnsupported();
+
+        $runner = new ParallelTaskRunner();
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('terminated by signal');
+
+        $runner->run(
+            [1, 2],
+            2,
+            static function (int $task): int {
+                if ($task === 1) {
+                    posix_kill(getmypid(), \SIGKILL);
+                }
+
+                return 1;
+            },
+            minTasksPerWorker: 1,
+        );
+    }
+
+    private function skipWhenSignalWorkerTestIsUnsupported(): void
+    {
+        foreach (['pcntl_fork', 'pcntl_waitpid', 'pcntl_wifsignaled', 'pcntl_wtermsig', 'posix_kill'] as $function) {
+            if (!function_exists($function)) {
+                self::markTestSkipped(sprintf('%s() is required to test signaled worker failures.', $function));
+            }
+        }
+
+        if (!defined('SIGKILL')) {
+            self::markTestSkipped('SIGKILL is required to test signaled worker failures.');
         }
     }
 }

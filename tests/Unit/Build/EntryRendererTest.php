@@ -314,6 +314,31 @@ PHP);
         assertStringContainsString('Wide content.', $html);
     }
 
+    public function testTemplateCanReadSiteData(): void
+    {
+        mkdir($this->contentDir . '/templates', 0o755, true);
+        file_put_contents($this->contentDir . '/templates/data.php', <<<'PHP'
+<?php
+
+declare(strict_types=1);
+?>
+<h1><?= $h($data['company']['name']) ?></h1>
+<a href="<?= $h($data['company']['links'][0]) ?>">About</a>
+PHP);
+
+        $entryFile = $this->contentDir . '/blog/data.md';
+        file_put_contents($entryFile, "---\ntitle: Data Post\nlayout: data\n---\n\nBody.\n");
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Data Post', layout: 'data');
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver($this->contentDir . '/templates'), contentDir: $this->contentDir);
+        $html = $renderer->render($this->createSiteConfig(theme: 'custom', data: [
+            'company' => ['name' => 'Acme', 'links' => ['/about/']],
+        ]), $entry);
+
+        assertStringContainsString('<h1>Acme</h1>', $html);
+        assertStringContainsString('<a href="/about/">About</a>', $html);
+    }
+
     public function testProvidesTranslationHelperToCustomEntryTemplates(): void
     {
         mkdir($this->contentDir . '/templates', 0o755, true);
@@ -486,8 +511,8 @@ PHP);
         assertStringContainsString('id="search-close"', $html);
         assertStringContainsString('data-ui-attr-aria-label="search_close"', $html);
         assertStringContainsString('<span class="search-hint" aria-hidden="true">ESC</span>', $html);
-        assertStringContainsString('assets/theme/search.css', $html);
-        assertStringContainsString('assets/theme/search.js', $html);
+        assertStringContainsString('assets/themes/minimal/search.css', $html);
+        assertStringContainsString('assets/themes/minimal/search.js', $html);
     }
 
     public function testRenderHooksCanObserveAndModifyRenderedHtml(): void
@@ -589,6 +614,7 @@ PHP);
         ?string $reportIssueUrl = null,
         bool $authorPages = false,
         bool $minify = true,
+        array $data = [],
     ): SiteConfig
     {
         return new SiteConfig(
@@ -611,6 +637,7 @@ PHP);
             reportIssueUrl: $reportIssueUrl,
             authorPages: $authorPages,
             minify: $minify,
+            data: $data,
         );
     }
 

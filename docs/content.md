@@ -27,9 +27,29 @@ content/
 │   │   └── john-doe.svg
 │   ├── john-doe.md
 │   └── jane-smith.md
+├── data/                          # Site data files exposed to templates
+│   └── company.yaml
 ├── config.yaml                    # Site-wide settings (see docs/configuration.md)
 ├── navigation.yaml                # Menu definitions
 └── standalone-page.md             # Standalone page (not in any collection)
+```
+
+## Site Data
+
+Put YAML files in `content/data/` to expose structured site data to templates. Each `.yaml` or `.yml` file becomes one key in the `$data` template variable using the file name without the extension.
+
+For example, `content/data/company.yaml`:
+
+```yaml
+name: Acme
+links:
+  - /about/
+```
+
+is available in templates as:
+
+```php
+<?= $h($data['company']['name']) ?>
 ```
 
 ## Collections
@@ -58,8 +78,8 @@ feed_limit: 20
 - **sort_by** — field to sort entries by: `date` (default), `weight`, `title`
 - **sort_order** — `desc` (default) or `asc`
 - **entries_per_page** — number of entries per page, `0` for no pagination
-- **feed** — `true` to generate RSS/Atom feed for this collection
-- **feed_limit** — maximum entries rendered into each RSS/Atom feed (default: `20`, `0` for unlimited)
+- **feed** — `true` to generate RSS, Atom, and JSON Feed files for this collection
+- **feed_limit** — maximum entries rendered into each feed (default: `20`, `0` for unlimited)
 - **listing** — `true` to generate a collection index page (default: `true`)
 - **navigation_pager** — `true` to render previous/next page links from the configured sidebar navigation (default: `false`)
 
@@ -106,7 +126,7 @@ extra:
 ```
 
 - **title** — entry title; if omitted, inferred from the first `# Heading` in the markdown body. Files with no title (neither in front matter nor as H1) are skipped with a console warning
-- **date** — publication date (`YYYY-MM-DD` or `YYYY-MM-DDTHH:MM:SS+00:00`); entries with a future date are excluded from build by default (scheduling)
+- **date** — publication date (`YYYY-MM-DD` or `YYYY-MM-DDTHH:MM:SS+00:00`); entries with a future date are excluded from build by default (scheduling). Invalid dates fail the build with the source file path.
 - **slug** — URL slug; overrides filename-derived slug
 - **draft** — `true` to exclude from build (default: `false`)
 - **tags** — list of tag slugs
@@ -114,13 +134,15 @@ extra:
 - **authors** — list of author slugs (referencing files in `content/authors/`)
 - **image** — featured image URL (absolute, or root-relative path resolved against `base_url`); used as `og:image` for social sharing. Falls back to the site-level `image` in `config.yaml`
 - **summary** — manual excerpt; if omitted, auto-generated from content
-- **permalink** — per-entry URL override; takes precedence over collection pattern
+- **permalink** — per-entry URL override; takes precedence over collection pattern. Permalinks must be root-relative paths with a trailing slash, must not contain repeated `/`, `.` or `..` path segments, and must be unique across generated entries and standalone pages.
 - **layout** — template layout name (default: collection-specific or `entry`)
 - **theme** — theme name for this entry; overrides the site-level default (see [Templates](templates.md))
 - **weight** — integer for custom sorting in non-blog collections (lower = first)
 - **language** — language code for multilingual content (e.g., `en`, `ru`)
 - **redirect_to** — URL to redirect to; generates a redirect HTML page (with `<meta http-equiv="refresh">`, JS `window.location.replace()`, and `<link rel="canonical">`) instead of rendering content. Redirect entries are excluded from feeds, sitemaps, listings, archives, and taxonomy pages. Root-relative targets such as `/new-url/` are YiiPress site-root paths; when `base_url` includes a deployment path, YiiPress prefixes that path in the generated redirect target. Absolute URLs are emitted unchanged
 - **extra** — arbitrary key-value pairs accessible in templates
+
+Front matter must be valid YAML key-value pairs. Syntax errors fail the build with the affected file path instead of being ignored.
 
 ### Internal links
 

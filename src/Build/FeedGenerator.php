@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiPress\Build;
 
+use YiiPress\Content\Model\Author;
 use YiiPress\Content\Model\Collection;
 use YiiPress\Content\Model\Entry;
 use YiiPress\Content\Model\SiteConfig;
@@ -14,12 +15,17 @@ use DateTimeInterface;
 use XMLWriter;
 
 use function array_slice;
+use function file_put_contents;
+use function json_encode;
 
 final class FeedGenerator
 {
     /** @var array<string, string> */
     private array $renderedContentCache = [];
 
+    /**
+     * @param array<string, Author> $authors
+     */
     public function __construct(
         private readonly ContentProcessorPipeline $pipeline,
         private readonly array $authors = [],
@@ -56,15 +62,27 @@ final class FeedGenerator
     /**
      * @param list<Entry> $entries
      */
+    public function generateJson(
+        SiteConfig $siteConfig,
+        Collection $collection,
+        array $entries,
+    ): string {
+        return json_encode(
+            $this->jsonDocument($siteConfig, $collection, $this->limitEntries($collection, $entries)),
+            JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
+        );
+    }
+
+    /**
+     * @param list<Entry> $entries
+     */
     public function writeAtomFile(
         string $path,
         SiteConfig $siteConfig,
         Collection $collection,
         array $entries,
     ): void {
-        $xml = $this->createFileWriter($path);
-        $this->writeAtomDocument($xml, $siteConfig, $collection, $this->limitEntries($collection, $entries));
-        $xml->flush();
+        FileWriter::write($path, $this->generateAtom($siteConfig, $collection, $entries));
     }
 
     /**
@@ -76,9 +94,19 @@ final class FeedGenerator
         Collection $collection,
         array $entries,
     ): void {
-        $xml = $this->createFileWriter($path);
-        $this->writeRssDocument($xml, $siteConfig, $collection, $this->limitEntries($collection, $entries));
-        $xml->flush();
+        FileWriter::write($path, $this->generateRss($siteConfig, $collection, $entries));
+    }
+
+    /**
+     * @param list<Entry> $entries
+     */
+    public function writeJsonFile(
+        string $path,
+        SiteConfig $siteConfig,
+        Collection $collection,
+        array $entries,
+    ): void {
+        file_put_contents($path, $this->generateJson($siteConfig, $collection, $entries));
     }
 
     /**
@@ -256,6 +284,77 @@ final class FeedGenerator
         $xml->endElement();
     }
 
+    /**
+     * @param list<Entry> $entries
+     * @return array<string, mixed>
+     */
+    private function jsonDocument(SiteConfig $siteConfig, Collection $collection, array $entries): array
+    {
+        $collectionUrl = rtrim($siteConfig->baseUrl, '/') . '/' . $collection->name . '/';
+        $document = [
+            'version' => 'https://jsonfeed.org/version/1.1',
+            'title' => $collection->title,
+            'home_page_url' => $collectionUrl,
+            'feed_url' => rtrim($siteConfig->baseUrl, '/') . '/' . $collection->name . '/feed.json',
+            'items' => array_map(
+                fn (Entry $entry): array => $this->jsonItem($siteConfig, $collection, $entry),
+                $entries,
+            ),
+        ];
+
+        $description = $collection->description !== '' ? $collection->description : $siteConfig->description;
+        if ($description !== '') {
+            $document['description'] = $description;
+        }
+
+        if ($siteConfig->defaultLanguage !== '') {
+            $document['language'] = $siteConfig->defaultLanguage;
+        }
+
+        return $document;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function jsonItem(SiteConfig $siteConfig, Collection $collection, Entry $entry): array
+    {
+        $entryUrl = $this->resolveEntryUrl($siteConfig, $collection, $entry);
+        $item = [
+            'id' => $entryUrl,
+            'url' => $entryUrl,
+            'title' => $entry->title,
+        ];
+
+        $summary = $entry->summary();
+        if ($summary !== '') {
+            $item['summary'] = $summary;
+        }
+
+        $html = $this->renderedContent($siteConfig, $entry);
+        if ($html !== '') {
+            $item['content_html'] = $html;
+        }
+
+        if ($entry->date !== null) {
+            $item['date_published'] = $entry->date->format(DateTimeInterface::ATOM);
+            $item['date_modified'] = $entry->date->format(DateTimeInterface::ATOM);
+        }
+
+        if ($entry->authors !== []) {
+            $item['authors'] = array_map(
+                fn (string $authorSlug): array => ['name' => $this->authors[$authorSlug]->title ?? $authorSlug],
+                $entry->authors,
+            );
+        }
+
+        if ($entry->tags !== []) {
+            $item['tags'] = $entry->tags;
+        }
+
+        return $item;
+    }
+
     private function resolveEntryUrl(SiteConfig $siteConfig, Collection $collection, Entry $entry): string
     {
         return rtrim($siteConfig->baseUrl, '/') . PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n);
@@ -289,16 +388,6 @@ final class FeedGenerator
     {
         $xml = new XMLWriter();
         $xml->openMemory();
-        $xml->setIndent(true);
-        $xml->setIndentString('  ');
-
-        return $xml;
-    }
-
-    private function createFileWriter(string $path): XMLWriter
-    {
-        $xml = new XMLWriter();
-        $xml->openUri($path);
         $xml->setIndent(true);
         $xml->setIndentString('  ');
 

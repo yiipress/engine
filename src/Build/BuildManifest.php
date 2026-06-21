@@ -27,19 +27,24 @@ final class BuildManifest
     public function load(): void
     {
         if (!is_file($this->manifestPath)) {
-            $this->entries = [];
+            $this->clear();
             return;
         }
 
         $json = file_get_contents($this->manifestPath);
         if ($json === false) {
-            $this->entries = [];
+            $this->clear();
             return;
         }
 
-        $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        try {
+            $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            $this->clear();
+            return;
+        }
         if (!is_array($data)) {
-            $this->entries = [];
+            $this->clear();
             return;
         }
 
@@ -55,6 +60,13 @@ final class BuildManifest
         $this->trackedDirectories = [];
     }
 
+    private function clear(): void
+    {
+        $this->entries = [];
+        $this->configFiles = [];
+        $this->trackedDirectories = [];
+    }
+
     public function save(): void
     {
         $dir = dirname($this->manifestPath);
@@ -62,7 +74,7 @@ final class BuildManifest
             throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
         }
 
-        file_put_contents(
+        FileWriter::writeAtomic(
             $this->manifestPath,
             json_encode([
                 'entries' => $this->entries,

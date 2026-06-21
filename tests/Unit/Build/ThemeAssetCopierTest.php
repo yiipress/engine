@@ -15,8 +15,10 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
 use function PHPUnit\Framework\assertFileExists;
+use function PHPUnit\Framework\assertFileDoesNotExist;
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
+use function PHPUnit\Framework\assertStringEqualsFile;
 
 final class ThemeAssetCopierTest extends TestCase
 {
@@ -44,9 +46,27 @@ final class ThemeAssetCopierTest extends TestCase
         $copier = new ThemeAssetCopier();
         $copied = $copier->copy($registry, $this->tempDir . '/output');
 
-        assertSame(1, $copied);
+        assertSame(2, $copied);
+        assertFileExists($this->tempDir . '/output/assets/themes/test/style.css');
         assertFileExists($this->tempDir . '/output/assets/theme/style.css');
-        assertStringContainsString('color: red', file_get_contents($this->tempDir . '/output/assets/theme/style.css'));
+        assertStringEqualsFile($this->tempDir . '/output/assets/themes/test/style.css', 'body{color:red}');
+        assertStringEqualsFile($this->tempDir . '/output/assets/theme/style.css', 'body{color:red}');
+    }
+
+    public function testCanCopyThemeAssetsWithoutMinifying(): void
+    {
+        $css = 'body { color: red; }';
+        file_put_contents($this->tempDir . '/theme/assets/style.css', $css);
+
+        $registry = new ThemeRegistry();
+        $registry->register(new Theme('test', $this->tempDir . '/theme'));
+
+        $copier = new ThemeAssetCopier();
+        $copied = $copier->copy($registry, $this->tempDir . '/output', minify: false);
+
+        assertSame(2, $copied);
+        assertStringEqualsFile($this->tempDir . '/output/assets/themes/test/style.css', $css);
+        assertStringEqualsFile($this->tempDir . '/output/assets/theme/style.css', $css);
     }
 
     public function testReturnsZeroWhenNoAssetsDir(): void
@@ -72,12 +92,34 @@ final class ThemeAssetCopierTest extends TestCase
         $copier = new ThemeAssetCopier();
         $copied = $copier->copy($registry, $this->tempDir . '/output');
 
-        assertSame(2, $copied);
+        assertSame(4, $copied);
+        assertFileExists($this->tempDir . '/output/assets/themes/test/style.css');
+        assertFileExists($this->tempDir . '/output/assets/themes/test/fonts/mono.woff2');
         assertFileExists($this->tempDir . '/output/assets/theme/style.css');
         assertFileExists($this->tempDir . '/output/assets/theme/fonts/mono.woff2');
     }
 
-    public function testCopiesFingerprintedThemeAssetsWhenManifestProvided(): void
+    public function testCopiesThemeAssetsWithoutCrossThemeCollisions(): void
+    {
+        mkdir($this->tempDir . '/other/assets', 0o755, true);
+        file_put_contents($this->tempDir . '/theme/assets/style.css', 'body { color: red; }');
+        file_put_contents($this->tempDir . '/other/assets/style.css', 'body { color: blue; }');
+
+        $registry = new ThemeRegistry();
+        $registry->register(new Theme('test', $this->tempDir . '/theme'));
+        $registry->register(new Theme('other', $this->tempDir . '/other'));
+
+        $copier = new ThemeAssetCopier();
+        $copied = $copier->copy($registry, $this->tempDir . '/output');
+
+        assertSame(3, $copied);
+        assertStringContainsString('color: red', file_get_contents($this->tempDir . '/output/assets/themes/test/style.css'));
+        assertStringContainsString('color: blue', file_get_contents($this->tempDir . '/output/assets/themes/other/style.css'));
+        assertStringContainsString('color: red', file_get_contents($this->tempDir . '/output/assets/theme/style.css'));
+        assertFileDoesNotExist($this->tempDir . '/output/assets/theme/other/style.css');
+    }
+
+    public function testCopiesFingerprintedCanonicalThemeAssetsWhenManifestProvided(): void
     {
         $source = $this->tempDir . '/theme/assets/style.css';
         file_put_contents($source, 'body { color: red; }');
@@ -86,13 +128,31 @@ final class ThemeAssetCopierTest extends TestCase
         $registry->register(new Theme('test', $this->tempDir . '/theme'));
 
         $manifest = new AssetFingerprintManifest();
-        $resolved = $manifest->register('assets/theme/style.css', $source);
+        $resolved = $manifest->register('assets/themes/test/style.css', $source);
 
         $copier = new ThemeAssetCopier();
         $copied = $copier->copy($registry, $this->tempDir . '/output', $manifest);
 
-        assertSame(1, $copied);
+        assertSame(2, $copied);
         assertFileExists($this->tempDir . '/output/' . $resolved);
+        assertFileExists($this->tempDir . '/output/assets/theme/style.css');
+    }
+
+    public function testMappingsUseNamespacedLogicalPaths(): void
+    {
+        file_put_contents($this->tempDir . '/theme/assets/style.css', 'body {}');
+
+        $registry = new ThemeRegistry();
+        $registry->register(new Theme('test', $this->tempDir . '/theme'));
+
+        $mappings = (new ThemeAssetCopier())->mappings($registry);
+
+        assertSame('assets/themes/test/style.css', $mappings[$this->tempDir . '/theme/assets/style.css']);
+    }
+
+    public function testLogicalPathSanitizesThemeName(): void
+    {
+        assertSame('assets/themes/bad-theme/style.css', ThemeAssetCopier::logicalPath('../bad theme', 'style.css'));
     }
 
     private function removeDir(string $dir): void

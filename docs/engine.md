@@ -129,7 +129,7 @@ Two pipelines are configured in `config/common/di/content-pipeline.php`:
 - **contentPipeline** — used by entry rendering, typically Markdown conversion followed by syntax highlighting and post-processing.
 - **feedPipeline** — used by feed generation, usually Markdown conversion without syntax highlighting.
 
-Built-in processors include Markdown conversion through MD4C, oEmbed expansion, Mermaid block handling, server-side syntax highlighting, table of contents extraction, and related-content data preparation.
+Built-in processors include Markdown conversion through `ext-mdparser`, oEmbed expansion, Mermaid block handling, server-side syntax highlighting, table of contents extraction, and related-content data preparation.
 
 Lifecycle hooks are separate from processors. They expose build-level and final-render PSR-14 events through `yiisoft/yii-event`, so plugins can react to `BuildStartedEvent`, `BuildFinishedEvent`, `RenderStartedEvent`, and `RenderFinishedEvent` without replacing writers or commands.
 
@@ -155,7 +155,7 @@ Scaffolding commands, cleanup commands, and importer media copying use `yiisoft/
 Performance is handled by doing less work, keeping expensive work native, and letting PHP orchestrate the pipeline:
 
 - YAML front matter uses `yaml_parse()`.
-- Markdown uses MD4C through `ext-md4c`.
+- Markdown uses `ext-mdparser` from `iliaal/mdparser`, backed by bundled MD4C sources.
 - Syntax highlighting uses `ext-highlighter`, backed by syntect and Rust.
 - Incremental builds reuse the build manifest and content hashes.
 - `--workers=auto` detects CPU capacity and caps user-facing defaults to avoid over-forking small builds.
@@ -176,6 +176,8 @@ The cache stores:
 - rendered Markdown HTML keyed by content hash;
 - incremental build manifests keyed by source and output paths.
 
+Build manifests are treated as disposable cache metadata: missing, unreadable, corrupt, or structurally invalid manifests reset incremental state and trigger normal rebuild work instead of failing the build. Manifest saves write a uniquely named temporary file in the target directory and replace the manifest atomically after the full JSON payload is written.
+
 `yiipress clean` removes both configured output and the relevant build cache.
 
 ## Serve Mode
@@ -193,7 +195,7 @@ The source-open overlay resolves the browser path through the build manifest, ve
 
 ## Theme Registration
 
-Project-local templates under `content/templates/` are registered automatically as the `local` theme. Engine-level or distributable themes are registered in [Yii3 DI](https://yiisoft.github.io/docs/guide/concept/di-container.html):
+Project themes under `<project>/themes/<name>/` are registered automatically by directory name. Project-local templates under `content/templates/` are registered automatically as the `local` theme. Engine-level themes may still be registered in [Yii3 DI](https://yiisoft.github.io/docs/guide/concept/di-container.html):
 
 ```php
 use YiiPress\Build\Theme;
@@ -204,11 +206,10 @@ return [
     ThemeRegistry::class => DynamicReference::to(static function (): ThemeRegistry {
         $registry = new ThemeRegistry();
         $registry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
-        $registry->register(new Theme('fancy', '/path/to/fancy-theme'));
 
         return $registry;
     }),
 ];
 ```
 
-Template resolution checks the active theme first, then falls back through registered themes. This lets a project override one template while keeping the rest of the bundled theme.
+For binary users, install a reusable theme as `themes/fancy/` and set `theme: fancy` in `content/config.yaml`. Template resolution checks the active theme first, then falls back through registered themes. This lets a project override one template while keeping the rest of the bundled theme. Theme assets are copied under `assets/themes/<theme>/`, and templates should use `$themeAsset('file.css')` so installed themes do not overwrite each other's files.

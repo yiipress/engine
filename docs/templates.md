@@ -43,7 +43,7 @@ Use `$h()` for text that should be escaped. Rendered Markdown content in `$conte
 
 ## Themes
 
-A theme is a named set of template files. YiiPress ships with the built-in `minimal` theme. A project-local `content/templates/` directory is automatically available as the `local` theme.
+A theme is a named set of template files. YiiPress ships with the built-in `minimal` theme. Project themes under `themes/<name>/` are registered automatically, and a project-local `content/templates/` directory is automatically available as the `local` theme.
 
 ### Theme resolution order
 
@@ -53,7 +53,36 @@ When YiiPress renders a page, it chooses templates in this order:
 2. **Site-level default theme** — set via `theme` in `config.yaml`.
 3. **Built-in `minimal` theme** — fallback when a template is missing.
 
-Within a theme, YiiPress uses the requested file when it exists and falls back to other registered themes when it does not. That means a local theme can override only `entry.php` and keep every other page type from `minimal`.
+Within a theme, YiiPress uses the requested file when it exists and falls back to other registered themes when it does not. That means a project theme or local theme can override only `entry.php` and keep every other page type from `minimal`.
+
+### Project themes
+
+Install reusable themes into the project root:
+
+```
+themes/
+└── brand/
+    ├── entry.php
+    ├── partials/
+    ├── assets/
+    └── translation/
+```
+
+Use the directory name as the theme name:
+
+```yaml
+theme: brand
+```
+
+To start editing the bundled theme in a PHAR or static binary build, initialize it into `themes/custom/`:
+
+```bash
+./yiipress theme:init
+```
+
+The command updates `content/config.yaml` automatically to set `theme: custom`.
+
+Theme directory names may contain letters, numbers, `_`, and `-`, and must start with a letter or number. If a project theme has the same name as an already registered built-in theme, the built-in theme is kept.
 
 ### Local theme
 
@@ -111,6 +140,7 @@ All built-in page templates receive these additional variables:
 | `$uiLanguages` | `list<string>`       | Available UI languages exposed by the site                    |
 | `$uiCatalogs` | `array<string, array<string, string>>` | Theme UI catalogs for client-side switching |
 | `$ui`       | `YiiPress\I18n\UiText`       | Injected localized UI-text helper for bundled theme labels    |
+| `$data`     | `array<string, mixed>`       | Site data loaded from `content/data/*.yaml` or `content/data/*.yml` |
 | `$h`        | `Closure(string, int, ?string, bool): string` | Injected alias for `htmlspecialchars()` |
 | `$t`        | `Closure(string, array): string` | Injected shortcut for `$ui->get()` in templates      |
 
@@ -119,6 +149,7 @@ Example:
 ```php
 <html lang="<?= $h($language) ?>">
 <button aria-label="<?= $h($t('search')) ?>">
+<span><?= $h($data['company']['name'] ?? '') ?></span>
 ```
 
 In the bundled `minimal` theme, `$language` is the content language of the current page, while the remembered UI language can differ and is applied client-side after load.
@@ -329,24 +360,34 @@ Partials are reusable template fragments stored in a `partials/` subdirectory of
 
 ## Asset helper
 
-Templates and partials should use `Asset::url()` to resolve the final public URL of a copied asset:
+Templates and partials should use `$themeAsset()` for files in the active theme's `assets/` directory:
+
+```php
+<link rel="stylesheet" href="<?= $h($themeAsset('style.css')) ?>">
+<script src="<?= $h($themeAsset('search.js')) ?>" defer></script>
+```
+
+This is especially useful when `assets.fingerprint: true` is enabled in `content/config.yaml`.
+In that mode, `$themeAsset('style.css')` returns the hashed output path rather than the logical one.
+
+Theme assets are copied to a theme-specific namespace:
+
+- `assets/themes/<theme>/style.css`
+- `assets/themes/<theme>/search.js`
+
+For compatibility, YiiPress also writes `assets/theme/...` aliases for the first registered theme. New templates should use `$themeAsset()` so installed themes cannot overwrite each other's asset files.
+
+For non-theme assets, use `Asset::url()` with a logical build-relative path:
 
 ```php
 <?php
 
 use YiiPress\Build\Asset;
 ?>
-<link rel="stylesheet" href="<?= $h(Asset::url('assets/theme/style.css', $rootPath, $assetManifest)) ?>">
-<script src="<?= $h(Asset::url('assets/theme/search.js', $rootPath, $assetManifest)) ?>" defer></script>
+<link rel="stylesheet" href="<?= $h(Asset::url('assets/plugins/mermaid.css', $rootPath, $assetManifest)) ?>">
 ```
 
-This is especially useful when `assets.fingerprint: true` is enabled in `content/config.yaml`.
-In that mode, `Asset::url('assets/theme/style.css', $rootPath, $assetManifest)` returns the hashed output path rather than the logical one.
-
-The helper accepts logical build-relative paths such as:
-
-- `assets/theme/style.css`
-- `assets/plugins/mermaid.css`
+That helper accepts logical build-relative paths such as `assets/plugins/mermaid.css`.
 
 ### Creating a partial
 
@@ -359,14 +400,14 @@ Create a PHP file in `themes/<name>/partials/`:
  * @var string $rootPath
  * @var AssetFingerprintManifest|null $assetManifest
  * @var Closure(string, int, ?string, bool): string $h
+ * @var Closure(string): string $themeAsset
  */
 
-use YiiPress\Build\Asset;
 ?>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= $h($title) ?></title>
-    <link rel="stylesheet" href="<?= $h(Asset::url('assets/theme/style.css', $rootPath, $assetManifest)) ?>">
+    <link rel="stylesheet" href="<?= $h($themeAsset('style.css')) ?>">
 ```
 
 ### Variable isolation

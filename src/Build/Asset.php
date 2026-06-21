@@ -24,4 +24,17 @@ final class Asset
 
         return $resolved;
     }
+
+    public static function themeUrl(
+        string $path,
+        string $themeName,
+        string $rootPath = '',
+        ?AssetFingerprintManifest $assetManifest = null,
+    ): string {
+        if ($themeName === '') {
+            return self::url(ThemeAssetCopier::legacyLogicalPath($path), $rootPath, $assetManifest);
+        }
+
+        return self::url(ThemeAssetCopier::logicalPath($themeName, $path), $rootPath, $assetManifest);
+    }
 }

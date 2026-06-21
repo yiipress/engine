@@ -74,7 +74,7 @@ editor: code
 - **toc** — generate a table of contents from headings (default: `true`); set to `false` to disable globally. When enabled, heading tags receive `id` attributes and a `$toc` variable is passed to templates
 - **search** — opt-in client-side search (see below)
 - **related** — opt-in related content suggestions (see below)
-- **minify** — minify generated HTML output (default: `true`); set to `false` to keep rendered template whitespace
+- **minify** — minify generated HTML output and copied CSS/JavaScript assets (default: `true`); set to `false` to keep rendered template and asset whitespace
 - **last_updated** — set to `true` to show each entry source file's last modification time below its content (default: `false`)
 - **edit_page** — URL template for an optional "Edit this page" link below entry content (see below)
 - **report_issue** — URL template for an optional "Report an issue" link below entry content (see below)
@@ -206,7 +206,7 @@ assets:
 
 When enabled, YiiPress renames copied assets to include a content hash, for example:
 
-- `assets/theme/style.css` → `assets/theme/style.4f8d2d5b1c3a.css`
+- `assets/themes/minimal/style.css` → `assets/themes/minimal/style.4f8d2d5b1c3a.css`
 - `blog/assets/hero.png` → `blog/assets/hero.a12b34c56d78.png`
 
 Built-in templates use the fingerprinted URLs automatically, and existing hardcoded `src` / `href`
@@ -216,14 +216,15 @@ the current output page, so they remain valid when `base_url` contains a deploym
 
 ### Output minification
 
-Generated HTML pages are minified by default:
+Generated HTML pages and copied CSS/JavaScript assets are minified by default:
 
 ```yaml
 minify: true
 ```
 
-Set `minify: false` to keep template indentation and line breaks in generated `*.html` files.
-Whitespace inside `pre`, `textarea`, `script`, and `style` elements is preserved either way.
+Set `minify: false` to keep template indentation and line breaks in generated `*.html` files
+and to copy `*.css` / `*.js` assets without rewriting them. Whitespace inside `pre`, `textarea`,
+`script`, and `style` elements is preserved either way.
 
 ### Editor
 
@@ -309,7 +310,7 @@ markdown:
 - **email_autolinks** — recognize e-mails as auto-links even without `<>` and `mailto:` (default: `true`)
 - **www_autolinks** — enable WWW auto-links (even without any scheme prefix, if they begin with 'www.') (default: `true`)
 - **collapse_whitespace** — collapse non-trivial whitespace into single space (default: `true`)
-- **latex_math** — enable LaTeX math spans `$...$` and `$$...$$` (default: `false`)
+- **latex_math** — enable LaTeX math spans `$...$` and `$$...$$` (default: `false`). Pages that contain math automatically include KaTeX CSS/JS and the shipped YiiPress math enhancer script.
 - **wikilinks** — enable wiki-style links `[[link]]` (default: `false`)
 - **underline** — underscore `_` denotes underline instead of emphasis (default: `false`)
 - **no_html_blocks** — disable raw HTML blocks (default: `true`)
@@ -326,7 +327,7 @@ Collection `_collection.yaml` fields override content config defaults:
 
 - Collection `entries_per_page` overrides `config.yaml` `entries_per_page`
 - Collection `permalink` overrides `config.yaml` `permalink`
-- Collection `feed_limit` controls how many entries are rendered into that collection's RSS/Atom feeds (`20` by default, `0` for unlimited)
+- Collection `feed_limit` controls how many entries are rendered into that collection's RSS, Atom, and JSON Feed files (`20` by default, `0` for unlimited)
 - Entry `permalink` overrides collection permalink
 
 Resolution order: entry → collection → content config → engine defaults.

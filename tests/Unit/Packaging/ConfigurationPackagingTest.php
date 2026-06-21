@@ -10,6 +10,7 @@ use YiiPress\Console\InitCommand;
 use YiiPress\Console\ImportCommand;
 use YiiPress\Console\NewCommand;
 use YiiPress\Console\ServeCommand;
+use YiiPress\Console\ThemeInitCommand;
 use YiiPress\Build\PharArchiveFilter;
 use YiiPress\Build\PhpDocStripper;
 use PHPUnit\Framework\Attributes\Test;
@@ -57,6 +58,7 @@ final class ConfigurationPackagingTest extends TestCase
             assertSame($workingDirectory, $contentPipelineConfiguration[CleanCommand::class]['__construct()']['rootPath']);
             assertSame($workingDirectory, $contentPipelineConfiguration[InitCommand::class]['__construct()']['rootPath']);
             assertSame($workingDirectory, $contentPipelineConfiguration[NewCommand::class]['__construct()']['rootPath']);
+            assertSame($workingDirectory, $contentPipelineConfiguration[ThemeInitCommand::class]['__construct()']['rootPath']);
             assertSame($workingDirectory, $importerConfiguration[ImportCommand::class]['__construct()']['rootPath']);
         } finally {
             chdir($previousDirectory);
@@ -72,6 +74,7 @@ final class ConfigurationPackagingTest extends TestCase
         /** @psalm-suppress RedundantCondition */
         assertSame(ServeCommand::class, $commands['serve']);
         assertSame(InitCommand::class, $commands['init']);
+        assertSame(ThemeInitCommand::class, $commands['theme:init']);
     }
 
     #[Test]
@@ -209,11 +212,16 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringNotContainsString('if ($IsWindows)', $script);
         self::assertStringContainsString('Invoke-WebRequest -Uri $Url -OutFile $archive -TimeoutSec 300', $script);
         self::assertStringContainsString('finally {', $script);
-        self::assertStringContainsString('[string] $HighlighterVersion = "1.0.1"', $script);
+        self::assertStringNotContainsString('[string] $HighlighterVersion', $script);
+        self::assertStringNotContainsString('[string] $MarkdownVersion', $script);
+        self::assertStringContainsString('function Get-PackagistLatestStableVersion', $script);
+        self::assertStringContainsString('$env:HIGHLIGHTER_VERSION = Get-PackagistLatestStableVersion "yiipress/highlighter"', $script);
+        self::assertStringNotContainsString('$env:MARKDOWN_VERSION', $script);
         self::assertStringNotContainsString('"dev-master"', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-inotify', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-pcntl', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-posix', $script);
+        self::assertStringContainsString('--ignore-platform-req=ext-mdparser', $script);
         self::assertStringContainsString('function Write-LogTail', $script);
         self::assertStringContainsString('log/spc.output.log', $script);
         self::assertStringContainsString('log/spc.shell.log', $script);
@@ -241,10 +249,14 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('require_command "$command"', $script);
         self::assertStringContainsString('for command in php composer tar curl rustup cargo make; do', $script);
         self::assertStringContainsString('curl -fsSL --max-time 300 --retry 3 --retry-delay 5 "$url" -o "$archive"', $script);
-        self::assertStringContainsString('HIGHLIGHTER_VERSION="${HIGHLIGHTER_VERSION:-1.0.1}"', $script);
+        self::assertStringNotContainsString('HIGHLIGHTER_VERSION="${HIGHLIGHTER_VERSION:-', $script);
+        self::assertStringNotContainsString('MARKDOWN_VERSION="${MARKDOWN_VERSION:-', $script);
+        self::assertStringContainsString('packagist_latest_stable_version()', $script);
+        self::assertStringContainsString('export HIGHLIGHTER_VERSION="$(packagist_latest_stable_version yiipress/highlighter)"', $script);
+        self::assertStringNotContainsString('export MARKDOWN_VERSION', $script);
         self::assertStringNotContainsString('dev-master', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-inotify', $script);
-        self::assertStringContainsString('--ignore-platform-req=ext-md4c', $script);
+        self::assertStringContainsString('--ignore-platform-req=ext-mdparser', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-yaml', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-highlighter', $script);
         self::assertStringContainsString('write_log_tail "${STATIC_PHP_PATH}/log/spc.output.log"', $script);
@@ -273,14 +285,17 @@ final class ConfigurationPackagingTest extends TestCase
             $workflow,
         );
         self::assertStringContainsString('Cache Windows package dependencies', $workflow);
-        self::assertStringContainsString('runtime\package-windows\yiipress-highlighter', $workflow);
+        self::assertStringNotContainsString('runtime\package-windows\yiipress-markdown', $workflow);
+        self::assertStringNotContainsString('runtime\package-windows\yiipress-highlighter', $workflow);
+        self::assertStringContainsString('runs-on: windows-2022', $workflow);
         self::assertStringContainsString('Smoke test Windows binary', $workflow);
         self::assertStringContainsString('./dist/windows-amd64/yiipress.exe --help', $workflow);
         self::assertStringContainsString('path: dist/windows-amd64/yiipress.exe', $workflow);
-        self::assertStringContainsString('runs-on: macos-latest', $workflow);
+        self::assertStringContainsString('runs-on: macos-14', $workflow);
         self::assertStringContainsString('targets: aarch64-apple-darwin', $workflow);
         self::assertStringContainsString('Cache macOS package dependencies', $workflow);
-        self::assertStringContainsString('runtime/package-macos/yiipress-highlighter', $workflow);
+        self::assertStringNotContainsString('runtime/package-macos/yiipress-markdown', $workflow);
+        self::assertStringNotContainsString('runtime/package-macos/yiipress-highlighter', $workflow);
         self::assertStringContainsString('make package-macos PACKAGE_MACOS_ARCH=arm64 PACKAGE_MACOS_DIST=dist/macos-arm64', $workflow);
         self::assertStringContainsString('Smoke test macOS binary', $workflow);
         self::assertStringContainsString('./dist/macos-arm64/yiipress --help', $workflow);
@@ -309,7 +324,7 @@ final class ConfigurationPackagingTest extends TestCase
     }
 
     #[Test]
-    public function buildActionInstallsBinaryOutsideCheckoutByDefault(): void
+    public function buildActionInitializesBinaryOutsideCheckoutByDefault(): void
     {
         $action = file_get_contents(dirname(__DIR__, 3) . '/.github/actions/build/action.yml');
         self::assertIsString($action);
@@ -641,7 +656,7 @@ PHP;
     }
 
     #[Test]
-    public function staticPackageInstallsRustTargetForHighlighterToolchain(): void
+    public function staticPackageInitializesRustTargetForHighlighterToolchain(): void
     {
         $dockerfile = file_get_contents(dirname(__DIR__, 3) . '/docker/Dockerfile');
         $windowsScript = file_get_contents(dirname(__DIR__, 3) . '/build/package-windows.ps1');
@@ -682,7 +697,8 @@ PHP;
         self::assertStringContainsString('--mount=type=cache,target=/tmp/composer-cache', $dockerfile);
         self::assertStringContainsString('COMPOSER_CACHE_DIR=/tmp/composer-cache composer install', $dockerfile);
         self::assertStringContainsString('COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project', $dockerfile);
-        self::assertStringContainsString('ARG HIGHLIGHTER_VERSION=1.0.1', $dockerfile);
+        self::assertStringNotContainsString('ARG HIGHLIGHTER_VERSION', $dockerfile);
+        self::assertStringNotContainsString('ARG MARKDOWN_VERSION', $dockerfile);
         self::assertStringNotContainsString('yiipress/highlighter /build/highlighter-extension dev-master', $dockerfile);
         self::assertStringNotContainsString('yiipress/highlighter /opt/yiipress-highlighter dev-master', $dockerfile);
         self::assertStringContainsString('--mount=type=cache,target=/root/.cargo/git', $dockerfile);
@@ -698,21 +714,21 @@ PHP;
         self::assertIsString($registrationPatch);
 
         self::assertStringContainsString("'highlighter'", $extensionConfigPatch);
-        self::assertStringContainsString("'md4c'", $extensionConfigPatch);
+        self::assertStringContainsString("'mdparser'", $extensionConfigPatch);
         self::assertStringNotContainsString("'unix-only' => true", $extensionConfigPatch);
         self::assertStringContainsString("patch_point() !== 'after-exts-extract'", $registrationPatch);
         self::assertStringContainsString('ARG_ENABLE("highlighter"', $registrationPatch);
-        self::assertStringContainsString('ARG_ENABLE("md4c"', $registrationPatch);
+        self::assertStringContainsString('MDPARSER_SOURCE is required.', $registrationPatch);
+        self::assertStringContainsString('/php-src/ext/mdparser/config.w32', $registrationPatch);
         self::assertStringContainsString('EXTENSION("highlighter", "highlighter.c", false);', $registrationPatch);
         self::assertStringContainsString('$highlighterWindowsConfigReplacementCount !== 1', $registrationPatch);
         self::assertStringContainsString(
             'str_contains($highlighterWindowsConfigContents, \'EXTENSION("highlighter", "highlighter.c", false);\')',
             $registrationPatch,
         );
-        self::assertStringContainsString('EXTENSION("md4c", "md4c.c", false);', $registrationPatch);
-        self::assertStringContainsString('md4c config.w32 was not found.', $registrationPatch);
-        self::assertStringContainsString('php_md4c.h', $registrationPatch);
-        self::assertStringContainsString('phpext_md4c_ptr', $registrationPatch);
+        self::assertStringContainsString('EXTENSION("mdparser", wrapper_sources, false);', $registrationPatch);
+        self::assertStringContainsString('mdparser config.w32 was not found.', $registrationPatch);
+        self::assertStringContainsString('phpext_mdparser_ptr', $registrationPatch);
     }
 
     #[Test]
@@ -776,6 +792,18 @@ PHP;
         self::assertStringNotContainsString('packages/highlighter-extension', $dockerfile);
         self::assertStringNotContainsString('yiipress-highligher', $dockerfile);
         self::assertStringNotContainsString('yiipress_highlighter', $dockerfile);
+    }
+
+    #[Test]
+    public function dockerBuildsMdParserExtensionFromPackagistPackage(): void
+    {
+        $dockerfile = file_get_contents(dirname(__DIR__, 3) . '/docker/Dockerfile');
+        self::assertIsString($dockerfile);
+
+        self::assertStringContainsString('composer create-project --no-dev --no-progress --no-interaction iliaal/mdparser', $dockerfile);
+        self::assertStringContainsString('docker-php-ext-enable highlighter mdparser', $dockerfile);
+        self::assertStringNotContainsString('md4c \\', $dockerfile);
+        self::assertStringNotContainsString('pecl.php.net/get/md4c', $dockerfile);
     }
 
     /**

@@ -10,14 +10,11 @@ use function array_slice;
 use function ceil;
 use function count;
 use function file_get_contents;
-use function file_put_contents;
 use function function_exists;
 use function is_dir;
 use function mkdir;
 use function min;
 use function pcntl_fork;
-use function pcntl_wexitstatus;
-use function pcntl_waitpid;
 use function rmdir;
 use function sys_get_temp_dir;
 use function unlink;
@@ -62,7 +59,7 @@ final class ParallelTaskRunner
 
                 if ($pid === 0) {
                     $count = $this->runSequential($chunk, $taskRunner);
-                    file_put_contents($resultFile, (string) $count);
+                    FileWriter::write($resultFile, (string) $count);
                     exit(0);
                 }
 
@@ -70,11 +67,17 @@ final class ParallelTaskRunner
                 $pids[] = $pid;
             }
 
+            $failure = null;
             foreach ($pids as $pid) {
-                pcntl_waitpid($pid, $status);
-                if (pcntl_wexitstatus($status) !== 0) {
-                    throw new RuntimeException('One or more worker processes failed');
+                try {
+                    WorkerProcessStatus::waitFor($pid);
+                } catch (RuntimeException $e) {
+                    $failure ??= $e;
                 }
+            }
+
+            if ($failure !== null) {
+                throw $failure;
             }
 
             $count = 0;

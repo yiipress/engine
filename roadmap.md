@@ -13,7 +13,7 @@
 
 ## Priority 1: Essential blog features
 
-- [x] RSS/Atom feed generation. Content should be generated using same plugins as for HTML content
+- [x] RSS/Atom/JSON Feed generation. Content should be generated using same plugins as for HTML content
 - [x] Sitemap generation
 - [x] Tags and categories (taxonomies)
 - [x] Draft support (front matter `draft: true` flag, exclude from build by default)
@@ -31,6 +31,7 @@
 - [x] Date-based archive pages (yearly, monthly)
 - [x] Cross-references / internal linking helpers (shorthand syntax to link between entries, prevents broken links on permalink changes)
 - [x] Markdown extensions configuration (enable/disable footnotes, definition lists, strikethrough, tables, etc.)
+- [x] KaTeX rendering assets for LaTeX math output
 
 ## Priority 2: Documentation
 
@@ -65,8 +66,11 @@
 ## Priority 4: Templates and theming
 
 - [x] Theme system — installable/distributable themes
+- [x] Auto-register project themes from `themes/<name>/` for binary users
+- [x] Namespaced theme assets for installable themes
 - [x] Template partials/includes support
 - [x] Template helper functions documentation
+- [x] Site data files exposed to templates (`content/data/*.yaml` or `.yml` as `$data`)
 - [x] Multiple layout support (per-entry layout selection via front matter)
 - [x] Beautiful default theme
 - [x] VuePress-style documentation layout with left sidebar navigation and right document table of contents
@@ -77,7 +81,7 @@
 - [x] Static file copying (fonts, downloads, PDFs from source to output)
 - [x] Root-relative asset URLs stay valid when deploying under a subdirectory
 - [x] Nightly Linux binary published for GitHub Actions preview builds
-- [x] Configurable generated HTML output minification
+- [x] Configurable generated HTML and CSS/JavaScript asset minification
 
 ## Priority 6: SEO and web standards
 

@@ -6,6 +6,8 @@ namespace YiiPress\Build;
 
 use Closure;
 
+use function ltrim;
+
 final class TemplateContext
 {
     /** @var array<string, Closure> */
@@ -23,8 +25,15 @@ final class TemplateContext
     public function partial(string $name, array $variables = []): string
     {
         $variables['partial'] = $this->partial(...);
+        if (!isset($variables['themeName'])) {
+            $variables['themeName'] = $this->themeName;
+        }
         if (!isset($variables['assetManifest'])) {
             $variables['assetManifest'] = $this->assetManifest;
+        }
+        if (!isset($variables['themeAsset'])) {
+            $rootPath = (string) ($variables['rootPath'] ?? '');
+            $variables['themeAsset'] = fn (string $path): string => $this->themeAssetUrl($path, $rootPath);
         }
         $variables = TemplateHelpers::inject($variables);
 
@@ -48,5 +57,12 @@ final class TemplateContext
         }
 
         return new AssetUrlRewriter($this->assetManifest)->rewrite($html, $rootPath);
+    }
+
+    private function themeAssetUrl(string $path, string $rootPath): string
+    {
+        $ownerThemeName = $this->templateResolver->resolveResourceThemeName('assets/' . ltrim($path, '/'), $this->themeName);
+
+        return Asset::themeUrl($path, $ownerThemeName, $rootPath, $this->assetManifest);
     }
 }

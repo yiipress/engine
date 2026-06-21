@@ -69,6 +69,7 @@ final readonly class TaxonomyPageWriter
         $taxonomyLabel = $uiViewData->ui->taxonomyLabel($taxonomyName);
         $html = $renderer->render('taxonomy_index', [
             'siteTitle' => $siteConfig->title,
+            'data' => $siteConfig->data,
             'taxonomyName' => $taxonomyName,
             'terms' => $terms,
             'nav' => $navigation,
@@ -85,7 +86,7 @@ final readonly class TaxonomyPageWriter
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
             }
 
-            file_put_contents($dir . '/index.html', $html);
+            FileWriter::write($dir . '/index.html', $html);
         }
     }
 
@@ -126,6 +127,7 @@ final readonly class TaxonomyPageWriter
 
         $html = $renderer->render('taxonomy_term', [
             'siteTitle' => $siteConfig->title,
+            'data' => $siteConfig->data,
             'taxonomyName' => $taxonomyName,
             'term' => $term,
             'entries' => $entries,
@@ -143,7 +145,7 @@ final readonly class TaxonomyPageWriter
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
             }
 
-            file_put_contents($dir . '/index.html', $html);
+            FileWriter::write($dir . '/index.html', $html);
         }
     }
 }
