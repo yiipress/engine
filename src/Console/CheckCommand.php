@@ -14,6 +14,9 @@ use YiiPress\Build\SiteChecker;
 use Yiisoft\Yii\Console\ExitCode;
 
 use function count;
+use function ltrim;
+use function preg_match;
+use function rtrim;
 use function sprintf;
 use function str_starts_with;
 use function strlen;
@@ -82,11 +85,15 @@ final class CheckCommand extends Command
 
     private function resolvePath(string $path, string $rootPath): string
     {
-        if (str_starts_with($path, '/')) {
+        if (
+            str_starts_with($path, '/')
+            || str_starts_with($path, '\\\\')
+            || preg_match('~^[A-Za-z]:[\\\\/]~', $path) === 1
+        ) {
             return $path;
         }
 
-        return $rootPath . '/' . $path;
+        return rtrim($rootPath, '/\\') . '/' . ltrim($path, '/\\');
     }
 
     private function relativePath(string $path, string $baseDir): string

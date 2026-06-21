@@ -10,6 +10,7 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 
+use function array_key_last;
 use function array_pop;
 use function dirname;
 use function explode;
@@ -24,6 +25,7 @@ use function parse_url;
 use function preg_match;
 use function preg_match_all;
 use function rawurldecode;
+use function rtrim;
 use function sort;
 use function str_contains;
 use function str_ends_with;
@@ -222,6 +224,7 @@ final readonly class SiteChecker
 
     private function resolveTargetFile(string $outputDir, string $sourceFile, string $path): ?string
     {
+        $outputDir = rtrim($outputDir, '/') ?: '/';
         $base = str_starts_with($path, '/')
             ? ''
             : substr(dirname($sourceFile), strlen($outputDir) + 1);
@@ -317,7 +320,20 @@ final readonly class SiteChecker
             return false;
         }
 
-        $statusLine = $headers[0] ?? '';
+        $statusLine = '';
+        foreach ($headers as $key => $header) {
+            if (!is_int($key)) {
+                continue;
+            }
+
+            if (is_array($header)) {
+                $statusLine = $header[array_key_last($header)] ?? $statusLine;
+                continue;
+            }
+
+            $statusLine = $header;
+        }
+
         if (!is_string($statusLine) || preg_match('/\s(\d{3})\s?/', $statusLine, $matches) !== 1) {
             return false;
         }

@@ -62,7 +62,7 @@ With `--workers=N` (N > 1), entry rendering and writing is parallelized across N
 
 Checks generated HTML output for broken local links, missing `src` targets, and missing anchor fragments.
 
-```
+```bash
 ./yiipress check:links [--output-dir=output] [--external]
 ```
 

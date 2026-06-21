@@ -11,8 +11,10 @@ use RecursiveIteratorIterator;
 use SplFileInfo;
 use Yiisoft\Yii\Console\ExitCode;
 
+use function bin2hex;
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
+use function random_bytes;
 
 final class CheckCommandTest extends TestCase
 {
@@ -20,7 +22,7 @@ final class CheckCommandTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->outputDir = sys_get_temp_dir() . '/yiipress-check-command-test-' . uniqid();
+        $this->outputDir = sys_get_temp_dir() . '/yiipress-check-command-test-' . bin2hex(random_bytes(8));
         mkdir($this->outputDir . '/docs', 0o755, true);
     }
 
@@ -68,7 +70,7 @@ final class CheckCommandTest extends TestCase
     {
         $yii = dirname(__DIR__, 3) . '/yii';
         exec(
-            $yii . ' check:links'
+            escapeshellarg($yii) . ' check:links'
             . ' --output-dir=' . escapeshellarg($this->outputDir)
             . ' 2>&1',
             $output,
