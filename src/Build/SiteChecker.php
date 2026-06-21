@@ -327,7 +327,9 @@ final readonly class SiteChecker
             }
 
             if (is_array($header)) {
-                $statusLine = $header[array_key_last($header)] ?? $statusLine;
+                if ($header !== []) {
+                    $statusLine = $header[array_key_last($header)];
+                }
                 continue;
             }
 
