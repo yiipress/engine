@@ -24,6 +24,7 @@ use function date_default_timezone_get;
 use function dirname;
 use function filemtime;
 use function hash;
+use function ltrim;
 use function strlen;
 
 final class EntryRenderer
@@ -223,6 +224,13 @@ final class EntryRenderer
             'partial' => $this->partialClosures[$themeName],
             'rootPath' => $rootPath,
             'assetManifest' => $this->assetManifest,
+            'themeName' => $themeName,
+            'themeAsset' => fn (string $path): string => Asset::themeUrl(
+                $path,
+                $this->templateResolver->resolveResourceThemeName('assets/' . ltrim($path, '/'), $themeName),
+                $rootPath,
+                $this->assetManifest,
+            ),
             'search' => $siteConfig->search !== null,
             'searchResults' => $siteConfig->search?->results ?? 10,
         ] + $uiViewData->toArray();

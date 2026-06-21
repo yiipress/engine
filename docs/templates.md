@@ -360,24 +360,34 @@ Partials are reusable template fragments stored in a `partials/` subdirectory of
 
 ## Asset helper
 
-Templates and partials should use `Asset::url()` to resolve the final public URL of a copied asset:
+Templates and partials should use `$themeAsset()` for files in the active theme's `assets/` directory:
+
+```php
+<link rel="stylesheet" href="<?= $h($themeAsset('style.css')) ?>">
+<script src="<?= $h($themeAsset('search.js')) ?>" defer></script>
+```
+
+This is especially useful when `assets.fingerprint: true` is enabled in `content/config.yaml`.
+In that mode, `$themeAsset('style.css')` returns the hashed output path rather than the logical one.
+
+Theme assets are copied to a theme-specific namespace:
+
+- `assets/themes/<theme>/style.css`
+- `assets/themes/<theme>/search.js`
+
+For compatibility, YiiPress also writes `assets/theme/...` aliases for the first registered theme. New templates should use `$themeAsset()` so installed themes cannot overwrite each other's asset files.
+
+For non-theme assets, use `Asset::url()` with a logical build-relative path:
 
 ```php
 <?php
 
 use YiiPress\Build\Asset;
 ?>
-<link rel="stylesheet" href="<?= $h(Asset::url('assets/theme/style.css', $rootPath, $assetManifest)) ?>">
-<script src="<?= $h(Asset::url('assets/theme/search.js', $rootPath, $assetManifest)) ?>" defer></script>
+<link rel="stylesheet" href="<?= $h(Asset::url('assets/plugins/mermaid.css', $rootPath, $assetManifest)) ?>">
 ```
 
-This is especially useful when `assets.fingerprint: true` is enabled in `content/config.yaml`.
-In that mode, `Asset::url('assets/theme/style.css', $rootPath, $assetManifest)` returns the hashed output path rather than the logical one.
-
-The helper accepts logical build-relative paths such as:
-
-- `assets/theme/style.css`
-- `assets/plugins/mermaid.css`
+That helper accepts logical build-relative paths such as `assets/plugins/mermaid.css`.
 
 ### Creating a partial
 
@@ -390,14 +400,14 @@ Create a PHP file in `themes/<name>/partials/`:
  * @var string $rootPath
  * @var AssetFingerprintManifest|null $assetManifest
  * @var Closure(string, int, ?string, bool): string $h
+ * @var Closure(string): string $themeAsset
  */
 
-use YiiPress\Build\Asset;
 ?>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= $h($title) ?></title>
-    <link rel="stylesheet" href="<?= $h(Asset::url('assets/theme/style.css', $rootPath, $assetManifest)) ?>">
+    <link rel="stylesheet" href="<?= $h($themeAsset('style.css')) ?>">
 ```
 
 ### Variable isolation
