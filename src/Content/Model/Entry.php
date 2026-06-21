@@ -14,6 +14,7 @@ final class Entry
      * @param list<string> $categories
      * @param list<string> $authors
      * @param array<string, mixed> $extra
+     * @param list<string> $aliases
      */
     public function __construct(
         public string $filePath,
@@ -39,6 +40,7 @@ final class Entry
         public array $inlineTags = [],
         public string $translationKey = '',
         public bool $showTitle = true,
+        public array $aliases = [],
     ) {}
 
     private ?string $bodyCache = null;
@@ -47,6 +49,36 @@ final class Entry
     public function sourceFilePath(): string
     {
         return $this->filePath;
+    }
+
+    public function withRedirectTo(string $redirectTo): self
+    {
+        return new self(
+            filePath: $this->filePath,
+            collection: $this->collection,
+            slug: $this->slug,
+            title: $this->title,
+            date: $this->date,
+            draft: $this->draft,
+            tags: $this->tags,
+            categories: $this->categories,
+            authors: $this->authors,
+            summary: $this->summary,
+            permalink: $this->permalink,
+            layout: $this->layout,
+            theme: $this->theme,
+            weight: $this->weight,
+            language: $this->language,
+            redirectTo: $redirectTo,
+            extra: $this->extra,
+            bodyOffset: $this->bodyOffset,
+            bodyLength: $this->bodyLength,
+            image: $this->image,
+            inlineTags: $this->inlineTags,
+            translationKey: $this->translationKey,
+            showTitle: $this->showTitle,
+            aliases: $this->aliases,
+        );
     }
 
     private const int SUMMARY_LENGTH = 300;

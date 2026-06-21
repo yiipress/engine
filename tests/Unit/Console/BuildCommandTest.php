@@ -569,6 +569,83 @@ PHP,
         assertStringNotContainsString('No Date Post', $atom);
     }
 
+    public function testBuildGeneratesRedirectsForEntryAliases(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/yiipress-build-alias-test-' . uniqid();
+        $contentDir = $tempDir . '/content';
+        $outputDir = $tempDir . '/output';
+        mkdir($contentDir . '/blog', 0o755, true);
+        $this->tempContentDirs[] = $tempDir;
+
+        file_put_contents($contentDir . '/config.yaml', "title: Alias Site\nbase_url: https://example.com\nlanguages: [en]\n");
+        file_put_contents($contentDir . '/blog/_collection.yaml', "title: Blog\npermalink: /blog/:slug/\n");
+        file_put_contents($contentDir . '/blog/post.md', "---\ntitle: Post\naliases:\n  - /old-post/\n  - legacy/post\n---\n\nBody.\n");
+
+        $yii = dirname(__DIR__, 3) . '/yii';
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($outputDir)
+            . ' --no-cache'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        assertSame(0, $exitCode, implode("\n", $output));
+
+        $oldPost = file_get_contents($outputDir . '/old-post/index.html');
+        assertNotFalse($oldPost);
+        assertStringContainsString('http-equiv="refresh"', $oldPost);
+        assertStringContainsString('href="/blog/post/"', $oldPost);
+
+        $legacy = file_get_contents($outputDir . '/legacy/post/index.html');
+        assertNotFalse($legacy);
+        assertStringContainsString('href="/blog/post/"', $legacy);
+
+        $sitemap = file_get_contents($outputDir . '/sitemap.xml');
+        assertNotFalse($sitemap);
+        assertStringContainsString('/blog/post/', $sitemap);
+        assertStringNotContainsString('/old-post/', $sitemap);
+        assertStringNotContainsString('/legacy/post/', $sitemap);
+    }
+
+    public function testBuildGeneratesAliasRedirectsForRedirectEntries(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/yiipress-build-redirect-alias-test-' . uniqid();
+        $contentDir = $tempDir . '/content';
+        $outputDir = $tempDir . '/output';
+        mkdir($contentDir . '/blog', 0o755, true);
+        $this->tempContentDirs[] = $tempDir;
+
+        file_put_contents($contentDir . '/config.yaml', "title: Alias Redirect Site\nbase_url: https://example.com\nlanguages: [en]\n");
+        file_put_contents($contentDir . '/blog/_collection.yaml', "title: Blog\npermalink: /blog/:slug/\n");
+        file_put_contents($contentDir . '/blog/post.md', "---\ntitle: Post\nredirect_to: /new-post/\naliases:\n  - /old-post/\n---\n");
+
+        $yii = dirname(__DIR__, 3) . '/yii';
+        exec(
+            $yii . ' build'
+            . ' --content-dir=' . escapeshellarg($contentDir)
+            . ' --output-dir=' . escapeshellarg($outputDir)
+            . ' --no-cache'
+            . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        assertSame(0, $exitCode, implode("\n", $output));
+
+        $redirect = file_get_contents($outputDir . '/blog/post/index.html');
+        assertNotFalse($redirect);
+        assertStringContainsString('href="/new-post/"', $redirect);
+
+        $alias = file_get_contents($outputDir . '/old-post/index.html');
+        assertNotFalse($alias);
+        assertStringContainsString('http-equiv="refresh"', $alias);
+        assertStringContainsString('href="/new-post/"', $alias);
+        assertStringNotContainsString('href="/blog/post/"', $alias);
+    }
+
     public function testBuildExcludesFutureDatedEntriesByDefault(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';
@@ -1247,6 +1324,32 @@ PHP,
 
         assertSame(65, $result['exitCode'], $result['output']);
         assertStringContainsString('Duplicate permalink "/same/"', $result['output']);
+    }
+
+    public function testBuildRejectsAliasThatDuplicatesPermalink(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'index.md' => "---\ntitle: Home\npermalink: /\naliases:\n  - /about/\n---\n\nHello.\n",
+            'about.md' => "---\ntitle: About\npermalink: /about/\n---\n\nAbout.\n",
+        ]);
+
+        $result = $this->runBuildResult($contentDir);
+
+        assertSame(65, $result['exitCode'], $result['output']);
+        assertStringContainsString('Duplicate permalink "/about/"', $result['output']);
+    }
+
+    public function testBuildRejectsDuplicateAliases(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'index.md' => "---\ntitle: Home\npermalink: /\naliases:\n  - /old/\n---\n\nHello.\n",
+            'about.md' => "---\ntitle: About\npermalink: /about/\naliases:\n  - old\n---\n\nAbout.\n",
+        ]);
+
+        $result = $this->runBuildResult($contentDir);
+
+        assertSame(65, $result['exitCode'], $result['output']);
+        assertStringContainsString('Duplicate alias "/old/"', $result['output']);
     }
 
     public function testBuildRejectsTraversingPermalink(): void

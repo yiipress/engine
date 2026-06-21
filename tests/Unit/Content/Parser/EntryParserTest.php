@@ -61,6 +61,20 @@ final class EntryParserTest extends TestCase
         assertSame(['custom_field' => 'value'], $entry->extra);
     }
 
+    public function testParseEntryAliases(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-aliases-') . '.md';
+        file_put_contents($file, "---\ntitle: Aliased\naliases:\n  - /old-url/\n  - legacy-url\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'blog');
+
+            assertSame(['/old-url/', 'legacy-url'], $entry->aliases);
+        } finally {
+            unlink($file);
+        }
+    }
+
     public function testEntryBodyIsLoadedLazily(): void
     {
         $entry = $this->parser->parse($this->dataDir . '/blog/2024-03-15-test-post.md', 'blog');
