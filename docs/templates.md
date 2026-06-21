@@ -275,7 +275,8 @@ Example:
 | `$siteTitle`    | `string`                                                | Site title                  |
 | `$taxonomyName` | `string`                                                | Taxonomy name               |
 | `$term`         | `string`                                                | Term value                  |
-| `$entries`      | `list<array{title: string, url: string, date: string}>` | Entries with this term      |
+| `$entries`      | `list<array{title: string, url: string, date: string}>` | Entries on the current term page |
+| `$pagination`   | `array{currentPage: int, totalPages: int, previousUrl: string, nextUrl: string}` | Pagination data |
 | `$nav`          | `?Navigation`                                           | Navigation object or `null` |
 
 ### Author page template (`author.php`)

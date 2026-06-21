@@ -7,6 +7,7 @@ declare(strict_types=1);
  * @var string $taxonomyName
  * @var string $term
  * @var list<array{title: string, url: string, date: string}> $entries
+ * @var array{currentPage: int, totalPages: int, previousUrl: string, nextUrl: string} $pagination
  * @var ?Navigation $nav
  * @var Closure(string, array): string $partial
  * @var string $language
@@ -19,6 +20,7 @@ declare(strict_types=1);
  * @var array<string, array<string, string>> $uiCatalogs
  * @var YiiPress\I18n\UiText $ui
  * @var Closure(string, int, ?string, bool): string $h
+ * @var Closure(string, array): string $t
  */
 
 use YiiPress\Content\Model\Navigation;
@@ -26,11 +28,14 @@ $language ??= 'en';
 $uiLanguage ??= 'en';
 $taxonomyLabel = $ui->taxonomyLabel($taxonomyName);
 $taxonomyKey = 'taxonomy.' . strtolower($taxonomyName);
+$pageTitle = $term . ' — ' . $taxonomyLabel
+    . ($pagination['currentPage'] > 1 ? ' — ' . $t('page_number', ['page' => $pagination['currentPage']]) : '')
+    . ' — ' . $siteTitle;
 ?>
 <!DOCTYPE html>
 <html lang="<?= $h($language) ?>">
 <head>
-<?= $partial('head', ['title' => $term . ' — ' . $taxonomyLabel . ' — ' . $siteTitle, 'rootPath' => $rootPath, 'metaTags' => $metaTags, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage], 'uiCatalogs' => $uiCatalogs ?? [$uiLanguage => []]]) ?>
+<?= $partial('head', ['title' => $pageTitle, 'rootPath' => $rootPath, 'metaTags' => $metaTags, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage], 'uiCatalogs' => $uiCatalogs ?? [$uiLanguage => []]]) ?>
 </head>
 <body>
 <?= $partial('header', ['siteTitle' => $siteTitle, 'nav' => $nav, 'rootPath' => $rootPath, 'search' => $search ?? false, 'searchResults' => $searchResults ?? 10, 'ui' => $ui, 'uiLanguage' => $uiLanguage, 'uiLanguages' => $uiLanguages ?? [$uiLanguage]]) ?>
@@ -47,6 +52,17 @@ $taxonomyKey = 'taxonomy.' . strtolower($taxonomyName);
             </li>
 <?php endforeach; ?>
         </ul>
+<?php if ($pagination['totalPages'] > 1): ?>
+        <nav class="pagination">
+<?php if ($pagination['previousUrl'] !== ''): ?>
+            <a href="<?= $h($pagination['previousUrl']) ?>" rel="prev">&larr; <span data-ui-key="previous"><?= $h($t('previous')) ?></span></a>
+<?php endif; ?>
+            <span data-ui-key="page_of" data-ui-params="<?= $h((string) json_encode(['current' => $pagination['currentPage'], 'total' => $pagination['totalPages']], JSON_THROW_ON_ERROR), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"><?= $h($t('page_of', ['current' => $pagination['currentPage'], 'total' => $pagination['totalPages']])) ?></span>
+<?php if ($pagination['nextUrl'] !== ''): ?>
+            <a href="<?= $h($pagination['nextUrl']) ?>" rel="next"><span data-ui-key="next"><?= $h($t('next')) ?></span> &rarr;</a>
+<?php endif; ?>
+        </nav>
+<?php endif; ?>
     </div>
 </main>
 <?= $partial('footer', ['nav' => $nav, 'rootPath' => $rootPath, 'ui' => $ui, 'uiLanguage' => $uiLanguage]) ?>

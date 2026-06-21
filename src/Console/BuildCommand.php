@@ -1377,8 +1377,16 @@ final class BuildCommand extends Command
                     continue;
                 }
                 $files[] = $outputDir . '/' . $taxonomyName . '/index.html';
-                foreach (array_keys($terms) as $term) {
+                foreach ($terms as $term => $termEntries) {
                     $files[] = $outputDir . '/' . $taxonomyName . '/' . $term . '/index.html';
+                    $perPage = $siteConfig->entriesPerPage;
+                    if ($perPage <= 0) {
+                        $perPage = count($termEntries) ?: 1;
+                    }
+                    $totalPages = $termEntries !== [] ? (int) ceil(count($termEntries) / $perPage) : 1;
+                    for ($p = 2; $p <= $totalPages; $p++) {
+                        $files[] = $outputDir . '/' . $taxonomyName . '/' . $term . '/page/' . $p . '/index.html';
+                    }
                 }
             }
         }
