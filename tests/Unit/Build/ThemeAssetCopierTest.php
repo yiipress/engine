@@ -113,9 +113,9 @@ final class ThemeAssetCopierTest extends TestCase
         $copied = $copier->copy($registry, $this->tempDir . '/output');
 
         assertSame(3, $copied);
-        assertStringContainsString('color: red', file_get_contents($this->tempDir . '/output/assets/themes/test/style.css'));
-        assertStringContainsString('color: blue', file_get_contents($this->tempDir . '/output/assets/themes/other/style.css'));
-        assertStringContainsString('color: red', file_get_contents($this->tempDir . '/output/assets/theme/style.css'));
+        assertStringEqualsFile($this->tempDir . '/output/assets/themes/test/style.css', 'body{color:red}');
+        assertStringEqualsFile($this->tempDir . '/output/assets/themes/other/style.css', 'body{color:blue}');
+        assertStringEqualsFile($this->tempDir . '/output/assets/theme/style.css', 'body{color:red}');
         assertFileDoesNotExist($this->tempDir . '/output/assets/theme/other/style.css');
     }
 
