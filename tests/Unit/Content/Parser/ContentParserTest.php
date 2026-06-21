@@ -49,6 +49,22 @@ final class ContentParserTest extends TestCase
         assertSame('Pages', $collections['page']->title);
     }
 
+    public function testDataDirectoryIsNotParsedAsCollection(): void
+    {
+        $dir = sys_get_temp_dir() . '/yiipress-content-data-' . uniqid();
+        mkdir($dir . '/data', 0o755, true);
+        file_put_contents($dir . '/data/_collection.yaml', "title: Data\n");
+
+        try {
+            assertSame([], $this->parser->parseCollections($dir));
+            assertSame([], iterator_to_array($this->parser->parseAllEntries($dir), false));
+        } finally {
+            unlink($dir . '/data/_collection.yaml');
+            rmdir($dir . '/data');
+            rmdir($dir);
+        }
+    }
+
     public function testParseRootCollection(): void
     {
         $dir = sys_get_temp_dir() . '/yiipress-root-collection-' . uniqid();

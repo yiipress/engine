@@ -68,6 +68,7 @@
 - [x] Auto-register project themes from `themes/<name>/` for binary users
 - [x] Template partials/includes support
 - [x] Template helper functions documentation
+- [x] Site data files exposed to templates (`content/data/*.yaml` or `.yml` as `$data`)
 - [x] Multiple layout support (per-entry layout selection via front matter)
 - [x] Beautiful default theme
 - [x] VuePress-style documentation layout with left sidebar navigation and right document table of contents

@@ -9,6 +9,7 @@ final readonly class SiteConfig
     /**
      * @param list<string> $taxonomies
      * @param array<string, mixed> $params
+     * @param array<string, mixed> $data
      */
     public function __construct(
         public string $title,
@@ -38,5 +39,6 @@ final readonly class SiteConfig
         public ?string $reportIssueUrl = null,
         public bool $authorPages = false,
         public bool $minify = true,
+        public array $data = [],
     ) {}
 }

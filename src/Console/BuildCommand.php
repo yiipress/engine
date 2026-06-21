@@ -1509,7 +1509,12 @@ final class BuildCommand extends Command
             /** @var SplFileInfo $item */
             if ($item->isDir()) {
                 $name = $item->getFilename();
-                if ($name === 'assets' || $name === 'authors' || $name === 'templates') {
+                if ($name === 'assets' || $name === 'authors' || $name === 'templates' || $name === 'data') {
+                    if ($name === 'data') {
+                        foreach ($this->collectDataFiles($item->getPathname()) as $dataFile) {
+                            $configFiles[] = $dataFile;
+                        }
+                    }
                     continue;
                 }
 
@@ -1545,6 +1550,28 @@ final class BuildCommand extends Command
             'allSourceFiles' => [...$contentFiles, ...$assetSourceFiles, ...$configFiles],
             'configFiles' => $configFiles,
         ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function collectDataFiles(string $dataDir): array
+    {
+        $files = [];
+        $iterator = new FilesystemIterator($dataDir, BaseFilesystemIterator::SKIP_DOTS);
+        foreach ($iterator as $item) {
+            /** @var SplFileInfo $item */
+            if ($item->isDir()) {
+                continue;
+            }
+
+            $extension = strtolower($item->getExtension());
+            if ($extension === 'yaml' || $extension === 'yml') {
+                $files[] = $item->getPathname();
+            }
+        }
+
+        return $files;
     }
 
     /**

@@ -127,6 +127,7 @@ final readonly class CollectionListingWriter
 
         return $renderer->render('collection_listing', [
             'siteTitle' => $siteConfig->title,
+            'data' => $siteConfig->data,
             'collectionTitle' => $collection->title,
             'collectionName' => $collection->name,
             'entries' => $entryData,
