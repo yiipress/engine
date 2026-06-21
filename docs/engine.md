@@ -195,7 +195,7 @@ The source-open overlay resolves the browser path through the build manifest, ve
 
 ## Theme Registration
 
-Project-local templates under `content/templates/` are registered automatically as the `local` theme. Engine-level or distributable themes are registered in [Yii3 DI](https://yiisoft.github.io/docs/guide/concept/di-container.html):
+Project themes under `<project>/themes/<name>/` are registered automatically by directory name. Project-local templates under `content/templates/` are registered automatically as the `local` theme. Engine-level themes may still be registered in [Yii3 DI](https://yiisoft.github.io/docs/guide/concept/di-container.html):
 
 ```php
 use YiiPress\Build\Theme;
@@ -206,11 +206,10 @@ return [
     ThemeRegistry::class => DynamicReference::to(static function (): ThemeRegistry {
         $registry = new ThemeRegistry();
         $registry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
-        $registry->register(new Theme('fancy', '/path/to/fancy-theme'));
 
         return $registry;
     }),
 ];
 ```
 
-Template resolution checks the active theme first, then falls back through registered themes. This lets a project override one template while keeping the rest of the bundled theme.
+For binary users, install a reusable theme as `themes/fancy/` and set `theme: fancy` in `content/config.yaml`. Template resolution checks the active theme first, then falls back through registered themes. This lets a project override one template while keeping the rest of the bundled theme.

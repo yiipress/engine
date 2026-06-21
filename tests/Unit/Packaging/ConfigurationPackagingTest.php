@@ -10,6 +10,7 @@ use YiiPress\Console\InitCommand;
 use YiiPress\Console\ImportCommand;
 use YiiPress\Console\NewCommand;
 use YiiPress\Console\ServeCommand;
+use YiiPress\Console\ThemeInitCommand;
 use YiiPress\Build\PharArchiveFilter;
 use YiiPress\Build\PhpDocStripper;
 use PHPUnit\Framework\Attributes\Test;
@@ -57,6 +58,7 @@ final class ConfigurationPackagingTest extends TestCase
             assertSame($workingDirectory, $contentPipelineConfiguration[CleanCommand::class]['__construct()']['rootPath']);
             assertSame($workingDirectory, $contentPipelineConfiguration[InitCommand::class]['__construct()']['rootPath']);
             assertSame($workingDirectory, $contentPipelineConfiguration[NewCommand::class]['__construct()']['rootPath']);
+            assertSame($workingDirectory, $contentPipelineConfiguration[ThemeInitCommand::class]['__construct()']['rootPath']);
             assertSame($workingDirectory, $importerConfiguration[ImportCommand::class]['__construct()']['rootPath']);
         } finally {
             chdir($previousDirectory);
@@ -72,6 +74,7 @@ final class ConfigurationPackagingTest extends TestCase
         /** @psalm-suppress RedundantCondition */
         assertSame(ServeCommand::class, $commands['serve']);
         assertSame(InitCommand::class, $commands['init']);
+        assertSame(ThemeInitCommand::class, $commands['theme:init']);
     }
 
     #[Test]
@@ -321,7 +324,7 @@ final class ConfigurationPackagingTest extends TestCase
     }
 
     #[Test]
-    public function buildActionInstallsBinaryOutsideCheckoutByDefault(): void
+    public function buildActionInitializesBinaryOutsideCheckoutByDefault(): void
     {
         $action = file_get_contents(dirname(__DIR__, 3) . '/.github/actions/build/action.yml');
         self::assertIsString($action);
@@ -653,7 +656,7 @@ PHP;
     }
 
     #[Test]
-    public function staticPackageInstallsRustTargetForHighlighterToolchain(): void
+    public function staticPackageInitializesRustTargetForHighlighterToolchain(): void
     {
         $dockerfile = file_get_contents(dirname(__DIR__, 3) . '/docker/Dockerfile');
         $windowsScript = file_get_contents(dirname(__DIR__, 3) . '/build/package-windows.ps1');

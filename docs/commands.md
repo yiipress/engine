@@ -100,6 +100,25 @@ Initializes a content directory with the minimal YiiPress structure:
 
 The command creates parent directories as needed and fails if any scaffolded file already exists.
 
+## `theme:init`
+
+Initializes editable theme files in the project from a bundled theme.
+
+```
+./yiipress theme:init [target-dir] [--theme=minimal] [--content-dir=content]
+```
+
+**Arguments:**
+
+- `target-dir` — directory to initialize theme files in (default: `themes/custom`). Absolute or relative to project root.
+
+**Options:**
+
+- `--theme`, `-t` — bundled theme name to use as the source (default: `minimal`).
+- `--content-dir`, `-c` — path to the content directory containing `config.yaml` (default: `content`). Absolute or relative to project root.
+
+The command creates parent directories as needed, fails if any target file already exists, and updates `config.yaml` to use the initialized theme. The theme name is derived from the target directory name, so the default target `themes/custom` sets `theme: "custom"`.
+
 ## `new`
 
 Scaffolds a new content entry or standalone page.

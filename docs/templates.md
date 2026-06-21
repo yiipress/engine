@@ -43,7 +43,7 @@ Use `$h()` for text that should be escaped. Rendered Markdown content in `$conte
 
 ## Themes
 
-A theme is a named set of template files. YiiPress ships with the built-in `minimal` theme. A project-local `content/templates/` directory is automatically available as the `local` theme.
+A theme is a named set of template files. YiiPress ships with the built-in `minimal` theme. Project themes under `themes/<name>/` are registered automatically, and a project-local `content/templates/` directory is automatically available as the `local` theme.
 
 ### Theme resolution order
 
@@ -53,7 +53,36 @@ When YiiPress renders a page, it chooses templates in this order:
 2. **Site-level default theme** — set via `theme` in `config.yaml`.
 3. **Built-in `minimal` theme** — fallback when a template is missing.
 
-Within a theme, YiiPress uses the requested file when it exists and falls back to other registered themes when it does not. That means a local theme can override only `entry.php` and keep every other page type from `minimal`.
+Within a theme, YiiPress uses the requested file when it exists and falls back to other registered themes when it does not. That means a project theme or local theme can override only `entry.php` and keep every other page type from `minimal`.
+
+### Project themes
+
+Install reusable themes into the project root:
+
+```
+themes/
+└── brand/
+    ├── entry.php
+    ├── partials/
+    ├── assets/
+    └── translation/
+```
+
+Use the directory name as the theme name:
+
+```yaml
+theme: brand
+```
+
+To start editing the bundled theme in a PHAR or static binary build, initialize it into `themes/custom/`:
+
+```bash
+./yiipress theme:init
+```
+
+The command updates `content/config.yaml` automatically to set `theme: custom`.
+
+Theme directory names may contain letters, numbers, `_`, and `-`, and must start with a letter or number. If a project theme has the same name as an already registered built-in theme, the built-in theme is kept.
 
 ### Local theme
 
