@@ -148,12 +148,12 @@ final class BuildCommandTest extends TestCase
         $tempDir = sys_get_temp_dir() . '/yiipress-build-project-theme-test-' . uniqid();
         $contentDir = $tempDir . '/content';
         $outputDir = $tempDir . '/output';
-        $themeDir = $tempDir . '/themes/docs';
+        $themeDir = $tempDir . '/themes/brand';
         mkdir($contentDir, 0o755, true);
         mkdir($themeDir, 0o755, true);
         $this->tempContentDirs[] = $tempDir;
 
-        file_put_contents($contentDir . '/config.yaml', "title: Themed Site\nbase_url: https://example.com\nlanguages: [en]\ntheme: docs\n");
+        file_put_contents($contentDir . '/config.yaml', "title: Themed Site\nbase_url: https://example.com\nlanguages: [en]\ntheme: brand\n");
         file_put_contents($contentDir . '/index.md', "---\ntitle: Home\npermalink: /\n---\n\nProject theme content.\n");
         file_put_contents(
             $themeDir . '/entry.php',
@@ -161,7 +161,7 @@ final class BuildCommandTest extends TestCase
 <?php
 declare(strict_types=1);
 ?>
-<html><body class="docs-theme"><?= $content ?></body></html>
+<html><body class="brand-theme"><?= $content ?></body></html>
 PHP,
         );
 
@@ -188,7 +188,7 @@ PHP,
         assertSame(0, $exitCode, $tester->getDisplay());
         $html = file_get_contents($outputDir . '/index.html');
         assertNotFalse($html);
-        assertStringContainsString('class="docs-theme"', $html);
+        assertStringContainsString('class="brand-theme"', $html);
         assertStringContainsString('Project theme content.', $html);
     }
 

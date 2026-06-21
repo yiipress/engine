@@ -6,9 +6,11 @@ namespace YiiPress\Build;
 
 use FilesystemIterator;
 use SplFileInfo;
+use UnexpectedValueException;
 
 use function array_values;
 use function is_dir;
+use function is_readable;
 use function ksort;
 use function preg_match;
 
@@ -19,24 +21,28 @@ final readonly class ProjectThemeDiscovery
      */
     public function discover(string $themesDir): array
     {
-        if (!is_dir($themesDir)) {
+        if (!is_dir($themesDir) || !is_readable($themesDir)) {
             return [];
         }
 
         $themes = [];
-        $iterator = new FilesystemIterator($themesDir, FilesystemIterator::SKIP_DOTS);
-        foreach ($iterator as $item) {
-            /** @var SplFileInfo $item */
-            if (!$item->isDir()) {
-                continue;
-            }
+        try {
+            $iterator = new FilesystemIterator($themesDir, FilesystemIterator::SKIP_DOTS);
+            foreach ($iterator as $item) {
+                /** @var SplFileInfo $item */
+                if (!$item->isDir()) {
+                    continue;
+                }
 
-            $name = $item->getFilename();
-            if (!$this->isValidThemeName($name)) {
-                continue;
-            }
+                $name = $item->getFilename();
+                if (!$this->isValidThemeName($name)) {
+                    continue;
+                }
 
-            $themes[$name] = new Theme($name, $item->getPathname());
+                $themes[$name] = new Theme($name, $item->getPathname());
+            }
+        } catch (UnexpectedValueException) {
+            return [];
         }
 
         ksort($themes);

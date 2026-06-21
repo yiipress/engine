@@ -8,6 +8,7 @@ use YiiPress\Console\BuildCommand;
 use YiiPress\Console\CleanCommand;
 use YiiPress\Console\InitCommand;
 use YiiPress\Console\NewCommand;
+use YiiPress\Console\ThemeInitCommand;
 use YiiPress\Processor\ContentProcessorPipeline;
 use YiiPress\Processor\Mermaid\MermaidProcessor;
 use YiiPress\Processor\OEmbed\OEmbedProcessor;
@@ -76,6 +77,12 @@ return [
     NewCommand::class => [
         '__construct()' => [
             'rootPath' => $workingDirectory,
+        ],
+    ],
+    ThemeInitCommand::class => [
+        '__construct()' => [
+            'rootPath' => $workingDirectory,
+            'themeRegistry' => Reference::to(ThemeRegistry::class),
         ],
     ],
 ];

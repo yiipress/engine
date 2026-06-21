@@ -61,7 +61,7 @@ Install reusable themes into the project root:
 
 ```
 themes/
-└── docs/
+└── brand/
     ├── entry.php
     ├── partials/
     ├── assets/
@@ -71,8 +71,16 @@ themes/
 Use the directory name as the theme name:
 
 ```yaml
-theme: docs
+theme: brand
 ```
+
+To start editing the bundled theme in a PHAR or static binary build, initialize it into `themes/custom/`:
+
+```bash
+./yiipress theme:init
+```
+
+The command updates `content/config.yaml` automatically to set `theme: custom`.
 
 Theme directory names may contain letters, numbers, `_`, and `-`, and must start with a letter or number. If a project theme has the same name as an already registered built-in theme, the built-in theme is kept.
 
