@@ -405,6 +405,7 @@ final class BuildCommand extends Command
         $permalinkSources = [];
         $aliasRedirectTasks = [];
         $aliasOutputsBySource = [];
+        $now = new DateTimeImmutable();
 
         try {
             foreach ($collections as $collectionName => $collection) {
@@ -418,9 +419,12 @@ final class BuildCommand extends Command
                     $collectionEntries[] = $entry;
                     $relativePath = substr($sourcePath, strlen($contentDir) + 1);
                     $permalink = PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n);
-                    $this->registerPermalink($permalinkSources, $permalink, $sourcePath);
-                    foreach ($entry->aliases as $alias) {
-                        $this->registerAliasPermalink($permalinkSources, $this->normalizeAliasPermalink($alias), $sourcePath);
+                    $this->validatePermalink($permalink, $sourcePath);
+                    if ($this->shouldGenerateEntry($entry, $includeDrafts, $includeFuture, $now)) {
+                        $this->registerPermalink($permalinkSources, $permalink, $sourcePath);
+                        foreach ($entry->aliases as $alias) {
+                            $this->registerAliasPermalink($permalinkSources, $this->normalizeAliasPermalink($alias), $sourcePath);
+                        }
                     }
                     $fileToPermalink[$relativePath] = $permalink;
                 }
@@ -438,9 +442,12 @@ final class BuildCommand extends Command
                 $relativePath = substr($sourcePath, strlen($contentDir) + 1);
                 $basePermalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
                 $permalink = PermalinkResolver::applyLanguagePrefix($basePermalink, $page->language, $siteConfig->i18n);
-                $this->registerPermalink($permalinkSources, $permalink, $sourcePath);
-                foreach ($page->aliases as $alias) {
-                    $this->registerAliasPermalink($permalinkSources, $this->normalizeAliasPermalink($alias), $sourcePath);
+                $this->validatePermalink($permalink, $sourcePath);
+                if ($this->shouldGenerateEntry($page, $includeDrafts, $includeFuture, $now)) {
+                    $this->registerPermalink($permalinkSources, $permalink, $sourcePath);
+                    foreach ($page->aliases as $alias) {
+                        $this->registerAliasPermalink($permalinkSources, $this->normalizeAliasPermalink($alias), $sourcePath);
+                    }
                 }
                 $fileToPermalink[$relativePath] = $permalink;
             }
@@ -476,8 +483,6 @@ final class BuildCommand extends Command
             $output->writeln("<comment>  ⚠ $warning</comment>");
         }
 
-        $now = new DateTimeImmutable();
-
         $profile->switchTo('prepare entry tasks');
         $allTasks = [];
         $redirectTasks = [];
@@ -495,7 +500,13 @@ final class BuildCommand extends Command
                 $sourcePath = $entry->filePath;
                 $relativePath = substr($sourcePath, strlen($contentDir) + 1);
                 $permalink = $fileToPermalink[$relativePath];
-                $filePath = $outputDir . $permalink . 'index.html';
+                try {
+                    $filePath = $this->outputFilePath($outputDir, $permalink);
+                } catch (RuntimeException $e) {
+                    $output->writeln('<error>' . OutputFormatter::escape($e->getMessage()) . '</error>');
+                    $this->writeProfile($output, $profile);
+                    return ExitCode::DATAERR;
+                }
 
                 if ($entry->redirectTo !== '') {
                     $redirectTasks[] = ['entry' => $entry, 'filePath' => $filePath, 'permalink' => $permalink, 'sourcePath' => $sourcePath];
@@ -659,7 +670,13 @@ final class BuildCommand extends Command
             $sourcePath = $page->filePath;
             $basePermalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
             $permalink = PermalinkResolver::applyLanguagePrefix($basePermalink, $page->language, $siteConfig->i18n);
-            $filePath = $outputDir . $permalink . 'index.html';
+            try {
+                $filePath = $this->outputFilePath($outputDir, $permalink);
+            } catch (RuntimeException $e) {
+                $output->writeln('<error>' . OutputFormatter::escape($e->getMessage()) . '</error>');
+                $this->writeProfile($output, $profile);
+                return ExitCode::DATAERR;
+            }
 
             if ($changedSet !== null && !isset($changedSet[$sourcePath])) {
                 $outputs = [$filePath];
@@ -1505,8 +1522,6 @@ final class BuildCommand extends Command
      */
     private function registerPermalink(array &$permalinkSources, string $permalink, string $sourcePath): void
     {
-        $this->validatePermalink($permalink, $sourcePath);
-
         $normalized = $permalink === '/' ? '/' : rtrim($permalink, '/');
         if (isset($permalinkSources[$normalized])) {
             throw new InvalidContentConfigException(
@@ -1581,6 +1596,44 @@ final class BuildCommand extends Command
                 );
             }
         }
+    }
+
+    private function outputFilePath(string $outputDir, string $permalink): string
+    {
+        return $outputDir . '/' . $this->permalinkOutputPath($permalink) . 'index.html';
+    }
+
+    private function shouldGenerateEntry(Entry $entry, bool $includeDrafts, bool $includeFuture, DateTimeImmutable $now): bool
+    {
+        if (!$includeDrafts && $entry->draft) {
+            return false;
+        }
+
+        return $includeFuture || $entry->date === null || $entry->date <= $now;
+    }
+
+    private function permalinkOutputPath(string $permalink): string
+    {
+        if (!str_starts_with($permalink, '/')) {
+            throw new RuntimeException(sprintf('Permalink "%s" must start with "/".', $permalink));
+        }
+
+        if (str_contains($permalink, "\0") || str_contains($permalink, '\\')) {
+            throw new RuntimeException(sprintf('Permalink "%s" contains an unsafe path segment.', $permalink));
+        }
+
+        if ($permalink === '/') {
+            return '';
+        }
+
+        $segments = explode('/', trim($permalink, '/'));
+        foreach ($segments as $segment) {
+            if ($segment === '' || $segment === '.' || $segment === '..') {
+                throw new RuntimeException(sprintf('Permalink "%s" contains an unsafe path segment.', $permalink));
+            }
+        }
+
+        return implode('/', $segments) . '/';
     }
 
     private function resolvePath(string $path, string $rootPath): string
