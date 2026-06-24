@@ -327,7 +327,7 @@ Collection `_collection.yaml` fields override content config defaults:
 
 - Collection `entries_per_page` overrides `config.yaml` `entries_per_page`
 - Collection `permalink` overrides `config.yaml` `permalink`
-- Collection `feed_limit` controls how many entries are rendered into that collection's RSS, Atom, and JSON Feed files (`20` by default, `0` for unlimited)
+- Collection `feed_limit` controls how many entries are rendered into that collection's RSS, Atom, and JSON Feed files (`20` by default, `0` for unlimited). Site-wide `/feed.xml`, `/rss.xml`, and `/feed.json` include entries from all feed-enabled collections and use the default limit.
 - Entry `permalink` overrides collection permalink
 
 Resolution order: entry → collection → content config → engine defaults.

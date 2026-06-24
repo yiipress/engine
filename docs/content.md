@@ -78,8 +78,8 @@ feed_limit: 20
 - **sort_by** — field to sort entries by: `date` (default), `weight`, `title`
 - **sort_order** — `desc` (default) or `asc`
 - **entries_per_page** — number of entries per page, `0` for no pagination
-- **feed** — `true` to generate RSS, Atom, and JSON Feed files for this collection
-- **feed_limit** — maximum entries rendered into each feed (default: `20`, `0` for unlimited)
+- **feed** — `true` to generate RSS, Atom, and JSON Feed files for this collection and include its entries in site-wide `/feed.xml`, `/rss.xml`, and `/feed.json`
+- **feed_limit** — maximum entries rendered into each collection feed (default: `20`, `0` for unlimited); site-wide feeds use the default limit
 - **listing** — `true` to generate a collection index page (default: `true`)
 - **navigation_pager** — `true` to render previous/next page links from the configured sidebar navigation (default: `false`)
 
