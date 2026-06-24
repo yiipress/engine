@@ -318,6 +318,7 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
     font: 600 .75rem/1 var(--font-sans);
     cursor: pointer;
     opacity: 0;
+    pointer-events: none;
     transition: opacity .15s, color .15s, border-color .15s, background .15s;
 }
 .code-block:hover .code-copy-button,
@@ -325,6 +326,7 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
 .code-copy-button.copied,
 .code-copy-button.copy-failed {
     opacity: 1;
+    pointer-events: auto;
 }
 .code-copy-button:hover,
 .code-copy-button:focus {

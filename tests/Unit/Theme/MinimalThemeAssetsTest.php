@@ -95,7 +95,9 @@ final class MinimalThemeAssetsTest extends TestCase
         self::assertNotFalse($css);
         assertStringContainsString('.code-block {', $css);
         assertStringContainsString('.code-copy-button {', $css);
+        assertStringContainsString('pointer-events: none;', $css);
         assertStringContainsString('.code-copy-button.copied {', $css);
+        assertStringContainsString('pointer-events: auto;', $css);
     }
 
     public function testCodeCopyScriptEnhancesContentPreBlocks(): void
