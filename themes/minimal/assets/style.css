@@ -721,17 +721,11 @@ a.tag-link:hover {
     }
 }
 
-/* Responsive: hide sidebar on narrow screens */
-@media (max-width: 860px) {
+@media (max-width: 1100px) {
     .site-header .container {
+        width: 100%;
+        min-width: 0;
         gap: 1rem;
-    }
-
-    .site-header nav ul {
-        gap: .875rem;
-    }
-
-    .site-header .container {
         grid-template-columns: minmax(0, 1fr) auto;
         grid-template-areas:
             "brand actions"
@@ -740,6 +734,7 @@ a.tag-link:hover {
 
     .site-header nav {
         justify-self: stretch;
+        min-width: 0;
     }
 
     .site-header nav ul {
@@ -751,7 +746,10 @@ a.tag-link:hover {
     .buttons {
         justify-content: flex-end;
     }
+}
 
+/* Responsive: hide sidebar on narrow screens */
+@media (max-width: 860px) {
     .article-with-sidebar {
         grid-template-columns: 1fr;
         left: 0;

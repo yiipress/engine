@@ -63,6 +63,19 @@ final class MinimalThemeAssetsTest extends TestCase
         assertStringContainsString('.toc-sidebar-right {', $css);
     }
 
+    public function testHeaderWrapsBeforeDocsSidebarsCollapse(): void
+    {
+        $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');
+
+        self::assertNotFalse($css);
+        assertStringContainsString('@media (max-width: 1100px) {', $css);
+        assertStringContainsString('grid-template-areas:', $css);
+        assertStringContainsString('"brand actions"', $css);
+        assertStringContainsString('"nav nav";', $css);
+        assertStringContainsString('flex-wrap: wrap;', $css);
+        assertStringContainsString('@media (max-width: 860px) {', $css);
+    }
+
     public function testStyleSupportsHeadingPermalinks(): void
     {
         $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');
