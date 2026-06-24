@@ -90,27 +90,27 @@ EXPECTED
         , $html);
     }
 
-    public function testEscapesRawHtmlByDefault(): void
+    public function testAllowsRawHtmlByDefault(): void
     {
         $html = $this->renderer->render("<section>block</section>\n\nA <span>span</span>.");
+
+        assertStringContainsString('<section>block</section>', $html);
+        assertStringContainsString('<span>span</span>', $html);
+    }
+
+    public function testEscapesRawHtmlWhenConfigured(): void
+    {
+        $renderer = new MarkdownRenderer(new MarkdownConfig(
+            noHtmlBlocks: true,
+            noHtmlSpans: true,
+        ));
+
+        $html = $renderer->render("<section>block</section>\n\nA <span>span</span>.");
 
         assertStringContainsString('&lt;section&gt;block&lt;/section&gt;', $html);
         assertStringContainsString('&lt;span&gt;span&lt;/span&gt;', $html);
         assertStringNotContainsString('<section>block</section>', $html);
         assertStringNotContainsString('<span>span</span>', $html);
-    }
-
-    public function testAllowsRawHtmlWhenConfigured(): void
-    {
-        $renderer = new MarkdownRenderer(new MarkdownConfig(
-            noHtmlBlocks: false,
-            noHtmlSpans: false,
-        ));
-
-        $html = $renderer->render("<section>block</section>\n\nA <span>span</span>.");
-
-        assertStringContainsString('<section>block</section>', $html);
-        assertStringContainsString('<span>span</span>', $html);
     }
 
     public function testRendersLatexMathWhenConfigured(): void

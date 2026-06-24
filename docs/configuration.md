@@ -297,8 +297,8 @@ markdown:
   latex_math: false
   wikilinks: false
   underline: false
-  no_html_blocks: true
-  no_html_spans: true
+  no_html_blocks: false
+  no_html_spans: false
   permissive_atx_headers: false
   no_indented_code_blocks: false
   hard_soft_breaks: true
@@ -314,8 +314,8 @@ markdown:
 - **latex_math** — enable LaTeX math spans `$...$` and `$$...$$` (default: `false`). Pages that contain math automatically include KaTeX CSS/JS and the shipped YiiPress math enhancer script.
 - **wikilinks** — enable wiki-style links `[[link]]` (default: `false`)
 - **underline** — underscore `_` denotes underline instead of emphasis (default: `false`)
-- **no_html_blocks** — disable raw HTML blocks (default: `true`)
-- **no_html_spans** — disable inline raw HTML (default: `true`)
+- **no_html_blocks** — disable raw HTML blocks (default: `false`)
+- **no_html_spans** — disable inline raw HTML (default: `false`)
 - **permissive_atx_headers** — do not require space in ATX headers ( `###header` ) (default: `false`)
 - **no_indented_code_blocks** — disable indented code blocks (only fenced code works) (default: `false`)
 - **hard_soft_breaks** — force all soft breaks to act as hard breaks (default: `true`)
