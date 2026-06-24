@@ -172,14 +172,42 @@ final class ImportCommandTest extends TestCase
         assertStringContainsString('Imported: 1', $result['output']);
     }
 
+    public function testImportsWordPressExport(): void
+    {
+        $exportFile = $this->sourceDir . '/wordpress.xml';
+        file_put_contents(
+            $exportFile,
+            '<?xml version="1.0" encoding="UTF-8" ?>'
+            . '<rss version="2.0"'
+            . ' xmlns:content="http://purl.org/rss/1.0/modules/content/"'
+            . ' xmlns:wp="http://wordpress.org/export/1.2/">'
+            . '<channel><item>'
+            . '<title>Hello WordPress</title>'
+            . '<content:encoded><![CDATA[Body.]]></content:encoded>'
+            . '<wp:post_id>1</wp:post_id>'
+            . '<wp:post_date>2024-03-15 10:30:00</wp:post_date>'
+            . '<wp:post_name>hello-wordpress</wp:post_name>'
+            . '<wp:status>publish</wp:status>'
+            . '<wp:post_type>post</wp:post_type>'
+            . '</item></channel></rss>',
+        );
+
+        $result = $this->runImport('wordpress', ['--file' => $exportFile]);
+
+        assertSame(0, $result['exitCode'], $result['output']);
+        assertStringContainsString('Importing from wordpress', $result['output']);
+        assertStringContainsString('Imported: 1', $result['output']);
+    }
+
     public function testShowsAvailableImportersOnError(): void
     {
-        $result = $this->runImport('wordpress', ['--directory' => $this->sourceDir]);
+        $result = $this->runImport('unknown', ['--directory' => $this->sourceDir]);
 
         assertSame(65, $result['exitCode']);
         assertStringContainsString('hugo', $result['output']);
         assertStringContainsString('jekyll', $result['output']);
         assertStringContainsString('telegram', $result['output']);
+        assertStringContainsString('wordpress', $result['output']);
     }
 
     /**
