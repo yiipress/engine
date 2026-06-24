@@ -51,12 +51,7 @@ final class ContentProcessorPipelineTest extends TestCase
 
     public function testCanInsertProcessorsBeforeMarkerProcessor(): void
     {
-        $marker = new class implements ContentProcessorInterface {
-            public function process(string $content, Entry $entry): string
-            {
-                return $content . ' [marker]';
-            }
-        };
+        $marker = $this->createMarkerProcessor();
 
         $pipeline = new ContentProcessorPipeline($marker);
         $pipeline->insertBefore($marker::class, $this->createProcessor(fn(string $c) => $c . ' [before]'));
@@ -66,12 +61,7 @@ final class ContentProcessorPipelineTest extends TestCase
 
     public function testCanInsertProcessorsAfterMarkerProcessor(): void
     {
-        $marker = new class implements ContentProcessorInterface {
-            public function process(string $content, Entry $entry): string
-            {
-                return $content . ' [marker]';
-            }
-        };
+        $marker = $this->createMarkerProcessor();
 
         $pipeline = new ContentProcessorPipeline($marker);
         $pipeline->insertAfter($marker::class, $this->createProcessor(fn(string $c) => $c . ' [after]'));
@@ -182,6 +172,17 @@ final class ContentProcessorPipelineTest extends TestCase
         assertSame('Solarized (dark)', $state->receivedTheme);
     }
 
+    public function testResetRestoresInitialProcessors(): void
+    {
+        $marker = $this->createMarkerProcessor();
+        $pipeline = new ContentProcessorPipeline($marker);
+
+        $pipeline->insertBefore($marker::class, $this->createProcessor(fn(string $c) => $c . ' [before]'));
+        $pipeline->reset();
+
+        assertSame('start [marker]', $pipeline->process('start', $this->createEntry()));
+    }
+
     private function createEntry(): Entry
     {
         $tmp = tempnam(sys_get_temp_dir(), 'yiipress_pipeline_test_');
@@ -219,6 +220,16 @@ final class ContentProcessorPipelineTest extends TestCase
             public function process(string $content, Entry $entry): string
             {
                 return ($this->fn)($content);
+            }
+        };
+    }
+
+    private function createMarkerProcessor(): ContentProcessorInterface
+    {
+        return new class implements ContentProcessorInterface {
+            public function process(string $content, Entry $entry): string
+            {
+                return $content . ' [marker]';
             }
         };
     }

@@ -13,9 +13,18 @@ final class ContentProcessorPipeline
     /** @var list<ContentProcessorInterface> */
     private array $processors;
 
+    /** @var list<ContentProcessorInterface> */
+    private array $initialProcessors;
+
     public function __construct(ContentProcessorInterface ...$processors)
     {
-        $this->processors = array_values($processors);
+        $this->initialProcessors = array_values($processors);
+        $this->processors = $this->initialProcessors;
+    }
+
+    public function reset(): void
+    {
+        $this->processors = $this->initialProcessors;
     }
 
     /**

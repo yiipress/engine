@@ -8,6 +8,7 @@ use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use RuntimeException;
 use SplFileInfo;
 use YiiPress\Content\Model\ProcessorConfig;
 use YiiPress\Content\Parser\InvalidContentConfigException;
@@ -83,6 +84,24 @@ final class ProjectProcessorLoaderTest extends TestCase
         $this->expectException(InvalidContentConfigException::class);
 
         $this->loader()->load(new ProcessorConfig(discover: false, contentBeforeMarkdown: ['processors/invalid.php']));
+    }
+
+    public function testWrappedCallbackMustReturnString(): void
+    {
+        file_put_contents(
+            $this->contentDir . '/processors/invalid-callback.php',
+            '<?php return static fn(string $content): int => 1;',
+        );
+
+        $set = $this->loader()->load(new ProcessorConfig(
+            discover: false,
+            contentBeforeMarkdown: ['processors/invalid-callback.php'],
+        ));
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Project processor callback must return string, int returned.');
+
+        $set->contentBeforeMarkdown[0]->process('content', $this->createEntry());
     }
 
     private function loader(): ProjectProcessorLoader

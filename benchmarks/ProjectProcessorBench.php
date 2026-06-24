@@ -13,7 +13,10 @@ use PhpBench\Attributes\Warmup;
 use YiiPress\Content\Model\Entry;
 use YiiPress\Content\Model\ProcessorConfig;
 use YiiPress\Processor\ContentProcessorPipeline;
+use YiiPress\Processor\MarkdownProcessor;
 use YiiPress\Processor\ProjectProcessorLoader;
+use YiiPress\Processor\TagLinkProcessor;
+use YiiPress\Render\MarkdownRenderer;
 
 #[BeforeMethods('setUp')]
 #[AfterMethods('tearDown')]
@@ -59,7 +62,12 @@ final class ProjectProcessorBench
 
         $processors = (new ProjectProcessorLoader($this->contentDir, $this->contentDir . '/config.yaml'))
             ->load(new ProcessorConfig());
-        $this->pipeline = new ContentProcessorPipeline(...$processors->contentBeforeMarkdown);
+        $this->pipeline = new ContentProcessorPipeline(
+            new MarkdownProcessor(new MarkdownRenderer()),
+            new TagLinkProcessor(),
+        );
+        $this->pipeline->insertBefore(MarkdownProcessor::class, ...$processors->contentBeforeMarkdown);
+        $this->pipeline->insertAfter(MarkdownProcessor::class, ...$processors->contentAfterMarkdown);
     }
 
     public function tearDown(): void

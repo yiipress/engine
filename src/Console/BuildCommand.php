@@ -1821,6 +1821,9 @@ final class BuildCommand extends Command
     {
         $processors = (new ProjectProcessorLoader($contentDir, $contentDir . '/config.yaml'))->load($siteConfig->processors);
 
+        $this->contentPipeline->reset();
+        $this->feedPipeline->reset();
+
         $this->contentPipeline->insertBefore(MarkdownProcessor::class, ...$processors->contentBeforeMarkdown);
         $this->contentPipeline->insertAfter(MarkdownProcessor::class, ...$processors->contentAfterMarkdown);
         $this->feedPipeline->insertBefore(MarkdownProcessor::class, ...$processors->feedBeforeMarkdown);
