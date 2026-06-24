@@ -726,19 +726,17 @@ a.tag-link:hover {
         width: 100%;
         min-width: 0;
         gap: 1rem;
-        grid-template-columns: minmax(0, 1fr) auto;
-        grid-template-areas:
-            "brand actions"
-            "nav nav";
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-areas: "brand nav actions";
     }
 
     .site-header nav {
-        justify-self: stretch;
+        justify-self: center;
         min-width: 0;
     }
 
     .site-header nav ul {
-        justify-content: flex-start;
+        justify-content: center;
         flex-wrap: wrap;
         gap: .35rem .75rem;
     }
@@ -750,6 +748,21 @@ a.tag-link:hover {
 
 /* Responsive: hide sidebar on narrow screens */
 @media (max-width: 860px) {
+    .site-header .container {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            "brand actions"
+            "nav nav";
+    }
+
+    .site-header nav {
+        justify-self: stretch;
+    }
+
+    .site-header nav ul {
+        justify-content: flex-start;
+    }
+
     .article-with-sidebar {
         grid-template-columns: 1fr;
         left: 0;
