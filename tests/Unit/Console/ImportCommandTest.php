@@ -199,11 +199,41 @@ final class ImportCommandTest extends TestCase
         assertStringContainsString('Imported: 1', $result['output']);
     }
 
+    public function testImportsGhostExport(): void
+    {
+        $exportFile = $this->sourceDir . '/ghost.json';
+        file_put_contents(
+            $exportFile,
+            json_encode([
+                'db' => [[
+                    'data' => [
+                        'posts' => [[
+                            'id' => 'post-1',
+                            'title' => 'Hello Ghost',
+                            'slug' => 'hello-ghost',
+                            'status' => 'published',
+                            'type' => 'post',
+                            'published_at' => '2024-03-15 10:30:00',
+                            'html' => 'Body.',
+                        ]],
+                    ],
+                ]],
+            ], JSON_THROW_ON_ERROR),
+        );
+
+        $result = $this->runImport('ghost', ['--file' => $exportFile]);
+
+        assertSame(0, $result['exitCode'], $result['output']);
+        assertStringContainsString('Importing from ghost', $result['output']);
+        assertStringContainsString('Imported: 1', $result['output']);
+    }
+
     public function testShowsAvailableImportersOnError(): void
     {
         $result = $this->runImport('unknown', ['--directory' => $this->sourceDir]);
 
         assertSame(65, $result['exitCode']);
+        assertStringContainsString('ghost', $result['output']);
         assertStringContainsString('hugo', $result['output']);
         assertStringContainsString('jekyll', $result['output']);
         assertStringContainsString('telegram', $result['output']);

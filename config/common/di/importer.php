@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use YiiPress\Console\ImportCommand;
+use YiiPress\Import\Ghost\GhostContentImporter;
 use YiiPress\Import\Hugo\HugoContentImporter;
 use YiiPress\Import\Jekyll\JekyllContentImporter;
 use YiiPress\Import\Telegram\TelegramContentImporter;
@@ -15,6 +16,7 @@ return [
         '__construct()' => [
             'rootPath' => $workingDirectory,
             'importers' => [
+                'ghost' => new GhostContentImporter(),
                 'hugo' => new HugoContentImporter(),
                 'jekyll' => new JekyllContentImporter(),
                 'telegram' => new TelegramContentImporter(),

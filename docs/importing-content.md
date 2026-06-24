@@ -62,6 +62,18 @@ Imports messages from a Telegram Desktop channel export (JSON format).
 
 See [commands.md](commands.md#yii-import) for usage details.
 
+### GhostContentImporter
+
+Imports posts and pages from a Ghost JSON export.
+
+**Options:**
+
+- `--file` — Path to the Ghost `.json` export file (required)
+
+The importer converts Ghost posts into the selected YiiPress collection and Ghost pages into standalone content root markdown files. It preserves common metadata (`title`, date, draft status, excerpt summary, feature image, tags, and authors), keeps `html` as the markdown body, skips unsupported post types, and avoids overwriting duplicate output filenames.
+
+See [commands.md](commands.md#ghost-import) for usage details.
+
 ### WordPressContentImporter
 
 Imports posts and pages from a WordPress WXR XML export.
