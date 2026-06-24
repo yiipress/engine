@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use YiiPress\Console\ImportCommand;
+use YiiPress\Import\Jekyll\JekyllContentImporter;
 use YiiPress\Import\Telegram\TelegramContentImporter;
 
 $workingDirectory = getcwd() ?: dirname(__DIR__, 3);
@@ -12,6 +13,7 @@ return [
         '__construct()' => [
             'rootPath' => $workingDirectory,
             'importers' => [
+                'jekyll' => new JekyllContentImporter(),
                 'telegram' => new TelegramContentImporter(),
             ],
         ],

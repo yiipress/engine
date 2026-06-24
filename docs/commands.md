@@ -178,7 +178,7 @@ Imports content from external sources into a YiiPress collection.
 
 **Arguments:**
 
-- `source` — source type to import from (required). Currently supported: `telegram`.
+- `source` — source type to import from (required). Currently supported: `jekyll`, `telegram`.
 
 **Common options:**
 
@@ -223,6 +223,31 @@ Supports both single-chat exports (`result.json` with `messages` array) and full
 ./yiipress import telegram --directory=/path/to/telegram-export
 ./yiipress import telegram --directory=/path/to/telegram-export --collection=channel
 ./yiipress import telegram --directory=./telegram-data --content-dir=content
+```
+
+### Jekyll import
+
+Imports Markdown posts from a Jekyll site directory. The importer reads `_posts/YYYY-MM-DD-slug.md` and `_posts/YYYY-MM-DD-slug.markdown` files, converts common front matter fields, and writes YiiPress markdown files into the target collection.
+
+**Importer options:**
+
+- `--directory` — path to the Jekyll site directory containing `_posts` (required). Absolute or relative to project root.
+
+The importer preserves:
+
+- `title`
+- `date`
+- `permalink`
+- `tags`
+- `categories`
+
+If `title` is missing, it is inferred from the first `# Heading` in the post body and then from the filename slug.
+
+**Examples:**
+
+```bash
+./yiipress import jekyll --directory=/path/to/jekyll-site
+./yiipress import jekyll --directory=../old-blog --collection=blog
 ```
 
 ### Adding custom importers

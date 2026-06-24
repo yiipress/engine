@@ -142,12 +142,27 @@ final class ImportCommandTest extends TestCase
         assertStringContainsString('Imported: 1', $result['output']);
     }
 
+    public function testImportsJekyllSite(): void
+    {
+        mkdir($this->sourceDir . '/_posts');
+        file_put_contents(
+            $this->sourceDir . '/_posts/2024-03-15-hello-jekyll.md',
+            "---\ntitle: Hello Jekyll\n---\n\nBody.\n",
+        );
+
+        $result = $this->runImport('jekyll', ['--directory' => $this->sourceDir]);
+
+        assertSame(0, $result['exitCode'], $result['output']);
+        assertStringContainsString('Importing from jekyll', $result['output']);
+        assertStringContainsString('Imported: 1', $result['output']);
+    }
 
     public function testShowsAvailableImportersOnError(): void
     {
         $result = $this->runImport('wordpress', ['--directory' => $this->sourceDir]);
 
         assertSame(65, $result['exitCode']);
+        assertStringContainsString('jekyll', $result['output']);
         assertStringContainsString('telegram', $result['output']);
     }
 
