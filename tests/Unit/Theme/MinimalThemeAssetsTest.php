@@ -71,6 +71,9 @@ final class MinimalThemeAssetsTest extends TestCase
         assertStringContainsString('@media (max-width: 1100px) {', $css);
         assertStringContainsString('grid-template-columns: auto minmax(0, 1fr) auto;', $css);
         assertStringContainsString('grid-template-areas: "brand nav actions";', $css);
+        assertStringContainsString('flex-wrap: nowrap;', $css);
+        assertStringContainsString('overflow-x: auto;', $css);
+        assertStringContainsString('@media (max-width: 640px) {', $css);
         assertStringContainsString('flex-wrap: wrap;', $css);
         assertStringContainsString('@media (max-width: 860px) {', $css);
         assertStringContainsString('grid-template-areas:', $css);
