@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace YiiPress\Import\WordPress;
 
-use DOMDocument;
-use DOMElement;
 use Throwable;
 use YiiPress\Import\ContentImporterInterface;
 use YiiPress\Import\ImporterOption;
@@ -18,15 +16,15 @@ use function count;
 use function file_exists;
 use function file_get_contents;
 use function file_put_contents;
+use function html_entity_decode;
 use function in_array;
 use function is_file;
 use function is_string;
-use function libxml_clear_errors;
-use function libxml_use_internal_errors;
 use function mb_strtolower;
 use function parse_url;
 use function pathinfo;
 use function preg_match;
+use function preg_match_all;
 use function preg_replace;
 use function str_replace;
 use function str_starts_with;
@@ -34,19 +32,14 @@ use function strip_tags;
 use function trim;
 use function ucfirst;
 
-use const LIBXML_NOERROR;
-use const LIBXML_NONET;
-use const LIBXML_NOWARNING;
+use const ENT_QUOTES;
+use const ENT_XML1;
 use const PHP_URL_PATH;
 use const PATHINFO_EXTENSION;
 use const PATHINFO_FILENAME;
 
 final class WordPressContentImporter implements ContentImporterInterface
 {
-    private const string CONTENT_NS = 'http://purl.org/rss/1.0/modules/content/';
-    private const string EXCERPT_NS = 'http://wordpress.org/export/1.2/excerpt/';
-    private const string WP_NS = 'http://wordpress.org/export/1.2/';
-
     public function options(): array
     {
         return [
@@ -82,8 +75,8 @@ final class WordPressContentImporter implements ContentImporterInterface
             );
         }
 
-        $document = $this->loadXml($xml);
-        if ($document === null) {
+        $items = $this->loadItems($xml);
+        if ($items === null) {
             return new ImportResult(
                 totalMessages: 0,
                 importedCount: 0,
@@ -102,12 +95,7 @@ final class WordPressContentImporter implements ContentImporterInterface
         $usedPaths = [];
         $hasCollectionEntries = false;
 
-        $items = $document->getElementsByTagName('item');
         foreach ($items as $item) {
-            if (!$item instanceof DOMElement) {
-                continue;
-            }
-
             $entry = $this->readItem($item);
             if ($entry === null) {
                 $skippedFiles[] = $this->itemIdentifier($item);
@@ -132,7 +120,7 @@ final class WordPressContentImporter implements ContentImporterInterface
         }
 
         return new ImportResult(
-            totalMessages: $items->length,
+            totalMessages: count($items),
             importedCount: count($importedFiles),
             importedFiles: $importedFiles,
             skippedFiles: $skippedFiles,
@@ -145,24 +133,26 @@ final class WordPressContentImporter implements ContentImporterInterface
         return 'wordpress';
     }
 
-    private function loadXml(string $xml): ?DOMDocument
+    /**
+     * @return list<string>|null
+     */
+    private function loadItems(string $xml): ?array
     {
-        if ($xml === '') {
+        if (trim($xml) === '') {
             return null;
         }
 
-        $previous = libxml_use_internal_errors(true);
-        try {
-            $document = new DOMDocument();
-            if (!$document->loadXML($xml, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING)) {
-                return null;
-            }
-
-            return $document;
-        } finally {
-            libxml_clear_errors();
-            libxml_use_internal_errors($previous);
+        if (preg_match('/<rss\b[^>]*>.*<\/rss>/is', $xml) !== 1) {
+            return null;
         }
+
+        if (preg_match('/<channel\b[^>]*>(.*?)<\/channel>/is', $xml, $matches) !== 1) {
+            return null;
+        }
+
+        preg_match_all('/<item\b[^>]*>.*?<\/item>/is', $matches[1], $itemMatches);
+
+        return $itemMatches[0];
     }
 
     /**
@@ -179,20 +169,20 @@ final class WordPressContentImporter implements ContentImporterInterface
      *     categories: list<string>
      * }|null
      */
-    private function readItem(DOMElement $item): ?array
+    private function readItem(string $item): ?array
     {
-        $type = $this->childText($item, 'post_type', self::WP_NS);
+        $type = $this->childText($item, 'wp:post_type');
         if (!in_array($type, ['post', 'page'], true)) {
             return null;
         }
 
-        $status = $this->childText($item, 'status', self::WP_NS);
+        $status = $this->childText($item, 'wp:status');
         if (in_array($status, ['trash', 'auto-draft'], true)) {
             return null;
         }
 
         $title = $this->childText($item, 'title');
-        $slug = $this->filesystemSlug($this->childText($item, 'post_name', self::WP_NS));
+        $slug = $this->filesystemSlug($this->childText($item, 'wp:post_name'));
         if ($slug === 'post') {
             $slug = $this->slugFromTitle($title);
         }
@@ -201,7 +191,7 @@ final class WordPressContentImporter implements ContentImporterInterface
             $title = ucfirst(str_replace('-', ' ', $slug));
         }
 
-        $body = $this->childText($item, 'encoded', self::CONTENT_NS);
+        $body = $this->childText($item, 'content:encoded');
         if ($body === '') {
             $body = $this->childText($item, 'description');
         }
@@ -220,37 +210,26 @@ final class WordPressContentImporter implements ContentImporterInterface
         ];
     }
 
-    private function itemIdentifier(DOMElement $item): string
+    private function itemIdentifier(string $item): string
     {
-        $id = $this->childText($item, 'post_id', self::WP_NS);
+        $id = $this->childText($item, 'wp:post_id');
 
         return $id !== '' ? $id : $this->childText($item, 'title');
     }
 
-    private function childText(DOMElement $element, string $localName, ?string $namespace = null): string
+    private function childText(string $xml, string $name): string
     {
-        foreach ($element->childNodes as $child) {
-            if (!$child instanceof DOMElement) {
-                continue;
-            }
-
-            if ($child->localName !== $localName) {
-                continue;
-            }
-
-            if ($namespace !== null && $child->namespaceURI !== $namespace) {
-                continue;
-            }
-
-            return trim($child->textContent);
+        $tag = preg_quote($name, '/');
+        if (preg_match('/<' . $tag . '\b[^>]*>(.*?)<\/' . $tag . '>/is', $xml, $matches) !== 1) {
+            return '';
         }
 
-        return '';
+        return trim($this->decodeXmlText($matches[1]));
     }
 
-    private function publishedDate(DOMElement $item): string
+    private function publishedDate(string $item): string
     {
-        $date = $this->childText($item, 'post_date', self::WP_NS);
+        $date = $this->childText($item, 'wp:post_date');
         if ($date !== '' && !str_starts_with($date, '0000-00-00')) {
             return $date;
         }
@@ -267,7 +246,7 @@ final class WordPressContentImporter implements ContentImporterInterface
         }
     }
 
-    private function permalink(DOMElement $item, string $type, string $slug): string
+    private function permalink(string $item, string $type, string $slug): string
     {
         $path = parse_url($this->childText($item, 'link'), PHP_URL_PATH);
         if (is_string($path) && $path !== '') {
@@ -277,9 +256,9 @@ final class WordPressContentImporter implements ContentImporterInterface
         return $type === 'page' ? '/' . $slug . '/' : '';
     }
 
-    private function summary(DOMElement $item): string
+    private function summary(string $item): string
     {
-        $summary = $this->childText($item, 'encoded', self::EXCERPT_NS);
+        $summary = $this->childText($item, 'excerpt:encoded');
         if ($summary === '') {
             return '';
         }
@@ -290,21 +269,18 @@ final class WordPressContentImporter implements ContentImporterInterface
     /**
      * @return list<string>
      */
-    private function taxonomyValues(DOMElement $item, string $domain): array
+    private function taxonomyValues(string $item, string $domain): array
     {
         $values = [];
-        foreach ($item->childNodes as $child) {
-            if (!$child instanceof DOMElement || $child->localName !== 'category') {
+        preg_match_all('/<category\b([^>]*)>(.*?)<\/category>/is', $item, $matches, PREG_SET_ORDER);
+        foreach ($matches as $match) {
+            if ($this->attributeValue($match[1], 'domain') !== $domain) {
                 continue;
             }
 
-            if ($child->getAttribute('domain') !== $domain) {
-                continue;
-            }
-
-            $value = $child->getAttribute('nicename');
+            $value = $this->attributeValue($match[1], 'nicename');
             if ($value === '') {
-                $value = $this->slugFromTitle(trim($child->textContent));
+                $value = $this->slugFromTitle($this->decodeXmlText($match[2]));
             }
 
             if ($value !== '') {
@@ -313,6 +289,23 @@ final class WordPressContentImporter implements ContentImporterInterface
         }
 
         return array_keys($values);
+    }
+
+    private function attributeValue(string $attributes, string $name): string
+    {
+        $attribute = preg_quote($name, '/');
+        if (preg_match('/\b' . $attribute . '\s*=\s*(["\'])(.*?)\1/is', $attributes, $matches) !== 1) {
+            return '';
+        }
+
+        return $this->decodeXmlText($matches[2]);
+    }
+
+    private function decodeXmlText(string $value): string
+    {
+        $value = (string) preg_replace('/<!\[CDATA\[(.*?)\]\]>/s', '$1', $value);
+
+        return html_entity_decode($value, ENT_QUOTES | ENT_XML1, 'UTF-8');
     }
 
     /**
