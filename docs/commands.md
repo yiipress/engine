@@ -178,7 +178,7 @@ Imports content from external sources into a YiiPress collection.
 
 **Arguments:**
 
-- `source` — source type to import from (required). Currently supported: `ghost`, `hugo`, `jekyll`, `telegram`, `wordpress`.
+- `source` — source type to import from (required). Currently supported: `ghost`, `hugo`, `jekyll`, `medium`, `telegram`, `wordpress`.
 
 **Common options:**
 
@@ -223,6 +223,25 @@ Supports both single-chat exports (`result.json` with `messages` array) and full
 ./yiipress import telegram --directory=/path/to/telegram-export
 ./yiipress import telegram --directory=/path/to/telegram-export --collection=channel
 ./yiipress import telegram --directory=./telegram-data --content-dir=content
+```
+
+### Medium Markdown import
+
+Imports Markdown files from a Medium Markdown export directory. The importer scans `posts/` first when it exists, otherwise it scans the provided directory recursively.
+
+**Importer options:**
+
+- `--directory` — path to the Medium Markdown export directory (required). Absolute or relative to project root.
+
+The importer reads `.md` files and converts YAML front matter plus body content into YiiPress entries. It preserves `title`, `date` / `published_at`, `canonical_url` / `url` as `origin`, `draft`, `published`, `tags`, and `categories`. When metadata is missing, the title is inferred from the first `# Heading` or filename, and the date can be inferred from filenames starting with `YYYY-MM-DD-`.
+
+Duplicate output filenames get numeric suffixes so earlier files are not overwritten.
+
+**Examples:**
+
+```bash
+./yiipress import medium --directory=/path/to/medium-markdown-export
+./yiipress import medium --directory=./medium --collection=blog
 ```
 
 ### Ghost import

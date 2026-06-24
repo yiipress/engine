@@ -6,6 +6,7 @@ use YiiPress\Console\ImportCommand;
 use YiiPress\Import\Ghost\GhostContentImporter;
 use YiiPress\Import\Hugo\HugoContentImporter;
 use YiiPress\Import\Jekyll\JekyllContentImporter;
+use YiiPress\Import\Medium\MediumContentImporter;
 use YiiPress\Import\Telegram\TelegramContentImporter;
 use YiiPress\Import\WordPress\WordPressContentImporter;
 
@@ -19,6 +20,7 @@ return [
                 'ghost' => new GhostContentImporter(),
                 'hugo' => new HugoContentImporter(),
                 'jekyll' => new JekyllContentImporter(),
+                'medium' => new MediumContentImporter(),
                 'telegram' => new TelegramContentImporter(),
                 'wordpress' => new WordPressContentImporter(),
             ],
