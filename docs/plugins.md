@@ -219,6 +219,38 @@ Both shortcode processors support:
 - Double quotes, single quotes, or no quotes for attribute values (no spaces)
 - Case-insensitive shortcode names
 
+### Project Processors
+
+Static binary users can add site-level content processors without editing Yii3 DI configuration. Put PHP processor files in `content/processors/`; files matching `*.php` are discovered automatically, sorted by filename, and inserted before Markdown rendering in both the page and feed pipelines.
+
+Each file must return either a `YiiPress\Processor\ContentProcessorInterface` instance or a callable with the same shape:
+
+```php
+<?php
+
+use YiiPress\Content\Model\Entry;
+
+return static function (string $content, Entry $entry): string {
+    return str_replace('[badge:stable]', '**Stable**', $content);
+};
+```
+
+For more control, configure processors explicitly in `content/config.yaml`:
+
+```yaml
+processors:
+  content:
+    before_markdown:
+      - processors/badge.php
+    after_markdown:
+      - processors/html-postprocess.php
+  feed:
+    before_markdown:
+      - processors/badge.php
+```
+
+Use `before_markdown` for processors that transform Markdown syntax. Use `after_markdown` for processors that transform rendered HTML. Processor paths are resolved from the content directory and must stay inside it. If the `processors` config key is omitted, YiiPress discovers `content/processors/*.php`; if `processors` contains a list or structured config, YiiPress uses only those files. Set `processors: false` to disable project processors.
+
 ### TweetProcessor
 
 Expands tweet shortcodes into Twitter embed HTML before markdown processing.
