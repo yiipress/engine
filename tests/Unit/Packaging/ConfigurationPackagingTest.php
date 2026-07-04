@@ -78,6 +78,16 @@ final class ConfigurationPackagingTest extends TestCase
     }
 
     #[Test]
+    public function phpunitConfigurationForcesTestEnvironment(): void
+    {
+        $configuration = file_get_contents(dirname(__DIR__, 3) . '/phpunit.xml');
+        self::assertIsString($configuration);
+
+        self::assertStringContainsString('<php>', $configuration);
+        self::assertStringContainsString('<env name="APP_ENV" value="test" force="true" />', $configuration);
+    }
+
+    #[Test]
     public function staticBinaryBuildDoesNotRequireNativeSocketsExtension(): void
     {
         $root = dirname(__DIR__, 3);
