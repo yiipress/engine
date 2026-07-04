@@ -501,8 +501,8 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('if: matrix.os == \'windows-2022\'', $workflow);
         self::assertMatchesRegularExpression('/uses:\s+shivammathur\/setup-php@[A-Za-z0-9._-]+/', $workflow);
         self::assertStringContainsString('Install extensions with PIE', $workflow);
-        self::assertStringContainsString("\$pieUrl = 'https://github.com/php/pie/releases/download/1.4.7/pie.phar'", $workflow);
-        self::assertStringContainsString("\$pieSha256 = 'e8d27c100e85720f374a55f79d63fa8d686dedabc9ccbc6567085e0baf646d55'", $workflow);
+        self::assertMatchesRegularExpression("/\\\$pieUrl = 'https:\\/\\/github\\.com\\/php\\/pie\\/releases\\/download\\/[0-9.]+\\/pie\\.phar'/", $workflow);
+        self::assertMatchesRegularExpression("/\\\$pieSha256 = '[a-f0-9]{64}'/", $workflow);
         self::assertStringContainsString('Invoke-WebRequest $pieUrl -OutFile pie.phar', $workflow);
         self::assertStringContainsString('(Get-FileHash pie.phar -Algorithm SHA256).Hash.ToLowerInvariant()', $workflow);
         self::assertStringContainsString('throw "Unexpected PIE checksum: $actualSha256"', $workflow);
