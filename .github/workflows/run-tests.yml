@@ -34,7 +34,15 @@ jobs:
         with:
           php-version: '8.5'
           coverage: none
-          extensions: yaml
+
+      - name: Install extensions with PIE
+        if: matrix.os == 'windows-2022'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest https://github.com/php/pie/releases/latest/download/pie.phar -OutFile pie.phar
+          php pie.phar install pecl/yaml
+          php pie.phar install iliaal/mdparser
+          php pie.phar install yiipress/highlighter
 
       - name: Set up Docker Buildx
         if: matrix.os == 'ubuntu-latest'
@@ -60,8 +68,6 @@ jobs:
           --ignore-platform-req=ext-inotify
           --ignore-platform-req=ext-pcntl
           --ignore-platform-req=ext-posix
-          --ignore-platform-req=ext-mdparser
-          --ignore-platform-req=ext-highlighter
 
       - name: Run tests in Docker
         if: matrix.os == 'ubuntu-latest'
