@@ -498,13 +498,15 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('runs-on: ${{ matrix.os }}', $workflow);
         self::assertStringContainsString('- ubuntu-latest', $workflow);
         self::assertStringContainsString('- windows-2022', $workflow);
+        self::assertMatchesRegularExpression("/PIE_VERSION: '[0-9]+(?:\\.[0-9]+)*'/", $workflow);
+        self::assertMatchesRegularExpression("/PIE_SHA256: '[a-f0-9]{64}'/", $workflow);
         self::assertStringContainsString('if: matrix.os == \'windows-2022\'', $workflow);
         self::assertMatchesRegularExpression('/uses:\s+shivammathur\/setup-php@[A-Za-z0-9._-]+/', $workflow);
         self::assertStringContainsString('Install extensions with PIE', $workflow);
-        self::assertMatchesRegularExpression("/\\\$pieUrl = 'https:\\/\\/github\\.com\\/php\\/pie\\/releases\\/download\\/[0-9.]+\\/pie\\.phar'/", $workflow);
-        self::assertMatchesRegularExpression("/\\\$pieSha256 = '[a-f0-9]{64}'/", $workflow);
+        self::assertStringContainsString('$pieUrl = "https://github.com/php/pie/releases/download/$env:PIE_VERSION/pie.phar"', $workflow);
         self::assertStringContainsString('Invoke-WebRequest $pieUrl -OutFile pie.phar', $workflow);
         self::assertStringContainsString('(Get-FileHash pie.phar -Algorithm SHA256).Hash.ToLowerInvariant()', $workflow);
+        self::assertStringContainsString('if ($actualSha256 -ne $env:PIE_SHA256) {', $workflow);
         self::assertStringContainsString('throw "Unexpected PIE checksum: $actualSha256"', $workflow);
         self::assertStringContainsString('php pie.phar install pecl/yaml iliaal/mdparser yiipress/highlighter', $workflow);
         self::assertStringContainsString('--ignore-platform-req=ext-inotify', $workflow);

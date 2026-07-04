@@ -21,6 +21,9 @@ jobs:
         os:
           - ubuntu-latest
           - windows-2022
+    env:
+      PIE_VERSION: '1.4.7'
+      PIE_SHA256: 'e8d27c100e85720f374a55f79d63fa8d686dedabc9ccbc6567085e0baf646d55'
     permissions:
       contents: read
 
@@ -39,11 +42,10 @@ jobs:
         if: matrix.os == 'windows-2022'
         shell: pwsh
         run: |
-          $pieUrl = 'https://github.com/php/pie/releases/download/1.4.7/pie.phar'
-          $pieSha256 = 'e8d27c100e85720f374a55f79d63fa8d686dedabc9ccbc6567085e0baf646d55'
+          $pieUrl = "https://github.com/php/pie/releases/download/$env:PIE_VERSION/pie.phar"
           Invoke-WebRequest $pieUrl -OutFile pie.phar
           $actualSha256 = (Get-FileHash pie.phar -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($actualSha256 -ne $pieSha256) {
+          if ($actualSha256 -ne $env:PIE_SHA256) {
             throw "Unexpected PIE checksum: $actualSha256"
           }
           php pie.phar install pecl/yaml iliaal/mdparser yiipress/highlighter
