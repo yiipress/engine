@@ -6,6 +6,7 @@ namespace YiiPress\Tests\Unit\Build;
 
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -101,6 +102,17 @@ final class SiteCheckerTest extends TestCase
         $issues = (new SiteChecker())->check($this->outputDir . '/');
 
         assertSame([], $issues);
+    }
+
+    public function testNormalizesWindowsPathSegmentsBeforeResolvingRelativeLinks(): void
+    {
+        $method = new ReflectionMethod(SiteChecker::class, 'normalizePath');
+        $checker = new SiteChecker();
+
+        assertSame(
+            'assets/themes/minimal/style.css',
+            $method->invoke($checker, 'blog\\2026\\07/../../../assets/themes/minimal/style.css'),
+        );
     }
 
     private function removeDir(string $path): void

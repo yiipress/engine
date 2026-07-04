@@ -30,6 +30,7 @@ use function sort;
 use function str_contains;
 use function str_ends_with;
 use function str_starts_with;
+use function str_replace;
 use function strlen;
 use function strpos;
 use function strrpos;
@@ -250,6 +251,7 @@ final readonly class SiteChecker
 
     private function normalizePath(string $path): ?string
     {
+        $path = str_replace('\\', '/', $path);
         $parsedPath = parse_url($path, PHP_URL_PATH);
         $path = is_string($parsedPath) ? $parsedPath : $path;
         $parts = [];

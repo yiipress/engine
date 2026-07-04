@@ -13,19 +13,22 @@ on:
 
 jobs:
   test:
+    name: Linux PHPUnit
     runs-on: ubuntu-latest
     permissions:
       contents: read
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
 
       - name: Build test Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         with:
           context: .
           file: ./docker/Dockerfile
@@ -45,3 +48,102 @@ jobs:
             --env-file docker/test/.env \
             engine:test \
             bash -c "composer install --no-progress --no-interaction && ./vendor/bin/phpunit"
+
+  windows:
+    name: Windows binary tests
+    runs-on: windows-2022
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: '8.5'
+          coverage: none
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756
+
+      - name: Cache Windows package dependencies
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            ~\AppData\Local\Composer\files
+            ~\.cargo\git
+            ~\.cargo\registry
+            runtime\package-windows\app\vendor
+            runtime\package-windows\static-php-cli
+          key: tests-windows-package-${{ runner.os }}-${{ hashFiles('composer.lock', 'build/package-windows.ps1') }}
+          restore-keys: |
+            tests-windows-package-${{ runner.os }}-
+
+      - name: Build Windows binary
+        shell: pwsh
+        run: build/package-windows.ps1 -DistDir dist/windows-amd64
+
+      - name: Run Windows binary tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $binary = (Resolve-Path "dist/windows-amd64/yiipress.exe").Path
+
+          function Invoke-YiiPress {
+              param(
+                  [Parameter(ValueFromRemainingArguments = $true)]
+                  [string[]] $Arguments
+              )
+
+              & $binary @Arguments
+              if ($LASTEXITCODE -ne 0) {
+                  throw "yiipress.exe failed with exit code ${LASTEXITCODE}: $($Arguments -join ' ')"
+              }
+          }
+
+          Invoke-YiiPress "--help"
+
+          $sitePath = Join-Path $env:RUNNER_TEMP "yiipress-windows-site"
+          if (Test-Path $sitePath) {
+              Remove-Item $sitePath -Recurse -Force
+          }
+          New-Item -ItemType Directory -Force -Path $sitePath | Out-Null
+
+          Push-Location $sitePath
+          try {
+              Invoke-YiiPress "init"
+              Invoke-YiiPress "new" "Hello Windows" "--collection=blog"
+              Set-Content -Path "content/index.md" -Encoding utf8NoBOM -Value @(
+                  "---"
+                  "title: Home"
+                  "permalink: /"
+                  "---"
+                  ""
+                  "Welcome from Windows."
+              )
+              Invoke-YiiPress "build" "--no-cache"
+              Invoke-YiiPress "check:links"
+
+              if (!(Test-Path "output/index.html")) {
+                  throw "Expected output/index.html to be generated."
+              }
+              if (!(Select-String -Path "output/blog/hello-windows/index.html" -Pattern "Hello Windows" -Quiet)) {
+                  throw "Expected generated blog page to contain the test title."
+              }
+
+              Invoke-YiiPress "clean"
+              if (Test-Path "output") {
+                  throw "Expected clean to remove the generated output directory."
+              }
+          } finally {
+              Pop-Location
+          }
