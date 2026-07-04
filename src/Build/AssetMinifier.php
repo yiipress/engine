@@ -18,6 +18,29 @@ use const PATHINFO_EXTENSION;
 
 final class AssetMinifier
 {
+    private const array CSS_SPACE_BLOCKING_PREVIOUS = [
+        '(' => true,
+        ':' => true,
+        ',' => true,
+        ';' => true,
+        '=' => true,
+        '>' => true,
+        '[' => true,
+        '{' => true,
+        '~' => true,
+    ];
+    private const array CSS_SPACE_BLOCKING_NEXT = [
+        '{' => true,
+        ')' => true,
+        ',' => true,
+        ';' => true,
+        '=' => true,
+        '>' => true,
+        ']' => true,
+        '}' => true,
+        '~' => true,
+    ];
+
     public static function supports(string $path): bool
     {
         $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
@@ -247,7 +270,7 @@ final class AssetMinifier
         $previous = substr($previousContent, -1);
 
         return $previous !== ''
-            && !str_contains('{(:;,>~=[', $previous)
-            && !str_contains('{};,>~=])', $next);
+            && !isset(self::CSS_SPACE_BLOCKING_PREVIOUS[$previous])
+            && !isset(self::CSS_SPACE_BLOCKING_NEXT[$next]);
     }
 }
