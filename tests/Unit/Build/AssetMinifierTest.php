@@ -51,6 +51,29 @@ final class AssetMinifierTest extends TestCase
         );
     }
 
+    public function testMinifiesCssWithoutBreakingSelectorOrValueWhitespace(): void
+    {
+        $css = <<<'CSS'
+            .site-header .container {
+                display: grid;
+                padding: 0 .125rem;
+            }
+
+            .container:has(.docs-layout) {
+                max-width: calc(100% - (var(--page-gutter) * 2));
+            }
+
+            .content :is(h1, h2) .header-anchor {
+                margin: 1rem 1.25rem;
+            }
+            CSS;
+
+        assertSame(
+            '.site-header .container{display:grid;padding:0 .125rem}.container:has(.docs-layout){max-width:calc(100% - (var(--page-gutter) * 2))}.content :is(h1,h2) .header-anchor{margin:1rem 1.25rem}',
+            AssetMinifier::minify('app.css', $css),
+        );
+    }
+
     public function testMinifiesJavaScriptWithoutBreakingRegexOrStrings(): void
     {
         $js = <<<'JS'
