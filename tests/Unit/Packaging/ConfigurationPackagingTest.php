@@ -489,6 +489,29 @@ final class ConfigurationPackagingTest extends TestCase
     }
 
     #[Test]
+    public function runTestsWorkflowCoversLinuxAndWindows(): void
+    {
+        $workflow = file_get_contents(dirname(__DIR__, 3) . '/.github/workflows/run-tests.yml');
+        self::assertIsString($workflow);
+
+        self::assertStringContainsString('name: Run Tests', $workflow);
+        self::assertStringContainsString('runs-on: ${{ matrix.os }}', $workflow);
+        self::assertStringContainsString('- ubuntu-latest', $workflow);
+        self::assertStringContainsString('- windows-2022', $workflow);
+        self::assertStringContainsString('if: matrix.os == \'windows-2022\'', $workflow);
+        self::assertStringContainsString('uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240', $workflow);
+        self::assertStringContainsString('extensions: yaml', $workflow);
+        self::assertStringContainsString('--ignore-platform-req=ext-inotify', $workflow);
+        self::assertStringContainsString('--ignore-platform-req=ext-pcntl', $workflow);
+        self::assertStringContainsString('--ignore-platform-req=ext-posix', $workflow);
+        self::assertStringContainsString('--ignore-platform-req=ext-mdparser', $workflow);
+        self::assertStringContainsString('--ignore-platform-req=ext-highlighter', $workflow);
+        self::assertStringContainsString('Run tests in Docker', $workflow);
+        self::assertStringContainsString('Run tests on Windows', $workflow);
+        self::assertStringContainsString('php ./vendor/bin/phpunit', $workflow);
+    }
+
+    #[Test]
     public function staticBinaryBuildTrimsUnusedServerSource(): void
     {
         $root = dirname(__DIR__, 3);
