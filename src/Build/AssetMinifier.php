@@ -38,7 +38,8 @@ final class AssetMinifier
     {
         $content = self::stripComments($content, preserveNewLines: false, stripLineComments: false);
         $content = self::collapseCssWhitespace($content);
-        $content = (string) preg_replace('/\s*([{}:;,>~=\[\]])\s*/', '$1', $content);
+        $content = (string) preg_replace('/\s*([{};,>~=\[\]])\s*/', '$1', $content);
+        $content = (string) preg_replace('/:\s*/', ':', $content);
         $content = (string) preg_replace('/;}/', '}', $content);
 
         return trim($content);
@@ -245,12 +246,8 @@ final class AssetMinifier
     {
         $previous = substr($previousContent, -1);
 
-        return (self::isIdentifierChar($previous) && self::isIdentifierChar($next))
-            || ($next === '(' && preg_match('/(?:^|[^A-Za-z0-9_-])(?:and|or|not|only)$/i', $previousContent) === 1);
-    }
-
-    private static function isIdentifierChar(string $char): bool
-    {
-        return $char !== '' && preg_match('/[A-Za-z0-9_-]/', $char) === 1;
+        return $previous !== ''
+            && !str_contains('{(:;,>~=[', $previous)
+            && !str_contains('{};,>~=])', $next);
     }
 }
