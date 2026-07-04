@@ -39,10 +39,14 @@ jobs:
         if: matrix.os == 'windows-2022'
         shell: pwsh
         run: |
-          Invoke-WebRequest https://github.com/php/pie/releases/latest/download/pie.phar -OutFile pie.phar
-          php pie.phar install pecl/yaml
-          php pie.phar install iliaal/mdparser
-          php pie.phar install yiipress/highlighter
+          $pieUrl = 'https://github.com/php/pie/releases/download/1.4.7/pie.phar'
+          $pieSha256 = 'e8d27c100e85720f374a55f79d63fa8d686dedabc9ccbc6567085e0baf646d55'
+          Invoke-WebRequest $pieUrl -OutFile pie.phar
+          $actualSha256 = (Get-FileHash pie.phar -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualSha256 -ne $pieSha256) {
+            throw "Unexpected PIE checksum: $actualSha256"
+          }
+          php pie.phar install pecl/yaml iliaal/mdparser yiipress/highlighter
 
       - name: Set up Docker Buildx
         if: matrix.os == 'ubuntu-latest'

@@ -501,10 +501,12 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('if: matrix.os == \'windows-2022\'', $workflow);
         self::assertMatchesRegularExpression('/uses:\s+shivammathur\/setup-php@[A-Za-z0-9._-]+/', $workflow);
         self::assertStringContainsString('Install extensions with PIE', $workflow);
-        self::assertStringContainsString('Invoke-WebRequest https://github.com/php/pie/releases/latest/download/pie.phar -OutFile pie.phar', $workflow);
-        self::assertStringContainsString('php pie.phar install pecl/yaml', $workflow);
-        self::assertStringContainsString('php pie.phar install iliaal/mdparser', $workflow);
-        self::assertStringContainsString('php pie.phar install yiipress/highlighter', $workflow);
+        self::assertStringContainsString("\$pieUrl = 'https://github.com/php/pie/releases/download/1.4.7/pie.phar'", $workflow);
+        self::assertStringContainsString("\$pieSha256 = 'e8d27c100e85720f374a55f79d63fa8d686dedabc9ccbc6567085e0baf646d55'", $workflow);
+        self::assertStringContainsString('Invoke-WebRequest $pieUrl -OutFile pie.phar', $workflow);
+        self::assertStringContainsString('(Get-FileHash pie.phar -Algorithm SHA256).Hash.ToLowerInvariant()', $workflow);
+        self::assertStringContainsString('throw "Unexpected PIE checksum: $actualSha256"', $workflow);
+        self::assertStringContainsString('php pie.phar install pecl/yaml iliaal/mdparser yiipress/highlighter', $workflow);
         self::assertStringContainsString('--ignore-platform-req=ext-inotify', $workflow);
         self::assertStringContainsString('--ignore-platform-req=ext-pcntl', $workflow);
         self::assertStringContainsString('--ignore-platform-req=ext-posix', $workflow);
