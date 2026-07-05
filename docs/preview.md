@@ -8,6 +8,8 @@ The preview server serves the built site during local development:
 
 The static binary is the recommended way to run preview. It resolves `content/` and `output/` from the current directory by default, and custom paths can be passed with `--content-dir` and `--output-dir`.
 
+On Windows, the preview server runs as a single ReactPHP server process. Preforked `--workers` and POSIX signal handlers are used only on platforms where PCNTL and signal constants are available.
+
 The command validates paths before opening the socket. The content directory must exist, and the output directory must exist or be creatable and writable. If either check fails, run it with explicit paths such as `./yiipress serve --content-dir=content --output-dir=output`.
 
 ## Static file serving
