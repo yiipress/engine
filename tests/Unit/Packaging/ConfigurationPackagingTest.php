@@ -324,6 +324,39 @@ final class ConfigurationPackagingTest extends TestCase
     }
 
     #[Test]
+    public function runTestsWorkflowRunsLinuxPhpunitAndWindowsBinaryTests(): void
+    {
+        $workflow = file_get_contents(dirname(__DIR__, 3) . '/.github/workflows/run-tests.yml');
+        self::assertIsString($workflow);
+
+        self::assertStringContainsString('name: Run Tests', $workflow);
+        self::assertStringContainsString('name: Linux PHPUnit', $workflow);
+        self::assertStringContainsString('runs-on: ubuntu-latest', $workflow);
+        self::assertStringContainsString('docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8', $workflow);
+        self::assertStringContainsString('./vendor/bin/phpunit', $workflow);
+
+        self::assertStringContainsString('name: Windows binary tests', $workflow);
+        self::assertStringContainsString('runs-on: windows-2022', $workflow);
+        self::assertStringContainsString('uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240', $workflow);
+        self::assertStringContainsString('uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8', $workflow);
+        self::assertStringContainsString('uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756', $workflow);
+        self::assertStringContainsString('uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830', $workflow);
+        self::assertStringContainsString('runtime\package-windows\static-php-cli', $workflow);
+        self::assertStringContainsString('build/package-windows.ps1 -DistDir dist/windows-amd64', $workflow);
+        self::assertStringContainsString('Resolve-Path "dist/windows-amd64/yiipress.exe"', $workflow);
+        self::assertStringContainsString('Invoke-YiiPress "init"', $workflow);
+        self::assertStringContainsString('Invoke-YiiPress "new" "Hello Windows" "--collection=blog"', $workflow);
+        self::assertStringContainsString('Set-Content -Path "content/index.md"', $workflow);
+        self::assertStringContainsString('"permalink: /"', $workflow);
+        self::assertStringContainsString('Invoke-YiiPress "build" "--no-cache"', $workflow);
+        self::assertStringContainsString('Invoke-YiiPress "check:links"', $workflow);
+        self::assertStringContainsString('Invoke-YiiPress "clean"', $workflow);
+        self::assertStringContainsString('output/blog/hello-windows/index.html', $workflow);
+        self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@v\d+/', $workflow);
+        self::assertSame(2, substr_count($workflow, 'persist-credentials: false'));
+    }
+
+    #[Test]
     public function buildActionInitializesBinaryOutsideCheckoutByDefault(): void
     {
         $action = file_get_contents(dirname(__DIR__, 3) . '/.github/actions/build/action.yml');
