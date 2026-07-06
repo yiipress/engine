@@ -108,6 +108,12 @@ final class ServeCommand extends Command
     private int $nextLiveReloadClientId = 1;
     private ?TimerInterface $liveReloadPingTimer = null;
 
+    public function __construct(
+        private readonly ServeRuntimeCapabilities $runtimeCapabilities = new ServeRuntimeCapabilities(),
+    ) {
+        parent::__construct();
+    }
+
     public function configure(): void
     {
         $this
@@ -195,7 +201,7 @@ final class ServeCommand extends Command
             return ExitCode::UNSPECIFIED_ERROR;
         }
 
-        if ($workers > 1 && function_exists('pcntl_fork')) {
+        if ($workers > 1 && $this->runtimeCapabilities->supportsWorkerPool()) {
             return $this->runWorkerPool($server, $address, $workers);
         }
 
@@ -284,8 +290,10 @@ final class ServeCommand extends Command
             $server->close();
             $loop->stop();
         };
-        $loop->addSignal(\SIGINT, $stop);
-        $loop->addSignal(\SIGTERM, $stop);
+        if ($this->runtimeCapabilities->supportsEventLoopSignals()) {
+            $loop->addSignal(\SIGINT, $stop);
+            $loop->addSignal(\SIGTERM, $stop);
+        }
         $loop->run();
 
         return ExitCode::OK;

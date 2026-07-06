@@ -86,7 +86,7 @@ Starts the preview server for local development.
 - `--content-dir`, `-c` — path to the content directory (default: `content`). Absolute or relative to project root.
 - `--output-dir`, `-o` — path to the output directory served by the preview server (default: `output`). Absolute or relative to project root.
 - `--port`, `-p` — port to serve at when the address argument does not include a port (default: `19777`).
-- `--workers`, `-w` — number of preforked server workers (default: `2`).
+- `--workers`, `-w` — number of preforked server workers on POSIX platforms with PCNTL support (default: `2`). Windows and other runtimes without signal support run a single server process.
 
 On startup, `serve` prints the URL it is listening on. Build progress is printed by rebuilds triggered after file changes. Content and output paths resolve from the current working directory, so run the binary from the site directory or pass explicit `--content-dir` and `--output-dir` paths.
 
