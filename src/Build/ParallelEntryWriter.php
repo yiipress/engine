@@ -38,6 +38,7 @@ final readonly class ParallelEntryWriter
 
     /**
      * @param list<array{entry: Entry, filePath: string, permalink: string, navigationPager?: array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null}> $tasks
+     * @param array<string, \YiiPress\Content\Model\Author> $authors
      * @return int number of entries written
      */
     public function write(
@@ -47,6 +48,7 @@ final readonly class ParallelEntryWriter
         int $workerCount,
         ?Navigation $navigation = null,
         ?CrossReferenceResolver $crossRefResolver = null,
+        /** @var array<string, \YiiPress\Content\Model\Author> $authors */
         array $authors = [],
         bool $noWrite = false,
     ): int {

@@ -82,6 +82,9 @@ final class PortableWorkerPool
             foreach ($workers as $worker) {
                 stream_get_contents($worker['pipes'][1]);
                 $stderr = stream_get_contents($worker['pipes'][2]);
+                if ($stderr === false) {
+                    $stderr = '';
+                }
                 fclose($worker['pipes'][1]);
                 fclose($worker['pipes'][2]);
                 $exitCode = proc_close($worker['process']);

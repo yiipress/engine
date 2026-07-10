@@ -37,6 +37,7 @@ final readonly class EntryWriteWorkerJob implements WorkerJobInterface
         return $this->siteConfig;
     }
 
+    /** @return list<array{entry: Entry, filePath: string, permalink: string, navigationPager?: array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null}> */
     public function tasks(): array
     {
         return $this->tasks;
@@ -57,6 +58,7 @@ final readonly class EntryWriteWorkerJob implements WorkerJobInterface
         return $this->crossRefResolver;
     }
 
+    /** @return array<string, Author> */
     public function authors(): array
     {
         return $this->authors;
