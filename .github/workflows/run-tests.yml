@@ -15,6 +15,9 @@ jobs:
   portable-workers:
     name: Portable workers (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    env:
+      APP_DEBUG: 'false'
+      APP_ENV: test
     permissions:
       contents: read
     strategy:
