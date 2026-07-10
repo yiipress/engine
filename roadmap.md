@@ -54,6 +54,7 @@
 - [x] Linux, macOS, Windows, and distroless Docker release packaging
 - [x] Tag release workflow for binaries, PHAR, and binary-only distroless image
 - [x] Windows binary test pipeline in CI
+- [x] macOS binary test pipeline in CI
 - [x] Reusable GitHub Action for downloading the Linux binary and building third-party sites
 - [x] `yiipress new` command — scaffold new entries from archetypes/templates
 - [x] `yiipress init` command — scaffold initial content structure

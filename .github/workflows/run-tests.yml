@@ -147,3 +147,77 @@ jobs:
           } finally {
               Pop-Location
           }
+
+  macos:
+    name: macOS binary tests
+    runs-on: macos-14
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: '8.5'
+          coverage: none
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: Install macOS package dependencies
+        run: |
+          brew install autoconf automake bison re2c pkgconf
+          echo "$(brew --prefix bison)/bin" >> "$GITHUB_PATH"
+
+      - name: Cache macOS package dependencies
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            ~/.composer/cache/files
+            ~/.cargo/git
+            ~/.cargo/registry
+            runtime/package-macos/app/vendor
+            runtime/package-macos/static-php-cli
+          key: tests-macos-package-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('composer.lock', 'build/package-macos.sh', 'build/static-php/*.php') }}
+          restore-keys: |
+            tests-macos-package-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Build macOS binary
+        run: make package-macos PACKAGE_MACOS_ARCH=arm64 PACKAGE_MACOS_DIST=dist/macos-arm64
+
+      - name: Run macOS binary tests
+        run: |
+          set -euo pipefail
+
+          binary="$(pwd)/dist/macos-arm64/yiipress"
+          "$binary" --help
+
+          site_path="${RUNNER_TEMP}/yiipress-macos-site"
+          rm -rf "$site_path"
+          mkdir -p "$site_path"
+          cd "$site_path"
+
+          "$binary" init
+          "$binary" new "Hello macOS" --collection=blog
+          printf '%s\n' \
+            '---' \
+            'title: Home' \
+            'permalink: /' \
+            '---' \
+            '' \
+            'Welcome from macOS.' > content/index.md
+          "$binary" build --no-cache
+          "$binary" check:links
+
+          test -f output/index.html
+          grep -Fq 'Hello macOS' output/blog/hello-macos/index.html
+
+          "$binary" clean
+          test ! -d output
