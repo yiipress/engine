@@ -6,6 +6,7 @@ namespace YiiPress\Build;
 
 use YiiPress\Content\CrossReferenceResolver;
 use YiiPress\Content\I18n\TranslationIndex;
+use YiiPress\Content\Model\Author;
 use YiiPress\Content\Model\Entry;
 use YiiPress\Content\Model\Navigation;
 use YiiPress\Content\Model\SiteConfig;
@@ -38,7 +39,7 @@ final readonly class ParallelEntryWriter
 
     /**
      * @param list<array{entry: Entry, filePath: string, permalink: string, navigationPager?: array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null}> $tasks
-     * @param array<string, \YiiPress\Content\Model\Author> $authors
+     * @param array<string, Author> $authors
      * @return int number of entries written
      */
     public function write(
@@ -48,7 +49,6 @@ final readonly class ParallelEntryWriter
         int $workerCount,
         ?Navigation $navigation = null,
         ?CrossReferenceResolver $crossRefResolver = null,
-        /** @var array<string, \YiiPress\Content\Model\Author> $authors */
         array $authors = [],
         bool $noWrite = false,
     ): int {
@@ -151,7 +151,7 @@ final readonly class ParallelEntryWriter
 
     public function workerCountFor(int $taskCount, int $requestedWorkerCount): int
     {
-        if ((!function_exists('pcntl_fork') && !function_exists('proc_open')) || $requestedWorkerCount <= 1 || $taskCount < self::MIN_TASKS_PER_WORKER * 2) {
+        if ((!is_callable('pcntl_fork') && !is_callable('proc_open')) || $requestedWorkerCount <= 1 || $taskCount < self::MIN_TASKS_PER_WORKER * 2) {
             return 1;
         }
 

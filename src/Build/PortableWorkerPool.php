@@ -47,7 +47,7 @@ final class PortableWorkerPool
         }
 
         $tempDir = sys_get_temp_dir() . '/yiipress_worker_pool_' . bin2hex(random_bytes(8));
-        if (!mkdir($tempDir, 0o755, true) && !is_dir($tempDir)) {
+        if (!mkdir($tempDir, 0o700, true) && !is_dir($tempDir)) {
             throw new RuntimeException(sprintf('Directory "%s" was not created.', $tempDir));
         }
 
@@ -80,7 +80,10 @@ final class PortableWorkerPool
             $count = 0;
             $failure = null;
             foreach ($workers as $worker) {
-                stream_get_contents($worker['pipes'][1]);
+                $stdout = stream_get_contents($worker['pipes'][1]);
+                if ($stdout === false) {
+                    $stdout = '';
+                }
                 $stderr = stream_get_contents($worker['pipes'][2]);
                 if ($stderr === false) {
                     $stderr = '';
@@ -89,10 +92,15 @@ final class PortableWorkerPool
                 fclose($worker['pipes'][2]);
                 $exitCode = proc_close($worker['process']);
                 if ($exitCode !== 0 || !is_file($worker['resultFile'])) {
-                    $failure ??= new RuntimeException('Worker process failed' . ($stderr !== '' ? ': ' . trim($stderr) : '.'));
+                    $message = $stderr !== '' ? $stderr : $stdout;
+                    $failure ??= new RuntimeException('Worker process failed' . ($message !== '' ? ': ' . trim($message) : '.'));
                     continue;
                 }
-                $count += (int) file_get_contents($worker['resultFile']);
+                $result = file_get_contents($worker['resultFile']);
+                if ($result === false) {
+                    throw new RuntimeException(sprintf('Unable to read worker result file "%s".', $worker['resultFile']));
+                }
+                $count += (int) $result;
             }
 
             if ($failure !== null) {
