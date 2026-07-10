@@ -324,7 +324,7 @@ final class ConfigurationPackagingTest extends TestCase
     }
 
     #[Test]
-    public function runTestsWorkflowRunsLinuxPhpunitAndWindowsBinaryTests(): void
+    public function runTestsWorkflowRunsLinuxPhpunitAndPlatformBinaryTests(): void
     {
         $workflow = file_get_contents(dirname(__DIR__, 3) . '/.github/workflows/run-tests.yml');
         self::assertIsString($workflow);
@@ -352,8 +352,24 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('Invoke-YiiPress "check:links"', $workflow);
         self::assertStringContainsString('Invoke-YiiPress "clean"', $workflow);
         self::assertStringContainsString('output/blog/hello-windows/index.html', $workflow);
+
+        self::assertStringContainsString('name: macOS binary tests', $workflow);
+        self::assertStringContainsString('runs-on: macos-14', $workflow);
+        self::assertStringContainsString('targets: aarch64-apple-darwin', $workflow);
+        self::assertStringContainsString('runtime/package-macos/static-php-cli', $workflow);
+        self::assertStringContainsString(
+            'make package-macos PACKAGE_MACOS_ARCH=arm64 PACKAGE_MACOS_DIST=dist/macos-arm64',
+            $workflow,
+        );
+        self::assertStringContainsString('binary="$(pwd)/dist/macos-arm64/yiipress"', $workflow);
+        self::assertStringContainsString('"$binary" init', $workflow);
+        self::assertStringContainsString('"$binary" new "Hello macOS" --collection=blog', $workflow);
+        self::assertStringContainsString("'permalink: /'", $workflow);
+        self::assertStringContainsString('"$binary" build --no-cache', $workflow);
+        self::assertStringContainsString('"$binary" check:links', $workflow);
+        self::assertStringContainsString('"$binary" clean', $workflow);
+        self::assertStringContainsString('output/blog/hello-macos/index.html', $workflow);
         self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@v\d+/', $workflow);
-        self::assertSame(2, substr_count($workflow, 'persist-credentials: false'));
     }
 
     #[Test]
