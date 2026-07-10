@@ -69,7 +69,7 @@ final readonly class ParallelEntryWriter
         }
 
         if ($effectiveWorkerCount <= 1) {
-            $this->writeEntries($siteConfig, $tasks, $contentDir, $navigation, $crossRefResolver, $authors, $noWrite);
+            $this->writeChunk($siteConfig, $tasks, $contentDir, $navigation, $crossRefResolver, $authors, $noWrite);
         } else {
             $this->writeParallel($siteConfig, $tasks, $contentDir, $effectiveWorkerCount, $navigation, $crossRefResolver, $authors, $noWrite);
         }
@@ -80,7 +80,7 @@ final readonly class ParallelEntryWriter
     /**
      * @param list<array{entry: Entry, filePath: string, permalink: string, navigationPager?: array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null}> $tasks
      */
-    private function writeEntries(SiteConfig $siteConfig, array $tasks, string $contentDir, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors, bool $noWrite): void
+    public function writeChunk(SiteConfig $siteConfig, array $tasks, string $contentDir, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors, bool $noWrite): void
     {
         $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors, $this->assetManifest, $this->relatedIndex, $this->translationIndex, $this->eventDispatcher);
 
@@ -98,6 +98,14 @@ final readonly class ParallelEntryWriter
     private function writeParallel(SiteConfig $siteConfig, array $tasks, string $contentDir, int $workerCount, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors, bool $noWrite): void
     {
         $taskChunks = $this->partitionTasks($tasks, $workerCount);
+        if (!function_exists('pcntl_fork')) {
+            $jobs = [];
+            foreach ($taskChunks as $chunk) {
+                $jobs[] = new EntryWriteWorkerJob($siteConfig, $chunk, $contentDir, $navigation, $crossRefResolver, $authors, $noWrite, $this->cache, $this->assetManifest, $this->relatedIndex, $this->translationIndex);
+            }
+            (new PortableWorkerPool())->run($jobs);
+            return;
+        }
         $pids = [];
 
         foreach ($taskChunks as $chunk) {
@@ -141,7 +149,7 @@ final readonly class ParallelEntryWriter
 
     public function workerCountFor(int $taskCount, int $requestedWorkerCount): int
     {
-        if (!function_exists('pcntl_fork') || $requestedWorkerCount <= 1 || $taskCount < self::MIN_TASKS_PER_WORKER * 2) {
+        if ((!function_exists('pcntl_fork') && !function_exists('proc_open')) || $requestedWorkerCount <= 1 || $taskCount < self::MIN_TASKS_PER_WORKER * 2) {
             return 1;
         }
 

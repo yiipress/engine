@@ -95,4 +95,6 @@ so they track real rebuild timing rather than component-only throughput.
 
 Measured on PHP 8.5 with `ext-mdparser`, `ext-yaml`, and `ext-pcntl`, xdebug off, OPCache disabled.
 
+`PortableWorkerPoolBench` tracks the startup and job-transport overhead of two portable worker processes used by Windows builds.
+
 Benchmarks are run with xdebug disabled automatically (`make bench` sets `XDEBUG_MODE=off`).
