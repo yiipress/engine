@@ -199,7 +199,7 @@ jobs:
 
       - name: Install macOS package dependencies
         run: |
-          brew install autoconf automake bison re2c pkgconf upx
+          brew install autoconf automake bison re2c pkgconf
           echo "$(brew --prefix bison)/bin" >> "$GITHUB_PATH"
 
       - name: Cache macOS package dependencies

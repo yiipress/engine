@@ -245,7 +245,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('aarch64-apple-darwin', $script);
         self::assertStringContainsString('x86_64-apple-darwin', $script);
         self::assertStringContainsString('micro:combine', $script);
-        self::assertStringContainsString('upx --force-macos --best --lzma', $script);
+        self::assertStringNotContainsString('upx', $script);
         self::assertStringContainsString('APP_PATH="${WORK_PATH}/app"', $script);
         self::assertStringContainsString('pushd "$APP_PATH"', $script);
         self::assertStringContainsString('require_command "$command"', $script);
