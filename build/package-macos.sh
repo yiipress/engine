@@ -139,7 +139,7 @@ exit(1);
     printf '%s' "$version"
 }
 
-for command in php composer tar curl rustup cargo make; do
+for command in php composer tar curl rustup cargo make upx; do
     require_command "$command"
 done
 
@@ -228,4 +228,5 @@ invoke php bin/spc micro:combine "$PHAR_PATH" -O "$BIN_PATH"
 popd >/dev/null
 
 chmod +x "$BIN_PATH"
+invoke upx --force-macos --best --lzma "$BIN_PATH"
 printf 'Built %s\n' "$BIN_PATH"
