@@ -87,12 +87,6 @@
       <code><![CDATA[require $templatePath]]></code>
     </UnresolvableInclude>
   </file>
-  <file src="src/Build/ParallelEntryWriter.php">
-    <MixedArgumentTypeCoercion>
-      <code><![CDATA[$authors]]></code>
-      <code><![CDATA[$authors]]></code>
-    </MixedArgumentTypeCoercion>
-  </file>
   <file src="src/Build/TaxonomyPageWriter.php">
     <RedundantCastGivenDocblockType>
       <code><![CDATA[(string) $term]]></code>
