@@ -348,7 +348,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('Invoke-YiiPress "new" "Hello Windows" "--collection=blog"', $workflow);
         self::assertStringContainsString('Set-Content -Path "content/index.md"', $workflow);
         self::assertStringContainsString('"permalink: /"', $workflow);
-        self::assertStringContainsString('Invoke-YiiPress "build" "--no-cache"', $workflow);
+        self::assertStringContainsString('Invoke-YiiPress "build" "--no-cache" "--workers=2"', $workflow);
         self::assertStringContainsString('Invoke-YiiPress "check:links"', $workflow);
         self::assertStringContainsString('Invoke-YiiPress "clean"', $workflow);
         self::assertStringContainsString('output/blog/hello-windows/index.html', $workflow);
