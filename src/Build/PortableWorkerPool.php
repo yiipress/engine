@@ -25,6 +25,10 @@ use function rmdir;
 use function serialize;
 use function sprintf;
 use function stream_get_contents;
+use function proc_get_status;
+use function proc_terminate;
+use function time;
+use function usleep;
 use function str_ends_with;
 use function str_starts_with;
 use function strtolower;
@@ -80,6 +84,19 @@ final class PortableWorkerPool
             $count = 0;
             $failure = null;
             foreach ($workers as $worker) {
+                $startedAt = time();
+                while (true) {
+                    $status = proc_get_status($worker['process']);
+                    if (!($status['running'] ?? false)) {
+                        break;
+                    }
+                    if (time() - $startedAt >= 300) {
+                        proc_terminate($worker['process']);
+                        $failure ??= new RuntimeException('Worker process timed out after 300 seconds.');
+                        break;
+                    }
+                    usleep(100_000);
+                }
                 $stdout = stream_get_contents($worker['pipes'][1]);
                 if ($stdout === false) {
                     $stdout = '';
