@@ -52,6 +52,28 @@ final class ServeCommandTest extends TestCase
     }
 
     #[Test]
+    public function liveReloadFileSnapshotChangesWhenContentChanges(): void
+    {
+        $root = sys_get_temp_dir() . '/yiipress-live-reload-' . uniqid();
+        mkdir($root . '/content', 0o755, true);
+        file_put_contents($root . '/content/index.md', 'one');
+        $command = new ServeCommand();
+        $property = new ReflectionProperty(ServeCommand::class, 'contentDir');
+        $property->setAccessible(true);
+        $property->setValue($command, $root . '/content');
+        $method = new ReflectionMethod(ServeCommand::class, 'liveReloadFileSnapshot');
+        $method->setAccessible(true);
+        $before = $method->invoke($command);
+        file_put_contents($root . '/content/index.md', 'changed content');
+        clearstatcache(true, $root . '/content/index.md');
+        $after = $method->invoke($command);
+        self::assertNotSame($before, $after);
+        unlink($root . '/content/index.md');
+        rmdir($root . '/content');
+        rmdir($root);
+    }
+
+    #[Test]
     public function serveKeepsWorkerOptionQuiet(): void
     {
         $tester = new CommandTester(new ServeCommand());

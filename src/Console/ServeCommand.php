@@ -107,6 +107,9 @@ final class ServeCommand extends Command
     private array $liveReloadClients = [];
     private int $nextLiveReloadClientId = 1;
     private ?TimerInterface $liveReloadPingTimer = null;
+    private ?TimerInterface $liveReloadPollingTimer = null;
+    /** @var array<string, string> */
+    private array $liveReloadSnapshot = [];
 
     public function __construct(
         private readonly ServeRuntimeCapabilities $runtimeCapabilities = new ServeRuntimeCapabilities(),
@@ -404,6 +407,18 @@ final class ServeCommand extends Command
 
         $stream = function_exists('inotify_init') ? inotify_init() : false;
         if ($stream === false) {
+            if ($this->liveReloadPollingTimer !== null) {
+                return;
+            }
+            $this->liveReloadSnapshot = $this->liveReloadFileSnapshot();
+            $this->liveReloadPollingTimer = Loop::addPeriodicTimer(1.0, function (): void {
+                $snapshot = $this->liveReloadFileSnapshot();
+                if ($snapshot === $this->liveReloadSnapshot) {
+                    return;
+                }
+                $this->liveReloadSnapshot = $snapshot;
+                $this->processLiveReloadChange();
+            });
             return;
         }
 
@@ -421,22 +436,42 @@ final class ServeCommand extends Command
                 return;
             }
 
-            $result = $this->buildLiveReloadSite();
-            if ($result === null) {
-                return;
-            }
-
-            if ($result->succeeded()) {
-                $this->broadcastLiveReloadEvent('reload', 'changed', true);
-                return;
-            }
-
-            $this->broadcastLiveReloadEvent(
-                'build-error',
-                $this->liveReloadBuildErrorData($result),
-                true,
-            );
+            $this->processLiveReloadChange();
         });
+    }
+
+    private function processLiveReloadChange(): void
+    {
+        $result = $this->buildLiveReloadSite();
+        if ($result === null) {
+            return;
+        }
+        $this->broadcastLiveReloadEvent(
+            $result->succeeded() ? 'reload' : 'build-error',
+            $result->succeeded() ? 'changed' : $this->liveReloadBuildErrorData($result),
+            true,
+        );
+    }
+
+    /** @return array<string, string> */
+    private function liveReloadFileSnapshot(): array
+    {
+        $snapshot = [];
+        foreach ([$this->contentDir(), $this->workingDirectory() . '/themes'] as $directory) {
+            if (!is_dir($directory)) {
+                continue;
+            }
+            $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS));
+            foreach ($iterator as $file) {
+                /** @var \SplFileInfo $file */
+                if ($file->isFile()) {
+                    $path = $file->getPathname();
+                    $snapshot[$path] = (string) $file->getMTime() . ':' . (string) $file->getSize();
+                }
+            }
+        }
+        ksort($snapshot);
+        return $snapshot;
     }
 
     private function liveReloadBuildErrorData(SiteBuildResult $result): string
@@ -480,6 +515,10 @@ final class ServeCommand extends Command
         if ($this->liveReloadPingTimer !== null) {
             Loop::cancelTimer($this->liveReloadPingTimer);
             $this->liveReloadPingTimer = null;
+        }
+        if ($this->liveReloadPollingTimer !== null) {
+            Loop::cancelTimer($this->liveReloadPollingTimer);
+            $this->liveReloadPollingTimer = null;
         }
 
         if ($this->liveReloadStream !== null) {
