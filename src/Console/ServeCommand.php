@@ -457,8 +457,10 @@ final class ServeCommand extends Command
         foreach ($this->liveReloadWatchedDirectories() as $directory) {
             $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS));
             foreach ($iterator as $file) {
+                /** @var \SplFileInfo $file */
                 if ($file->isFile()) {
-                    $snapshot[$file->getPathname()] = $file->getMTime() . ':' . $file->getSize();
+                    $path = $file->getPathname();
+                    $snapshot[$path] = (string) $file->getMTime() . ':' . (string) $file->getSize();
                 }
             }
         }

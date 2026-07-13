@@ -62,7 +62,7 @@ final class ServeCommandTest extends TestCase
         $property->setValue($command, $root . '/content');
         $method = new ReflectionMethod(ServeCommand::class, 'liveReloadFileSnapshot');
         $before = $method->invoke($command);
-        file_put_contents($root . '/content/index.md', 'two');
+        file_put_contents($root . '/content/index.md', 'changed content');
         clearstatcache(true, $root . '/content/index.md');
         $after = $method->invoke($command);
         self::assertNotSame($before, $after);
