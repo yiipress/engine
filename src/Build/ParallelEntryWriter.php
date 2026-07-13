@@ -81,6 +81,7 @@ final readonly class ParallelEntryWriter
 
     /**
      * @param list<array{entry: Entry, filePath: string, permalink: string, navigationPager?: array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null}> $tasks
+     * @param array<string, Author> $authors
      */
     public function writeChunk(SiteConfig $siteConfig, array $tasks, string $contentDir, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors, bool $noWrite): void
     {
