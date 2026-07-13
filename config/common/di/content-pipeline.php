@@ -10,6 +10,7 @@ use YiiPress\Console\CleanCommand;
 use YiiPress\Console\InitCommand;
 use YiiPress\Console\NewCommand;
 use YiiPress\Console\ThemeInitCommand;
+use YiiPress\Console\WorkerCommand;
 use YiiPress\Processor\ContentProcessorPipeline;
 use YiiPress\Processor\LatexMath\LatexMathProcessor;
 use YiiPress\Processor\Mermaid\MermaidProcessor;
@@ -58,6 +59,16 @@ return [
         ],
     ],
     BuildCommand::class => [
+        '__construct()' => [
+            'rootPath' => $workingDirectory,
+            'contentPipeline' => Reference::to('contentPipeline'),
+            'feedPipeline' => Reference::to('feedPipeline'),
+            'themeRegistry' => Reference::to(ThemeRegistry::class),
+            'templateResolver' => Reference::to(TemplateResolver::class),
+            'eventDispatcher' => Reference::to(EventDispatcherInterface::class),
+        ],
+    ],
+    WorkerCommand::class => [
         '__construct()' => [
             'rootPath' => $workingDirectory,
             'contentPipeline' => Reference::to('contentPipeline'),

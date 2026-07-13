@@ -162,7 +162,7 @@ Performance is handled by doing less work, keeping expensive work native, and le
 - OPCache can reuse compiled PHP templates when the runtime enables it.
 - JIT and preloading remain available to source installs where the PHP runtime is managed directly.
 
-Fork-based parallelism uses `pcntl_fork()`. Each worker receives the indexed site, renders its assigned pages, and writes independent files. Secondary outputs stay sequential or are parallelized only when the page count is high enough to justify worker overhead.
+Parallel builds use `pcntl_fork()` where it is available. On Windows, YiiPress starts portable child processes through the packaged executable and passes each one an isolated typed rendering job. Each worker receives the indexed site, renders its assigned pages, and writes independent files. Secondary outputs stay sequential or are parallelized only when the page count is high enough to justify worker overhead.
 
 This approach avoids shared memory and synchronization. Feed generation can split work per collection when workers are enabled because feeds may render every entry body again. Sitemap and robots output remain serial.
 

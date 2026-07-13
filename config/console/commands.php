@@ -5,6 +5,7 @@ declare(strict_types=1);
 use YiiPress\Console;
 
 return [
+    '_worker' => Console\WorkerCommand::class,
     'build' => Console\BuildCommand::class,
     'check:links' => Console\CheckCommand::class,
     'clean|clear' => Console\CleanCommand::class,

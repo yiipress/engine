@@ -49,6 +49,7 @@
 
 - [x] Live reload / file watching during `yiipress serve`
 - [x] Windows-compatible `yiipress serve` without PCNTL or POSIX signal handlers
+- [x] Multiple build workers on Windows without PCNTL
 - [x] PHAR and static PHP binary packaging
 - [x] Worker-mode serving for PHAR and static PHP binary packages
 - [x] Linux, macOS, Windows, and distroless Docker release packaging

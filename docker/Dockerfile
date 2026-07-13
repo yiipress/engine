@@ -12,7 +12,7 @@ COPY docker/php.ini $PHP_INI_DIR/conf.d/98-yiipress.ini
 RUN install-php-extensions \
     opcache \
     mbstring \
-    inotify \
+    inotify-3.0.1 \
     dom \
     ctype \
     curl \

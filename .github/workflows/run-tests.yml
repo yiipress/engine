@@ -12,6 +12,37 @@ on:
   workflow_dispatch:
 
 jobs:
+  portable-workers:
+    name: Portable workers (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    env:
+      APP_DEBUG: 'false'
+      APP_ENV: test
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-14, windows-2022]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: '8.5'
+          coverage: none
+
+      - name: Install test dependencies
+        run: composer install --no-progress --no-interaction --ignore-platform-reqs
+
+      - name: Test portable worker processes
+        run: vendor/bin/phpunit tests/Unit/Build/PortableWorkerPoolTest.php
+
   test:
     name: Linux PHPUnit
     runs-on: ubuntu-latest
@@ -130,7 +161,22 @@ jobs:
                   ""
                   "Welcome from Windows."
               )
-              Invoke-YiiPress "build" "--no-cache"
+              1..128 | ForEach-Object {
+                  Set-Content -Path "content/blog/worker-$_.md" -Encoding utf8NoBOM -Value @(
+                      "---"
+                      "title: Worker $_"
+                      "---"
+                      ""
+                      "Rendered by a portable worker."
+                  )
+              }
+              $buildOutput = & $binary "build" "--no-cache" "--workers=2" 2>&1
+              if ($LASTEXITCODE -ne 0) {
+                  throw "Parallel build failed with exit code ${LASTEXITCODE}: $($buildOutput -join [Environment]::NewLine)"
+              }
+              if (($buildOutput -join [Environment]::NewLine) -notmatch "using\s+2\s+workers") {
+                  throw "Expected the build to use two workers: $($buildOutput -join [Environment]::NewLine)"
+              }
               Invoke-YiiPress "check:links"
 
               if (!(Test-Path "output/index.html")) {

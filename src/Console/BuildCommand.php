@@ -51,8 +51,7 @@ use YiiPress\Hook\BuildFinishedEvent;
 use YiiPress\Hook\BuildStartedEvent;
 use YiiPress\I18n\UiText;
 use YiiPress\Processor\ContentProcessorPipeline;
-use YiiPress\Processor\MarkdownProcessor;
-use YiiPress\Processor\ProjectProcessorLoader;
+use YiiPress\Processor\ProjectProcessorConfigurator;
 use YiiPress\RuntimePaths;
 use DateTimeImmutable;
 use FilesystemIterator;
@@ -234,8 +233,6 @@ final class BuildCommand extends Command
         try {
             $siteConfig = $parser->parseSiteConfig($contentDir);
             $this->configureProjectProcessors($contentDir, $siteConfig);
-            $this->contentPipeline->applySiteConfig($siteConfig);
-            $this->feedPipeline->applySiteConfig($siteConfig);
         } catch (FriendlyExceptionInterface $e) {
             $this->writeFriendlyException($output, $e);
             $this->writeProfile($output, $profile);
@@ -1209,6 +1206,11 @@ final class BuildCommand extends Command
             return $allowedCpuCount;
         }
 
+        $windowsCpuCount = getenv('NUMBER_OF_PROCESSORS');
+        if ($windowsCpuCount !== false && ctype_digit($windowsCpuCount) && (int) $windowsCpuCount > 0) {
+            return (int) $windowsCpuCount;
+        }
+
         $nproc = trim((string) shell_exec('nproc 2>/dev/null'));
         if (ctype_digit($nproc) && (int) $nproc > 0) {
             return (int) $nproc;
@@ -1819,15 +1821,7 @@ final class BuildCommand extends Command
 
     private function configureProjectProcessors(string $contentDir, SiteConfig $siteConfig): void
     {
-        $processors = (new ProjectProcessorLoader($contentDir, $contentDir . '/config.yaml'))->load($siteConfig->processors);
-
-        $this->contentPipeline->reset();
-        $this->feedPipeline->reset();
-
-        $this->contentPipeline->insertBefore(MarkdownProcessor::class, ...$processors->contentBeforeMarkdown);
-        $this->contentPipeline->insertAfter(MarkdownProcessor::class, ...$processors->contentAfterMarkdown);
-        $this->feedPipeline->insertBefore(MarkdownProcessor::class, ...$processors->feedBeforeMarkdown);
-        $this->feedPipeline->insertAfter(MarkdownProcessor::class, ...$processors->feedAfterMarkdown);
+        (new ProjectProcessorConfigurator($this->contentPipeline, $this->feedPipeline))->configure($contentDir, $siteConfig);
     }
 
     /**
