@@ -407,6 +407,9 @@ final class ServeCommand extends Command
 
         $stream = function_exists('inotify_init') ? inotify_init() : false;
         if ($stream === false) {
+            if ($this->liveReloadPollingTimer !== null) {
+                return;
+            }
             $this->liveReloadSnapshot = $this->liveReloadFileSnapshot();
             $this->liveReloadPollingTimer = Loop::addPeriodicTimer(1.0, function (): void {
                 $snapshot = $this->liveReloadFileSnapshot();
@@ -454,7 +457,10 @@ final class ServeCommand extends Command
     private function liveReloadFileSnapshot(): array
     {
         $snapshot = [];
-        foreach ($this->liveReloadWatchedDirectories() as $directory) {
+        foreach ([$this->contentDir(), $this->workingDirectory() . '/themes'] as $directory) {
+            if (!is_dir($directory)) {
+                continue;
+            }
             $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS));
             foreach ($iterator as $file) {
                 /** @var \SplFileInfo $file */
@@ -509,6 +515,10 @@ final class ServeCommand extends Command
         if ($this->liveReloadPingTimer !== null) {
             Loop::cancelTimer($this->liveReloadPingTimer);
             $this->liveReloadPingTimer = null;
+        }
+        if ($this->liveReloadPollingTimer !== null) {
+            Loop::cancelTimer($this->liveReloadPollingTimer);
+            $this->liveReloadPollingTimer = null;
         }
 
         if ($this->liveReloadStream !== null) {
