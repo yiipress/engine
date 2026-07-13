@@ -86,6 +86,8 @@ require_command() {
     fi
 }
 
+require_command upx
+
 write_log_tail() {
     local path="$1"
     if [ -f "$path" ]; then
@@ -227,4 +229,5 @@ invoke php bin/spc micro:combine "$PHAR_PATH" -O "$BIN_PATH"
 popd >/dev/null
 
 chmod +x "$BIN_PATH"
+invoke upx --best --lzma "$BIN_PATH"
 printf 'Built %s\n' "$BIN_PATH"

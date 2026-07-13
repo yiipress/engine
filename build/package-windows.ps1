@@ -100,7 +100,7 @@ function Get-PackagistLatestStableVersion {
     throw "Unable to determine latest stable Packagist version for $Package."
 }
 
-foreach ($command in @("php", "composer", "tar", "rustup", "cargo")) {
+foreach ($command in @("php", "composer", "tar", "rustup", "cargo", "upx")) {
     Test-NativeCommand $command
 }
 
@@ -235,6 +235,7 @@ try {
         throw
     }
     Invoke-NativeCommand "php" @("bin/spc", "micro:combine", $pharPath, "-O", $exePath)
+    Invoke-NativeCommand "upx" @("--best", "--lzma", $exePath)
 } finally {
     Pop-Location
 }
