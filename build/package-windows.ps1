@@ -100,7 +100,7 @@ function Get-PackagistLatestStableVersion {
     throw "Unable to determine latest stable Packagist version for $Package."
 }
 
-foreach ($command in @("php", "composer", "tar", "rustup", "cargo", "upx")) {
+foreach ($command in @("php", "composer", "tar", "rustup", "cargo")) {
     Test-NativeCommand $command
 }
 
@@ -214,6 +214,7 @@ try {
         "--without-suggestions"
     )
     Invoke-NativeCommand "php" @("bin/spc", "doctor", "--auto-fix")
+    Invoke-NativeCommand "php" @("bin/spc", "install-pkg", "upx")
     $buildrootLibraryPath = Join-Path $staticPhpPath "buildroot/lib"
     New-Item -ItemType Directory -Force -Path $buildrootLibraryPath | Out-Null
     Copy-Item `
@@ -226,6 +227,7 @@ try {
             "build",
             $StaticPhpExtensions,
             "--build-micro",
+            "--with-upx-pack",
             "-P",
             (Join-Path $root "build/static-php/register-yiipress-highlighter.php")
         )
@@ -235,7 +237,6 @@ try {
         throw
     }
     Invoke-NativeCommand "php" @("bin/spc", "micro:combine", $pharPath, "-O", $exePath)
-    Invoke-NativeCommand "upx" @("--best", "--lzma", $exePath)
 } finally {
     Pop-Location
 }

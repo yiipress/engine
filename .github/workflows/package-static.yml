@@ -144,8 +144,6 @@ jobs:
       - name: Set up MSVC
         uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756
 
-      - name: Install UPX
-        run: choco install upx -y --no-progress
 
       - name: Cache Windows package dependencies
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
@@ -201,7 +199,7 @@ jobs:
 
       - name: Install macOS package dependencies
         run: |
-          brew install autoconf automake bison re2c pkgconf upx
+          brew install autoconf automake bison re2c pkgconf
           echo "$(brew --prefix bison)/bin" >> "$GITHUB_PATH"
 
       - name: Cache macOS package dependencies
