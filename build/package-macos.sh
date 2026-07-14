@@ -86,6 +86,7 @@ require_command() {
     fi
 }
 
+
 write_log_tail() {
     local path="$1"
     if [ -f "$path" ]; then
@@ -141,6 +142,10 @@ exit(1);
 for command in php composer tar curl rustup cargo make; do
     require_command "$command"
 done
+
+if ! command -v wrappe >/dev/null 2>&1; then
+    invoke cargo install --locked --version 1.0.4 wrappe
+fi
 
 mkdir -p "$DIST_PATH" "$WORK_PATH"
 rm -f "${DIST_PATH}/yiipress.phar"
@@ -226,5 +231,13 @@ fi
 invoke php bin/spc micro:combine "$PHAR_PATH" -O "$BIN_PATH"
 popd >/dev/null
 
+chmod +x "$BIN_PATH"
+PACK_PATH="${WORK_PATH}/wrappe-input"
+PACKED_PATH="${WORK_PATH}/yiipress-packed"
+rm -rf "$PACK_PATH" "$PACKED_PATH"
+mkdir -p "$PACK_PATH"
+cp "$BIN_PATH" "$PACK_PATH/yiipress"
+invoke wrappe --compression 16 "$PACK_PATH" yiipress "$PACKED_PATH"
+mv "$PACKED_PATH" "$BIN_PATH"
 chmod +x "$BIN_PATH"
 printf 'Built %s\n' "$BIN_PATH"

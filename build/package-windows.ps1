@@ -214,6 +214,7 @@ try {
         "--without-suggestions"
     )
     Invoke-NativeCommand "php" @("bin/spc", "doctor", "--auto-fix")
+    Invoke-NativeCommand "php" @("bin/spc", "install-pkg", "upx")
     $buildrootLibraryPath = Join-Path $staticPhpPath "buildroot/lib"
     New-Item -ItemType Directory -Force -Path $buildrootLibraryPath | Out-Null
     Copy-Item `
@@ -226,6 +227,7 @@ try {
             "build",
             $StaticPhpExtensions,
             "--build-micro",
+            "--with-upx-pack",
             "-P",
             (Join-Path $root "build/static-php/register-yiipress-highlighter.php")
         )

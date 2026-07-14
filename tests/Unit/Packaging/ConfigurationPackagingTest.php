@@ -229,6 +229,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('buildroot/lib', $script);
         self::assertStringContainsString('highlighter.lib', $script);
         self::assertStringContainsString('$env:RUSTFLAGS = "-C target-feature=+crt-static"', $script);
+        self::assertStringContainsString('upx', $script);
     }
 
     #[Test]
@@ -244,6 +245,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('aarch64-apple-darwin', $script);
         self::assertStringContainsString('x86_64-apple-darwin', $script);
         self::assertStringContainsString('micro:combine', $script);
+        self::assertStringContainsString('wrappe --compression 16', $script);
         self::assertStringContainsString('APP_PATH="${WORK_PATH}/app"', $script);
         self::assertStringContainsString('pushd "$APP_PATH"', $script);
         self::assertStringContainsString('require_command "$command"', $script);
