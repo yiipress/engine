@@ -15,6 +15,7 @@ use YiiPress\Processor\ContentProcessorPipeline;
 use YiiPress\Processor\LatexMath\LatexMathProcessor;
 use YiiPress\Processor\Mermaid\MermaidProcessor;
 use YiiPress\Processor\OEmbed\OEmbedProcessor;
+use YiiPress\Processor\Shortcode\CodeGroupProcessor;
 use YiiPress\Processor\Shortcode\TweetProcessor;
 use YiiPress\Processor\Shortcode\VimeoProcessor;
 use YiiPress\Processor\Shortcode\YouTubeProcessor;
@@ -43,11 +44,13 @@ return [
             Reference::to(VimeoProcessor::class),
             Reference::to(TweetProcessor::class),
             Reference::to(OEmbedProcessor::class),
+            Reference::to(CodeGroupProcessor::class),
             Reference::to(MarkdownProcessor::class),
             Reference::to(LatexMathProcessor::class),
             Reference::to(TagLinkProcessor::class),
             Reference::to(MermaidProcessor::class),
             Reference::to(SyntaxHighlightProcessor::class),
+            Reference::to(CodeGroupProcessor::class),
             Reference::to(TocProcessor::class),
         ],
     ],

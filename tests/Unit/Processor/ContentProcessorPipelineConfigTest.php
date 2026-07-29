@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 use YiiPress\Processor\ContentProcessorPipeline;
 use YiiPress\Processor\LatexMath\LatexMathProcessor;
+use YiiPress\Processor\Shortcode\CodeGroupProcessor;
 use Yiisoft\Definitions\Reference;
 
 use function dirname;
@@ -26,6 +27,7 @@ final class ContentProcessorPipelineConfigTest extends TestCase
         }
 
         self::assertContains(LatexMathProcessor::class, $registeredProcessorIds);
+        self::assertSame(2, array_count_values($registeredProcessorIds)[CodeGroupProcessor::class] ?? 0);
 
         $pipeline = new ContentProcessorPipeline(new LatexMathProcessor());
         self::assertStringContainsString(

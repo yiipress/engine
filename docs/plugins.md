@@ -222,6 +222,47 @@ Both shortcode processors support:
 - Double quotes, single quotes, or no quotes for attribute values (no spaces)
 - Case-insensitive shortcode names
 
+### Tabbed code groups
+
+The built-in `CodeGroupProcessor` groups two or more labeled fenced code blocks. It uses
+the existing shortcode format, while the code itself remains ordinary fenced Markdown:
+
+````markdown
+[code-group]
+[code-tab label="npm"]
+```sh
+npm install
+```
+[/code-tab]
+[code-tab label="pnpm"]
+```sh
+pnpm install
+```
+[/code-tab]
+[/code-group]
+````
+
+The generated HTML contains every code block and remains readable without JavaScript.
+The browser enhancer activates one panel at a time and supports Left/Right arrow, Home,
+and End keys. Each group has independent ARIA tab and panel IDs.
+
+The processor is a regular configurable plugin. Projects using DI configuration can
+change both shortcode names without adding a new parser or syntax:
+
+```php
+use YiiPress\Processor\Shortcode\CodeGroupProcessor;
+
+CodeGroupProcessor::class => [
+    'class' => CodeGroupProcessor::class,
+    '__construct()' => [
+        'groupShortcode' => 'switcher',
+        'tabShortcode' => 'option',
+    ],
+],
+```
+
+That configuration uses `[switcher]` and `[option label="..."]`.
+
 ### Project Processors
 
 Static binary users can add site-level content processors without editing Yii3 DI configuration. Put PHP processor files in `content/processors/`; files matching `*.php` are discovered automatically, sorted by filename, and inserted before Markdown rendering in both the page and feed pipelines.
