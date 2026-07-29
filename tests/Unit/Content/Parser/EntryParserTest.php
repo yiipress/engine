@@ -241,6 +241,34 @@ final class EntryParserTest extends TestCase
         }
     }
 
+    public function testParsesEnabledLastUpdatedVisibilityOverride(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-last-updated-');
+        file_put_contents($file, "---\ntitle: Generated\nlast_updated: true\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+
+            assertTrue($entry->lastUpdated);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testLastUpdatedVisibilityIsInheritedWhenNull(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-last-updated-');
+        file_put_contents($file, "---\ntitle: Generated\nlast_updated: null\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+
+            assertNull($entry->lastUpdated);
+        } finally {
+            unlink($file);
+        }
+    }
+
     public function testLastUpdatedVisibilityIsInheritedWhenOmitted(): void
     {
         $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-last-updated-');
