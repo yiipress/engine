@@ -14,6 +14,8 @@ use PHPUnit\Framework\TestCase;
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertNotSame;
 use function PHPUnit\Framework\assertNotFalse;
+use function PHPUnit\Framework\assertStringContainsString;
+use function PHPUnit\Framework\assertStringNotContainsString;
 use function class_exists;
 
 final class SyntaxHighlightProcessorTest extends TestCase
@@ -38,6 +40,40 @@ final class SyntaxHighlightProcessorTest extends TestCase
         $configuredResult = $configuredProcessor->process($html, $this->createEntry());
 
         assertNotSame($defaultResult, $configuredResult);
+    }
+
+    public function testPreservesNormalizedLanguageMetadataAroundHighlightedBlock(): void
+    {
+        $html = '<pre><code class="language-PHP">&lt;?php echo 1;</code></pre>';
+
+        $result = (new SyntaxHighlightProcessor(new Highlighter()))->process($html, $this->createEntry());
+
+        assertStringContainsString(
+            '<div class="code-block" data-language="php"><span class="code-language-label">PHP</span><pre',
+            $result,
+        );
+        assertStringContainsString('style=', $result);
+        assertStringNotContainsString('language-PHP', $result);
+    }
+
+    public function testPreservesUnknownLanguageMetadataWhenHighlighterFallsBackToPlainText(): void
+    {
+        $html = '<pre><code class="language-custom-lang">some code</code></pre>';
+
+        $result = (new SyntaxHighlightProcessor(new Highlighter()))->process($html, $this->createEntry());
+
+        assertStringContainsString('data-language="custom-lang"', $result);
+        assertStringContainsString('<span class="code-language-label">CUSTOM-LANG</span>', $result);
+        assertStringContainsString('some code', $result);
+    }
+
+    public function testLeavesUnlabeledCodeBlockUnwrapped(): void
+    {
+        $html = '<pre><code>plain code</code></pre>';
+
+        $result = (new SyntaxHighlightProcessor(new Highlighter()))->process($html, $this->createEntry());
+
+        assertSame($html, $result);
     }
 
     private function createEntry(): Entry

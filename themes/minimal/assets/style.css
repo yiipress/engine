@@ -304,6 +304,22 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
     margin: 0;
     padding-right: 4.5rem;
 }
+.code-language-label {
+    position: absolute;
+    top: .75rem;
+    right: .75rem;
+    z-index: 1;
+    color: var(--c-text-muted);
+    font-size: .75rem;
+    font-weight: 600;
+    line-height: 1;
+    pointer-events: none;
+    transition: opacity .15s;
+}
+.code-block:hover .code-language-label,
+.code-block:focus-within .code-language-label {
+    opacity: 0;
+}
 .code-copy-button {
     position: absolute;
     top: .5rem;

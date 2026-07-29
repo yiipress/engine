@@ -65,9 +65,12 @@ defines the PHP API as `YiiPress\Highlighter`, builds a Rust
 library with [syntect](https://github.com/trishume/syntect) and [rayon](https://github.com/rayon-rs/rayon),
 then statically links that library into `ext-highlighter`. It processes all
 `<pre><code class="language-xxx">` blocks in the rendered HTML, replacing them with
-inline-styled highlighted output.
+inline-styled highlighted output. `SyntaxHighlightProcessor` preserves the normalized language
+identifier in a surrounding `<div class="code-block" data-language="php">` and emits a visible
+`.code-language-label`, so custom themes can style or reposition the label without inspecting code.
 
-The bundled `minimal` theme adds a client-side **Copy** button to rendered code blocks.
+The bundled `minimal` theme displays the language label and adds a client-side **Copy** button to
+rendered code blocks. Unlabeled blocks remain unchanged and still receive a copy button.
 
 ## LaTeX math
 
