@@ -144,7 +144,18 @@ extra:
 - **weight** — integer for custom sorting in non-blog collections (lower = first)
 - **language** — language code for multilingual content (e.g., `en`, `ru`)
 - **redirect_to** — URL to redirect to; generates a redirect HTML page (with `<meta http-equiv="refresh">`, JS `window.location.replace()`, and `<link rel="canonical">`) instead of rendering content. Redirect entries are excluded from feeds, sitemaps, listings, archives, and taxonomy pages. Root-relative targets such as `/new-url/` are YiiPress site-root paths; when `base_url` includes a deployment path, YiiPress prefixes that path in the generated redirect target. Absolute URLs are emitted unchanged
+- **previous**, **next** — per-entry pager overrides. Omit a direction to inherit its link from sidebar navigation when `navigation_pager` is enabled for the collection, set it to `false` to hide that direction, or provide both `text` and `link` for a custom link. Custom links also work when collection navigation paging is disabled. Relative and root-relative internal links and absolute HTTP(S) links are accepted; unsafe URL schemes fail the build. Root-relative links are rendered relative to the output page, so they work when `base_url` contains a deployment subdirectory
 - **extra** — arbitrary key-value pairs accessible in templates
+
+Pager precedence is resolved independently for each direction: an entry override wins, an omitted
+override inherits the navigation-derived link, and a missing navigation neighbor produces no link.
+
+```yaml
+previous: false
+next:
+  text: Advanced guide
+  link: /guide/advanced/
+```
 
 Front matter must be valid YAML key-value pairs. Syntax errors fail the build with the affected file path instead of being ignored.
 

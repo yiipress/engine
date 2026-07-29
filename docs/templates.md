@@ -175,7 +175,7 @@ Built-in templates and partials expect `$ui` to be passed by the renderer; `Page
 | `$related`    | `list<RelatedEntry>` | Related entries ordered by relevance or empty list        |
 | `$language`   | `string`      | Effective language code for the current entry                    |
 | `$translations` | `list<Translation>` | Alternate-language versions of the current entry           |
-| `$navigationPager` | `?array{previous: ?array, next: ?array}` | Previous/next links resolved from sidebar navigation when enabled |
+| `$navigationPager` | `?array{previous: ?array, next: ?array}` | Final previous/next links after per-entry overrides are applied to sidebar-derived navigation |
 | `$lastUpdated` | `?array{iso: string, text: string}` | Source file modification time when `last_updated` is enabled |
 | `$editPageUrl` | `string` | Resolved edit-page URL when `edit_page` is configured, otherwise empty |
 | `$reportIssueUrl` | `string` | Resolved issue-report URL when `report_issue` is configured, otherwise empty |

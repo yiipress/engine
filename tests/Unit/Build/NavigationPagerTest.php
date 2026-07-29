@@ -50,6 +50,48 @@ final class NavigationPagerTest extends TestCase
         assertNull(NavigationPager::forUrl($this->createNavigation(), 'sidebar', '/missing/'));
     }
 
+    public function testAppliesOverridesIndependently(): void
+    {
+        $inherited = NavigationPager::forUrl($this->createNavigation(), 'sidebar', '/content/');
+
+        $pager = NavigationPager::withOverrides(
+            $inherited,
+            false,
+            ['text' => 'Custom next', 'link' => '/custom/next/'],
+        );
+
+        assertSame(
+            [
+                'previous' => null,
+                'next' => ['title' => 'Custom next', 'url' => '/custom/next/'],
+            ],
+            $pager,
+        );
+    }
+
+    public function testCustomOverrideCreatesPagerWithoutNavigationData(): void
+    {
+        assertSame(
+            [
+                'previous' => ['title' => 'External guide', 'url' => 'https://example.com/guide'],
+                'next' => null,
+            ],
+            NavigationPager::withOverrides(
+                null,
+                ['text' => 'External guide', 'link' => 'https://example.com/guide'],
+                null,
+            ),
+        );
+    }
+
+    public function testOmittedOverridesPreserveInheritedPager(): void
+    {
+        $inherited = NavigationPager::forUrl($this->createNavigation(), 'sidebar', '/content/');
+
+        assertSame($inherited, NavigationPager::withOverrides($inherited, null, null));
+        assertNull(NavigationPager::withOverrides(null, null, null));
+    }
+
     private function createNavigation(): Navigation
     {
         return new Navigation([

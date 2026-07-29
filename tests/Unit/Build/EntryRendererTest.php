@@ -119,6 +119,26 @@ final class EntryRendererTest extends TestCase
         assertStringNotContainsString('class="entry-pager"', $html);
     }
 
+    public function testRendersInternalCustomPagerUrlRelativeToDeploymentPage(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Current\n---\n\nBody.\n");
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Current');
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver(), contentDir: $this->contentDir);
+        $html = $renderer->render(
+            $this->createSiteConfig(baseUrl: 'https://example.com/project/'),
+            $entry,
+            '/guide/current/',
+            navigationPager: [
+                'previous' => null,
+                'next' => ['title' => 'Custom Page', 'url' => '/guide/custom/'],
+            ],
+        );
+
+        assertStringContainsString('href="../../guide/custom/" rel="next"', $html);
+    }
+
     public function testRendersLastUpdatedWhenEnabled(): void
     {
         $entryFile = $this->contentDir . '/blog/post.md';
@@ -582,12 +602,50 @@ PHP);
         $entry = $this->createEntry(filePath: $entryFile, title: 'Cached Post', layout: 'spaced');
         $html = $renderer->render($this->createSiteConfig(theme: 'custom'), $entry, '/blog/cached-post/');
 
-        $cacheFiles = array_values(array_filter(scandir($cacheDir), static fn (string $file): bool => $file !== '.' && $file !== '..'));
+        $cacheFiles = array_values(array_filter(scandir($cacheDir), static fn(string $file): bool => $file !== '.' && $file !== '..'));
 
         $this->assertCount(1, $cacheFiles);
         assertSame($html, file_get_contents($cacheDir . '/' . $cacheFiles[0]));
         assertStringContainsString('<html><body><main> Cached body. </main></body></html>', $html);
         assertStringNotContainsString("\n", (string) file_get_contents($cacheDir . '/' . $cacheFiles[0]));
+    }
+
+    public function testResolvedPagerDataChangesCacheSignature(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Cached Pager\n---\n\nBody.\n");
+
+        $templateResolver = $this->createTemplateResolver();
+        $cacheDir = $this->contentDir . '/cache';
+        $renderer = new EntryRenderer(
+            $this->createPipeline(),
+            $templateResolver,
+            cache: new BuildCache($cacheDir, $templateResolver->templateDirs()),
+            contentDir: $this->contentDir,
+        );
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Cached Pager');
+
+        $first = $renderer->render(
+            $this->createSiteConfig(),
+            $entry,
+            '/guide/current/',
+            navigationPager: ['previous' => null, 'next' => ['title' => 'First', 'url' => '/first/']],
+        );
+        $second = $renderer->render(
+            $this->createSiteConfig(),
+            $entry,
+            '/guide/current/',
+            navigationPager: ['previous' => null, 'next' => ['title' => 'Second', 'url' => '/second/']],
+        );
+
+        $cacheFiles = array_values(array_filter(
+            scandir($cacheDir),
+            static fn(string $file): bool => $file !== '.' && $file !== '..',
+        ));
+
+        $this->assertCount(2, $cacheFiles);
+        assertStringContainsString('First', $first);
+        assertStringContainsString('Second', $second);
     }
 
     private function createPipeline(): ContentProcessorPipeline
@@ -615,12 +673,12 @@ PHP);
         bool $authorPages = false,
         bool $minify = true,
         array $data = [],
-    ): SiteConfig
-    {
+        string $baseUrl = 'https://example.com',
+    ): SiteConfig {
         return new SiteConfig(
             title: 'Test Site',
             description: '',
-            baseUrl: 'https://example.com',
+            baseUrl: $baseUrl,
             defaultLanguage: 'en',
             charset: 'UTF-8',
             defaultAuthor: '',

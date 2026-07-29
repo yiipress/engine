@@ -1956,19 +1956,24 @@ final class BuildCommand extends Command
      */
     private function withNavigationPager(array $task, Collection $collection, SiteConfig $siteConfig, Navigation $navigation): array
     {
-        if (!$collection->navigationPager) {
-            return $task;
+        $entry = $task['entry'];
+        $navigationPager = null;
+        if ($collection->navigationPager) {
+            $language = $entry->language !== ''
+                ? $entry->language
+                : ($siteConfig->i18n?->defaultLanguage ?? $siteConfig->defaultLanguage);
+            $navigationPager = NavigationPager::forUrl(
+                $navigation,
+                'sidebar',
+                $task['permalink'],
+                $language,
+                $siteConfig->defaultLanguage,
+            );
         }
-
-        $language = $task['entry']->language !== ''
-            ? $task['entry']->language
-            : ($siteConfig->i18n?->defaultLanguage ?? $siteConfig->defaultLanguage);
-        $navigationPager = NavigationPager::forUrl(
-            $navigation,
-            'sidebar',
-            $task['permalink'],
-            $language,
-            $siteConfig->defaultLanguage,
+        $navigationPager = NavigationPager::withOverrides(
+            $navigationPager,
+            $entry->previous,
+            $entry->next,
         );
 
         if ($navigationPager !== null) {

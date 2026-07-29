@@ -9,6 +9,7 @@ use DateMalformedStringException;
 use DateTimeImmutable;
 
 use function is_array;
+use function is_string;
 
 final readonly class EntryParser
 {
@@ -106,7 +107,74 @@ final readonly class EntryParser
             aliases: isset($fields['aliases']) && is_array($fields['aliases'])
                 ? array_values(array_map(strval(...), $fields['aliases']))
                 : [],
+            previous: $this->parsePagerOverride($fields, 'previous', $filePath),
+            next: $this->parsePagerOverride($fields, 'next', $filePath),
         );
+    }
+
+    /**
+     * @param array<string, mixed> $fields
+     * @return array{text: string, link: string}|false|null
+     */
+    private function parsePagerOverride(array $fields, string $direction, string $filePath): array|false|null
+    {
+        if (!array_key_exists($direction, $fields)) {
+            return null;
+        }
+
+        $value = $fields[$direction];
+        if ($value === false) {
+            return false;
+        }
+
+        if (
+            !is_array($value)
+            || count($value) !== 2
+            || !array_key_exists('text', $value)
+            || !array_key_exists('link', $value)
+            || !is_string($value['text'])
+            || trim($value['text']) === ''
+            || !is_string($value['link'])
+            || trim($value['link']) === ''
+        ) {
+            throw new InvalidContentConfigException(
+                sprintf('Invalid "%s" pager override in front matter: %s', $direction, $filePath),
+                $filePath,
+                sprintf(
+                    'Omit "%1$s" to inherit it, set "%1$s: false" to disable it, or use "%1$s: {text: Title, link: /page/}".',
+                    $direction,
+                ),
+            );
+        }
+
+        $link = trim($value['link']);
+        if (!$this->isSafePagerUrl($link)) {
+            throw new InvalidContentConfigException(
+                sprintf('Unsafe URL in "%s" pager override: %s', $direction, $filePath),
+                $filePath,
+                'Use a relative or root-relative internal URL, or an absolute http:// or https:// URL.',
+            );
+        }
+
+        return ['text' => trim($value['text']), 'link' => $link];
+    }
+
+    private function isSafePagerUrl(string $url): bool
+    {
+        if (preg_match('/[\x00-\x1F\x7F]/', $url) === 1 || str_starts_with($url, '//')) {
+            return false;
+        }
+
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+
+        if ($scheme === null) {
+            return true;
+        }
+        if ($scheme === false || !in_array(strtolower($scheme), ['http', 'https'], true)) {
+            return false;
+        }
+
+        return filter_var($url, FILTER_VALIDATE_URL) !== false;
     }
 
     /**
