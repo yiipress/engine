@@ -148,11 +148,11 @@ available:
 ```yaml
 ---
 title: Generated API reference
-editLink: false
+edit_link: false
 ---
 ```
 
-Omitting `editLink` (or setting it to `true`) preserves the site-wide `edit_page` behavior.
+Omitting `edit_link` (or setting it to `true`) preserves the site-wide `edit_page` behavior.
 
 ### Multilingual support
 

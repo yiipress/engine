@@ -1,6 +1,6 @@
 ---
 title: "GitHub Actions"
-showTitle: true
+show_title: true
 ---
 
 YiiPress provides a composite GitHub Action that downloads the Linux static binary from a YiiPress release and runs `yiipress build`. It is intended for site repositories that want a fast build without installing PHP, Composer, Docker, or YiiPress source dependencies.
