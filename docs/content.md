@@ -123,10 +123,6 @@ theme: custom
 weight: 10
 language: en
 redirect_to: /new-url/
-previous: false
-next:
-  text: Continue with deployment
-  link: /deployment/
 extra:
   custom_field: value
 ---
@@ -157,8 +153,8 @@ override inherits the navigation-derived link, and a missing navigation neighbor
 ```yaml
 previous: false
 next:
-  text: Advanced configuration
-  link: /configuration/advanced/
+  text: Advanced guide
+  link: /guide/advanced/
 ```
 
 Front matter must be valid YAML key-value pairs. Syntax errors fail the build with the affected file path instead of being ignored.
