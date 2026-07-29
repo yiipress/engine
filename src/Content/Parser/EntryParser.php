@@ -9,6 +9,7 @@ use DateMalformedStringException;
 use DateTimeImmutable;
 
 use function is_array;
+use function is_bool;
 use function is_string;
 
 final readonly class EntryParser
@@ -109,7 +110,27 @@ final readonly class EntryParser
                 : [],
             previous: $this->parsePagerOverride($fields, 'previous', $filePath),
             next: $this->parsePagerOverride($fields, 'next', $filePath),
+            editLink: $this->parseEditLink($fields, $filePath),
         );
+    }
+
+    /**
+     * @param array<string, mixed> $fields
+     */
+    private function parseEditLink(array $fields, string $filePath): ?bool
+    {
+        if (!array_key_exists('editLink', $fields) || $fields['editLink'] === null) {
+            return null;
+        }
+        if (!is_bool($fields['editLink'])) {
+            throw new InvalidContentConfigException(
+                "Invalid \"editLink\" visibility override in front matter: $filePath",
+                $filePath,
+                'Omit "editLink" to inherit it, or set it to true or false.',
+            );
+        }
+
+        return $fields['editLink'];
     }
 
     /**

@@ -108,6 +108,7 @@
 - [x] oEmbed support (auto-expanding URLs to embeds) as a plugin
 - [x] [Code block language labels](https://github.com/yiipress/engine/issues/105)
 - [x] [Per-entry previous/next pager overrides](https://github.com/yiipress/engine/issues/113)
+- [x] [Per-entry edit-link visibility override](https://github.com/yiipress/engine/issues/112)
 
 ## Priority 8: Advanced features
 

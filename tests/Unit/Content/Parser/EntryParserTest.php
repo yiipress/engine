@@ -94,6 +94,50 @@ final class EntryParserTest extends TestCase
         }
     }
 
+    public function testParsesEditLinkVisibilityOverride(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-edit-link-') . '.md';
+        file_put_contents($file, "---\ntitle: Generated\neditLink: false\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+
+            assertFalse($entry->editLink);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testEditLinkVisibilityIsInheritedWhenOmitted(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-edit-link-') . '.md';
+        file_put_contents($file, "---\ntitle: Editable\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+
+            assertNull($entry->editLink);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testRejectsInvalidEditLinkVisibilityOverride(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-edit-link-invalid-') . '.md';
+        file_put_contents($file, "---\ntitle: Editable\neditLink: hidden\n---\n\nBody.\n");
+
+        try {
+            $this->parser->parse($file, 'docs');
+            self::fail('Expected invalid edit-link visibility override to throw.');
+        } catch (InvalidContentConfigException $e) {
+            assertStringContainsString('Invalid "editLink" visibility override', $e->getMessage());
+            assertSame($file, $e->filePath());
+        } finally {
+            unlink($file);
+        }
+    }
+
     #[DataProvider('invalidPagerOverrideProvider')]
     public function testRejectsInvalidPagerOverrides(string $yaml, string $message): void
     {

@@ -180,7 +180,7 @@ final class EntryRenderer
         $rootPath = UrlResolver::rootPath($permalink);
         $navigationPager = $this->relativizeNavigationPager($navigationPager, $rootPath);
         $lastUpdated = $this->lastUpdated($siteConfig, $entry);
-        $editPageUrl = $siteConfig->editPageUrl === null
+        $editPageUrl = $siteConfig->editPageUrl === null || $entry->editLink === false
             ? ''
             : PageActionUrlFormatter::format($siteConfig->editPageUrl, $siteConfig, $entry, $permalink, $this->contentDir);
         $reportIssueUrl = $siteConfig->reportIssueUrl === null
