@@ -1225,6 +1225,26 @@ PHP,
         assertFalse(is_dir($outputDir));
     }
 
+    public function testDryRunPrefixesLocalizedStandalonePage(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'pt-BR/about.md' => "---\ntitle: Sobre\n---\n\nSobre.\n",
+        ]);
+        $config = file_get_contents($contentDir . '/config.yaml');
+        assertNotFalse($config);
+        file_put_contents(
+            $contentDir . '/config.yaml',
+            str_replace('languages: [en]', 'languages: [en, pt-BR]', $config),
+        );
+
+        $result = $this->runBuildResult($contentDir, '--dry-run');
+
+        assertSame(0, $result['exitCode'], $result['output']);
+        assertStringContainsString('/pt-BR/about/index.html', $result['output']);
+        assertStringNotContainsString($this->outputDir . '/about/index.html', $result['output']);
+        assertFalse(is_dir($this->outputDir));
+    }
+
     public function testIncrementalBuildSkipsUnchangedEntries(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';
@@ -1505,21 +1525,21 @@ PHP,
         assertNotFalse($config);
         file_put_contents(
             $contentDir . '/config.yaml',
-            str_replace('languages: ["en"]', 'languages: ["en", "ru"]', $config),
+            str_replace('languages: ["en"]', 'languages: ["en", "pt-BR"]', $config),
         );
 
-        mkdir($contentDir . '/blog/ru');
-        $entryPath = $contentDir . '/blog/ru/2024-03-15-test-post.md';
+        mkdir($contentDir . '/blog/pt-BR');
+        $entryPath = $contentDir . '/blog/pt-BR/2024-03-15-test-post.md';
         rename($contentDir . '/blog/2024-03-15-test-post.md', $entryPath);
 
         $this->runBuild($contentDir);
 
-        $outputPath = $this->outputDir . '/ru/blog/test-post/index.html';
+        $outputPath = $this->outputDir . '/pt-BR/blog/test-post/index.html';
         assertFileExists($outputPath);
 
         $entry = file_get_contents($entryPath);
         assertNotFalse($entry);
-        file_put_contents($entryPath, str_replace('Test Post', 'Updated Russian Post', $entry));
+        file_put_contents($entryPath, str_replace('Test Post', 'Updated Brazilian Post', $entry));
 
         $result = $this->runBuildResult($contentDir);
         $html = file_get_contents($outputPath);
@@ -1527,7 +1547,7 @@ PHP,
         assertSame(0, $result['exitCode'], $result['output']);
         assertStringContainsString('Incremental build', $result['output']);
         assertNotFalse($html);
-        assertStringContainsString('Updated Russian Post', $html);
+        assertStringContainsString('Updated Brazilian Post', $html);
     }
 
     public function testBuildReportsInvalidEntryDateWithFilePath(): void

@@ -1405,7 +1405,12 @@ final class BuildCommand extends Command
             if (!$includeFuture && $page->date !== null && $page->date > $now) {
                 continue;
             }
-            $permalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
+            $basePermalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
+            $permalink = PermalinkResolver::applyLanguagePrefix(
+                $basePermalink,
+                $page->language,
+                $siteConfig->i18n,
+            );
             $files[] = $outputDir . $permalink . 'index.html';
             foreach ($page->aliases as $alias) {
                 $files[] = $this->aliasFilePath($outputDir, $this->normalizeAliasPermalink($alias));
@@ -1886,7 +1891,10 @@ final class BuildCommand extends Command
                     }
                 }
 
-                if (preg_match('/^[a-z]{2}(?:-[A-Z]{2})?$/D', $name) === 1) {
+                if (
+                    !is_file($collectionConfig)
+                    && preg_match('/^[a-z]{2}(?:-[A-Z]{2})?$/D', $name) === 1
+                ) {
                     $languageIterator = new FilesystemIterator(
                         $item->getPathname(),
                         BaseFilesystemIterator::SKIP_DOTS,

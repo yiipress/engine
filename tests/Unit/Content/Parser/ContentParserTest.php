@@ -151,6 +151,28 @@ final class ContentParserTest extends TestCase
         }
     }
 
+    public function testTwoLetterCollectionIsNotParsedAsStandaloneLanguageDirectory(): void
+    {
+        $dir = sys_get_temp_dir() . '/yiipress-two-letter-collection-' . uniqid();
+        mkdir($dir . '/it', 0o755, true);
+        file_put_contents($dir . '/it/_collection.yaml', "title: Italian articles\n");
+        file_put_contents($dir . '/it/post.md', "---\ntitle: Post\n---\n");
+
+        try {
+            assertSame([], iterator_to_array($this->parser->parseStandalonePages($dir), false));
+
+            $entries = iterator_to_array($this->parser->parseEntries($dir, 'it'), false);
+            assertCount(1, $entries);
+            assertSame('it', $entries[0]->collection);
+            assertSame('', $entries[0]->language);
+        } finally {
+            unlink($dir . '/it/post.md');
+            unlink($dir . '/it/_collection.yaml');
+            rmdir($dir . '/it');
+            rmdir($dir);
+        }
+    }
+
     public function testParseAuthors(): void
     {
         $authors = iterator_to_array($this->parser->parseAuthors($this->dataDir));

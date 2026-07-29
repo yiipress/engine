@@ -129,7 +129,10 @@ final class ContentParser
         foreach ($iterator as $item) {
             /** @var SplFileInfo $item */
             if ($item->isDir()) {
-                if ($this->isLanguageDirectory($item)) {
+                if (
+                    $this->isLanguageDirectory($item)
+                    && !file_exists($item->getPathname() . '/_collection.yaml')
+                ) {
                     yield from $this->parseMarkdownFiles($item->getPathname(), '', $item->getFilename());
                 }
                 continue;
