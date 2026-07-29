@@ -136,37 +136,32 @@ HTML;
 
                 $groupNumber++;
                 $groupId = 'code-group-' . $groupNumber;
-                $controls = [];
                 $panels = [];
 
                 foreach ($tabs as $index => $tab) {
                     $number = $index + 1;
-                    $tabId = $groupId . '-tab-' . $number;
                     $panelId = $groupId . '-panel-' . $number;
+                    $labelId = $panelId . '-label';
                     $label = base64_decode($tab[1], true);
                     if ($label === false) {
                         return $groupMatch[0];
                     }
 
-                    $controls[] = sprintf(
-                        '<button type="button" role="tab" id="%s" aria-controls="%s" aria-selected="%s" tabindex="%s">%s</button>',
-                        $tabId,
-                        $panelId,
-                        $index === 0 ? 'true' : 'false',
-                        $index === 0 ? '0' : '-1',
-                        htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5),
-                    );
+                    $escapedLabel = htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5);
                     $panels[] = sprintf(
-                        '<div class="code-group-panel" role="tabpanel" id="%s" aria-labelledby="%s">%s</div>',
+                        '<section class="code-group-panel" id="%s" aria-labelledby="%s" data-code-group-panel data-label="%s">'
+                        . '<div class="code-group-label" id="%s">%s</div>%s</section>',
                         $panelId,
-                        $tabId,
+                        $labelId,
+                        $escapedLabel,
+                        $labelId,
+                        $escapedLabel,
                         trim($tab[2]),
                     );
                 }
 
                 return sprintf(
-                    '<div class="code-group" data-code-group><div class="code-group-tabs" role="tablist">%s</div>%s</div>',
-                    implode('', $controls),
+                    '<div class="code-group" data-code-group>%s</div>',
                     implode('', $panels),
                 );
             },

@@ -13,7 +13,7 @@ use YiiPress\Render\MarkdownRenderer;
 
 final class CodeGroupProcessorTest extends TestCase
 {
-    public function testRendersAccessibleGroupAcrossMarkdownPass(): void
+    public function testRendersLabeledFallbackGroupAcrossMarkdownPass(): void
     {
         $processor = new CodeGroupProcessor();
         $markdown = <<<'MARKDOWN'
@@ -36,10 +36,11 @@ MARKDOWN;
         $result = $processor->process($html, $this->entry());
 
         self::assertStringContainsString('class="code-group"', $result);
-        self::assertStringContainsString('role="tablist"', $result);
-        self::assertStringContainsString('role="tab"', $result);
-        self::assertStringContainsString('role="tabpanel"', $result);
-        self::assertStringContainsString('aria-selected="true"', $result);
+        self::assertStringContainsString('class="code-group-label"', $result);
+        self::assertStringContainsString('data-label="npm"', $result);
+        self::assertStringContainsString('data-label="pnpm"', $result);
+        self::assertStringNotContainsString('role="tab"', $result);
+        self::assertStringNotContainsString('<button', $result);
         self::assertStringContainsString('<code class="language-sh">npm install', $result);
         self::assertStringContainsString('<code class="language-sh">pnpm install', $result);
     }
@@ -97,8 +98,8 @@ MARKDOWN;
         $result = $processor->process($html, $this->entry());
 
         self::assertStringContainsString('&lt;b&gt;One&lt;/b&gt;', $result);
-        self::assertStringContainsString('id="code-group-1-tab-1"', $result);
-        self::assertStringContainsString('id="code-group-2-tab-1"', $result);
+        self::assertStringContainsString('id="code-group-1-panel-1"', $result);
+        self::assertStringContainsString('id="code-group-2-panel-1"', $result);
     }
 
     public function testProvidesAssetsOnlyForRenderedGroups(): void
@@ -121,7 +122,10 @@ MARKDOWN;
         self::assertStringContainsString("document.addEventListener('click'", $script);
         self::assertStringContainsString("document.addEventListener('keydown'", $script);
         self::assertStringContainsString("'ArrowLeft', 'ArrowRight', 'Home', 'End'", $script);
+        self::assertStringContainsString("document.createElement('button')", $script);
+        self::assertStringContainsString("panel.setAttribute('role', 'tabpanel')", $script);
         self::assertStringContainsString("group.classList.add('is-enhanced')", $script);
+        self::assertStringContainsString("if (!tab)", $script);
         self::assertStringContainsString('.code-group.is-enhanced .code-group-panel[hidden]', $style);
     }
 

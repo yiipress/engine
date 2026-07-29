@@ -93,11 +93,15 @@ final class ContentProcessorPipeline
         $assets = '';
         $collected = [];
         foreach ($this->processors as $processor) {
-            $id = spl_object_id($processor);
-            if ($processor instanceof AssetProcessorInterface && !isset($collected[$id])) {
-                $assets .= $processor->headAssets($processedContent);
-                $collected[$id] = true;
+            if (!$processor instanceof AssetProcessorInterface) {
+                continue;
             }
+            $id = spl_object_id($processor);
+            if (isset($collected[$id])) {
+                continue;
+            }
+            $assets .= $processor->headAssets($processedContent);
+            $collected[$id] = true;
         }
         return $assets;
     }

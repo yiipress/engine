@@ -21,8 +21,17 @@
 }
 
 .code-group-tabs [role="tab"][aria-selected="true"] {
-    border-bottom-color: currentColor;
+    border-bottom-color: currentcolor;
     font-weight: 600;
+}
+
+.code-group-label {
+    margin-bottom: .5rem;
+    font-weight: 600;
+}
+
+.code-group.is-enhanced .code-group-label {
+    display: none;
 }
 
 .code-group.is-enhanced .code-group-panel[hidden] {
