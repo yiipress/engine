@@ -222,6 +222,32 @@ Both shortcode processors support:
 - Double quotes, single quotes, or no quotes for attribute values (no spaces)
 - Case-insensitive shortcode names
 
+### Tabbed code groups
+
+Use `[code-group]` to present two or more alternative code examples as tabs. Wrap each
+fenced code block in `[code-tab]` and set its visible tab label:
+
+````markdown
+[code-group]
+[code-tab label="npm"]
+```sh
+npm install
+```
+[/code-tab]
+[code-tab label="pnpm"]
+```sh
+pnpm install
+```
+[/code-tab]
+[/code-group]
+````
+
+Every group must contain at least two `[code-tab]` shortcodes, and every tab must have a
+non-empty `label`. Content outside the tab shortcodes is not allowed within a group.
+
+Visitors can select tabs with a pointer or use Left/Right arrow, Home, and End keys.
+When JavaScript is unavailable, all labeled examples remain visible.
+
 ### Project Processors
 
 Static binary users can add site-level content processors without editing Yii3 DI configuration. Put PHP processor files in `content/processors/`; files matching `*.php` are discovered automatically, sorted by filename, and inserted before Markdown rendering in both the page and feed pipelines.

@@ -91,10 +91,17 @@ final class ContentProcessorPipeline
     public function collectHeadAssets(string $processedContent): string
     {
         $assets = '';
+        $collected = [];
         foreach ($this->processors as $processor) {
-            if ($processor instanceof AssetProcessorInterface) {
-                $assets .= $processor->headAssets($processedContent);
+            if (!$processor instanceof AssetProcessorInterface) {
+                continue;
             }
+            $id = spl_object_id($processor);
+            if (isset($collected[$id])) {
+                continue;
+            }
+            $assets .= $processor->headAssets($processedContent);
+            $collected[$id] = true;
         }
         return $assets;
     }

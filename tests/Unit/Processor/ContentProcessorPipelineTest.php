@@ -102,6 +102,29 @@ final class ContentProcessorPipelineTest extends TestCase
         assertSame('', $pipeline->collectHeadAssets('content'));
     }
 
+    public function testCollectHeadAssetsOnceWhenSameProcessorIsInPipelineTwice(): void
+    {
+        $assetProcessor = new class implements ContentProcessorInterface, AssetProcessorInterface {
+            public function process(string $content, Entry $entry): string
+            {
+                return $content;
+            }
+
+            public function headAssets(string $processedContent): string
+            {
+                return '<script src="test.js"></script>';
+            }
+
+            public function assetFiles(): array
+            {
+                return [];
+            }
+        };
+        $pipeline = new ContentProcessorPipeline($assetProcessor, $assetProcessor);
+
+        assertSame('<script src="test.js"></script>', $pipeline->collectHeadAssets('content'));
+    }
+
     public function testCollectAssetFilesFromAssetAwareProcessors(): void
     {
         $assetProcessor = new class implements ContentProcessorInterface, AssetProcessorInterface {
@@ -133,14 +156,12 @@ final class ContentProcessorPipelineTest extends TestCase
 
     public function testApplySiteConfigPassesConfigurationToAwareProcessors(): void
     {
-        $state = new class () {
+        $state = new class {
             public ?string $receivedTheme = null;
         };
 
         $awareProcessor = new class ($state) implements ContentProcessorInterface, SiteConfigAwareProcessorInterface {
-            public function __construct(private object $state)
-            {
-            }
+            public function __construct(private object $state) {}
 
             public function applySiteConfig(SiteConfig $siteConfig): void
             {
