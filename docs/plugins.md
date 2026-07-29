@@ -224,8 +224,8 @@ Both shortcode processors support:
 
 ### Tabbed code groups
 
-The built-in `CodeGroupProcessor` groups two or more labeled fenced code blocks. It uses
-the existing shortcode format, while the code itself remains ordinary fenced Markdown:
+Use `[code-group]` to present two or more alternative code examples as tabs. Wrap each
+fenced code block in `[code-tab]` and set its visible tab label:
 
 ````markdown
 [code-group]
@@ -242,12 +242,13 @@ pnpm install
 [/code-group]
 ````
 
-The generated HTML contains every code block and remains readable without JavaScript.
-The browser enhancer activates one panel at a time and supports Left/Right arrow, Home,
-and End keys. Each group has independent ARIA tab and panel IDs.
+Every group must contain at least two `[code-tab]` shortcodes, and every tab must have a
+non-empty `label`. Content outside the tab shortcodes is not allowed within a group.
 
-The processor is a regular configurable plugin. Projects using DI configuration can
-change both shortcode names without adding a new parser or syntax:
+Visitors can select tabs with a pointer or use Left/Right arrow, Home, and End keys.
+When JavaScript is unavailable, all labeled examples remain visible.
+
+Projects that configure plugins through DI can change both shortcode names:
 
 ```php
 use YiiPress\Processor\Shortcode\CodeGroupProcessor;
@@ -261,7 +262,8 @@ CodeGroupProcessor::class => [
 ],
 ```
 
-That configuration uses `[switcher]` and `[option label="..."]`.
+With this configuration, use `[switcher]` in place of `[code-group]` and
+`[option label="..."]` in place of `[code-tab label="..."]`.
 
 ### Project Processors
 
