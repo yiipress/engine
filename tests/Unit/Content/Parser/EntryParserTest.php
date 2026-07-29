@@ -97,7 +97,7 @@ final class EntryParserTest extends TestCase
     public function testParsesEditLinkVisibilityOverride(): void
     {
         $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-edit-link-');
-        file_put_contents($file, "---\ntitle: Generated\neditLink: false\n---\n\nBody.\n");
+        file_put_contents($file, "---\ntitle: Generated\nedit_link: false\n---\n\nBody.\n");
 
         try {
             $entry = $this->parser->parse($file, 'docs');
@@ -230,7 +230,7 @@ final class EntryParserTest extends TestCase
     public function testParsesLastUpdatedVisibilityOverride(): void
     {
         $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-last-updated-');
-        file_put_contents($file, "---\ntitle: Generated\nlastUpdated: false\n---\n\nBody.\n");
+        file_put_contents($file, "---\ntitle: Generated\nlast_updated: false\n---\n\nBody.\n");
 
         try {
             $entry = $this->parser->parse($file, 'docs');
@@ -258,13 +258,13 @@ final class EntryParserTest extends TestCase
     public function testRejectsInvalidLastUpdatedVisibilityOverride(): void
     {
         $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-last-updated-invalid-');
-        file_put_contents($file, "---\ntitle: Generated\nlastUpdated: yesterday\n---\n\nBody.\n");
+        file_put_contents($file, "---\ntitle: Generated\nlast_updated: yesterday\n---\n\nBody.\n");
 
         try {
             $this->parser->parse($file, 'docs');
             self::fail('Expected invalid last-updated visibility override to throw.');
         } catch (InvalidContentConfigException $e) {
-            assertStringContainsString('Invalid "lastUpdated" visibility override', $e->getMessage());
+            assertStringContainsString('Invalid "last_updated" visibility override', $e->getMessage());
             assertSame($file, $e->filePath());
         } finally {
             unlink($file);
@@ -274,13 +274,13 @@ final class EntryParserTest extends TestCase
     public function testRejectsInvalidEditLinkVisibilityOverride(): void
     {
         $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-edit-link-invalid-');
-        file_put_contents($file, "---\ntitle: Editable\neditLink: hidden\n---\n\nBody.\n");
+        file_put_contents($file, "---\ntitle: Editable\nedit_link: hidden\n---\n\nBody.\n");
 
         try {
             $this->parser->parse($file, 'docs');
             self::fail('Expected invalid edit-link visibility override to throw.');
         } catch (InvalidContentConfigException $e) {
-            assertStringContainsString('Invalid "editLink" visibility override', $e->getMessage());
+            assertStringContainsString('Invalid "edit_link" visibility override', $e->getMessage());
             assertSame($file, $e->filePath());
         } finally {
             unlink($file);
@@ -411,7 +411,7 @@ final class EntryParserTest extends TestCase
         $filePath = tempnam(sys_get_temp_dir(), 'yiipress-entry-');
         self::assertNotFalse($filePath);
 
-        file_put_contents($filePath, "---\ntitle: Logo First\nshowTitle: false\n---\n\nBody.\n");
+        file_put_contents($filePath, "---\ntitle: Logo First\nshow_title: false\n---\n\nBody.\n");
 
         try {
             $entry = $this->parser->parse($filePath, 'pages');

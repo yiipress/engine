@@ -104,7 +104,7 @@ final readonly class EntryParser
             bodyLength: $result['bodyLength'],
             image: (string) ($fields['image'] ?? ''),
             translationKey: (string) ($fields['translation_key'] ?? ''),
-            showTitle: (bool) ($fields['showTitle'] ?? true),
+            showTitle: (bool) ($fields['show_title'] ?? true),
             aliases: isset($fields['aliases']) && is_array($fields['aliases'])
                 ? array_values(array_map(strval(...), $fields['aliases']))
                 : [],
@@ -113,7 +113,7 @@ final readonly class EntryParser
             editLink: $this->parseEditLink($fields, $filePath),
             faqLevel: $this->parseFaqLevel($fields, $filePath),
             toc: $this->parseToc($fields, $filePath),
-            lastUpdated: $this->parseBooleanOverride($fields, 'lastUpdated', $filePath),
+            lastUpdated: $this->parseBooleanOverride($fields, 'last_updated', $filePath),
         );
     }
 
@@ -187,7 +187,7 @@ final readonly class EntryParser
      */
     private function parseEditLink(array $fields, string $filePath): ?bool
     {
-        return $this->parseBooleanOverride($fields, 'editLink', $filePath);
+        return $this->parseBooleanOverride($fields, 'edit_link', $filePath);
     }
 
     /**
