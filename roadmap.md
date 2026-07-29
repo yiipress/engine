@@ -110,6 +110,7 @@
 - [x] [Tabbed code groups](https://github.com/yiipress/engine/issues/107)
 - [x] [Per-entry previous/next pager overrides](https://github.com/yiipress/engine/issues/113)
 - [x] [Per-entry edit-link visibility override](https://github.com/yiipress/engine/issues/112)
+- [x] [Per-entry last-updated visibility override](https://github.com/yiipress/engine/issues/111)
 
 ## Priority 8: Advanced features
 
