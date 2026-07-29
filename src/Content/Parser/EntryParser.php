@@ -113,6 +113,7 @@ final readonly class EntryParser
             editLink: $this->parseEditLink($fields, $filePath),
             faqLevel: $this->parseFaqLevel($fields, $filePath),
             toc: $this->parseToc($fields, $filePath),
+            lastUpdated: $this->parseBooleanOverride($fields, 'lastUpdated', $filePath),
         );
     }
 
@@ -186,18 +187,26 @@ final readonly class EntryParser
      */
     private function parseEditLink(array $fields, string $filePath): ?bool
     {
-        if (!array_key_exists('editLink', $fields) || $fields['editLink'] === null) {
+        return $this->parseBooleanOverride($fields, 'editLink', $filePath);
+    }
+
+    /**
+     * @param array<string, mixed> $fields
+     */
+    private function parseBooleanOverride(array $fields, string $name, string $filePath): ?bool
+    {
+        if (!array_key_exists($name, $fields) || $fields[$name] === null) {
             return null;
         }
-        if (!is_bool($fields['editLink'])) {
+        if (!is_bool($fields[$name])) {
             throw new InvalidContentConfigException(
-                "Invalid \"editLink\" visibility override in front matter: $filePath",
+                "Invalid \"$name\" visibility override in front matter: $filePath",
                 $filePath,
-                'Omit "editLink" to inherit it, or set it to true or false.',
+                "Omit \"$name\" to inherit it, or set it to true or false.",
             );
         }
 
-        return $fields['editLink'];
+        return $fields[$name];
     }
 
     /**

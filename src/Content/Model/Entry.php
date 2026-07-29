@@ -49,6 +49,7 @@ final class Entry
         public ?bool $editLink = null,
         public int|false|null $faqLevel = null,
         public array|false|null $toc = null,
+        public ?bool $lastUpdated = null,
     ) {}
 
     private ?string $bodyCache = null;
@@ -91,6 +92,7 @@ final class Entry
             editLink: $this->editLink,
             faqLevel: $this->faqLevel,
             toc: $this->toc,
+            lastUpdated: $this->lastUpdated,
         );
     }
 

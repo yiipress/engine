@@ -148,6 +148,7 @@ extra:
 - **editLink** — set to `false` to hide the edit-page action for this entry. When omitted or `true`, the entry inherits the site-wide `edit_page` configuration. This does not affect the report-issue action
 - **faq_level** — controls where `[question]` shortcodes appear. Omit it or set it to `false` to keep each question inline, use `0` to collect all questions at the end of the page, or use a heading level from `1` to `6` to collect questions at the end of each matching heading section
 - **toc** — controls table-of-contents headings for this entry. Omit it to inherit the site-wide `toc` setting; use `false` to disable the entry TOC, an integer from `1` to `6` for one heading level, `[min, max]` for an inclusive range, or `deep` for levels 2–6. Heading IDs remain available even when the visible TOC is disabled
+- **lastUpdated** — set to `true` or `false` to override last-updated output for this entry. When omitted, the entry inherits the site-wide `last_updated` setting. Disabled entries do not read the source modification time
 - **extra** — arbitrary key-value pairs accessible in templates
 
 Pager precedence is resolved independently for each direction: an entry override wins, an omitted

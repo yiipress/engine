@@ -227,6 +227,50 @@ final class EntryParserTest extends TestCase
         yield 'unknown string' => ['toc: shallow'];
     }
 
+    public function testParsesLastUpdatedVisibilityOverride(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-last-updated-');
+        file_put_contents($file, "---\ntitle: Generated\nlastUpdated: false\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+
+            assertFalse($entry->lastUpdated);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testLastUpdatedVisibilityIsInheritedWhenOmitted(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-last-updated-');
+        file_put_contents($file, "---\ntitle: Generated\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+
+            assertNull($entry->lastUpdated);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testRejectsInvalidLastUpdatedVisibilityOverride(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-last-updated-invalid-');
+        file_put_contents($file, "---\ntitle: Generated\nlastUpdated: yesterday\n---\n\nBody.\n");
+
+        try {
+            $this->parser->parse($file, 'docs');
+            self::fail('Expected invalid last-updated visibility override to throw.');
+        } catch (InvalidContentConfigException $e) {
+            assertStringContainsString('Invalid "lastUpdated" visibility override', $e->getMessage());
+            assertSame($file, $e->filePath());
+        } finally {
+            unlink($file);
+        }
+    }
+
     public function testRejectsInvalidEditLinkVisibilityOverride(): void
     {
         $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-edit-link-invalid-');
