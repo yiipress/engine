@@ -142,6 +142,18 @@ Supported placeholders are:
 - `{permalink}` — root-relative permalink, URL-encoded with `/` preserved
 - `{url}` — absolute page URL resolved from `base_url`, URL-encoded
 
+An individual entry can suppress only its edit action while leaving the report-issue action
+available:
+
+```yaml
+---
+title: Generated API reference
+editLink: false
+---
+```
+
+Omitting `editLink` (or setting it to `true`) preserves the site-wide `edit_page` behavior.
+
 ### Multilingual support
 
 Declare site languages in `content/config.yaml`. The first language is the default:

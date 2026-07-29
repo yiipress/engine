@@ -45,6 +45,7 @@ final class Entry
         public array $aliases = [],
         public array|false|null $previous = null,
         public array|false|null $next = null,
+        public ?bool $editLink = null,
     ) {}
 
     private ?string $bodyCache = null;
@@ -84,6 +85,7 @@ final class Entry
             aliases: $this->aliases,
             previous: $this->previous,
             next: $this->next,
+            editLink: $this->editLink,
         );
     }
 
