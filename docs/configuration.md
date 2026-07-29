@@ -150,9 +150,12 @@ Declare site languages in `content/config.yaml`. The first language is the defau
 languages: [en, ru]
 ```
 
-Entries are tagged with the `language` front matter field. Entries whose language
-differs from the first configured site language get their permalink prefixed automatically (e.g.,
-`/ru/blog/hello/`); default-language entries keep the plain URL (`/blog/hello/`).
+Put translations in a locale directory (`content/blog/ru/hello.md` for a collection entry
+or `content/ru/about.md` for a standalone page). The directory sets the entry language;
+the `language` front matter field remains available as an explicit override. Entries whose
+language differs from the first configured site language get their permalink prefixed
+automatically (e.g., `/ru/blog/hello/`); default-language entries keep the plain URL
+(`/blog/hello/`).
 Explicit `permalink:` overrides in front matter bypass the prefix. `languages` is required
 and must contain at least one language code.
 

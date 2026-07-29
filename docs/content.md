@@ -390,8 +390,15 @@ Translations of the same entry share the same slug but differ in language:
 
 ```
 content/blog/
-├── hello-world.md           # language: en (default)
-└── hello-world.ru.md        # language: ru
+├── hello-world.md           # default language
+├── cs/
+│   └── hello-world.md       # language: cs
+└── ru/
+    └── hello-world.md       # language: ru
 ```
 
-The language suffix in the filename (`.ru.md`) is a shorthand for setting `language: ru` in front matter.
+The directory name sets the entry language, so localized files do not need a `language`
+front matter field. An explicit `language` field takes precedence when present. Standalone
+pages use the same convention (`content/about.md`, `content/ru/about.md`). This follows
+VitePress's locale-directory layout. Locale directory names use lowercase ISO language
+codes and may include an uppercase region, for example `pt-BR`.

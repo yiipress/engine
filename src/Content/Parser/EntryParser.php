@@ -18,7 +18,7 @@ final readonly class EntryParser
         private array $authors = [],
     ) {}
 
-    public function parse(string $filePath, string $collectionName): Entry
+    public function parse(string $filePath, string $collectionName, string $language = ''): Entry
     {
         $result = $this->frontMatterParser->parse($filePath);
         $fields = $result['frontMatter'];
@@ -93,7 +93,7 @@ final readonly class EntryParser
             layout: (string) ($fields['layout'] ?? ''),
             theme: (string) ($fields['theme'] ?? ''),
             weight: (int) ($fields['weight'] ?? 0),
-            language: (string) ($fields['language'] ?? ''),
+            language: (string) ($fields['language'] ?? $language),
             redirectTo: (string) ($fields['redirect_to'] ?? ''),
             extra: isset($fields['extra']) && is_array($fields['extra'])
                 ? $fields['extra']
