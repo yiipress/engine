@@ -96,7 +96,7 @@ final class EntryParserTest extends TestCase
 
     public function testParsesEditLinkVisibilityOverride(): void
     {
-        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-edit-link-') . '.md';
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-edit-link-');
         file_put_contents($file, "---\ntitle: Generated\neditLink: false\n---\n\nBody.\n");
 
         try {
@@ -110,7 +110,7 @@ final class EntryParserTest extends TestCase
 
     public function testEditLinkVisibilityIsInheritedWhenOmitted(): void
     {
-        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-edit-link-') . '.md';
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-edit-link-');
         file_put_contents($file, "---\ntitle: Editable\n---\n\nBody.\n");
 
         try {
@@ -124,7 +124,7 @@ final class EntryParserTest extends TestCase
 
     public function testRejectsInvalidEditLinkVisibilityOverride(): void
     {
-        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-edit-link-invalid-') . '.md';
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-edit-link-invalid-');
         file_put_contents($file, "---\ntitle: Editable\neditLink: hidden\n---\n\nBody.\n");
 
         try {
