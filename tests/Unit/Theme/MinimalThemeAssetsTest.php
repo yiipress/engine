@@ -97,6 +97,8 @@ final class MinimalThemeAssetsTest extends TestCase
 
         self::assertNotFalse($css);
         assertStringContainsString('.code-block {', $css);
+        assertStringContainsString('.code-language-label {', $css);
+        assertStringContainsString('.code-block:hover .code-language-label,', $css);
         assertStringContainsString('.code-copy-button {', $css);
         assertStringContainsString('pointer-events: none;', $css);
         assertStringContainsString('.code-copy-button.copied {', $css);
@@ -109,6 +111,9 @@ final class MinimalThemeAssetsTest extends TestCase
 
         self::assertNotFalse($script);
         assertStringContainsString("document.querySelectorAll('.content pre')", $script);
+        assertStringContainsString("const existingWrapper = pre.closest('.code-block');", $script);
+        assertStringContainsString("if (existingWrapper?.querySelector('.code-copy-button'))", $script);
+        assertStringContainsString('const wrapper = existingWrapper ?? document.createElement', $script);
         assertStringContainsString("button.className = 'code-copy-button';", $script);
         assertStringContainsString("navigator.clipboard.writeText(text)", $script);
         assertStringContainsString("document.execCommand('copy')", $script);

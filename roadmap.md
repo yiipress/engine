@@ -106,6 +106,7 @@
 - [x] Table of contents generation from headings as a plugin
 - [x] Diagram support (Mermaid) as a plugin
 - [x] oEmbed support (auto-expanding URLs to embeds) as a plugin
+- [x] [Code block language labels](https://github.com/yiipress/engine/issues/105)
 
 ## Priority 8: Advanced features
 

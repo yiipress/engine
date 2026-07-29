@@ -2,23 +2,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const codeBlocks = document.querySelectorAll('.content pre');
 
     codeBlocks.forEach((pre) => {
-        if (pre.closest('.code-block') !== null) {
+        const existingWrapper = pre.closest('.code-block');
+        if (existingWrapper?.querySelector('.code-copy-button')) {
             return;
         }
 
         const code = pre.querySelector('code');
-        const wrapper = document.createElement('div');
+        const wrapper = existingWrapper ?? document.createElement('div');
         const button = document.createElement('button');
 
-        wrapper.className = 'code-block';
         button.className = 'code-copy-button';
         button.type = 'button';
         button.setAttribute('aria-label', 'Copy Code');
         button.title = 'Copy Code';
         button.textContent = 'Copy';
 
-        pre.parentNode?.insertBefore(wrapper, pre);
-        wrapper.appendChild(pre);
+        if (existingWrapper === null) {
+            wrapper.className = 'code-block';
+            pre.parentNode?.insertBefore(wrapper, pre);
+            wrapper.appendChild(pre);
+        }
         wrapper.appendChild(button);
 
         button.addEventListener('click', async () => {

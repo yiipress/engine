@@ -199,6 +199,18 @@ highlight_theme: "Solarized (dark)"
 
 If `highlight_theme` is omitted, YiiPress uses `InspiredGitHub`.
 
+Language-tagged fenced blocks retain their normalized language identifier in generated HTML:
+
+```html
+<div class="code-block" data-language="php">
+    <span class="code-language-label">PHP</span>
+    <!-- highlighted pre/code output -->
+</div>
+```
+
+The bundled `minimal` theme displays this label next to the copy button. Custom themes can use
+`data-language` and `.code-language-label` without parsing the highlighted code.
+
 ### Assets
 
 Asset fingerprinting is enabled by default. Disable it in `content/config.yaml` if needed:
