@@ -44,12 +44,14 @@ return [
             Reference::to(VimeoProcessor::class),
             Reference::to(TweetProcessor::class),
             Reference::to(OEmbedProcessor::class),
+            // Preserve code-group shortcode metadata before Markdown, then render it after syntax highlighting.
             Reference::to(CodeGroupProcessor::class),
             Reference::to(MarkdownProcessor::class),
             Reference::to(LatexMathProcessor::class),
             Reference::to(TagLinkProcessor::class),
             Reference::to(MermaidProcessor::class),
             Reference::to(SyntaxHighlightProcessor::class),
+            // Complete the second code-group pass using the rendered, highlighted code blocks.
             Reference::to(CodeGroupProcessor::class),
             Reference::to(TocProcessor::class),
         ],
