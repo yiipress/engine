@@ -248,23 +248,6 @@ non-empty `label`. Content outside the tab shortcodes is not allowed within a gr
 Visitors can select tabs with a pointer or use Left/Right arrow, Home, and End keys.
 When JavaScript is unavailable, all labeled examples remain visible.
 
-Projects that configure plugins through DI can change both shortcode names:
-
-```php
-use YiiPress\Processor\Shortcode\CodeGroupProcessor;
-
-CodeGroupProcessor::class => [
-    'class' => CodeGroupProcessor::class,
-    '__construct()' => [
-        'groupShortcode' => 'switcher',
-        'tabShortcode' => 'option',
-    ],
-],
-```
-
-With this configuration, use `[switcher]` in place of `[code-group]` and
-`[option label="..."]` in place of `[code-tab label="..."]`.
-
 ### Project Processors
 
 Static binary users can add site-level content processors without editing Yii3 DI configuration. Put PHP processor files in `content/processors/`; files matching `*.php` are discovered automatically, sorted by filename, and inserted before Markdown rendering in both the page and feed pipelines.

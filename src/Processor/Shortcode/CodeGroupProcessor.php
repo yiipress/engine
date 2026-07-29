@@ -10,9 +10,7 @@ use YiiPress\Processor\ContentProcessorInterface;
 
 use function htmlspecialchars;
 use function implode;
-use function preg_match;
 use function preg_match_all;
-use function preg_quote;
 use function preg_replace;
 use function preg_replace_callback;
 use function str_contains;
@@ -20,7 +18,7 @@ use function strtolower;
 use function trim;
 
 /**
- * Turns configurable code-group and code-tab shortcodes into accessible tabbed code groups.
+ * Turns code-group and code-tab shortcodes into accessible tabbed code groups.
  *
  * The same processor is intentionally run on both sides of MarkdownProcessor: the first pass
  * preserves shortcode metadata in HTML comments, and the second pass builds the final markup.
@@ -29,25 +27,13 @@ final readonly class CodeGroupProcessor implements ContentProcessorInterface, As
 {
     use ParsesShortcodeAttributesTrait;
 
-    public function __construct(
-        private string $groupShortcode = 'code-group',
-        private string $tabShortcode = 'code-tab',
-    ) {
-        if (
-            preg_match('/^[a-z][a-z0-9-]*$/i', $this->groupShortcode) !== 1
-            || preg_match('/^[a-z][a-z0-9-]*$/i', $this->tabShortcode) !== 1
-        ) {
-            throw new \InvalidArgumentException('Code group shortcode names must contain only letters, digits, and hyphens.');
-        }
-    }
-
     public function process(string $content, Entry $entry): string
     {
         if (str_contains($content, '<!-- yiipress-code-group:')) {
             return $this->renderGroups($content);
         }
 
-        if (!str_contains(strtolower($content), '[' . strtolower($this->groupShortcode))) {
+        if (!str_contains(strtolower($content), '[code-group]')) {
             return $content;
         }
 
@@ -77,16 +63,13 @@ HTML;
 
     private function preserveShortcodes(string $content): string
     {
-        $group = preg_quote($this->groupShortcode, '/');
-        $tab = preg_quote($this->tabShortcode, '/');
-
         return (string) preg_replace_callback(
-            '/^\[' . $group . '\]\s*$([\s\S]*?)^\[\/' . $group . '\]\s*$/mi',
-            function (array $groupMatch) use ($tab): string {
+            '/^\[code-group\]\s*$([\s\S]*?)^\[\/code-group\]\s*$/mi',
+            function (array $groupMatch): string {
                 $tabs = [];
                 if (
                     preg_match_all(
-                        $tabPattern = '/^\[' . $tab . '\s+([^\]]*)\]\s*$([\s\S]*?)^\[\/' . $tab . '\]\s*$/mi',
+                        $tabPattern = '/^\[code-tab\s+([^\]]*)\]\s*$([\s\S]*?)^\[\/code-tab\]\s*$/mi',
                         $groupMatch[1],
                         $tabMatches,
                         PREG_SET_ORDER,

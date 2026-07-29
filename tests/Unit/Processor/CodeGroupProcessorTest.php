@@ -45,30 +45,6 @@ MARKDOWN;
         self::assertStringContainsString('<code class="language-sh">pnpm install', $result);
     }
 
-    public function testSupportsConfiguredShortcodeNames(): void
-    {
-        $processor = new CodeGroupProcessor('switcher', 'option');
-        $markdown = <<<'MARKDOWN'
-[switcher]
-[option label="PHP"]
-```php
-echo 1;
-```
-[/option]
-[option label="Go"]
-```go
-fmt.Println(1)
-```
-[/option]
-[/switcher]
-MARKDOWN;
-
-        $preserved = $processor->process($markdown, $this->entry());
-
-        self::assertStringContainsString('yiipress-code-group:start', $preserved);
-        self::assertStringNotContainsString('[switcher]', $preserved);
-    }
-
     public function testRequiresTwoLabeledTabs(): void
     {
         $processor = new CodeGroupProcessor();
