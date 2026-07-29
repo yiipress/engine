@@ -1861,10 +1861,41 @@ final class BuildCommand extends Command
                     $collectionIterator = new FilesystemIterator($item->getPathname(), BaseFilesystemIterator::SKIP_DOTS);
                     foreach ($collectionIterator as $collectionItem) {
                         /** @var SplFileInfo $collectionItem */
-                        if ($collectionItem->isDir() || strtolower($collectionItem->getExtension()) !== 'md') {
+                        if ($collectionItem->isDir()) {
+                            if (preg_match('/^[a-z]{2}(?:-[A-Z]{2})?$/D', $collectionItem->getFilename()) === 1) {
+                                $languageIterator = new FilesystemIterator(
+                                    $collectionItem->getPathname(),
+                                    BaseFilesystemIterator::SKIP_DOTS,
+                                );
+                                foreach ($languageIterator as $languageItem) {
+                                    /** @var SplFileInfo $languageItem */
+                                    if (
+                                        $languageItem->isFile()
+                                        && strtolower($languageItem->getExtension()) === 'md'
+                                    ) {
+                                        $contentFiles[] = $languageItem->getPathname();
+                                    }
+                                }
+                            }
+                            continue;
+                        }
+                        if (strtolower($collectionItem->getExtension()) !== 'md') {
                             continue;
                         }
                         $contentFiles[] = $collectionItem->getPathname();
+                    }
+                }
+
+                if (preg_match('/^[a-z]{2}(?:-[A-Z]{2})?$/D', $name) === 1) {
+                    $languageIterator = new FilesystemIterator(
+                        $item->getPathname(),
+                        BaseFilesystemIterator::SKIP_DOTS,
+                    );
+                    foreach ($languageIterator as $languageItem) {
+                        /** @var SplFileInfo $languageItem */
+                        if ($languageItem->isFile() && strtolower($languageItem->getExtension()) === 'md') {
+                            $contentFiles[] = $languageItem->getPathname();
+                        }
                     }
                 }
 

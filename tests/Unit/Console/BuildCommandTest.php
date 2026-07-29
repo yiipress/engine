@@ -1060,7 +1060,7 @@ PHP,
         $contentDir = $this->copyContentFixture();
         file_put_contents($contentDir . '/config.yaml', "\nauthor_pages: false\n", FILE_APPEND);
 
-        $this->runBuild($contentDir);
+        $this->runBuild($contentDir, '--no-cache');
 
         assertFalse(is_dir($this->outputDir . '/authors'));
 
@@ -1496,6 +1496,38 @@ PHP,
         $sitemap = file_get_contents($this->outputDir . '/sitemap.xml');
         assertNotFalse($sitemap);
         assertStringContainsString('https://test.example.com/ru/blog/test-post/', $sitemap);
+    }
+
+    public function testLocalizedEntryDirectorySetsLanguageAndParticipatesInIncrementalBuilds(): void
+    {
+        $contentDir = $this->copyContentFixture();
+        $config = file_get_contents($contentDir . '/config.yaml');
+        assertNotFalse($config);
+        file_put_contents(
+            $contentDir . '/config.yaml',
+            str_replace('languages: ["en"]', 'languages: ["en", "ru"]', $config),
+        );
+
+        mkdir($contentDir . '/blog/ru');
+        $entryPath = $contentDir . '/blog/ru/2024-03-15-test-post.md';
+        rename($contentDir . '/blog/2024-03-15-test-post.md', $entryPath);
+
+        $this->runBuild($contentDir);
+
+        $outputPath = $this->outputDir . '/ru/blog/test-post/index.html';
+        assertFileExists($outputPath);
+
+        $entry = file_get_contents($entryPath);
+        assertNotFalse($entry);
+        file_put_contents($entryPath, str_replace('Test Post', 'Updated Russian Post', $entry));
+
+        $result = $this->runBuildResult($contentDir);
+        $html = file_get_contents($outputPath);
+
+        assertSame(0, $result['exitCode'], $result['output']);
+        assertStringContainsString('Incremental build', $result['output']);
+        assertNotFalse($html);
+        assertStringContainsString('Updated Russian Post', $html);
     }
 
     public function testBuildReportsInvalidEntryDateWithFilePath(): void

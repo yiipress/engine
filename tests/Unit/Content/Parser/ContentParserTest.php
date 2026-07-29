@@ -90,6 +90,67 @@ final class ContentParserTest extends TestCase
         assertCount(7, $entries);
     }
 
+    public function testParseLocalizedCollectionEntriesFromLanguageDirectories(): void
+    {
+        $dir = sys_get_temp_dir() . '/yiipress-localized-collection-' . uniqid();
+        mkdir($dir . '/blog/ru', 0o755, true);
+        file_put_contents($dir . '/blog/_collection.yaml', "title: Blog\n");
+        file_put_contents($dir . '/blog/post.md', "---\ntitle: Hello\n---\n");
+        file_put_contents($dir . '/blog/ru/post.md', "---\ntitle: Привет\n---\n");
+        file_put_contents(
+            $dir . '/blog/ru/override.md',
+            "---\ntitle: Override\nlanguage: uk\n---\n",
+        );
+
+        try {
+            $entries = iterator_to_array($this->parser->parseEntries($dir, 'blog'), false);
+            $byTitle = [];
+            foreach ($entries as $entry) {
+                $byTitle[$entry->title] = $entry;
+            }
+
+            assertCount(3, $entries);
+            assertSame('', $byTitle['Hello']->language);
+            assertSame('ru', $byTitle['Привет']->language);
+            assertSame('uk', $byTitle['Override']->language);
+            assertSame('post', $byTitle['Привет']->slug);
+        } finally {
+            unlink($dir . '/blog/ru/override.md');
+            unlink($dir . '/blog/ru/post.md');
+            unlink($dir . '/blog/post.md');
+            unlink($dir . '/blog/_collection.yaml');
+            rmdir($dir . '/blog/ru');
+            rmdir($dir . '/blog');
+            rmdir($dir);
+        }
+    }
+
+    public function testParseLocalizedStandalonePagesFromLanguageDirectories(): void
+    {
+        $dir = sys_get_temp_dir() . '/yiipress-localized-pages-' . uniqid();
+        mkdir($dir . '/cs', 0o755, true);
+        file_put_contents($dir . '/about.md', "---\ntitle: About\n---\n");
+        file_put_contents($dir . '/cs/about.md', "---\ntitle: O nás\n---\n");
+
+        try {
+            $entries = iterator_to_array($this->parser->parseStandalonePages($dir), false);
+            $byTitle = [];
+            foreach ($entries as $entry) {
+                $byTitle[$entry->title] = $entry;
+            }
+
+            assertCount(2, $entries);
+            assertSame('cs', $byTitle['O nás']->language);
+            assertSame('', $byTitle['About']->language);
+            assertSame('about', $byTitle['O nás']->slug);
+        } finally {
+            unlink($dir . '/cs/about.md');
+            unlink($dir . '/about.md');
+            rmdir($dir . '/cs');
+            rmdir($dir);
+        }
+    }
+
     public function testParseAuthors(): void
     {
         $authors = iterator_to_array($this->parser->parseAuthors($this->dataDir));

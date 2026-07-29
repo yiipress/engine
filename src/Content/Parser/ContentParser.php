@@ -129,6 +129,9 @@ final class ContentParser
         foreach ($iterator as $item) {
             /** @var SplFileInfo $item */
             if ($item->isDir()) {
+                if ($this->isLanguageDirectory($item)) {
+                    yield from $this->parseMarkdownFiles($item->getPathname(), '', $item->getFilename());
+                }
                 continue;
             }
 
@@ -177,6 +180,13 @@ final class ContentParser
         foreach ($iterator as $item) {
             /** @var SplFileInfo $item */
             if ($item->isDir()) {
+                if ($this->isLanguageDirectory($item)) {
+                    yield from $this->parseMarkdownFiles(
+                        $item->getPathname(),
+                        $collectionName,
+                        $item->getFilename(),
+                    );
+                }
                 continue;
             }
 
@@ -186,6 +196,25 @@ final class ContentParser
 
             yield $this->entryParser->parse($item->getPathname(), $collectionName);
         }
+    }
+
+    /**
+     * @return Generator<Entry>
+     */
+    private function parseMarkdownFiles(string $directory, string $collectionName, string $language): Generator
+    {
+        $iterator = new FilesystemIterator($directory, FilesystemIterator::SKIP_DOTS);
+        foreach ($iterator as $item) {
+            /** @var SplFileInfo $item */
+            if ($item->isFile() && $item->getExtension() === 'md') {
+                yield $this->entryParser->parse($item->getPathname(), $collectionName, $language);
+            }
+        }
+    }
+
+    private function isLanguageDirectory(SplFileInfo $item): bool
+    {
+        return preg_match('/^[a-z]{2}(?:-[A-Z]{2})?$/D', $item->getFilename()) === 1;
     }
 
     /**
