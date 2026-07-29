@@ -8,6 +8,7 @@ use YiiPress\Content\Parser\EntryParser;
 use YiiPress\Content\Parser\FilenameParser;
 use YiiPress\Content\Parser\FrontMatterParser;
 use YiiPress\Content\Parser\InvalidContentConfigException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 use function file_put_contents;
@@ -75,6 +76,51 @@ final class EntryParserTest extends TestCase
         }
     }
 
+    public function testParsesPagerOverrides(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-pager-') . '.md';
+        file_put_contents(
+            $file,
+            "---\ntitle: Pager\nprevious: false\nnext:\n  text: Continue\n  link: /guide/continue/\n---\n\nBody.\n",
+        );
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+
+            assertFalse($entry->previous);
+            assertSame(['text' => 'Continue', 'link' => '/guide/continue/'], $entry->next);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    #[DataProvider('invalidPagerOverrideProvider')]
+    public function testRejectsInvalidPagerOverrides(string $yaml, string $message): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-pager-invalid-') . '.md';
+        file_put_contents($file, "---\ntitle: Pager\n$yaml\n---\n\nBody.\n");
+
+        try {
+            $this->parser->parse($file, 'docs');
+            self::fail('Expected invalid pager override to throw.');
+        } catch (InvalidContentConfigException $e) {
+            assertStringContainsString($message, $e->getMessage());
+            assertSame($file, $e->filePath());
+        } finally {
+            unlink($file);
+        }
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function invalidPagerOverrideProvider(): iterable
+    {
+        yield 'scalar' => ['previous: Previous page', 'Invalid "previous" pager override'];
+        yield 'missing text' => ["next:\n  link: /next/", 'Invalid "next" pager override'];
+        yield 'extra field' => ["next:\n  text: Next\n  link: /next/\n  target: _blank", 'Invalid "next" pager override'];
+        yield 'unsafe scheme' => ["previous:\n  text: Bad\n  link: 'javascript:alert(1)'", 'Unsafe URL'];
+        yield 'protocol relative' => ["next:\n  text: Bad\n  link: //evil.example/page", 'Unsafe URL'];
+    }
+
     public function testEntryBodyIsLoadedLazily(): void
     {
         $entry = $this->parser->parse($this->dataDir . '/blog/2024-03-15-test-post.md', 'blog');
@@ -124,7 +170,7 @@ final class EntryParserTest extends TestCase
         assertSame(['php', 'inline', 'shit', 'yii', 'multi-part-tag', 'two-words'], $tagLowercases);
 
         // Verify 'php' appears only once (not duplicated as 'php' and 'PHP')
-        $phpCount = count(array_filter($entry->tags, static fn ($tag) => strtolower($tag) === 'php'));
+        $phpCount = count(array_filter($entry->tags, static fn($tag) => strtolower($tag) === 'php'));
         assertSame(1, $phpCount);
     }
 

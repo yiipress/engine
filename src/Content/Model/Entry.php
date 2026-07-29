@@ -15,6 +15,8 @@ final class Entry
      * @param list<string> $authors
      * @param array<string, mixed> $extra
      * @param list<string> $aliases
+     * @param array{text: string, link: string}|false|null $previous
+     * @param array{text: string, link: string}|false|null $next
      */
     public function __construct(
         public string $filePath,
@@ -41,6 +43,8 @@ final class Entry
         public string $translationKey = '',
         public bool $showTitle = true,
         public array $aliases = [],
+        public array|false|null $previous = null,
+        public array|false|null $next = null,
     ) {}
 
     private ?string $bodyCache = null;
@@ -78,6 +82,8 @@ final class Entry
             translationKey: $this->translationKey,
             showTitle: $this->showTitle,
             aliases: $this->aliases,
+            previous: $this->previous,
+            next: $this->next,
         );
     }
 

@@ -10,6 +10,24 @@ use YiiPress\Content\Model\NavigationItem;
 final class NavigationPager
 {
     /**
+     * @param array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null $navigationPager
+     * @param array{text: string, link: string}|false|null $previous
+     * @param array{text: string, link: string}|false|null $next
+     * @return array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null
+     */
+    public static function withOverrides(?array $navigationPager, array|false|null $previous, array|false|null $next): ?array
+    {
+        if ($navigationPager === null && $previous === null && $next === null) {
+            return null;
+        }
+
+        return [
+            'previous' => self::resolveOverride($navigationPager['previous'] ?? null, $previous),
+            'next' => self::resolveOverride($navigationPager['next'] ?? null, $next),
+        ];
+    }
+
+    /**
      * @return array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null
      */
     public static function forUrl(
@@ -86,5 +104,23 @@ final class NavigationPager
         }
 
         return rtrim($path, '/') ?: '/';
+    }
+
+    /**
+     * @param array{title: string, url: string}|null $inherited
+     * @param array{text: string, link: string}|false|null $override
+     * @return array{title: string, url: string}|null
+     */
+    private static function resolveOverride(?array $inherited, array|false|null $override): ?array
+    {
+        if ($override === null) {
+            return $inherited;
+        }
+
+        if ($override === false) {
+            return null;
+        }
+
+        return ['title' => $override['text'], 'url' => $override['link']];
     }
 }
