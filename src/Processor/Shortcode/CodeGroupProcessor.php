@@ -29,7 +29,7 @@ final readonly class CodeGroupProcessor implements ContentProcessorInterface, As
 
     public function process(string $content, Entry $entry): string
     {
-        if (str_contains($content, '<!-- yiipress-code-group:')) {
+        if (str_contains($content, '<!-- yiipress-code-group:start -->')) {
             return $this->renderGroups($content);
         }
 

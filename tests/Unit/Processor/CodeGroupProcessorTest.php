@@ -63,6 +63,22 @@ MARKDOWN;
         self::assertSame($content, $processor->process($content, $this->entry()));
     }
 
+    public function testUnrelatedCodeGroupCommentDoesNotSkipShortcodePreservation(): void
+    {
+        $processor = new CodeGroupProcessor();
+        $content = "<!-- yiipress-code-group:note -->\n"
+            . "[code-group]\n"
+            . "[code-tab label=\"One\"]\n```text\none\n```\n[/code-tab]\n"
+            . "[code-tab label=\"Two\"]\n```text\ntwo\n```\n[/code-tab]\n"
+            . '[/code-group]';
+
+        $result = $processor->process($content, $this->entry());
+
+        self::assertStringContainsString('<!-- yiipress-code-group:note -->', $result);
+        self::assertStringContainsString('<!-- yiipress-code-group:start -->', $result);
+        self::assertStringNotContainsString('[code-group]', $result);
+    }
+
     public function testEscapesLabelsAndCreatesIndependentGroupIds(): void
     {
         $processor = new CodeGroupProcessor();
