@@ -161,6 +161,20 @@ final class EntryParserTest extends TestCase
         }
     }
 
+    public function testAsideVisibilityIsInheritedWhenExplicitlyNull(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-aside-');
+        file_put_contents($file, "---\ntitle: Default\naside: null\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+
+            assertNull($entry->aside);
+        } finally {
+            unlink($file);
+        }
+    }
+
     public function testRejectsInvalidAsideVisibilityOverride(): void
     {
         $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-aside-invalid-');

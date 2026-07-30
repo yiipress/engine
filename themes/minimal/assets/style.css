@@ -686,13 +686,19 @@ a.tag-link:hover {
 }
 
 .container:has(.docs-layout) {
+    max-width: calc(var(--max-width) + 16rem + 2.5rem);
+}
+.container:has(.docs-layout-with-toc) {
     max-width: calc(var(--max-width) + 16rem + 14rem + 5rem);
 }
 .docs-layout {
     display: grid;
-    grid-template-columns: 16rem minmax(0, var(--max-width)) 14rem;
+    grid-template-columns: 16rem minmax(0, var(--max-width));
     gap: 2.5rem;
     align-items: start;
+}
+.docs-layout.docs-layout-with-toc {
+    grid-template-columns: 16rem minmax(0, var(--max-width)) 14rem;
 }
 .docs-content {
     min-width: 0;
