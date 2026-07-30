@@ -248,6 +248,43 @@ non-empty `label`. Content outside the tab shortcodes is not allowed within a gr
 Visitors can select tabs with a pointer or use Left/Right arrow, Home, and End keys.
 When JavaScript is unavailable, all labeled examples remain visible.
 
+### FAQ question blocks
+
+Use a titled `::: question` container for an answer that should be expandable without
+JavaScript. The answer is normal Markdown:
+
+```markdown
+::: question How do I install YiiPress?
+Download the binary for your platform and run **`yiipress init`**.
+:::
+```
+
+YiiPress escapes the title and renders semantic `<details>` and `<summary>` elements.
+The closing fence must contain at least as many colons as the opening fence. Question
+blocks cannot be nested; malformed, nested, and unclosed containers are left as literal
+content instead of consuming the rest of the page.
+
+By default, questions remain where they are written. Set `faq_level` in entry front matter
+to change grouping:
+
+```yaml
+---
+title: Troubleshooting
+faq_level: 2
+---
+```
+
+- `false` or omitted — render every question inline.
+- `0` — collect every question into one FAQ section at the end of the page.
+- `1` through `6` — collect questions at the end of each matching heading section.
+
+Grouping preserves question order. Questions before the first matching heading form a
+section immediately before that heading; questions after the last matching heading form a
+section at the page end. YiiPress does not emit `FAQPage` JSON-LD automatically because
+search engines restrict FAQ rich results to specific authoritative sites and duplicated
+answer data can become stale. Custom layouts may derive structured data from their own
+content policy.
+
 ### Project Processors
 
 Static binary users can add site-level content processors without editing Yii3 DI configuration. Put PHP processor files in `content/processors/`; files matching `*.php` are discovered automatically, sorted by filename, and inserted before Markdown rendering in both the page and feed pipelines.

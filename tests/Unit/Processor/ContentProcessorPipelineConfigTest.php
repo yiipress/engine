@@ -9,6 +9,7 @@ use ReflectionProperty;
 use YiiPress\Processor\ContentProcessorPipeline;
 use YiiPress\Processor\LatexMath\LatexMathProcessor;
 use YiiPress\Processor\MarkdownProcessor;
+use YiiPress\Processor\Question\QuestionProcessor;
 use YiiPress\Processor\Shortcode\CodeGroupProcessor;
 use YiiPress\Processor\SyntaxHighlightProcessor;
 use Yiisoft\Definitions\Reference;
@@ -35,16 +36,29 @@ final class ContentProcessorPipelineConfigTest extends TestCase
                 static fn(string $processorId): bool => $processorId === CodeGroupProcessor::class,
             ),
         );
+        $questionPositions = array_keys(
+            array_filter(
+                $registeredProcessorIds,
+                static fn(string $processorId): bool => $processorId === QuestionProcessor::class,
+            ),
+        );
         $markdownPosition = array_search(MarkdownProcessor::class, $registeredProcessorIds, true);
         $syntaxHighlightPosition = array_search(SyntaxHighlightProcessor::class, $registeredProcessorIds, true);
         self::assertNotFalse($markdownPosition);
         self::assertNotFalse($syntaxHighlightPosition);
         self::assertSame(
             [
-                $markdownPosition - 1,
+                $markdownPosition - 2,
                 $syntaxHighlightPosition + 1,
             ],
             $codeGroupPositions,
+        );
+        self::assertSame(
+            [
+                $markdownPosition - 1,
+                $syntaxHighlightPosition + 2,
+            ],
+            $questionPositions,
         );
 
         $pipeline = new ContentProcessorPipeline(new LatexMathProcessor());

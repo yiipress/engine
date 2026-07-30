@@ -110,6 +110,7 @@
 - [x] [Tabbed code groups](https://github.com/yiipress/engine/issues/107)
 - [x] [Per-entry previous/next pager overrides](https://github.com/yiipress/engine/issues/113)
 - [x] [Per-entry edit-link visibility override](https://github.com/yiipress/engine/issues/112)
+- [x] [FAQ question blocks with configurable section grouping](https://github.com/yiipress/engine/issues/114)
 
 ## Priority 8: Advanced features
 

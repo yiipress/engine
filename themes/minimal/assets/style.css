@@ -657,6 +657,34 @@ a.tag-link:hover {
     overflow-wrap: anywhere;
 }
 
+.faq-section {
+    margin: 2rem 0;
+}
+.faq-question {
+    border-top: 1px solid var(--c-border);
+    padding: .875rem 0;
+}
+.faq-question:last-child {
+    border-bottom: 1px solid var(--c-border);
+}
+.faq-question summary {
+    color: var(--c-text);
+    cursor: pointer;
+    font-weight: 600;
+}
+.faq-question summary:hover {
+    color: var(--c-link);
+}
+.faq-answer {
+    padding-top: .75rem;
+}
+.faq-answer > :first-child {
+    margin-top: 0;
+}
+.faq-answer > :last-child {
+    margin-bottom: 0;
+}
+
 .container:has(.docs-layout) {
     max-width: calc(var(--max-width) + 16rem + 14rem + 5rem);
 }

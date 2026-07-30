@@ -111,6 +111,31 @@ final readonly class EntryParser
             previous: $this->parsePagerOverride($fields, 'previous', $filePath),
             next: $this->parsePagerOverride($fields, 'next', $filePath),
             editLink: $this->parseEditLink($fields, $filePath),
+            faqLevel: $this->parseFaqLevel($fields, $filePath),
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $fields
+     */
+    private function parseFaqLevel(array $fields, string $filePath): int|false|null
+    {
+        if (!array_key_exists('faq_level', $fields) || $fields['faq_level'] === null) {
+            return null;
+        }
+
+        $value = $fields['faq_level'];
+        if ($value === false) {
+            return false;
+        }
+        if (is_int($value) && $value >= 0 && $value <= 6) {
+            return $value;
+        }
+
+        throw new InvalidContentConfigException(
+            "Invalid \"faq_level\" grouping mode in front matter: $filePath",
+            $filePath,
+            'Omit "faq_level" or set it to false for inline questions, 0 for page-end grouping, or a heading level from 1 to 6.',
         );
     }
 
