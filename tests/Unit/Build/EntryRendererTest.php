@@ -20,6 +20,7 @@ use YiiPress\Hook\RenderStartedEvent;
 use YiiPress\Processor\ContentProcessorPipeline;
 use YiiPress\Processor\MarkdownProcessor;
 use YiiPress\Processor\TagLinkProcessor;
+use YiiPress\Processor\Toc\TocProcessor;
 use YiiPress\Render\MarkdownRenderer;
 use DateTimeImmutable;
 use FilesystemIterator;
@@ -117,6 +118,101 @@ final class EntryRendererTest extends TestCase
         $html = $renderer->render($this->createSiteConfig(), $entry, '/current/');
 
         assertStringNotContainsString('class="entry-pager"', $html);
+    }
+
+    public function testFiltersTocToEntryHeadingRange(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Outline\n---\n\n<h1>One</h1><h2>Two</h2><h3>Three</h3><h4>Four</h4>\n");
+        $themePath = $this->contentDir . '/custom-theme';
+        mkdir($themePath);
+        file_put_contents(
+            $themePath . '/entry.php',
+            '<?php foreach ($toc as $item): ?><?= $item["level"] ?>:<?= $item["text"] ?>;<?php endforeach; ?>',
+        );
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Outline', toc: [2, 3]);
+        $renderer = new EntryRenderer(
+            new ContentProcessorPipeline(new TocProcessor()),
+            $this->createTemplateResolver($themePath),
+            contentDir: $this->contentDir,
+        );
+        $html = $renderer->render($this->createSiteConfig(theme: 'custom', toc: false, minify: false), $entry);
+
+        assertSame('2:Two;3:Three;', $html);
+    }
+
+    public function testOmittedTocOverrideInheritsDisabledSiteSetting(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Outline\n---\n\n<h2>Details</h2>\n");
+        $themePath = $this->contentDir . '/custom-theme';
+        mkdir($themePath);
+        file_put_contents($themePath . '/entry.php', '<?= count($toc) ?>|<?= $content ?>');
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Outline');
+        $renderer = new EntryRenderer(
+            new ContentProcessorPipeline(new TocProcessor()),
+            $this->createTemplateResolver($themePath),
+            contentDir: $this->contentDir,
+        );
+        $html = $renderer->render(
+            $this->createSiteConfig(theme: 'custom', toc: false, minify: false),
+            $entry,
+        );
+
+        assertStringContainsString('0|<h2 id="details">', $html);
+    }
+
+    public function testEntryCanDisableTocWhileHeadingIdsRemain(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Outline\n---\n\n<h2>Details</h2>\n");
+        $themePath = $this->contentDir . '/custom-theme';
+        mkdir($themePath);
+        file_put_contents($themePath . '/entry.php', '<?= count($toc) ?>|<?= $content ?>');
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Outline', toc: false);
+        $renderer = new EntryRenderer(
+            new ContentProcessorPipeline(new TocProcessor()),
+            $this->createTemplateResolver($themePath),
+            contentDir: $this->contentDir,
+        );
+        $html = $renderer->render($this->createSiteConfig(theme: 'custom', minify: false), $entry);
+
+        assertStringContainsString('0|<h2 id="details">', $html);
+    }
+
+    public function testEffectiveTocRangeChangesCacheSignature(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Outline\n---\n\n<h2>Two</h2><h3>Three</h3>\n");
+        $themePath = $this->contentDir . '/custom-theme';
+        mkdir($themePath);
+        file_put_contents($themePath . '/entry.php', '<?= count($toc) ?>');
+        $templateResolver = $this->createTemplateResolver($themePath);
+        $cacheDir = $this->contentDir . '/cache';
+        $renderer = new EntryRenderer(
+            new ContentProcessorPipeline(new TocProcessor()),
+            $templateResolver,
+            cache: new BuildCache($cacheDir, $templateResolver->templateDirs()),
+            contentDir: $this->contentDir,
+        );
+
+        $renderer->render(
+            $this->createSiteConfig(theme: 'custom', minify: false),
+            $this->createEntry(filePath: $entryFile, toc: [2, 2]),
+        );
+        $renderer->render(
+            $this->createSiteConfig(theme: 'custom', minify: false),
+            $this->createEntry(filePath: $entryFile, toc: [2, 3]),
+        );
+
+        $cacheFiles = array_values(array_filter(
+            scandir($cacheDir),
+            static fn (string $file): bool => $file !== '.' && $file !== '..',
+        ));
+        $this->assertCount(2, $cacheFiles);
     }
 
     public function testRendersInternalCustomPagerUrlRelativeToDeploymentPage(): void
@@ -722,6 +818,7 @@ PHP);
         ?string $editPageUrl = null,
         ?string $reportIssueUrl = null,
         bool $authorPages = false,
+        bool $toc = true,
         bool $minify = true,
         array $data = [],
         string $baseUrl = 'https://example.com',
@@ -739,6 +836,7 @@ PHP);
             taxonomies: [],
             params: [],
             theme: $theme,
+            toc: $toc,
             search: $search,
             i18n: $i18n,
             lastUpdated: $lastUpdated,
@@ -765,6 +863,7 @@ PHP);
         array $extra = [],
         bool $showTitle = true,
         ?bool $editLink = null,
+        array|false|null $toc = null,
     ): Entry {
         $content = file_get_contents($filePath);
         $bodyMarker = "---\n\n";
@@ -799,6 +898,7 @@ PHP);
             inlineTags: $inlineTags,
             showTitle: $showTitle,
             editLink: $editLink,
+            toc: $toc,
         );
     }
 
