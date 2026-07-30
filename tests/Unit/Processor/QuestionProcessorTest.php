@@ -99,6 +99,15 @@ final class QuestionProcessorTest extends TestCase
         assertStringNotContainsString('class="faq-question"', $result);
     }
 
+    public function testPreservesAnswerIndentationBeforeMarkdownRendering(): void
+    {
+        $result = $this->process(
+            "::: question What is the command?\n    echo 'preserved';\n:::",
+        );
+
+        assertStringContainsString("<pre><code>echo 'preserved';", $result);
+    }
+
     private function process(string $markdown, int|false|null $faqLevel = null): string
     {
         $questionProcessor = new QuestionProcessor();

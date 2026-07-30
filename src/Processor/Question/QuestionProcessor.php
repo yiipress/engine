@@ -119,7 +119,10 @@ final readonly class QuestionProcessor implements ContentProcessorInterface
             }
 
             $output[] = self::START_MARKER . base64_encode(trim($open['title'])) . ' -->';
-            $output[] = trim(implode("\n", array_slice($lines, $index + 1, $closeIndex - $index - 1)));
+            $output[] = trim(
+                implode("\n", array_slice($lines, $index + 1, $closeIndex - $index - 1)),
+                "\r\n",
+            );
             $output[] = self::END_MARKER;
             $index = $closeIndex;
         }
