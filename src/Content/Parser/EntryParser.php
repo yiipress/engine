@@ -114,6 +114,7 @@ final readonly class EntryParser
             faqLevel: $this->parseFaqLevel($fields, $filePath),
             toc: $this->parseToc($fields, $filePath),
             lastUpdated: $this->parseBooleanOverride($fields, 'last_updated', $filePath),
+            aside: $this->parseBooleanOverride($fields, 'aside', $filePath),
         );
     }
 

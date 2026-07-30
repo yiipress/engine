@@ -228,7 +228,7 @@ final class EntryRenderer
             'entryAuthors' => $this->entryAuthors($siteConfig, $entry, $rootPath),
             'tags' => array_values(array_filter(
                 $entry->tags,
-                static fn (string $tag) => !in_array(mb_strtolower($tag), $entry->inlineTags, true),
+                static fn(string $tag) => !in_array(mb_strtolower($tag), $entry->inlineTags, true),
             )),
             'categories' => $entry->categories,
             'collection' => $entry->collection,
@@ -238,6 +238,7 @@ final class EntryRenderer
             'nav' => $navigation,
             'headAssets' => $headAssets,
             'toc' => $toc,
+            'aside' => $entry->aside ?? true,
             'related' => $related,
             'translations' => $translations,
             'navigationPager' => $navigationPager,
@@ -250,7 +251,7 @@ final class EntryRenderer
             'rootPath' => $rootPath,
             'assetManifest' => $this->assetManifest,
             'themeName' => $themeName,
-            'themeAsset' => fn (string $path): string => Asset::themeUrl(
+            'themeAsset' => fn(string $path): string => Asset::themeUrl(
                 $path,
                 $this->templateResolver->resolveResourceThemeName('assets/' . ltrim($path, '/'), $themeName),
                 $rootPath,
@@ -270,7 +271,7 @@ final class EntryRenderer
     private function authorText(Entry $entry): string
     {
         return implode(', ', array_map(
-            fn (string $authorSlug) => $this->authors[$authorSlug]->title ?? $authorSlug,
+            fn(string $authorSlug) => $this->authors[$authorSlug]->title ?? $authorSlug,
             $entry->authors,
         ));
     }

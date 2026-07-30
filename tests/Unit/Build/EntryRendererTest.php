@@ -13,6 +13,8 @@ use YiiPress\Build\TemplateResolver;
 use YiiPress\Content\Model\Author;
 use YiiPress\Content\Model\Entry;
 use YiiPress\Content\Model\I18nConfig;
+use YiiPress\Content\Model\Navigation;
+use YiiPress\Content\Model\NavigationItem;
 use YiiPress\Content\Model\SearchConfig;
 use YiiPress\Content\Model\SiteConfig;
 use YiiPress\Hook\RenderFinishedEvent;
@@ -213,6 +215,48 @@ final class EntryRendererTest extends TestCase
             static fn (string $file): bool => $file !== '.' && $file !== '..',
         ));
         $this->assertCount(2, $cacheFiles);
+    }
+
+    public function testCanHideDocumentationAsideWithoutDiscardingTocData(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Focused\n---\n\n<h2>Details</h2>\n");
+        $themePath = $this->contentDir . '/custom-theme';
+        mkdir($themePath);
+        file_put_contents($themePath . '/entry.php', '<?= $aside ? "aside-visible" : "aside-hidden" ?>|<?= count($toc) ?>');
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Focused', aside: false);
+        $renderer = new EntryRenderer(
+            new ContentProcessorPipeline(new TocProcessor()),
+            $this->createTemplateResolver($themePath),
+            contentDir: $this->contentDir,
+        );
+        $html = $renderer->render($this->createSiteConfig(theme: 'custom', minify: false), $entry, '/docs/focused/');
+
+        assertSame('aside-hidden|1', $html);
+    }
+
+    public function testHiddenDocumentationAsideDoesNotReserveThemeGridColumn(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Focused\n---\n\n<h2>Details</h2>\n");
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Focused', aside: false);
+        $renderer = new EntryRenderer(
+            new ContentProcessorPipeline(new TocProcessor()),
+            $this->createTemplateResolver(),
+            contentDir: $this->contentDir,
+        );
+        $navigation = new Navigation([
+            'sidebar' => [new NavigationItem('Focused', '/docs/focused/', [])],
+        ]);
+        $html = $renderer->render($this->createSiteConfig(minify: false), $entry, '/docs/focused/', $navigation);
+
+        assertStringContainsString('class="docs-layout"', $html);
+        assertStringContainsString('class="docs-sidebar"', $html);
+        assertStringNotContainsString('docs-layout-with-toc', $html);
+        assertStringNotContainsString('toc-sidebar-right', $html);
+        assertStringContainsString('id="details"', $html);
     }
 
     public function testRendersInternalCustomPagerUrlRelativeToDeploymentPage(): void
@@ -927,6 +971,7 @@ PHP);
         ?bool $editLink = null,
         array|false|null $toc = null,
         ?bool $lastUpdated = null,
+        ?bool $aside = null,
     ): Entry {
         $content = file_get_contents($filePath);
         $bodyMarker = "---\n\n";
@@ -963,6 +1008,7 @@ PHP);
             editLink: $editLink,
             toc: $toc,
             lastUpdated: $lastUpdated,
+            aside: $aside,
         );
     }
 
