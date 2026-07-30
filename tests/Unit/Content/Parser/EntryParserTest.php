@@ -227,6 +227,34 @@ final class EntryParserTest extends TestCase
         yield 'unknown string' => ['toc: shallow'];
     }
 
+    public function testLegacyEditLinkVisibilityRemainsSupported(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-edit-link-legacy-');
+        file_put_contents($file, "---\ntitle: Generated\neditLink: false\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+
+            assertFalse($entry->editLink);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testSnakeCaseEditLinkTakesPrecedenceOverLegacyKey(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-edit-link-precedence-');
+        file_put_contents($file, "---\ntitle: Generated\neditLink: false\nedit_link: true\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+
+            assertTrue($entry->editLink);
+        } finally {
+            unlink($file);
+        }
+    }
+
     public function testParsesLastUpdatedVisibilityOverride(): void
     {
         $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-last-updated-');
@@ -448,6 +476,25 @@ final class EntryParserTest extends TestCase
             assertSame([], $entry->extra);
         } finally {
             unlink($filePath);
+        }
+    }
+
+    public function testLegacyShowTitleRemainsSupportedWithSnakeCasePrecedence(): void
+    {
+        $legacyFile = tempnam(sys_get_temp_dir(), 'yiipress-entry-show-title-legacy-');
+        $precedenceFile = tempnam(sys_get_temp_dir(), 'yiipress-entry-show-title-precedence-');
+        file_put_contents($legacyFile, "---\ntitle: Legacy\nshowTitle: false\n---\n\nBody.\n");
+        file_put_contents(
+            $precedenceFile,
+            "---\ntitle: Precedence\nshowTitle: false\nshow_title: true\n---\n\nBody.\n",
+        );
+
+        try {
+            assertFalse($this->parser->parse($legacyFile, 'docs')->showTitle);
+            assertTrue($this->parser->parse($precedenceFile, 'docs')->showTitle);
+        } finally {
+            unlink($legacyFile);
+            unlink($precedenceFile);
         }
     }
 }

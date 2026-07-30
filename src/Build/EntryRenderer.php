@@ -132,6 +132,8 @@ final class EntryRenderer
         ?CrossReferenceResolver $crossRefResolver,
         ?array $navigationPager,
     ): string {
+        $lastUpdated = $this->isLastUpdatedEnabled($siteConfig, $entry);
+
         return hash('xxh128', serialize([
             'siteConfig' => $siteConfig,
             'permalink' => $permalink,
@@ -142,7 +144,7 @@ final class EntryRenderer
             'related' => $this->relatedIndex?->signature() ?? '',
             'translations' => $this->translationIndex?->signature() ?? '',
             'tocRange' => $this->tocRange($siteConfig, $entry),
-            'lastUpdated' => $lastUpdated = $this->isLastUpdatedEnabled($siteConfig, $entry),
+            'lastUpdated' => $lastUpdated,
             'lastUpdatedMtime' => $lastUpdated ? filemtime($entry->sourceFilePath()) : null,
         ]));
     }

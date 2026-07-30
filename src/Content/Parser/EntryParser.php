@@ -104,7 +104,7 @@ final readonly class EntryParser
             bodyLength: $result['bodyLength'],
             image: (string) ($fields['image'] ?? ''),
             translationKey: (string) ($fields['translation_key'] ?? ''),
-            showTitle: (bool) ($fields['show_title'] ?? true),
+            showTitle: (bool) ($fields['show_title'] ?? $fields['showTitle'] ?? true),
             aliases: isset($fields['aliases']) && is_array($fields['aliases'])
                 ? array_values(array_map(strval(...), $fields['aliases']))
                 : [],
@@ -187,14 +187,21 @@ final readonly class EntryParser
      */
     private function parseEditLink(array $fields, string $filePath): ?bool
     {
-        return $this->parseBooleanOverride($fields, 'edit_link', $filePath);
+        return $this->parseBooleanOverride($fields, 'edit_link', $filePath, 'editLink');
     }
 
     /**
      * @param array<string, mixed> $fields
      */
-    private function parseBooleanOverride(array $fields, string $name, string $filePath): ?bool
-    {
+    private function parseBooleanOverride(
+        array $fields,
+        string $name,
+        string $filePath,
+        ?string $legacyName = null,
+    ): ?bool {
+        if (!array_key_exists($name, $fields) && $legacyName !== null && array_key_exists($legacyName, $fields)) {
+            $fields[$name] = $fields[$legacyName];
+        }
         if (!array_key_exists($name, $fields) || $fields[$name] === null) {
             return null;
         }
@@ -202,7 +209,7 @@ final readonly class EntryParser
             throw new InvalidContentConfigException(
                 "Invalid \"$name\" visibility override in front matter: $filePath",
                 $filePath,
-                "Omit \"$name\" to inherit it, or set it to true or false.",
+                "Omit \"$name\" or set it to null to inherit it, or set it to true or false.",
             );
         }
 
