@@ -47,6 +47,7 @@ final class Entry
         public array|false|null $previous = null,
         public array|false|null $next = null,
         public ?bool $editLink = null,
+        public int|false|null $faqLevel = null,
         public array|false|null $toc = null,
     ) {}
 
@@ -88,6 +89,7 @@ final class Entry
             previous: $this->previous,
             next: $this->next,
             editLink: $this->editLink,
+            faqLevel: $this->faqLevel,
             toc: $this->toc,
         );
     }

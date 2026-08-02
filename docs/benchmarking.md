@@ -64,6 +64,7 @@ Use `--no-write` to separate render/template/processor cost from output director
 - **`ContentParserBench`** — measures parsing speed for site config, navigation, collections, authors, and entries (with and without body loading)
 - **`MarkdownRendererBench`** — measures `iliaal/mdparser` markdown-to-HTML rendering for short and long documents
 - **`SyntaxHighlighterBench`** — measures the reusable highlighter package path for plain HTML, raw code, a single highlighted block, and a page with many highlighted blocks
+- **`QuestionProcessorBench`** — measures pages with 100 Markdown question blocks in inline and heading-grouped modes
 - **`AssetFingerprintingBench`** — measures fingerprint lookup and HTML asset URL rewriting
 - **`BuildProfileBench`** — measures overhead of disabled and enabled build phase timers
 - **`OEmbedProcessorBench`** — measures standalone URL-to-embed expansion across pluggable oEmbed providers

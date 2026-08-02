@@ -81,6 +81,28 @@ final class MinimalThemeAssetsTest extends TestCase
         assertStringContainsString('"nav nav";', $css);
     }
 
+    public function testStyleSupportsSemanticFaqQuestionsInBothColorSchemes(): void
+    {
+        $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');
+
+        self::assertNotFalse($css);
+        assertStringContainsString('.faq-section {', $css);
+        assertStringContainsString('.faq-question {', $css);
+        assertStringContainsString('border-top: 1px solid var(--c-border);', $css);
+        assertStringContainsString('.faq-question summary {', $css);
+        assertStringContainsString('color: var(--c-text);', $css);
+        assertStringContainsString('.faq-question summary:hover {', $css);
+        assertStringContainsString('color: var(--c-link);', $css);
+        assertStringContainsString('.faq-question:last-child {', $css);
+        assertStringContainsString('border-bottom: 1px solid var(--c-border);', $css);
+        assertStringContainsString('.faq-answer {', $css);
+        assertStringContainsString('padding-top: .75rem;', $css);
+        assertStringContainsString('.faq-answer > :first-child {', $css);
+        assertStringContainsString('margin-top: 0;', $css);
+        assertStringContainsString('.faq-answer > :last-child {', $css);
+        assertStringContainsString('margin-bottom: 0;', $css);
+    }
+
     public function testStyleSupportsHeadingPermalinks(): void
     {
         $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');

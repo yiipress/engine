@@ -122,6 +122,56 @@ final class EntryParserTest extends TestCase
         }
     }
 
+    #[DataProvider('faqLevelProvider')]
+    public function testParsesFaqLevel(string $yaml, int|false|null $expected): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-faq-');
+        file_put_contents($file, "---\ntitle: FAQ\n$yaml\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+
+            assertSame($expected, $entry->faqLevel);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public static function faqLevelProvider(): iterable
+    {
+        yield 'inline' => ['faq_level: false', false];
+        yield 'page end' => ['faq_level: 0', 0];
+        yield 'heading level' => ['faq_level: 3', 3];
+        yield 'null inheritance' => ['faq_level: null', null];
+        yield 'omitted inheritance' => ['', null];
+    }
+
+    #[DataProvider('invalidFaqLevelProvider')]
+    public function testRejectsInvalidFaqLevel(string $yaml): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-faq-invalid-');
+        file_put_contents($file, "---\ntitle: Invalid\n$yaml\n---\n\nBody.\n");
+
+        try {
+            $this->parser->parse($file, 'docs');
+            self::fail('Expected invalid FAQ grouping level to throw.');
+        } catch (InvalidContentConfigException $e) {
+            assertStringContainsString('Invalid "faq_level" grouping mode', $e->getMessage());
+            assertSame($file, $e->filePath());
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public static function invalidFaqLevelProvider(): iterable
+    {
+        yield 'true' => ['faq_level: true'];
+        yield 'negative' => ['faq_level: -1'];
+        yield 'above maximum' => ['faq_level: 7'];
+        yield 'string' => ['faq_level: section'];
+        yield 'array' => ['faq_level: [2]'];
+    }
+
     #[DataProvider('tocOverrideProvider')]
     public function testParsesTocOverride(string $yaml, array|false|null $expected): void
     {
