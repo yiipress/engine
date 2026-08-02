@@ -20,7 +20,7 @@ use function preg_match_all;
 use function preg_replace_callback;
 use function sprintf;
 use function str_contains;
-use function strtolower;
+use function stripos;
 use function trim;
 
 /**
@@ -40,7 +40,7 @@ final readonly class QuestionProcessor implements ContentProcessorInterface
         if (str_contains($content, self::START_MARKER)) {
             return $this->renderQuestions($content, $entry->faqLevel);
         }
-        if (!str_contains(strtolower($content), '[question')) {
+        if (stripos($content, '[question') === false) {
             return $content;
         }
 

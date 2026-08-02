@@ -47,6 +47,7 @@ return [
             Reference::to(OEmbedProcessor::class),
             // Preserve code-group shortcode metadata before Markdown, then render it after syntax highlighting.
             Reference::to(CodeGroupProcessor::class),
+            // Preserve question shortcode metadata before Markdown.
             Reference::to(QuestionProcessor::class),
             Reference::to(MarkdownProcessor::class),
             Reference::to(LatexMathProcessor::class),
@@ -55,6 +56,7 @@ return [
             Reference::to(SyntaxHighlightProcessor::class),
             // Complete the second code-group pass using the rendered, highlighted code blocks.
             Reference::to(CodeGroupProcessor::class),
+            // Render preserved question shortcodes after the later processors.
             Reference::to(QuestionProcessor::class),
             Reference::to(TocProcessor::class),
         ],
@@ -62,9 +64,11 @@ return [
     'feedPipeline' => [
         'class' => ContentProcessorPipeline::class,
         '__construct()' => [
+            // Preserve question shortcode metadata before Markdown.
             Reference::to(QuestionProcessor::class),
             Reference::to(MarkdownProcessor::class),
             Reference::to(TagLinkProcessor::class),
+            // Render preserved question shortcodes after the later processors.
             Reference::to(QuestionProcessor::class),
         ],
     ],

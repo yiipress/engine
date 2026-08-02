@@ -35,6 +35,14 @@ final class QuestionProcessorTest extends TestCase
         assertStringNotContainsString('[question', $result);
     }
 
+    public function testRendersCaseInsensitiveQuestionShortcode(): void
+    {
+        $result = $this->process("[QUESTION title=\"Does case matter?\"]\nNo.\n[/QUESTION]");
+
+        assertStringContainsString('<summary>Does case matter?</summary>', $result);
+        assertStringContainsString('<div class="faq-answer"><p>No.</p></div>', $result);
+    }
+
     public function testGroupsQuestionsAtPageEndInDocumentOrder(): void
     {
         $result = $this->process(
