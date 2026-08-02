@@ -85,7 +85,13 @@ final class EntryRenderer
         $rootPath = UrlResolver::rootPath($permalink);
         $content = $this->pipeline->process($body, $entry, $rootPath);
         $headAssets = $this->pipeline->collectHeadAssets($content);
-        $toc = $siteConfig->toc ? $this->pipeline->collectToc() : [];
+        $tocRange = $this->tocRange($siteConfig, $entry);
+        $toc = $tocRange === null
+            ? []
+            : array_values(array_filter(
+                $this->pipeline->collectToc(),
+                static fn (array $item): bool => $item['level'] >= $tocRange[0] && $item['level'] <= $tocRange[1],
+            ));
         $related = $this->relatedIndex?->forEntry($entry->filePath) ?? [];
         $translations = $this->translationIndex?->forEntry($entry->filePath) ?? [];
         $html = $this->renderTemplate($siteConfig, $entry, $content, $permalink, $navigation, $headAssets, $toc, $related, $translations, $navigationPager);
@@ -135,8 +141,24 @@ final class EntryRenderer
             'crossReferences' => $crossRefResolver?->signature() ?? '',
             'related' => $this->relatedIndex?->signature() ?? '',
             'translations' => $this->translationIndex?->signature() ?? '',
+            'tocRange' => $this->tocRange($siteConfig, $entry),
             'lastUpdatedMtime' => $siteConfig->lastUpdated ? filemtime($entry->sourceFilePath()) : null,
         ]));
+    }
+
+    /**
+     * @return array{0: int, 1: int}|null
+     */
+    private function tocRange(SiteConfig $siteConfig, Entry $entry): ?array
+    {
+        if ($entry->toc === false) {
+            return null;
+        }
+        if (is_array($entry->toc)) {
+            return $entry->toc;
+        }
+
+        return $siteConfig->toc ? [1, 6] : null;
     }
 
     private function resolveContentDir(Entry $entry): string

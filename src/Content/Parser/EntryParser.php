@@ -112,6 +112,7 @@ final readonly class EntryParser
             next: $this->parsePagerOverride($fields, 'next', $filePath),
             editLink: $this->parseEditLink($fields, $filePath),
             faqLevel: $this->parseFaqLevel($fields, $filePath),
+            toc: $this->parseToc($fields, $filePath),
         );
     }
 
@@ -136,6 +137,47 @@ final readonly class EntryParser
             "Invalid \"faq_level\" grouping mode in front matter: $filePath",
             $filePath,
             'Omit "faq_level" or set it to false for inline questions, 0 for page-end grouping, or a heading level from 1 to 6.',
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $fields
+     *
+     * @return array{0: int, 1: int}|false|null
+     */
+    private function parseToc(array $fields, string $filePath): array|false|null
+    {
+        if (!array_key_exists('toc', $fields) || $fields['toc'] === null) {
+            return null;
+        }
+
+        $value = $fields['toc'];
+        if ($value === false) {
+            return false;
+        }
+        if ($value === 'deep') {
+            return [2, 6];
+        }
+        if (is_int($value) && $value >= 1 && $value <= 6) {
+            return [$value, $value];
+        }
+        if (is_array($value) && array_is_list($value) && count($value) === 2) {
+            [$minimum, $maximum] = $value;
+            if (
+                is_int($minimum)
+                && is_int($maximum)
+                && $minimum >= 1
+                && $maximum <= 6
+                && $minimum <= $maximum
+            ) {
+                return [$minimum, $maximum];
+            }
+        }
+
+        throw new InvalidContentConfigException(
+            "Invalid \"toc\" heading range in front matter: $filePath",
+            $filePath,
+            'Omit "toc" to inherit it, set it to false, "deep", a level from 1 to 6, or an inclusive range such as [2, 4].',
         );
     }
 

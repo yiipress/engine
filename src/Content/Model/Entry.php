@@ -17,6 +17,7 @@ final class Entry
      * @param list<string> $aliases
      * @param array{text: string, link: string}|false|null $previous
      * @param array{text: string, link: string}|false|null $next
+     * @param array{0: int, 1: int}|false|null $toc
      */
     public function __construct(
         public string $filePath,
@@ -47,6 +48,7 @@ final class Entry
         public array|false|null $next = null,
         public ?bool $editLink = null,
         public int|false|null $faqLevel = null,
+        public array|false|null $toc = null,
     ) {}
 
     private ?string $bodyCache = null;
@@ -88,6 +90,7 @@ final class Entry
             next: $this->next,
             editLink: $this->editLink,
             faqLevel: $this->faqLevel,
+            toc: $this->toc,
         );
     }
 
