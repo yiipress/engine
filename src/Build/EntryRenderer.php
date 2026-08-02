@@ -132,6 +132,8 @@ final class EntryRenderer
         ?CrossReferenceResolver $crossRefResolver,
         ?array $navigationPager,
     ): string {
+        $lastUpdated = $this->isLastUpdatedEnabled($siteConfig, $entry);
+
         return hash('xxh128', serialize([
             'siteConfig' => $siteConfig,
             'permalink' => $permalink,
@@ -142,7 +144,8 @@ final class EntryRenderer
             'related' => $this->relatedIndex?->signature() ?? '',
             'translations' => $this->translationIndex?->signature() ?? '',
             'tocRange' => $this->tocRange($siteConfig, $entry),
-            'lastUpdatedMtime' => $siteConfig->lastUpdated ? filemtime($entry->sourceFilePath()) : null,
+            'lastUpdated' => $lastUpdated,
+            'lastUpdatedMtime' => $lastUpdated ? filemtime($entry->sourceFilePath()) : null,
         ]));
     }
 
@@ -298,7 +301,7 @@ final class EntryRenderer
      */
     private function lastUpdated(SiteConfig $siteConfig, Entry $entry): ?array
     {
-        if (!$siteConfig->lastUpdated) {
+        if (!$this->isLastUpdatedEnabled($siteConfig, $entry)) {
             return null;
         }
 
@@ -314,6 +317,11 @@ final class EntryRenderer
             'iso' => $date->format(DATE_ATOM),
             'text' => $date->format('n/j/y, g:i A'),
         ];
+    }
+
+    private function isLastUpdatedEnabled(SiteConfig $siteConfig, Entry $entry): bool
+    {
+        return $entry->lastUpdated ?? $siteConfig->lastUpdated;
     }
 
     /**

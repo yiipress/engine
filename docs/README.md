@@ -1,7 +1,7 @@
 ---
 permalink: "/"
 title: "YiiPress Documentation"
-showTitle: false
+show_title: false
 ---
 
 <p align="center">

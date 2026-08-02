@@ -97,7 +97,7 @@ final class EntryParserTest extends TestCase
     public function testParsesEditLinkVisibilityOverride(): void
     {
         $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-edit-link-');
-        file_put_contents($file, "---\ntitle: Generated\neditLink: false\n---\n\nBody.\n");
+        file_put_contents($file, "---\ntitle: Generated\nedit_link: false\n---\n\nBody.\n");
 
         try {
             $entry = $this->parser->parse($file, 'docs');
@@ -227,16 +227,116 @@ final class EntryParserTest extends TestCase
         yield 'unknown string' => ['toc: shallow'];
     }
 
+    public function testLegacyEditLinkVisibilityRemainsSupported(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-edit-link-legacy-');
+        file_put_contents($file, "---\ntitle: Generated\neditLink: false\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+
+            assertFalse($entry->editLink);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testSnakeCaseEditLinkTakesPrecedenceOverLegacyKey(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-edit-link-precedence-');
+        file_put_contents($file, "---\ntitle: Generated\neditLink: false\nedit_link: true\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+
+            assertTrue($entry->editLink);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testParsesLastUpdatedVisibilityOverride(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-last-updated-');
+        file_put_contents($file, "---\ntitle: Generated\nlast_updated: false\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+
+            assertFalse($entry->lastUpdated);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testParsesEnabledLastUpdatedVisibilityOverride(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-last-updated-');
+        file_put_contents($file, "---\ntitle: Generated\nlast_updated: true\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+
+            assertTrue($entry->lastUpdated);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testLastUpdatedVisibilityIsInheritedWhenNull(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-last-updated-');
+        file_put_contents($file, "---\ntitle: Generated\nlast_updated: null\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+
+            assertNull($entry->lastUpdated);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testLastUpdatedVisibilityIsInheritedWhenOmitted(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-last-updated-');
+        file_put_contents($file, "---\ntitle: Generated\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+
+            assertNull($entry->lastUpdated);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testRejectsInvalidLastUpdatedVisibilityOverride(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-last-updated-invalid-');
+        file_put_contents($file, "---\ntitle: Generated\nlast_updated: yesterday\n---\n\nBody.\n");
+
+        try {
+            $this->parser->parse($file, 'docs');
+            self::fail('Expected invalid last-updated visibility override to throw.');
+        } catch (InvalidContentConfigException $e) {
+            assertStringContainsString('Invalid "last_updated" visibility override', $e->getMessage());
+            assertSame($file, $e->filePath());
+        } finally {
+            unlink($file);
+        }
+    }
+
     public function testRejectsInvalidEditLinkVisibilityOverride(): void
     {
         $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-edit-link-invalid-');
-        file_put_contents($file, "---\ntitle: Editable\neditLink: hidden\n---\n\nBody.\n");
+        file_put_contents($file, "---\ntitle: Editable\nedit_link: hidden\n---\n\nBody.\n");
 
         try {
             $this->parser->parse($file, 'docs');
             self::fail('Expected invalid edit-link visibility override to throw.');
         } catch (InvalidContentConfigException $e) {
-            assertStringContainsString('Invalid "editLink" visibility override', $e->getMessage());
+            assertStringContainsString('Invalid "edit_link" visibility override', $e->getMessage());
             assertSame($file, $e->filePath());
         } finally {
             unlink($file);
@@ -367,7 +467,7 @@ final class EntryParserTest extends TestCase
         $filePath = tempnam(sys_get_temp_dir(), 'yiipress-entry-');
         self::assertNotFalse($filePath);
 
-        file_put_contents($filePath, "---\ntitle: Logo First\nshowTitle: false\n---\n\nBody.\n");
+        file_put_contents($filePath, "---\ntitle: Logo First\nshow_title: false\n---\n\nBody.\n");
 
         try {
             $entry = $this->parser->parse($filePath, 'pages');
@@ -376,6 +476,25 @@ final class EntryParserTest extends TestCase
             assertSame([], $entry->extra);
         } finally {
             unlink($filePath);
+        }
+    }
+
+    public function testLegacyShowTitleRemainsSupportedWithSnakeCasePrecedence(): void
+    {
+        $legacyFile = tempnam(sys_get_temp_dir(), 'yiipress-entry-show-title-legacy-');
+        $precedenceFile = tempnam(sys_get_temp_dir(), 'yiipress-entry-show-title-precedence-');
+        file_put_contents($legacyFile, "---\ntitle: Legacy\nshowTitle: false\n---\n\nBody.\n");
+        file_put_contents(
+            $precedenceFile,
+            "---\ntitle: Precedence\nshowTitle: false\nshow_title: true\n---\n\nBody.\n",
+        );
+
+        try {
+            assertFalse($this->parser->parse($legacyFile, 'docs')->showTitle);
+            assertTrue($this->parser->parse($precedenceFile, 'docs')->showTitle);
+        } finally {
+            unlink($legacyFile);
+            unlink($precedenceFile);
         }
     }
 }

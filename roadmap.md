@@ -112,6 +112,7 @@
 - [x] [Per-entry edit-link visibility override](https://github.com/yiipress/engine/issues/112)
 - [x] [FAQ question blocks with configurable section grouping](https://github.com/yiipress/engine/issues/114)
 - [x] [Per-entry table-of-contents depth and visibility](https://github.com/yiipress/engine/issues/109)
+- [x] [Per-entry last-updated visibility override](https://github.com/yiipress/engine/issues/111)
 
 ## Priority 8: Advanced features
 

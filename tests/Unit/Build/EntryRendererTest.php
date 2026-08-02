@@ -263,6 +263,31 @@ final class EntryRendererTest extends TestCase
         assertStringNotContainsString('data-ui-key="last_updated"', $html);
     }
 
+    public function testEntryCanEnableLastUpdatedWhenDisabledForSite(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Updated\n---\n\nBody.\n");
+        touch($entryFile, 1_780_000_000);
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Updated', lastUpdated: true);
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver(), contentDir: $this->contentDir);
+        $html = $renderer->render($this->createSiteConfig(), $entry);
+
+        assertStringContainsString('data-ui-key="last_updated">Last updated:', $html);
+    }
+
+    public function testEntryCanDisableLastUpdatedWhenEnabledForSite(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Current\n---\n\nBody.\n");
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Current', lastUpdated: false);
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver(), contentDir: $this->contentDir);
+        $html = $renderer->render($this->createSiteConfig(lastUpdated: true), $entry);
+
+        assertStringNotContainsString('data-ui-key="last_updated"', $html);
+    }
+
     public function testRendersKnownAuthorAsLinkWhenAuthorPagesAreEnabled(): void
     {
         $entryFile = $this->contentDir . '/blog/post.md';
@@ -795,6 +820,43 @@ PHP);
         assertStringContainsString('Second', $second);
     }
 
+    public function testLastUpdatedCacheSignatureUsesMtimeOnlyWhenEnabled(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Cached Timestamp\n---\n\nBody.\n");
+        touch($entryFile, 1_780_000_000);
+
+        $templateResolver = $this->createTemplateResolver();
+        $disabledCacheDir = $this->contentDir . '/cache-disabled';
+        $enabledCacheDir = $this->contentDir . '/cache-enabled';
+        $disabledRenderer = new EntryRenderer(
+            $this->createPipeline(),
+            $templateResolver,
+            cache: new BuildCache($disabledCacheDir, $templateResolver->templateDirs()),
+            contentDir: $this->contentDir,
+        );
+        $enabledRenderer = new EntryRenderer(
+            $this->createPipeline(),
+            $templateResolver,
+            cache: new BuildCache($enabledCacheDir, $templateResolver->templateDirs()),
+            contentDir: $this->contentDir,
+        );
+
+        $disabledEntry = $this->createEntry(filePath: $entryFile, lastUpdated: false);
+        $enabledEntry = $this->createEntry(filePath: $entryFile, lastUpdated: true);
+        $siteConfig = $this->createSiteConfig(lastUpdated: true);
+
+        $disabledRenderer->render($siteConfig, $disabledEntry);
+        $enabledRenderer->render($siteConfig, $enabledEntry);
+        touch($entryFile, 1_790_000_000);
+        clearstatcache(true, $entryFile);
+        $disabledRenderer->render($siteConfig, $disabledEntry);
+        $enabledRenderer->render($siteConfig, $enabledEntry);
+
+        $this->assertCount(1, array_diff(scandir($disabledCacheDir), ['.', '..']));
+        $this->assertCount(2, array_diff(scandir($enabledCacheDir), ['.', '..']));
+    }
+
     private function createPipeline(): ContentProcessorPipeline
     {
         return new ContentProcessorPipeline();
@@ -864,6 +926,7 @@ PHP);
         bool $showTitle = true,
         ?bool $editLink = null,
         array|false|null $toc = null,
+        ?bool $lastUpdated = null,
     ): Entry {
         $content = file_get_contents($filePath);
         $bodyMarker = "---\n\n";
@@ -899,6 +962,7 @@ PHP);
             showTitle: $showTitle,
             editLink: $editLink,
             toc: $toc,
+            lastUpdated: $lastUpdated,
         );
     }
 
