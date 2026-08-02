@@ -21,7 +21,7 @@ final class QuestionProcessorTest extends TestCase
     public function testRendersInlineQuestionWithMarkdownAnswerAndEscapedTitle(): void
     {
         $result = $this->process(
-            "Before.\n\n::: question Is <this> safe?\nUse **bold** and [a link](https://example.com).\n:::\n\nAfter.",
+            "Before.\n\n[question title=\"Is <this> safe?\"]\nUse **bold** and [a link](https://example.com).\n[/question]\n\nAfter.",
         );
 
         assertStringContainsString('<p>Before.</p>', $result);
@@ -32,13 +32,14 @@ final class QuestionProcessorTest extends TestCase
             $result,
         );
         assertStringContainsString('<p>After.</p>', $result);
-        assertStringNotContainsString('::: question', $result);
+        assertStringNotContainsString('[question', $result);
     }
 
     public function testGroupsQuestionsAtPageEndInDocumentOrder(): void
     {
         $result = $this->process(
-            "::: question First?\nFirst answer.\n:::\n\nMiddle.\n\n::: question Second?\nSecond answer.\n:::",
+            "[question title=\"First?\"]\nFirst answer.\n[/question]\n\nMiddle.\n\n"
+            . "[question title=\"Second?\"]\nSecond answer.\n[/question]",
             0,
         );
 
@@ -51,9 +52,9 @@ final class QuestionProcessorTest extends TestCase
     public function testGroupsQuestionsAtEndOfMatchingHeadingSections(): void
     {
         $result = $this->process(
-            "## Alpha\n\nAlpha text.\n\n::: question Alpha question?\nAlpha answer.\n:::\n\n"
-            . "### Nested\n\nNested text.\n\n::: question Nested question?\nNested answer.\n:::\n\n"
-            . "## Beta\n\nBeta text.\n\n::: question Beta question?\nBeta answer.\n:::",
+            "## Alpha\n\nAlpha text.\n\n[question title=\"Alpha question?\"]\nAlpha answer.\n[/question]\n\n"
+            . "### Nested\n\nNested text.\n\n[question title=\"Nested question?\"]\nNested answer.\n[/question]\n\n"
+            . "## Beta\n\nBeta text.\n\n[question title=\"Beta question?\"]\nBeta answer.\n[/question]",
             2,
         );
 
@@ -71,19 +72,19 @@ final class QuestionProcessorTest extends TestCase
     public function testLeavesNestedAndMalformedQuestionsAsLiteralContent(): void
     {
         $nested = $this->process(
-            "::: question Outer?\n::: question Inner?\nAnswer.\n:::\n:::",
+            "[question title=\"Outer?\"]\n[question title=\"Inner?\"]\nAnswer.\n[/question]\n[/question]",
         );
         $shortClose = $this->process(
-            ":::: question Long fence?\nAnswer.\n:::",
+            "[question]\nAnswer.\n[/question]",
         );
         $unclosed = $this->process(
-            "::: question Unclosed?\nAnswer.",
+            "[question title=\"Unclosed?\"]\nAnswer.",
         );
 
-        assertStringContainsString('question Outer?', $nested);
-        assertStringContainsString('question Inner?', $nested);
+        assertStringContainsString('title=&quot;Outer?&quot;', $nested);
+        assertStringContainsString('title=&quot;Inner?&quot;', $nested);
         assertStringNotContainsString('class="faq-question"', $nested);
-        assertStringContainsString('Long fence?', $shortClose);
+        assertStringContainsString('[question]', $shortClose);
         assertStringNotContainsString('class="faq-question"', $shortClose);
         assertStringContainsString('Unclosed?', $unclosed);
         assertStringNotContainsString('class="faq-question"', $unclosed);
@@ -92,17 +93,17 @@ final class QuestionProcessorTest extends TestCase
     public function testDoesNotInterpretQuestionSyntaxInsideCodeFences(): void
     {
         $result = $this->process(
-            "```markdown\n::: question Example only?\nNot a real question.\n:::\n```",
+            "```markdown\n[question title=\"Example only?\"]\nNot a real question.\n[/question]\n```",
         );
 
-        assertStringContainsString('::: question Example only?', $result);
+        assertStringContainsString('[question title=&quot;Example only?&quot;]', $result);
         assertStringNotContainsString('class="faq-question"', $result);
     }
 
     public function testPreservesAnswerIndentationBeforeMarkdownRendering(): void
     {
         $result = $this->process(
-            "::: question What is the command?\n    echo 'preserved';\n:::",
+            "[question title=\"What is the command?\"]\n    echo 'preserved';\n[/question]",
         );
 
         assertStringContainsString("<pre><code>echo 'preserved';", $result);

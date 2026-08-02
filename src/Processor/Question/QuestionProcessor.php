@@ -6,6 +6,7 @@ namespace YiiPress\Processor\Question;
 
 use YiiPress\Content\Model\Entry;
 use YiiPress\Processor\ContentProcessorInterface;
+use YiiPress\Processor\Shortcode\ParsesShortcodeAttributesTrait;
 
 use function array_key_last;
 use function array_slice;
@@ -19,6 +20,7 @@ use function preg_match_all;
 use function preg_replace_callback;
 use function sprintf;
 use function str_contains;
+use function strtolower;
 use function trim;
 
 /**
@@ -26,6 +28,8 @@ use function trim;
  */
 final readonly class QuestionProcessor implements ContentProcessorInterface
 {
+    use ParsesShortcodeAttributesTrait;
+
     private const string START_MARKER = '<!-- yiipress-question:';
     private const string END_MARKER = '<!-- /yiipress-question -->';
     private const string QUESTION_PATTERN = '/<!-- yiipress-question:([A-Za-z0-9+\/=]+) -->\s*([\s\S]*?)\s*'
@@ -36,7 +40,7 @@ final readonly class QuestionProcessor implements ContentProcessorInterface
         if (str_contains($content, self::START_MARKER)) {
             return $this->renderQuestions($content, $entry->faqLevel);
         }
-        if (!str_contains($content, '::: question')) {
+        if (!str_contains(strtolower($content), '[question')) {
             return $content;
         }
 
@@ -52,16 +56,13 @@ final readonly class QuestionProcessor implements ContentProcessorInterface
 
         $output = [];
         $markdownFence = null;
-        $suppressedQuestionFenceLength = null;
+        $insideMalformedQuestion = false;
         for ($index = 0, $lineCount = count($lines); $index < $lineCount; $index++) {
             $line = $lines[$index];
-            if ($suppressedQuestionFenceLength !== null) {
+            if ($insideMalformedQuestion) {
                 $output[] = $line;
-                if (
-                    preg_match('/^(?<fence>:{3,})\s*$/', $line, $suppressedClose) === 1
-                    && strlen($suppressedClose['fence']) >= $suppressedQuestionFenceLength
-                ) {
-                    $suppressedQuestionFenceLength = null;
+                if (preg_match('/^\[\/question]\s*$/i', $line) === 1) {
+                    $insideMalformedQuestion = false;
                 }
                 continue;
             }
@@ -77,7 +78,13 @@ final readonly class QuestionProcessor implements ContentProcessorInterface
                 $output[] = $line;
                 continue;
             }
-            if (preg_match('/^(?<fence>:{3,})\s+question\s+(?<title>.+?)\s*$/', $line, $open) !== 1) {
+            if (preg_match('/^\[question\s+([^]]+)]\s*$/i', $line, $open) !== 1) {
+                $output[] = $line;
+                continue;
+            }
+
+            $title = $this->parseAttributes($open[1])['title'] ?? '';
+            if ($title === '') {
                 $output[] = $line;
                 continue;
             }
@@ -97,14 +104,11 @@ final readonly class QuestionProcessor implements ContentProcessorInterface
                 if ($answerFence !== null) {
                     continue;
                 }
-                if (preg_match('/^:{3,}\s+question(?:\s|$)/', $answerLine) === 1) {
+                if (preg_match('/^\[question(?:\s|])/i', $answerLine) === 1) {
                     $nested = true;
                     break;
                 }
-                if (
-                    preg_match('/^(?<fence>:{3,})\s*$/', $answerLine, $close) === 1
-                    && strlen($close['fence']) >= strlen($open['fence'])
-                ) {
+                if (preg_match('/^\[\/question]\s*$/i', $answerLine) === 1) {
                     $closeIndex = $candidate;
                     break;
                 }
@@ -113,12 +117,12 @@ final readonly class QuestionProcessor implements ContentProcessorInterface
             if ($nested || $closeIndex === null) {
                 $output[] = $line;
                 if ($nested) {
-                    $suppressedQuestionFenceLength = strlen($open['fence']);
+                    $insideMalformedQuestion = true;
                 }
                 continue;
             }
 
-            $output[] = self::START_MARKER . base64_encode(trim($open['title'])) . ' -->';
+            $output[] = self::START_MARKER . base64_encode($title) . ' -->';
             $output[] = trim(
                 implode("\n", array_slice($lines, $index + 1, $closeIndex - $index - 1)),
                 "\r\n",

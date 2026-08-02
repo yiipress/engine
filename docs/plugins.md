@@ -250,19 +250,18 @@ When JavaScript is unavailable, all labeled examples remain visible.
 
 ### FAQ question blocks
 
-Use a titled `::: question` container for an answer that should be expandable without
-JavaScript. The answer is normal Markdown:
+Use a `[question]` shortcode with a `title` for an answer that should be expandable
+without JavaScript. The answer is normal Markdown:
 
 ```markdown
-::: question How do I install YiiPress?
+[question title="How do I install YiiPress?"]
 Download the binary for your platform and run **`yiipress init`**.
-:::
+[/question]
 ```
 
 YiiPress escapes the title and renders semantic `<details>` and `<summary>` elements.
-The closing fence must contain at least as many colons as the opening fence. Question
-blocks cannot be nested; malformed, nested, and unclosed containers are left as literal
-content instead of consuming the rest of the page.
+Question shortcodes cannot be nested. Malformed, nested, and unclosed shortcodes are left
+as literal content instead of consuming the rest of the page.
 
 By default, questions remain where they are written. Set `faq_level` in entry front matter
 to change grouping:

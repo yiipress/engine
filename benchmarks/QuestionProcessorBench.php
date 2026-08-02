@@ -37,7 +37,7 @@ final class QuestionProcessorBench
             $questions = [];
             for ($question = 1; $question <= 10; $question++) {
                 $questions[] = sprintf(
-                    "::: question Question %d.%d?\nAnswer with **Markdown** and a [link](https://example.com).\n:::",
+                    "[question title=\"Question %d.%d?\"]\nAnswer with **Markdown** and a [link](https://example.com).\n[/question]",
                     $section,
                     $question,
                 );
