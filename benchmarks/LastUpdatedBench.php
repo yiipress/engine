@@ -20,13 +20,14 @@ use PhpBench\Attributes\Revs;
 use PhpBench\Attributes\Warmup;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use RuntimeException;
 use SplFileInfo;
 
 #[BeforeMethods('setUp')]
 #[AfterMethods('tearDown')]
 final class LastUpdatedBench
 {
-    private string $tempDir;
+    private ?string $tempDir = null;
     private EntryRenderer $renderer;
     private Entry $enabledEntry;
     private Entry $disabledEntry;
@@ -34,16 +35,20 @@ final class LastUpdatedBench
 
     public function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/yiipress-last-updated-bench-' . uniqid();
+        $this->tempDir = $this->createTempDirectory();
         $entryFile = $this->tempDir . '/content/post.md';
         $themeDir = $this->tempDir . '/theme';
-        mkdir($themeDir, 0o755, true);
-        mkdir(dirname($entryFile), 0o755, true);
-        file_put_contents($entryFile, "Body.\n");
-        file_put_contents(
-            $themeDir . '/entry.php',
-            '<?php if ($lastUpdated !== null): ?><time><?= $lastUpdated["iso"] ?></time><?php endif; ?>',
-        );
+        if (
+            !mkdir($themeDir, 0o700)
+            || !mkdir(dirname($entryFile), 0o700)
+            || file_put_contents($entryFile, "Body.\n") === false
+            || file_put_contents(
+                $themeDir . '/entry.php',
+                '<?php if ($lastUpdated !== null): ?><time><?= $lastUpdated["iso"] ?></time><?php endif; ?>',
+            ) === false
+        ) {
+            throw new RuntimeException('Could not create benchmark fixtures.');
+        }
 
         $registry = new ThemeRegistry();
         $registry->register(new Theme('bench', $themeDir));
@@ -73,6 +78,10 @@ final class LastUpdatedBench
 
     public function tearDown(): void
     {
+        if ($this->tempDir === null) {
+            return;
+        }
+
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($this->tempDir, FilesystemIterator::SKIP_DOTS),
             RecursiveIteratorIterator::CHILD_FIRST,
@@ -82,6 +91,7 @@ final class LastUpdatedBench
             $item->isDir() ? rmdir($item->getPathname()) : unlink($item->getPathname());
         }
         rmdir($this->tempDir);
+        $this->tempDir = null;
     }
 
     #[Revs(500)]
@@ -124,5 +134,17 @@ final class LastUpdatedBench
             bodyLength: 6,
             lastUpdated: $lastUpdated,
         );
+    }
+
+    private function createTempDirectory(): string
+    {
+        for ($attempt = 0; $attempt < 10; $attempt++) {
+            $path = sys_get_temp_dir() . '/yiipress-last-updated-bench-' . bin2hex(random_bytes(16));
+            if (@mkdir($path, 0o700)) {
+                return $path;
+            }
+        }
+
+        throw new RuntimeException('Could not create benchmark temp directory.');
     }
 }
