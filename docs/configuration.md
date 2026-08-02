@@ -71,7 +71,7 @@ editor: code
 - **image** — default Open Graph image URL (absolute, or root-relative path resolved against `base_url`); used as fallback when an entry has no `image` front matter field
 - **twitter** — Twitter/X account handle (e.g., `@example`) added to `twitter:site` meta tag on all pages
 - **robots_txt** — `robots.txt` generation settings (see below)
-- **toc** — generate a table of contents from headings (default: `true`); set to `false` to disable globally. When enabled, heading tags receive `id` attributes and a `$toc` variable is passed to templates
+- **toc** — generate a table of contents from headings (default: `true`); set to `false` to disable globally. Entries may override visibility and included heading levels with their `toc` front matter. Heading tags receive `id` attributes and a filtered `$toc` variable is passed to templates
 - **search** — opt-in client-side search (see below)
 - **related** — opt-in related content suggestions (see below)
 - **processors** — project-level content processor loading (see [Plugins](plugins.md#project-processors))

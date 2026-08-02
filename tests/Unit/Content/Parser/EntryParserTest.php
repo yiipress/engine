@@ -122,6 +122,61 @@ final class EntryParserTest extends TestCase
         }
     }
 
+    #[DataProvider('tocOverrideProvider')]
+    public function testParsesTocOverride(string $yaml, array|false|null $expected): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-toc-');
+        file_put_contents($file, "---\ntitle: Outline\n$yaml\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+
+            assertSame($expected, $entry->toc);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public static function tocOverrideProvider(): iterable
+    {
+        yield 'disabled' => ['toc: false', false];
+        yield 'single level' => ['toc: 3', [3, 3]];
+        yield 'inclusive range' => ["toc:\n  - 2\n  - 4", [2, 4]];
+        yield 'deep' => ['toc: deep', [2, 6]];
+        yield 'null inheritance' => ['toc: null', null];
+        yield 'omitted inheritance' => ['', null];
+    }
+
+    #[DataProvider('invalidTocOverrideProvider')]
+    public function testRejectsInvalidTocOverride(string $yaml): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-toc-invalid-');
+        file_put_contents($file, "---\ntitle: Invalid\n$yaml\n---\n\nBody.\n");
+
+        try {
+            $this->parser->parse($file, 'docs');
+            self::fail('Expected invalid table-of-contents override to throw.');
+        } catch (InvalidContentConfigException $e) {
+            assertStringContainsString('Invalid "toc" heading range', $e->getMessage());
+            assertSame($file, $e->filePath());
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public static function invalidTocOverrideProvider(): iterable
+    {
+        yield 'true' => ['toc: true'];
+        yield 'zero' => ['toc: 0'];
+        yield 'above maximum' => ['toc: 7'];
+        yield 'reversed range' => ['toc: [4, 2]'];
+        yield 'range below minimum' => ['toc: [0, 2]'];
+        yield 'range above maximum' => ['toc: [2, 7]'];
+        yield 'range wrong length' => ['toc: [2, 3, 4]'];
+        yield 'non-integer range' => ['toc: [2, deep]'];
+        yield 'unknown string' => ['toc: shallow'];
+    }
+
     public function testRejectsInvalidEditLinkVisibilityOverride(): void
     {
         $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-edit-link-invalid-');
