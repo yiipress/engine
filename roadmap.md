@@ -67,6 +67,7 @@
 - [x] Dry run mode for build — show what would be generated without writing files
 - [x] No-write build mode for render-vs-filesystem performance diagnostics
 - [x] `serve` overlay button to open the current markdown source in a configured editor
+- [x] [Respect console verbosity when rendering errors](https://github.com/yiipress/engine/issues/126)
 
 ## Priority 4: Templates and theming
 

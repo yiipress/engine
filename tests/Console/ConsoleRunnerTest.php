@@ -21,4 +21,22 @@ final class ConsoleRunnerTest extends TestCase
         assertStringContainsString('YiiPress 1.0.0', implode("\n", $output));
         self::assertStringNotContainsString('Yii Console', implode("\n", $output));
     }
+
+    public function testCommandErrorRespectsVerbosity(): void
+    {
+        $yii = dirname(__DIR__, 2) . '/yii';
+
+        exec($yii . ' new 2>&1', $defaultOutput, $defaultExitCode);
+        exec($yii . ' new -vvv 2>&1', $debugOutput, $debugExitCode);
+
+        $defaultOutput = implode("\n", $defaultOutput);
+        $debugOutput = implode("\n", $debugOutput);
+
+        self::assertSame(1, $defaultExitCode);
+        self::assertSame(1, $debugExitCode);
+        self::assertStringContainsString('Not enough arguments', $defaultOutput);
+        self::assertStringNotContainsString('Message context:', $defaultOutput);
+        self::assertStringNotContainsString('Stack trace:', $defaultOutput);
+        self::assertStringContainsString('Stack trace:', $debugOutput);
+    }
 }
