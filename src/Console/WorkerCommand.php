@@ -27,7 +27,7 @@ use function file_put_contents;
 use function is_dir;
 use function unserialize;
 
-#[AsCommand(name: '_worker', description: 'Runs an internal portable worker job', hidden: true)]
+#[AsCommand(name: 'worker', description: 'Runs an internal portable worker job', hidden: true)]
 final class WorkerCommand extends Command
 {
     public function __construct(

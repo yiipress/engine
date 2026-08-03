@@ -11,6 +11,7 @@ use YiiPress\Console\ImportCommand;
 use YiiPress\Console\NewCommand;
 use YiiPress\Console\ServeCommand;
 use YiiPress\Console\ThemeInitCommand;
+use YiiPress\Console\WorkerCommand;
 use YiiPress\Build\PharArchiveFilter;
 use YiiPress\Build\PhpDocStripper;
 use PHPUnit\Framework\Attributes\Test;
@@ -75,6 +76,7 @@ final class ConfigurationPackagingTest extends TestCase
         assertSame(ServeCommand::class, $commands['serve']);
         assertSame(InitCommand::class, $commands['init']);
         assertSame(ThemeInitCommand::class, $commands['theme:init']);
+        assertSame(WorkerCommand::class, $commands['|worker']);
     }
 
     #[Test]

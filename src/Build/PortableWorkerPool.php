@@ -67,7 +67,7 @@ final class PortableWorkerPool
                     throw new RuntimeException(sprintf('Unable to write worker job "%s".', $jobFile));
                 }
 
-                $command = [...$this->executableCommand(), '_worker', $jobFile, $resultFile];
+                $command = [...$this->executableCommand(), 'worker', $jobFile, $resultFile];
                 $pipes = [];
                 $process = proc_open($command, [
                     0 => ['pipe', 'r'],
