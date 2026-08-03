@@ -50,6 +50,7 @@ final class Entry
         public int|false|null $faqLevel = null,
         public array|false|null $toc = null,
         public ?bool $lastUpdated = null,
+        public ?bool $aside = null,
     ) {}
 
     private ?string $bodyCache = null;
@@ -93,6 +94,7 @@ final class Entry
             faqLevel: $this->faqLevel,
             toc: $this->toc,
             lastUpdated: $this->lastUpdated,
+            aside: $this->aside,
         );
     }
 

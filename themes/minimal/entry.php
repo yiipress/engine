@@ -18,6 +18,7 @@ declare(strict_types=1);
  * @var bool $showTitle
  * @var string $headAssets
  * @var list<array{id: string, text: string, level: int}> $toc
+ * @var bool $aside
  * @var list<YiiPress\Content\Model\RelatedEntry> $related
  * @var list<YiiPress\Content\Model\Translation> $translations
  * @var array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null $navigationPager
@@ -48,9 +49,11 @@ $uiLanguage ??= 'en';
 $translations ??= [];
 $entryAuthors ??= [];
 $permalink ??= '';
+$aside ??= true;
 $hasToc = $toc !== [];
 $hasDocsSidebar = $nav !== null && NavigationRenderer::menuContainsUrl($nav, 'sidebar', $permalink);
 $useDocsLayout = $hasDocsSidebar;
+$hasDocsAside = $useDocsLayout && $aside && $hasToc;
 $useLegacyTocSidebar = !$useDocsLayout && $hasToc;
 ?>
 <!DOCTYPE html>
@@ -65,7 +68,7 @@ $useLegacyTocSidebar = !$useDocsLayout && $hasToc;
 <main>
     <div class="container">
 <?php if ($useDocsLayout): ?>
-        <div class="docs-layout<?= $hasToc ? ' docs-layout-with-toc' : '' ?>">
+        <div class="docs-layout<?= $hasDocsAside ? ' docs-layout-with-toc' : '' ?>">
             <aside class="docs-sidebar" aria-label="<?= $h($t('sidebar_navigation')) ?>" data-ui-attr-aria-label="sidebar_navigation">
                 <?= NavigationRenderer::render($nav, 'sidebar', $rootPath, $uiLanguage, $uiLanguage, 'docs-sidebar-nav', $permalink) ?>
             </aside>
@@ -200,7 +203,7 @@ $useLegacyTocSidebar = !$useDocsLayout && $hasToc;
                 </nav>
 <?php endif; ?>
             </article>
-<?php if ($useDocsLayout && $hasToc): ?>
+<?php if ($hasDocsAside): ?>
             <aside class="toc-sidebar toc-sidebar-right" aria-label="<?= $h($t('table_of_contents')) ?>" data-ui-attr-aria-label="table_of_contents">
                 <nav>
                     <ol>

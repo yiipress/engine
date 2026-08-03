@@ -330,7 +330,7 @@ sidebar:
 
 You can define any number of menus. Each item has a `title`, an optional `url`, and supports nested `children` for sub-navigation. Items without `url` render as section labels, which is useful for grouped sidebars.
 
-In the bundled `minimal` theme, a menu named `sidebar` enables a documentation layout for entries whose permalink appears in that sidebar. Those pages render the sidebar navigation on the left and the generated table of contents on the right. Blog entries and other pages that are not listed in `sidebar` keep the regular article layout.
+In the bundled `minimal` theme, a menu named `sidebar` enables a documentation layout for entries whose permalink appears in that sidebar. Those pages render the sidebar navigation on the left and the generated table of contents on the right. Set `aside: false` in an entry's front matter to hide only its right-hand documentation aside; heading IDs and table-of-contents data remain available to custom templates. Omitting `aside` (or setting it to `true`) keeps the default documentation layout. Blog entries and other pages that are not listed in `sidebar` keep the regular article layout.
 
 To localize menu labels, make `title` a language map instead of a scalar:
 

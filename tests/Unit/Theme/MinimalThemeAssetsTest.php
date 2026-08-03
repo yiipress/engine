@@ -54,8 +54,10 @@ final class MinimalThemeAssetsTest extends TestCase
 
         self::assertNotFalse($css);
         assertStringContainsString('.docs-layout {', $css);
+        assertStringContainsString('grid-template-columns: 16rem minmax(0, var(--max-width));', $css);
+        assertStringContainsString('.docs-layout.docs-layout-with-toc {', $css);
         assertStringContainsString('grid-template-columns: 16rem minmax(0, var(--max-width)) 14rem;', $css);
-        assertStringNotContainsString('.docs-layout:not(.docs-layout-with-toc)', $css);
+        assertStringContainsString('.container:has(.docs-layout-with-toc) {', $css);
         assertStringContainsString('.docs-sidebar-nav .is-current > a {', $css);
         assertStringContainsString('.toc-sidebar .is-current > a {', $css);
         assertStringContainsString('.toc-sidebar .is-current::before {', $css);

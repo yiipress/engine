@@ -122,6 +122,75 @@ final class EntryParserTest extends TestCase
         }
     }
 
+    public function testParsesAsideVisibilityOverride(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-aside-');
+        file_put_contents($file, "---\ntitle: Focused\naside: false\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+            assertFalse($entry->aside);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testParsesEnabledAsideVisibilityOverride(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-aside-');
+        file_put_contents($file, "---\ntitle: Full layout\naside: true\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+            assertTrue($entry->aside);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testAsideVisibilityIsInheritedWhenOmitted(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-aside-');
+        file_put_contents($file, "---\ntitle: Default\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+            assertNull($entry->aside);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testAsideVisibilityIsInheritedWhenExplicitlyNull(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-aside-');
+        file_put_contents($file, "---\ntitle: Default\naside: null\n---\n\nBody.\n");
+
+        try {
+            $entry = $this->parser->parse($file, 'docs');
+
+            assertNull($entry->aside);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testRejectsInvalidAsideVisibilityOverride(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-entry-aside-invalid-');
+        file_put_contents($file, "---\ntitle: Invalid\naside: right\n---\n\nBody.\n");
+
+        try {
+            $this->parser->parse($file, 'docs');
+            self::fail('Expected invalid aside visibility override to throw.');
+        } catch (InvalidContentConfigException $e) {
+            assertStringContainsString('Invalid "aside" visibility override', $e->getMessage());
+            assertSame($file, $e->filePath());
+        } finally {
+            unlink($file);
+        }
+    }
+
     #[DataProvider('faqLevelProvider')]
     public function testParsesFaqLevel(string $yaml, int|false|null $expected): void
     {

@@ -172,6 +172,7 @@ Built-in templates and partials expect `$ui` to be passed by the renderer; `Page
 | `$permalink`  | `string`      | Current entry permalink                                          |
 | `$nav`        | `?Navigation` | Navigation object or `null`                                      |
 | `$toc`        | `list<array>` | Table of contents entries (`{id, text, level}`) or empty list    |
+| `$aside`      | `bool`        | Whether the documentation aside is enabled for this entry        |
 | `$related`    | `list<RelatedEntry>` | Related entries ordered by relevance or empty list        |
 | `$language`   | `string`      | Effective language code for the current entry                    |
 | `$translations` | `list<Translation>` | Alternate-language versions of the current entry           |
