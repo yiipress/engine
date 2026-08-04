@@ -470,9 +470,8 @@ final class ConfigurationPackagingTest extends TestCase
 
         self::assertStringContainsString("tags:\n      - '*.*.*'", $workflow);
         self::assertStringContainsString('COMPOSER_ROOT_VERSION: ${{ github.ref_name }}', $workflow);
-        self::assertStringContainsString('YIIPRESS_COMMIT: ${{ github.sha }}', $workflow);
         self::assertStringContainsString('COMPOSER_ROOT_VERSION=${{ github.ref_name }}', $workflow);
-        self::assertStringContainsString('YIIPRESS_COMMIT=${{ github.sha }}', $workflow);
+        self::assertStringNotContainsString('YIIPRESS_COMMIT: ${{ github.sha }}', $workflow);
         self::assertStringContainsString(
             'test "$(./dist/linux-amd64/yiipress --version)" = "YiiPress ${GITHUB_REF_NAME}"',
             $workflow,
@@ -486,7 +485,7 @@ final class ConfigurationPackagingTest extends TestCase
             $workflow,
         );
         self::assertStringContainsString(
-            'make package-macos PACKAGE_MACOS_ARCH=arm64 PACKAGE_MACOS_DIST=dist/macos-arm64 YIIPRESS_COMMIT=${GITHUB_SHA}',
+            'make package-macos PACKAGE_MACOS_ARCH=arm64 PACKAGE_MACOS_DIST=dist/macos-arm64',
             $workflow,
         );
         self::assertStringContainsString(

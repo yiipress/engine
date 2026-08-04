@@ -17,7 +17,7 @@ irm https://raw.githubusercontent.com/yiipress/engine/master/install.ps1 | iex
 The installers download the latest release archive and `SHA256SUMS`, verify the archive, and atomically install the executable.
 The shell installer prints the exact resolved release version before downloading its archive.
 The installed binary reports that same release tag with `yiipress --version`.
-Development artifacts report the full commit SHA from which they were built instead of a placeholder version.
+Development and nightly artifacts report the full commit SHA from which they were built, even when cached Composer metadata contains an older stable version.
 The shell installer uses `/usr/local/bin/yiipress`; the PowerShell installer uses the current user's local application directory
 and adds it to the user `PATH`. Re-run the same command to update an existing installation. To use another directory or a fixed
 release, set environment variables before invoking the installer. For example, with the shell installer:

@@ -39,4 +39,29 @@ final class ApplicationInfoTest extends TestCase
 
         self::assertSame(ApplicationInfo::VERSION, $method->invoke(null, null, null));
     }
+
+    #[Test]
+    public function packagedCommitTakesPrecedenceOverStaleReleaseMetadata(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/src/ApplicationInfo.php');
+        self::assertIsString($source);
+
+        $source = str_replace(
+            "public const string COMMIT = '';",
+            "public const string COMMIT = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';",
+            $source,
+            $replacementCount,
+        );
+        self::assertSame(1, $replacementCount);
+
+        $className = 'PackagedApplicationInfo' . bin2hex(random_bytes(8));
+        $source = str_replace('final class ApplicationInfo', "final class {$className}", $source);
+        eval(substr($source, 5));
+
+        $method = new ReflectionMethod("YiiPress\\{$className}", 'resolveVersion');
+        self::assertSame(
+            'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            $method->invoke(null, '1.0.0', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'),
+        );
+    }
 }

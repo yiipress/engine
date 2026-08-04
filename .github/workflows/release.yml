@@ -13,7 +13,6 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}-static
   COMPOSER_ROOT_VERSION: ${{ github.ref_name }}
-  YIIPRESS_COMMIT: ${{ github.sha }}
 
 jobs:
   linux:
@@ -45,7 +44,6 @@ jobs:
           platforms: linux/amd64
           build-args: |
             COMPOSER_ROOT_VERSION=${{ github.ref_name }}
-            YIIPRESS_COMMIT=${{ github.sha }}
 
       - name: Smoke test Linux binary
         run: test "$(./dist/linux-amd64/yiipress --version)" = "YiiPress ${GITHUB_REF_NAME}"
@@ -164,7 +162,7 @@ jobs:
             release-macos-package-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Build macOS artifact
-        run: make package-macos PACKAGE_MACOS_ARCH=arm64 PACKAGE_MACOS_DIST=dist/macos-arm64 YIIPRESS_COMMIT=${GITHUB_SHA}
+        run: make package-macos PACKAGE_MACOS_ARCH=arm64 PACKAGE_MACOS_DIST=dist/macos-arm64
 
       - name: Smoke test macOS binary
         run: ./dist/macos-arm64/yiipress --version | grep -Fqx "YiiPress ${GITHUB_REF_NAME}"
