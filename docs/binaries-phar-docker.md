@@ -73,9 +73,9 @@ yiipress self-update
 yiipress self-update --nightly
 ```
 
-The first command installs the latest stable release. The second installs the newest complete nightly prerelease for the current package type and platform. Composer/source checkouts must be updated with Composer instead.
+The first command installs the latest stable release. The second installs the newest nightly prerelease containing a compatible package. Currently, nightly GitHub releases contain the Linux binary; PHAR, macOS, and Windows installations report that no compatible nightly is available. Composer/source checkouts must be updated with Composer instead.
 
-GitHub Actions builds the same outputs in the `Package Static Builds` workflow. Commits to `master` publish separate nightly PHAR, Linux, macOS, and Windows workflow artifacts, create immutable GitHub prereleases tagged as `nightly-<run>-<attempt>-<sha>` with every self-update package and checksums, and push the distroless image as `ghcr.io/<owner>/<repo>-static:nightly` plus a commit-specific `nightly-<sha>` tag. The reusable build action resolves `version: nightly` to the newest matching nightly prerelease.
+GitHub Actions builds the same outputs in the `Package Static Builds` workflow. Commits to `master` publish separate nightly PHAR, Linux, macOS, and Windows workflow artifacts, create immutable GitHub prereleases tagged as `nightly-<run>-<attempt>-<sha>` with the Linux binary and checksums, and push the distroless image as `ghcr.io/<owner>/<repo>-static:nightly` plus a commit-specific `nightly-<sha>` tag. The reusable build action resolves `version: nightly` to the newest matching nightly prerelease.
 
 The `Run Tests` workflow runs PHPUnit in the Linux Docker test image and builds the native Windows and macOS binaries. Both platform jobs exercise a complete site lifecycle with the packaged executable: initialize a project, create content, build it, check generated links, verify output, and clean the build.
 

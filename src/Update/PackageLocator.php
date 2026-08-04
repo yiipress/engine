@@ -27,15 +27,17 @@ final class PackageLocator
             return new Package($targetPath, 'yiipress.phar');
         }
 
-        return new Package($targetPath, $this->binaryAssetName());
+        $assetName = $this->binaryAssetName();
+
+        return new Package($targetPath, $assetName, PHP_OS_FAMILY === 'Windows' ? 'yiipress.exe' : 'yiipress');
     }
 
     private function binaryAssetName(): string
     {
         return match (PHP_OS_FAMILY) {
-            'Linux' => PHP_INT_SIZE === 8 ? 'yiipress-linux-amd64' : throw new RuntimeException('Unsupported Linux architecture.'),
-            'Darwin' => php_uname('m') === 'arm64' ? 'yiipress-macos-arm64' : throw new RuntimeException('Unsupported macOS architecture.'),
-            'Windows' => PHP_INT_SIZE === 8 ? 'yiipress-windows-amd64.exe' : throw new RuntimeException('Unsupported Windows architecture.'),
+            'Linux' => PHP_INT_SIZE === 8 ? 'yiipress-linux-amd64.tar.gz' : throw new RuntimeException('Unsupported Linux architecture.'),
+            'Darwin' => php_uname('m') === 'arm64' ? 'yiipress-macos-arm64.tar.gz' : throw new RuntimeException('Unsupported macOS architecture.'),
+            'Windows' => PHP_INT_SIZE === 8 ? 'yiipress-windows-amd64.zip' : throw new RuntimeException('Unsupported Windows architecture.'),
             default => throw new RuntimeException('Self-update is not available for this operating system.'),
         };
     }

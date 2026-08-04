@@ -256,9 +256,6 @@ jobs:
           tar -C release/yiipress-linux-amd64 -czf assets/yiipress-linux-amd64.tar.gz yiipress
           cp release/yiipress-macos-arm64/yiipress-macos-arm64.tar.gz assets/yiipress-macos-arm64.tar.gz
           zip -j assets/yiipress-windows-amd64.zip release/yiipress-windows-amd64/*
-          cp release/yiipress-linux-amd64/yiipress assets/yiipress-linux-amd64
-          tar -xOf assets/yiipress-macos-arm64.tar.gz yiipress > assets/yiipress-macos-arm64
-          cp release/yiipress-windows-amd64/yiipress.exe assets/yiipress-windows-amd64.exe
           cp release/yiipress-phar/yiipress.phar assets/yiipress.phar
           sha256sum assets/* > assets/SHA256SUMS
 
@@ -319,7 +316,6 @@ jobs:
             printf '%s\n' '- yiipress-linux-amd64.tar.gz'
             printf '%s\n' '- yiipress-macos-arm64.tar.gz'
             printf '%s\n' '- yiipress-windows-amd64.zip'
-            printf '%s\n' '- Direct executable and PHAR assets used by `yiipress self-update`'
             printf -- '- %s\n\n' "${image}"
             printf '%s\n\n' 'Checksums are in SHA256SUMS.'
             printf '## Changes\n\n'

@@ -313,10 +313,6 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('type=sha,prefix=nightly-', $workflow);
         self::assertStringContainsString('nightly_tag="nightly-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}-${short_sha}"', $workflow);
         self::assertStringContainsString('gh release create "${nightly_tag}" assets/*', $workflow);
-        self::assertStringContainsString('assets/yiipress-linux-amd64', $workflow);
-        self::assertStringContainsString('assets/yiipress-macos-arm64', $workflow);
-        self::assertStringContainsString('assets/yiipress-windows-amd64.exe', $workflow);
-        self::assertStringContainsString('assets/yiipress.phar', $workflow);
         self::assertStringContainsString('--target "${GITHUB_SHA}"', $workflow);
         self::assertStringContainsString('--latest=false', $workflow);
         self::assertStringNotContainsString('git/ref/tags/nightly', $workflow);
@@ -467,8 +463,6 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringNotContainsString("git log --format='- %s (%an)'", $workflow);
         self::assertStringNotContainsString('git describe --tags --abbrev=0 "${tag}^"', $workflow);
         self::assertStringContainsString('Changes since %s:', $workflow);
-        self::assertStringContainsString('assets/yiipress-windows-amd64.exe', $workflow);
-        self::assertStringContainsString('assets/yiipress-macos-arm64', $workflow);
     }
 
     #[Test]

@@ -9,5 +9,6 @@ final readonly class Package
     public function __construct(
         public string $targetPath,
         public string $assetName,
+        public ?string $archiveMember = null,
     ) {}
 }
