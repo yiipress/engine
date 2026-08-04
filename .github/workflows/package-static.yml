@@ -89,34 +89,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64
 
-      - name: Publish nightly Linux release
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-
-          mkdir -p assets
-          tar -C dist/linux-amd64 -czf assets/yiipress-linux-amd64.tar.gz yiipress
-          sha256sum assets/yiipress-linux-amd64.tar.gz > assets/SHA256SUMS
-          short_sha="${GITHUB_SHA::12}"
-          nightly_tag="nightly-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}-${short_sha}"
-
-          {
-            printf '# Nightly %s\n\n' "${short_sha}"
-            printf 'Built from `%s` on `%s`.\n\n' "${GITHUB_SHA}" "${GITHUB_REF_NAME}"
-            printf 'Nightly tag: `%s`.\n\n' "${nightly_tag}"
-            printf '%s\n\n' 'This immutable prerelease is created after a successful package build on `master`.'
-            printf '%s\n' 'It is intended for testing unreleased YiiPress changes in site build workflows.'
-          } > nightly-release-notes.md
-
-          gh release create "${nightly_tag}" assets/* \
-            --target "${GITHUB_SHA}" \
-            --title "Nightly ${short_sha}" \
-            --notes-file nightly-release-notes.md \
-            --prerelease \
-            --latest=false
-
   windows:
     name: Windows static binary
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
@@ -230,3 +202,49 @@ jobs:
           name: yiipress-macos-arm64
           path: dist/yiipress-macos-arm64.tar.gz
           if-no-files-found: error
+
+  nightly-release:
+    name: Publish nightly release
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    needs: [linux, windows, macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download package artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          path: release
+          pattern: yiipress-*
+
+      - name: Publish nightly release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p assets
+          cp release/yiipress-linux-amd64/yiipress assets/yiipress-linux-amd64
+          cp release/yiipress-phar/yiipress.phar assets/yiipress.phar
+          tar -xOf release/yiipress-macos-arm64/yiipress-macos-arm64.tar.gz yiipress > assets/yiipress-macos-arm64
+          cp release/yiipress-windows-amd64/yiipress.exe assets/yiipress-windows-amd64.exe
+          tar -C release/yiipress-linux-amd64 -czf assets/yiipress-linux-amd64.tar.gz yiipress
+          sha256sum assets/* > assets/SHA256SUMS
+          short_sha="${GITHUB_SHA::12}"
+          nightly_tag="nightly-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}-${short_sha}"
+
+          {
+            printf '# Nightly %s\n\n' "${short_sha}"
+            printf 'Built from `%s` on `%s`.\n\n' "${GITHUB_SHA}" "${GITHUB_REF_NAME}"
+            printf 'Nightly tag: `%s`.\n\n' "${nightly_tag}"
+            printf '%s\n\n' 'This immutable prerelease is created after a successful package build on `master`.'
+            printf '%s\n' 'It is intended for testing unreleased YiiPress changes in site build workflows.'
+          } > nightly-release-notes.md
+
+          gh release create "${nightly_tag}" assets/* \
+            --target "${GITHUB_SHA}" \
+            --title "Nightly ${short_sha}" \
+            --notes-file nightly-release-notes.md \
+            --prerelease \
+            --latest=false

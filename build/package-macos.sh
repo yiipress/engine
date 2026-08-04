@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PHP_VERSION="${PHP_VERSION:-8.5}"
 STATIC_PHP_CLI_REF="${STATIC_PHP_CLI_REF:-5b5861c366a0d94bc84002db7b3f46144b388fbb}"
-STATIC_PHP_EXTENSIONS="${STATIC_PHP_EXTENSIONS:-ctype,dom,filter,highlighter,mdparser,mbstring,opcache,pcntl,phar,posix,xmlwriter,yaml}"
+STATIC_PHP_EXTENSIONS="${STATIC_PHP_EXTENSIONS:-ctype,dom,filter,highlighter,mdparser,mbstring,opcache,openssl,pcntl,phar,posix,xmlwriter,yaml}"
 
 detect_arch() {
     case "$(uname -m)" in

@@ -70,6 +70,7 @@
 - [x] [Respect console verbosity when rendering errors](https://github.com/yiipress/engine/issues/126)
 - [x] [Hide the internal worker command from the user-facing command list](https://github.com/yiipress/engine/issues/124)
 - [x] [Add one-command Linux, macOS, and Windows installers and updaters](https://github.com/yiipress/engine/issues/129)
+- [x] [`yiipress self-update` command for stable and nightly packaged builds](https://github.com/yiipress/engine/issues/130)
 
 ## Priority 4: Templates and theming
 

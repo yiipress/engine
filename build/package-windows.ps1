@@ -2,7 +2,7 @@ param(
     [string] $DistDir = "dist/windows-amd64",
     [string] $PhpVersion = "8.5",
     [string] $StaticPhpCliRef = "5b5861c366a0d94bc84002db7b3f46144b388fbb",
-    [string] $StaticPhpExtensions = "ctype,dom,filter,highlighter,mdparser,mbstring,opcache,phar,xmlwriter,yaml"
+    [string] $StaticPhpExtensions = "ctype,dom,filter,highlighter,mdparser,mbstring,opcache,openssl,phar,xmlwriter,yaml"
 )
 
 $ErrorActionPreference = "Stop"
