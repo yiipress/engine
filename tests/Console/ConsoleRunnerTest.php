@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
+use function PHPUnit\Framework\assertStringNotContainsString;
 
 final class ConsoleRunnerTest extends TestCase
 {
@@ -20,6 +21,7 @@ final class ConsoleRunnerTest extends TestCase
         assertSame(0, $exitCode);
         assertStringContainsString('YiiPress 1.0.0', implode("\n", $output));
         self::assertStringNotContainsString('Yii Console', implode("\n", $output));
+        assertStringNotContainsString('Runs an internal portable worker job', implode("\n", $output));
     }
 
     public function testCommandErrorRespectsVerbosity(): void
