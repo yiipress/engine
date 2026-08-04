@@ -2,6 +2,8 @@
 
 The examples below assume the static binary is in your project directory and use `./yiipress` so they work without changing `PATH`. Source checkouts expose the same commands through `./yii`; engine contributors should run them through the repository `make` targets.
 
+All commands support Symfony's standard verbosity options. By default, errors contain only information useful to an end user. Use `-v` to include the exception type, `-vv` to include its source location, or `-vvv` to include the debugging stack trace.
+
 ## `build`
 
 Generates static HTML content from source files.

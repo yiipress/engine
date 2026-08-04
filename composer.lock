@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "26447d6116aec376ef2d17385e7ed35b",
+    "content-hash": "78267b02298cb5573fc1a5565f4357a9",
     "packages": [
         {
             "name": "alexkart/curl-builder",
@@ -3558,82 +3558,6 @@
                 }
             ],
             "time": "2025-12-19T12:23:49+00:00"
-        },
-        {
-            "name": "yiisoft/yii-runner-console",
-            "version": "2.2.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/yiisoft/yii-runner-console.git",
-                "reference": "16ca4daa1c02ef4c9e2d0db4cf30a194467c6a34"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/yiisoft/yii-runner-console/zipball/16ca4daa1c02ef4c9e2d0db4cf30a194467c6a34",
-                "reference": "16ca4daa1c02ef4c9e2d0db4cf30a194467c6a34",
-                "shasum": ""
-            },
-            "require": {
-                "php": "8.0 - 8.5",
-                "symfony/console": "^5.4 || ^6.0 || ^7.0 || ^8.0",
-                "yiisoft/config": "^1.1",
-                "yiisoft/definitions": "^1.0 || ^2.0 || ^3.0",
-                "yiisoft/di": "^1.0",
-                "yiisoft/yii-console": "^2.0",
-                "yiisoft/yii-runner": "^2.2"
-            },
-            "require-dev": {
-                "bamarni/composer-bin-plugin": "^1.8.3",
-                "codeception/codeception": "^5.1.2",
-                "codeception/module-cli": "^2.0.1",
-                "rector/rector": "^2.0.11"
-            },
-            "type": "library",
-            "extra": {
-                "bamarni-bin": {
-                    "bin-links": true,
-                    "forward-command": true,
-                    "target-directory": "tools"
-                },
-                "config-plugin-options": {
-                    "build-merge-plan": false
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Yiisoft\\Yii\\Runner\\Console\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "description": "Console application runner",
-            "homepage": "https://www.yiiframework.com/",
-            "keywords": [
-                "console",
-                "runner",
-                "yii"
-            ],
-            "support": {
-                "chat": "https://t.me/yii3en",
-                "forum": "https://www.yiiframework.com/forum/",
-                "irc": "ircs://irc.libera.chat:6697/yii",
-                "issues": "https://github.com/yiisoft/yii-runner-console/issues?state=open",
-                "source": "https://github.com/yiisoft/yii-runner-console",
-                "wiki": "https://www.yiiframework.com/wiki/"
-            },
-            "funding": [
-                {
-                    "url": "https://github.com/sponsors/yiisoft",
-                    "type": "github"
-                },
-                {
-                    "url": "https://opencollective.com/yiisoft",
-                    "type": "opencollective"
-                }
-            ],
-            "time": "2025-12-20T07:01:24+00:00"
         },
         {
             "name": "yiisoft/yii-runner-http",
