@@ -53,7 +53,8 @@ while [ "$#" -gt 0 ]; do
     esac
 done
 case "$url" in
-    https://api.github.com/*) cp "${YIIPRESS_TEST_RELEASES}" "$output" ;;
+    https://api.github.com/*page=2) cp "${YIIPRESS_TEST_RELEASES_PAGE_2}" "$output" ;;
+    https://api.github.com/*) cp "${YIIPRESS_TEST_RELEASES_PAGE_1}" "$output" ;;
     *) cp "${YIIPRESS_TEST_RELEASE_DIR}/${url##*/}" "$output" ;;
 esac
 printf '%s\n' "$url" >> "${YIIPRESS_TEST_CURL_LOG}"
@@ -77,8 +78,12 @@ SH);
         chmod($this->root . '/bin/sudo', 0755);
 
         file_put_contents(
-            $this->root . '/releases.json',
-            "[{\"tag_name\":\"nightly-42-1-abcdef123456\",\"prerelease\":true}]\n",
+            $this->root . '/releases-page-1.json',
+            "[{\"prerelease\":false,\"tag_name\":\"1.2.3\"}]\n",
+        );
+        file_put_contents(
+            $this->root . '/releases-page-2.json',
+            "[{\"prerelease\":true,\"draft\":false,\"tag_name\":\"nightly-42-1-abcdef123456\"}]\n",
         );
     }
 
@@ -177,7 +182,8 @@ SH);
         self::assertSame('nightly-version', file_get_contents($this->root . '/install/yiipress'));
         $curlLog = file_get_contents($this->root . '/curl.log');
         self::assertIsString($curlLog);
-        self::assertStringContainsString('/repos/test/engine/releases?per_page=100', $curlLog);
+        self::assertStringContainsString('/repos/test/engine/releases?per_page=100&page=1', $curlLog);
+        self::assertStringContainsString('/repos/test/engine/releases?per_page=100&page=2', $curlLog);
         self::assertStringContainsString(
             '/releases/download/nightly-42-1-abcdef123456/yiipress-linux-amd64.tar.gz',
             $curlLog,
@@ -191,7 +197,7 @@ SH);
     #[Test]
     public function reportsWhenANightlyReleaseIsUnavailable(): void
     {
-        file_put_contents($this->root . '/releases.json', "[]\n");
+        file_put_contents($this->root . '/releases-page-1.json', "[]\n");
 
         [$exitCode, $output] = $this->runInstaller(version: 'nightly');
 
@@ -280,7 +286,8 @@ SH);
             'YIIPRESS_INSTALL_DIR' => $installDirectory ?? $this->root . '/install',
             'YIIPRESS_REPOSITORY' => 'test/engine',
             'YIIPRESS_TEST_RELEASE_DIR' => $this->root . '/release',
-            'YIIPRESS_TEST_RELEASES' => $this->root . '/releases.json',
+            'YIIPRESS_TEST_RELEASES_PAGE_1' => $this->root . '/releases-page-1.json',
+            'YIIPRESS_TEST_RELEASES_PAGE_2' => $this->root . '/releases-page-2.json',
             'YIIPRESS_TEST_CURL_LOG' => $this->root . '/curl.log',
             'YIIPRESS_TEST_SYSTEM' => $system,
             'YIIPRESS_TEST_MACHINE' => $machine,

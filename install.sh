@@ -54,10 +54,30 @@ work_dir="$(mktemp -d)"
 trap 'rm -rf "$work_dir"' EXIT HUP INT TERM
 
 if [ "$version" = "nightly" ]; then
-    curl -fsSL --retry 3 --retry-delay 2 \
-        "https://api.github.com/repos/${repository}/releases?per_page=100" \
-        -o "${work_dir}/releases.json"
-    version="$(awk -F '"' '$2 == "tag_name" && $4 ~ /^nightly-[0-9]+-[0-9]+-[0-9a-f]+$/ { print $4; exit }' "${work_dir}/releases.json")"
+    version=""
+    page=1
+    while [ -z "$version" ]; do
+        curl -fsSL --retry 3 --retry-delay 2 \
+            "https://api.github.com/repos/${repository}/releases?per_page=100&page=${page}" \
+            -o "${work_dir}/releases.json"
+        version="$(awk -F '"' '
+            {
+                for (field = 2; field + 2 <= NF; field += 2) {
+                    if ($field == "tag_name" && $(field + 2) ~ /^nightly-[0-9]+-[0-9]+-[0-9a-f]+$/) {
+                        print $(field + 2)
+                        exit
+                    }
+                }
+            }
+        ' "${work_dir}/releases.json")"
+        if [ -n "$version" ]; then
+            break
+        fi
+        if awk '{ content = content $0 } END { gsub(/[[:space:]]/, "", content); exit content == "[]" ? 0 : 1 }' "${work_dir}/releases.json"; then
+            break
+        fi
+        page=$((page + 1))
+    done
     if [ -z "$version" ]; then
         echo "Could not find a YiiPress nightly release for ${repository}." >&2
         exit 1
