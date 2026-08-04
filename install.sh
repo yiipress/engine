@@ -80,7 +80,7 @@ if [ "$actual_checksum" != "$expected_checksum" ]; then
 fi
 
 tar -xzf "${work_dir}/${asset}" -C "$work_dir" yiipress
-if [ ! -f "${work_dir}/yiipress" ]; then
+if [ ! -f "${work_dir}/yiipress" ] || [ -L "${work_dir}/yiipress" ]; then
     echo "The release archive does not contain the yiipress binary." >&2
     exit 1
 fi

@@ -22,6 +22,7 @@ use function readdir;
 use function rmdir;
 use function stream_get_contents;
 use function str_replace;
+use function symlink;
 use function sys_get_temp_dir;
 use function uniqid;
 use function unlink;
@@ -106,6 +107,18 @@ SH);
     }
 
     #[Test]
+    public function refusesASymbolicLinkBinaryFromTheArchive(): void
+    {
+        $this->createRelease('unused', symbolicLink: true);
+
+        [$exitCode, $output] = $this->runInstaller();
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('does not contain the yiipress binary', $output);
+        self::assertFileDoesNotExist($this->root . '/install/yiipress');
+    }
+
+    #[Test]
     public function installsTheLatestMacOsArmBinary(): void
     {
         $this->createRelease('macos-version', 'yiipress-macos-arm64.tar.gz');
@@ -158,19 +171,29 @@ SH);
         self::assertStringContainsString('OSPlatform]::Windows', $script);
         self::assertStringContainsString('releases/latest/download', $script);
         self::assertStringContainsString('Get-FileHash -Algorithm SHA256', $script);
-        self::assertStringContainsString('[IO.File]::Move($TemporaryTarget, $Target, $true)', $script);
+        self::assertStringContainsString('[IO.File]::Replace($TemporaryTarget, $Target, $null)', $script);
+        self::assertStringContainsString('[IO.File]::Move($TemporaryTarget, $Target)', $script);
+        self::assertStringNotContainsString('[IO.File]::Move($TemporaryTarget, $Target, $true)', $script);
         self::assertStringContainsString('[Environment]::SetEnvironmentVariable("Path", $UpdatedPath, "User")', $script);
         self::assertStringContainsString('YIIPRESS_INSTALL_DIR', $script);
         self::assertStringContainsString('YIIPRESS_VERSION', $script);
     }
 
-    private function createRelease(string $contents, string $asset = 'yiipress-linux-amd64.tar.gz'): void
+    private function createRelease(
+        string $contents,
+        string $asset = 'yiipress-linux-amd64.tar.gz',
+        bool $symbolicLink = false,
+    ): void
     {
         $archiveRoot = $this->root . '/archive';
         if (!is_dir($archiveRoot)) {
             mkdir($archiveRoot);
         }
-        file_put_contents($archiveRoot . '/yiipress', $contents);
+        if ($symbolicLink) {
+            symlink('/etc/passwd', $archiveRoot . '/yiipress');
+        } else {
+            file_put_contents($archiveRoot . '/yiipress', $contents);
+        }
 
         $archive = $this->root . '/release/' . $asset;
         $pipes = [];

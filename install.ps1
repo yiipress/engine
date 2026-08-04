@@ -54,7 +54,11 @@ try {
     $Target = Join-Path $InstallDirectory "yiipress.exe"
     $TemporaryTarget = Join-Path $InstallDirectory (".yiipress-" + [Guid]::NewGuid() + ".exe")
     Copy-Item -Path $Binary -Destination $TemporaryTarget
-    [IO.File]::Move($TemporaryTarget, $Target, $true)
+    if (Test-Path -PathType Leaf $Target) {
+        [IO.File]::Replace($TemporaryTarget, $Target, $null)
+    } else {
+        [IO.File]::Move($TemporaryTarget, $Target)
+    }
 
     $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
     $PathEntries = if ($UserPath) { $UserPath -split ";" } else { @() }
