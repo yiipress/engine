@@ -43,15 +43,20 @@ final class InstallerTest extends TestCase
 set -eu
 url=""
 output=""
+write_out=""
 while [ "$#" -gt 0 ]; do
     case "$1" in
         -o) output="$2"; shift 2 ;;
+        -w) write_out="$2"; shift 2 ;;
         http*) url="$1"; shift ;;
         *) shift ;;
     esac
 done
 cp "${YIIPRESS_TEST_RELEASE_DIR}/${url##*/}" "$output"
 printf '%s\n' "$url" >> "${YIIPRESS_TEST_CURL_LOG}"
+if [ "$write_out" = '%{redirect_url}' ]; then
+    printf '%s\n' "https://github.com/test/engine/releases/download/${YIIPRESS_TEST_LATEST_VERSION}/${url##*/}?sig=test&expires=1"
+fi
 SH);
         file_put_contents($this->root . '/bin/curl', $curl);
         chmod($this->root . '/bin/curl', 0755);
@@ -82,6 +87,12 @@ SH);
         [$exitCode, $output] = $this->runInstaller();
 
         self::assertSame(0, $exitCode, $output);
+        self::assertStringContainsString('Downloading YiiPress 1.2.3 for linux/amd64...', $output);
+        $curlLog = file_get_contents($this->root . '/curl.log');
+        self::assertIsString($curlLog);
+        self::assertStringContainsString('/releases/download/1.2.3/SHA256SUMS', $curlLog);
+        self::assertStringContainsString('/releases/download/1.2.3/yiipress-linux-amd64.tar.gz', $curlLog);
+        self::assertStringNotContainsString('?sig=test', $curlLog);
         self::assertSame('version-one', file_get_contents($this->root . '/install/yiipress'));
         self::assertSame(0755, fileperms($this->root . '/install/yiipress') & 0777);
 
@@ -183,8 +194,7 @@ SH);
         string $contents,
         string $asset = 'yiipress-linux-amd64.tar.gz',
         bool $symbolicLink = false,
-    ): void
-    {
+    ): void {
         $archiveRoot = $this->root . '/archive';
         if (!is_dir($archiveRoot)) {
             mkdir($archiveRoot);
@@ -219,8 +229,7 @@ SH);
         string $machine = 'x86_64',
         ?string $installDirectory = null,
         string $version = 'latest',
-    ): array
-    {
+    ): array {
         $systemPath = getenv('PATH');
         self::assertIsString($systemPath);
         $environment = [
@@ -231,6 +240,7 @@ SH);
             'YIIPRESS_TEST_CURL_LOG' => $this->root . '/curl.log',
             'YIIPRESS_TEST_SYSTEM' => $system,
             'YIIPRESS_TEST_MACHINE' => $machine,
+            'YIIPRESS_TEST_LATEST_VERSION' => '1.2.3',
             'YIIPRESS_TEST_SUDO_LOG' => $this->root . '/sudo.log',
             'YIIPRESS_VERSION' => $version,
         ];

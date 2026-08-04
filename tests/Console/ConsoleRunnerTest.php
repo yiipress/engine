@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiPress\Tests\Console;
 
 use PHPUnit\Framework\TestCase;
+use YiiPress\ApplicationInfo;
 
 use function escapeshellarg;
 use function PHPUnit\Framework\assertSame;
@@ -20,7 +21,7 @@ final class ConsoleRunnerTest extends TestCase
         exec($yii . ' 2>&1', $output, $exitCode);
 
         assertSame(0, $exitCode);
-        assertStringContainsString('YiiPress 1.0.0', implode("\n", $output));
+        assertStringContainsString('YiiPress ' . ApplicationInfo::version(), implode("\n", $output));
         self::assertStringNotContainsString('Yii Console', implode("\n", $output));
         assertStringNotContainsString('Runs an internal portable worker job', implode("\n", $output));
     }
