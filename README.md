@@ -22,13 +22,13 @@ and assets without a database or any runtime.
 Linux (x86-64) and macOS (Apple silicon):
 
 ```shell
-curl -fsSL https://raw.githubusercontent.com/yiipress/engine/9ec820b7c9d62160c183d3a6c1497b01afb4b133/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/yiipress/engine/master/install.sh | sh
 ```
 
 Windows (x86-64, PowerShell):
 
 ```powershell
-irm https://raw.githubusercontent.com/yiipress/engine/9ec820b7c9d62160c183d3a6c1497b01afb4b133/install.ps1 | iex
+irm https://raw.githubusercontent.com/yiipress/engine/master/install.ps1 | iex
 ```
 
 Both installers verify the latest release checksum and put `yiipress` on `PATH`. Run the same command again to update it.
