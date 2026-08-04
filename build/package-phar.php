@@ -16,7 +16,7 @@ require_once __DIR__ . '/PhpDocStripper.php';
 
 $target = $argv[1] ?? $root . '/dist/yiipress.phar';
 $targetDirectory = dirname($target);
-$commit = getenv('YIIPRESS_COMMIT') ?: '';
+$commit = strtolower(getenv('YIIPRESS_COMMIT') ?: '');
 
 if ($commit !== '' && preg_match('/^[0-9a-f]{40}$/', $commit) !== 1) {
     fwrite(STDERR, "YIIPRESS_COMMIT must be a full 40-character commit SHA.\n");
@@ -73,7 +73,16 @@ foreach ($includeDirectories as $directory) {
                 fwrite(STDERR, "Failed to read file: {$localPath}\n");
                 exit(1);
             }
-            $contents = str_replace("public const string COMMIT = '';", "public const string COMMIT = '{$commit}';", $contents);
+            $contents = str_replace(
+                "public const string COMMIT = '';",
+                "public const string COMMIT = '{$commit}';",
+                $contents,
+                $replacementCount,
+            );
+            if ($replacementCount !== 1) {
+                fwrite(STDERR, "Failed to embed the YiiPress commit in {$localPath}.\n");
+                exit(1);
+            }
             $phar->addFromString($localPath, $contents);
             continue;
         }

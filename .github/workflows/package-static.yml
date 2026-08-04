@@ -194,7 +194,7 @@ jobs:
             macos-package-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Build macOS artifacts
-        run: make package-macos PACKAGE_MACOS_ARCH=arm64 PACKAGE_MACOS_DIST=dist/macos-arm64
+        run: make package-macos PACKAGE_MACOS_ARCH=arm64 PACKAGE_MACOS_DIST=dist/macos-arm64 YIIPRESS_COMMIT=${GITHUB_SHA}
 
       - name: Smoke test macOS binary
         run: test "$(./dist/macos-arm64/yiipress --version)" = "YiiPress ${GITHUB_SHA}"

@@ -54,8 +54,8 @@ while [ "$#" -gt 0 ]; do
 done
 cp "${YIIPRESS_TEST_RELEASE_DIR}/${url##*/}" "$output"
 printf '%s\n' "$url" >> "${YIIPRESS_TEST_CURL_LOG}"
-if [ "$write_out" = '%{url_effective}' ]; then
-    printf '%s\n' "https://github.com/test/engine/releases/download/${YIIPRESS_TEST_LATEST_VERSION}/${url##*/}"
+if [ "$write_out" = '%{redirect_url}' ]; then
+    printf '%s\n' "https://github.com/test/engine/releases/download/${YIIPRESS_TEST_LATEST_VERSION}/${url##*/}?sig=test&expires=1"
 fi
 SH);
         file_put_contents($this->root . '/bin/curl', $curl);
@@ -88,6 +88,11 @@ SH);
 
         self::assertSame(0, $exitCode, $output);
         self::assertStringContainsString('Downloading YiiPress 1.2.3 for linux/amd64...', $output);
+        $curlLog = file_get_contents($this->root . '/curl.log');
+        self::assertIsString($curlLog);
+        self::assertStringContainsString('/releases/download/1.2.3/SHA256SUMS', $curlLog);
+        self::assertStringContainsString('/releases/download/1.2.3/yiipress-linux-amd64.tar.gz', $curlLog);
+        self::assertStringNotContainsString('?sig=test', $curlLog);
         self::assertSame('version-one', file_get_contents($this->root . '/install/yiipress'));
         self::assertSame(0755, fileperms($this->root . '/install/yiipress') & 0777);
 
