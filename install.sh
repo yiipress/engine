@@ -59,9 +59,16 @@ fi
 work_dir="$(mktemp -d)"
 trap 'rm -rf "$work_dir"' EXIT HUP INT TERM
 
+if [ "$version" = "latest" ]; then
+    effective_url="$(curl -fsSL --retry 3 --retry-delay 2 -w '%{url_effective}' "${release_url}/SHA256SUMS" -o "${work_dir}/SHA256SUMS")"
+    release_url="${effective_url%/SHA256SUMS}"
+    version="${release_url##*/}"
+else
+    curl -fsSL --retry 3 --retry-delay 2 "${release_url}/SHA256SUMS" -o "${work_dir}/SHA256SUMS"
+fi
+
 echo "Downloading YiiPress ${version} for ${platform}/${architecture}..."
 curl -fsSL --retry 3 --retry-delay 2 "${release_url}/${asset}" -o "${work_dir}/${asset}"
-curl -fsSL --retry 3 --retry-delay 2 "${release_url}/SHA256SUMS" -o "${work_dir}/SHA256SUMS"
 
 expected_checksum="$(awk -v asset="$asset" '$2 == asset || $2 == "*" asset || $2 == "assets/" asset { print $1; exit }' "${work_dir}/SHA256SUMS")"
 if [ -z "$expected_checksum" ]; then

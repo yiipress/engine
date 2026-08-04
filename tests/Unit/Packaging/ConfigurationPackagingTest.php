@@ -281,7 +281,8 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('name: yiipress-phar', $workflow);
         self::assertStringContainsString('path: dist/linux-amd64/yiipress.phar', $workflow);
         self::assertStringContainsString('Smoke test Linux binary', $workflow);
-        self::assertStringContainsString('./dist/linux-amd64/yiipress --help', $workflow);
+        self::assertStringContainsString('YiiPress ${GITHUB_SHA}', $workflow);
+        self::assertStringContainsString('YIIPRESS_COMMIT=${{ github.sha }}', $workflow);
         self::assertStringContainsString('path: dist/linux-amd64/yiipress', $workflow);
         self::assertStringContainsString('build/package-windows.ps1 -DistDir dist/windows-amd64', $workflow);
         self::assertStringContainsString(
@@ -293,7 +294,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringNotContainsString('runtime\package-windows\yiipress-highlighter', $workflow);
         self::assertStringContainsString('runs-on: windows-2022', $workflow);
         self::assertStringContainsString('Smoke test Windows binary', $workflow);
-        self::assertStringContainsString('./dist/windows-amd64/yiipress.exe --help', $workflow);
+        self::assertStringContainsString('./dist/windows-amd64/yiipress.exe --version', $workflow);
         self::assertStringContainsString('path: dist/windows-amd64/yiipress.exe', $workflow);
         self::assertStringContainsString('runs-on: macos-14', $workflow);
         self::assertStringContainsString('targets: aarch64-apple-darwin', $workflow);
@@ -302,7 +303,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringNotContainsString('runtime/package-macos/yiipress-highlighter', $workflow);
         self::assertStringContainsString('make package-macos PACKAGE_MACOS_ARCH=arm64 PACKAGE_MACOS_DIST=dist/macos-arm64', $workflow);
         self::assertStringContainsString('Smoke test macOS binary', $workflow);
-        self::assertStringContainsString('./dist/macos-arm64/yiipress --help', $workflow);
+        self::assertStringContainsString('./dist/macos-arm64/yiipress --version', $workflow);
         self::assertStringContainsString('Pack macOS artifact', $workflow);
         self::assertStringContainsString('tar -C dist/macos-arm64 -czf dist/yiipress-macos-arm64.tar.gz yiipress', $workflow);
         self::assertStringContainsString('name: yiipress-macos-arm64', $workflow);
@@ -455,6 +456,18 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertIsString($workflow);
 
         self::assertStringContainsString("tags:\n      - '*.*.*'", $workflow);
+        self::assertStringContainsString('COMPOSER_ROOT_VERSION: ${{ github.ref_name }}', $workflow);
+        self::assertStringContainsString('YIIPRESS_COMMIT: ${{ github.sha }}', $workflow);
+        self::assertStringContainsString('COMPOSER_ROOT_VERSION=${{ github.ref_name }}', $workflow);
+        self::assertStringContainsString(
+            'test "$(./dist/linux-amd64/yiipress --version)" = "YiiPress ${GITHUB_REF_NAME}"',
+            $workflow,
+        );
+        self::assertStringContainsString('./dist/windows-amd64/yiipress.exe --version', $workflow);
+        self::assertStringContainsString(
+            'test "$(./dist/macos-arm64/yiipress --version)" = "YiiPress ${GITHUB_REF_NAME}"',
+            $workflow,
+        );
         self::assertStringContainsString(
             "git describe --tags --abbrev=0 --match '[0-9]*.[0-9]*.[0-9]*' --exclude '*[!0-9.]*' \"\${tag}^\"",
             $workflow,
@@ -646,6 +659,9 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringNotContainsString("'content'", $packageScript);
         self::assertStringNotContainsString("'runtime'", $packageScript);
         self::assertStringContainsString('PharArchiveFilter::shouldExclude($localPath)', $packageScript);
+        self::assertStringContainsString("getenv('YIIPRESS_COMMIT')", $packageScript);
+        self::assertStringContainsString("\$localPath === 'src/ApplicationInfo.php'", $packageScript);
+        self::assertStringContainsString("public const string COMMIT = '{\$commit}';", $packageScript);
         self::assertStringNotContainsString('packages/highlighter-extension/php', $stage);
         self::assertStringNotContainsString("'packages/highlighter-extension/php'", $packageScript);
         self::assertStringContainsString('COPY config /app/config', $stage);
@@ -755,7 +771,16 @@ PHP;
         self::assertIsString($dockerfile);
 
         self::assertStringContainsString('--mount=type=cache,target=/tmp/composer-cache', $dockerfile);
-        self::assertStringContainsString('COMPOSER_CACHE_DIR=/tmp/composer-cache composer install', $dockerfile);
+        self::assertStringContainsString('ARG COMPOSER_ROOT_VERSION=dev-master', $dockerfile);
+        self::assertStringContainsString('ARG YIIPRESS_COMMIT', $dockerfile);
+        self::assertStringContainsString(
+            'COMPOSER_CACHE_DIR=/tmp/composer-cache COMPOSER_ROOT_VERSION="${COMPOSER_ROOT_VERSION}" composer install',
+            $dockerfile,
+        );
+        self::assertStringContainsString(
+            'YIIPRESS_COMMIT="${YIIPRESS_COMMIT}" php -d phar.readonly=0 build/package-phar.php',
+            $dockerfile,
+        );
         self::assertStringContainsString('COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project', $dockerfile);
         self::assertStringNotContainsString('ARG HIGHLIGHTER_VERSION', $dockerfile);
         self::assertStringNotContainsString('ARG MARKDOWN_VERSION', $dockerfile);

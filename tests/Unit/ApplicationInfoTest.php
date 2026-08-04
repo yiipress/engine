@@ -14,7 +14,8 @@ final class ApplicationInfoTest extends TestCase
     public function versionIsUserFacingReleaseVersion(): void
     {
         self::assertSame('YiiPress', ApplicationInfo::NAME);
-        self::assertMatchesRegularExpression('/^\d+\.\d+\.\d+/', ApplicationInfo::version());
+        self::assertMatchesRegularExpression('/^(?:\d+\.\d+\.\d+|[0-9a-f]{40}|unknown)/', ApplicationInfo::version());
+        self::assertSame('', ApplicationInfo::COMMIT);
         self::assertStringNotContainsString('no-version-set', ApplicationInfo::version());
     }
 }

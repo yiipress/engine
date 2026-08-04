@@ -20,7 +20,7 @@ final class ConsoleRunnerTest extends TestCase
         exec($yii . ' 2>&1', $output, $exitCode);
 
         assertSame(0, $exitCode);
-        assertStringContainsString('YiiPress 1.0.0', implode("\n", $output));
+        assertStringContainsString('YiiPress unknown', implode("\n", $output));
         self::assertStringNotContainsString('Yii Console', implode("\n", $output));
         assertStringNotContainsString('Runs an internal portable worker job', implode("\n", $output));
     }
