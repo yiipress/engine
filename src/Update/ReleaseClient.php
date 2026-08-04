@@ -7,11 +7,14 @@ namespace YiiPress\Update;
 use JsonException;
 use RuntimeException;
 
-use function file_get_contents;
+use function fclose;
+use function fopen;
 use function is_array;
 use function is_string;
 use function json_decode;
 use function sprintf;
+use function stream_copy_to_stream;
+use function unlink;
 use function str_starts_with;
 
 use const JSON_THROW_ON_ERROR;
@@ -25,19 +28,17 @@ final class ReleaseClient
         private readonly string $apiUrl = 'https://api.github.com/repos/' . self::REPOSITORY . '/releases?per_page=100',
     ) {}
 
-    /** @return array{version: string, package: string, checksums: string} */
-    public function download(string $assetName, bool $nightly): array
+    /** @return array{version: string, checksums: string} */
+    public function download(string $assetName, bool $nightly, string $destination): array
     {
         $version = $nightly ? $this->latestNightlyTag($assetName) : 'latest';
         $releaseUrl = $version === 'latest'
             ? $this->downloadBaseUrl . '/latest/download'
             : $this->downloadBaseUrl . '/download/' . $version;
 
-        return [
-            'version' => $version,
-            'package' => $this->get($releaseUrl . '/' . $assetName),
-            'checksums' => $this->get($releaseUrl . '/SHA256SUMS'),
-        ];
+        $this->downloadTo($releaseUrl . '/' . $assetName, $destination);
+
+        return ['version' => $version, 'checksums' => $this->get($releaseUrl . '/SHA256SUMS')];
     }
 
     private function latestNightlyTag(string $assetName): string
@@ -82,11 +83,46 @@ final class ReleaseClient
     private function get(string $url): string
     {
         $context = stream_context_create(['http' => ['header' => "User-Agent: YiiPress self-update\r\n", 'timeout' => 30]]);
-        $contents = @file_get_contents($url, false, $context);
-        if ($contents === false) {
+        $stream = @fopen($url, 'rb', false, $context);
+        if ($stream === false) {
             throw new RuntimeException("Could not download $url.");
         }
 
-        return $contents;
+        try {
+            $contents = stream_get_contents($stream);
+            if ($contents === false) {
+                throw new RuntimeException("Could not download $url.");
+            }
+
+            return $contents;
+        } finally {
+            fclose($stream);
+        }
+    }
+
+    private function downloadTo(string $url, string $destination): void
+    {
+        $context = stream_context_create(['http' => ['header' => "User-Agent: YiiPress self-update\r\n", 'timeout' => 30]]);
+        $source = @fopen($url, 'rb', false, $context);
+        if ($source === false) {
+            throw new RuntimeException("Could not download $url.");
+        }
+        $target = @fopen($destination, 'wb');
+        if ($target === false) {
+            fclose($source);
+            throw new RuntimeException("Could not write temporary update file $destination.");
+        }
+
+        $copied = false;
+        try {
+            $copied = stream_copy_to_stream($source, $target) !== false;
+        } finally {
+            fclose($source);
+            fclose($target);
+        }
+        if (!$copied) {
+            @unlink($destination);
+            throw new RuntimeException("Could not download $url.");
+        }
     }
 }

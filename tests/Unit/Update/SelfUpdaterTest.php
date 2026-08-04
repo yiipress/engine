@@ -106,6 +106,14 @@ final class SelfUpdaterTest extends TestCase
     }
 
     #[Test]
+    public function packageLocatorRejectsNonAmd64LinuxBinary(): void
+    {
+        $this->expectExceptionMessage('Unsupported Linux architecture: aarch64');
+
+        (new PackageLocator('Linux', 'aarch64'))->locateBinary('/usr/local/bin/yiipress');
+    }
+
+    #[Test]
     public function reportsWhenNightlyPackageIsUnavailable(): void
     {
         file_put_contents(

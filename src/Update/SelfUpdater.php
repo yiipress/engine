@@ -8,15 +8,18 @@ use PharData;
 use RuntimeException;
 
 use function chmod;
+use function copy;
 use function dirname;
-use function file_put_contents;
 use function hash;
 use function hash_equals;
+use function hash_file;
+use function is_dir;
+use function mkdir;
 use function preg_match;
 use function preg_quote;
-use function rename;
 use function strtolower;
 use function unlink;
+use function rmdir;
 use function sys_get_temp_dir;
 
 final readonly class SelfUpdater
@@ -24,54 +27,66 @@ final readonly class SelfUpdater
     public function __construct(
         private PackageLocator $packageLocator,
         private ReleaseClient $releaseClient,
+        private PackageReplacer $packageReplacer = new PackageReplacer(),
     ) {}
 
     public function update(bool $nightly = false, ?Package $package = null): string
     {
         $package ??= $this->packageLocator->locate();
-        $release = $this->releaseClient->download($package->assetName, $nightly);
+        $downloadPath = sys_get_temp_dir() . '/yiipress-download-' . hash('xxh128', $package->targetPath) . '-' . $package->assetName;
+        $release = $this->releaseClient->download($package->assetName, $nightly, $downloadPath);
         $expectedHash = $this->checksum($release['checksums'], $package->assetName);
-        $actualHash = hash('sha256', $release['package']);
+        $actualHash = hash_file('sha256', $downloadPath);
+        if ($actualHash === false) {
+            @unlink($downloadPath);
+            throw new RuntimeException("Could not hash {$package->assetName}.");
+        }
         if (!hash_equals($expectedHash, $actualHash)) {
+            @unlink($downloadPath);
             throw new RuntimeException("Checksum verification failed for {$package->assetName}.");
         }
 
-        $contents = $this->packageContents($release['package'], $package, $actualHash);
-
         $temporaryPath = dirname($package->targetPath) . '/.yiipress-update-' . hash('xxh128', $package->targetPath . $actualHash);
-        if (file_put_contents($temporaryPath, $contents, LOCK_EX) === false || !chmod($temporaryPath, 0755)) {
-            @unlink($temporaryPath);
-            throw new RuntimeException("Could not write the update next to {$package->targetPath}.");
+        try {
+            $this->preparePackage($downloadPath, $temporaryPath, $package);
+        } finally {
+            @unlink($downloadPath);
         }
-        if (!rename($temporaryPath, $package->targetPath)) {
+        if (!chmod($temporaryPath, 0755)) {
             @unlink($temporaryPath);
-            throw new RuntimeException("Could not replace {$package->targetPath}. Check its permissions.");
+            throw new RuntimeException("Could not make the update executable next to {$package->targetPath}.");
         }
+        $this->packageReplacer->replace($temporaryPath, $package->targetPath);
 
         return $release['version'];
     }
 
-    private function packageContents(string $download, Package $package, string $hash): string
+    private function preparePackage(string $downloadPath, string $temporaryPath, Package $package): void
     {
         if ($package->archiveMember === null) {
-            return $download;
+            if (!copy($downloadPath, $temporaryPath)) {
+                throw new RuntimeException("Could not write the update next to {$package->targetPath}.");
+            }
+
+            return;
         }
 
-        $archivePath = sys_get_temp_dir() . '/yiipress-update-' . $hash . '-' . $package->assetName;
-        if (file_put_contents($archivePath, $download, LOCK_EX) === false) {
-            throw new RuntimeException('Could not create a temporary update archive.');
+        $extractPath = sys_get_temp_dir() . '/yiipress-extract-' . hash('xxh128', $downloadPath);
+        if (!is_dir($extractPath) && !mkdir($extractPath, 0700, true) && !is_dir($extractPath)) {
+            throw new RuntimeException('Could not create a temporary extraction directory.');
         }
 
         try {
-            $archive = new PharData($archivePath);
-            $file = $archive[$package->archiveMember] ?? null;
-            if (!$file instanceof \PharFileInfo) {
+            $archive = new PharData($downloadPath);
+            if (!$archive->extractTo($extractPath, $package->archiveMember, true)) {
                 throw new RuntimeException("{$package->assetName} does not contain {$package->archiveMember}.");
             }
-
-            return $file->getContent();
+            if (!copy($extractPath . '/' . $package->archiveMember, $temporaryPath)) {
+                throw new RuntimeException("Could not write the update next to {$package->targetPath}.");
+            }
         } finally {
-            @unlink($archivePath);
+            @unlink($extractPath . '/' . $package->archiveMember);
+            @rmdir($extractPath);
         }
     }
 
