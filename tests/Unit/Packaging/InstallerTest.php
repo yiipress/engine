@@ -52,7 +52,11 @@ while [ "$#" -gt 0 ]; do
         *) shift ;;
     esac
 done
-cp "${YIIPRESS_TEST_RELEASE_DIR}/${url##*/}" "$output"
+case "$url" in
+    https://api.github.com/*page=2) cp "${YIIPRESS_TEST_RELEASES_PAGE_2}" "$output" ;;
+    https://api.github.com/*) cp "${YIIPRESS_TEST_RELEASES_PAGE_1}" "$output" ;;
+    *) cp "${YIIPRESS_TEST_RELEASE_DIR}/${url##*/}" "$output" ;;
+esac
 printf '%s\n' "$url" >> "${YIIPRESS_TEST_CURL_LOG}"
 if [ "$write_out" = '%{redirect_url}' ]; then
     printf '%s\n' "https://github.com/test/engine/releases/download/${YIIPRESS_TEST_LATEST_VERSION}/${url##*/}?sig=test&expires=1"
@@ -72,6 +76,15 @@ SH);
         $sudo = "#!/bin/sh\nprintf '%s\\n' \"\$*\" >> \"\$YIIPRESS_TEST_SUDO_LOG\"\n";
         file_put_contents($this->root . '/bin/sudo', $sudo);
         chmod($this->root . '/bin/sudo', 0755);
+
+        file_put_contents(
+            $this->root . '/releases-page-1.json',
+            "[{\"prerelease\":false,\"tag_name\":\"1.2.3\"}]\n",
+        );
+        file_put_contents(
+            $this->root . '/releases-page-2.json',
+            "[{\"prerelease\":true,\"draft\":false,\"tag_name\":\"nightly-42-1-abcdef123456\"}]\n",
+        );
     }
 
     protected function tearDown(): void
@@ -158,6 +171,42 @@ SH);
     }
 
     #[Test]
+    public function installsTheNewestNightlyRelease(): void
+    {
+        $this->createRelease('nightly-version');
+
+        [$exitCode, $output] = $this->runInstaller(version: 'nightly');
+
+        self::assertSame(0, $exitCode, $output);
+        self::assertStringContainsString('Downloading YiiPress nightly-42-1-abcdef123456', $output);
+        self::assertSame('nightly-version', file_get_contents($this->root . '/install/yiipress'));
+        $curlLog = file_get_contents($this->root . '/curl.log');
+        self::assertIsString($curlLog);
+        self::assertStringContainsString('/repos/test/engine/releases?per_page=100&page=1', $curlLog);
+        self::assertStringContainsString('/repos/test/engine/releases?per_page=100&page=2', $curlLog);
+        self::assertStringContainsString(
+            '/releases/download/nightly-42-1-abcdef123456/yiipress-linux-amd64.tar.gz',
+            $curlLog,
+        );
+        self::assertStringContainsString(
+            '/releases/download/nightly-42-1-abcdef123456/SHA256SUMS',
+            $curlLog,
+        );
+    }
+
+    #[Test]
+    public function reportsWhenANightlyReleaseIsUnavailable(): void
+    {
+        file_put_contents($this->root . '/releases-page-1.json', "[]\n");
+
+        [$exitCode, $output] = $this->runInstaller(version: 'nightly');
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('Could not find a YiiPress nightly release for test/engine.', $output);
+        self::assertFileDoesNotExist($this->root . '/install/yiipress');
+    }
+
+    #[Test]
     public function usesSudoWhenTheInstallDirectoryCannotBeCreated(): void
     {
         $this->createRelease('sudo-version');
@@ -237,6 +286,8 @@ SH);
             'YIIPRESS_INSTALL_DIR' => $installDirectory ?? $this->root . '/install',
             'YIIPRESS_REPOSITORY' => 'test/engine',
             'YIIPRESS_TEST_RELEASE_DIR' => $this->root . '/release',
+            'YIIPRESS_TEST_RELEASES_PAGE_1' => $this->root . '/releases-page-1.json',
+            'YIIPRESS_TEST_RELEASES_PAGE_2' => $this->root . '/releases-page-2.json',
             'YIIPRESS_TEST_CURL_LOG' => $this->root . '/curl.log',
             'YIIPRESS_TEST_SYSTEM' => $system,
             'YIIPRESS_TEST_MACHINE' => $machine,

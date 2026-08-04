@@ -25,7 +25,11 @@ release, set environment variables before invoking the installer. For example, w
 ```shell
 curl -fsSL https://raw.githubusercontent.com/yiipress/engine/master/install.sh | YIIPRESS_INSTALL_DIR="$HOME/.local/bin" sh
 curl -fsSL https://raw.githubusercontent.com/yiipress/engine/master/install.sh | YIIPRESS_VERSION=X.Y.Z sh
+curl -fsSL https://raw.githubusercontent.com/yiipress/engine/master/install.sh | YIIPRESS_VERSION=nightly sh
 ```
+
+`YIIPRESS_VERSION=nightly` resolves the newest immutable nightly prerelease through the GitHub releases API. It does not require
+`jq` or GitHub CLI. Nightly builds contain unreleased changes and are intended for preview and testing.
 
 YiiPress can be packaged as reproducible artifacts:
 
