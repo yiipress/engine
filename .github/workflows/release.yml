@@ -12,6 +12,8 @@ concurrency:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}-static
+  COMPOSER_ROOT_VERSION: ${{ github.ref_name }}
+  YIIPRESS_COMMIT: ${{ github.sha }}
 
 jobs:
   linux:
@@ -41,9 +43,12 @@ jobs:
           cache-from: type=gha,scope=release-linux-amd64
           cache-to: type=gha,scope=release-linux-amd64,mode=max
           platforms: linux/amd64
+          build-args: |
+            COMPOSER_ROOT_VERSION=${{ github.ref_name }}
+            YIIPRESS_COMMIT=${{ github.sha }}
 
       - name: Smoke test Linux binary
-        run: ./dist/linux-amd64/yiipress --help
+        run: test "$(./dist/linux-amd64/yiipress --version)" = "YiiPress ${GITHUB_REF_NAME}"
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -105,7 +110,10 @@ jobs:
 
       - name: Smoke test Windows binary
         shell: pwsh
-        run: ./dist/windows-amd64/yiipress.exe --help
+        run: |
+          if ((./dist/windows-amd64/yiipress.exe --version) -ne "YiiPress $env:GITHUB_REF_NAME") {
+              throw "Packaged YiiPress version does not match $env:GITHUB_REF_NAME."
+          }
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -156,10 +164,10 @@ jobs:
             release-macos-package-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Build macOS artifact
-        run: make package-macos PACKAGE_MACOS_ARCH=arm64 PACKAGE_MACOS_DIST=dist/macos-arm64
+        run: make package-macos PACKAGE_MACOS_ARCH=arm64 PACKAGE_MACOS_DIST=dist/macos-arm64 YIIPRESS_COMMIT=${GITHUB_SHA}
 
       - name: Smoke test macOS binary
-        run: ./dist/macos-arm64/yiipress --help
+        run: ./dist/macos-arm64/yiipress --version | grep -Fqx "YiiPress ${GITHUB_REF_NAME}"
 
       - name: Pack macOS artifact
         run: tar -C dist/macos-arm64 -czf dist/yiipress-macos-arm64.tar.gz yiipress

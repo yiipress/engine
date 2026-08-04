@@ -16,6 +16,12 @@ require_once __DIR__ . '/PhpDocStripper.php';
 
 $target = $argv[1] ?? $root . '/dist/yiipress.phar';
 $targetDirectory = dirname($target);
+$commit = strtolower(getenv('YIIPRESS_COMMIT') ?: '');
+
+if ($commit !== '' && preg_match('/^[0-9a-f]{40}$/', $commit) !== 1) {
+    fwrite(STDERR, "YIIPRESS_COMMIT must be a full 40-character commit SHA.\n");
+    exit(1);
+}
 
 if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0775, true) && !is_dir($targetDirectory)) {
     fwrite(STDERR, "Failed to create target directory: {$targetDirectory}\n");
@@ -58,6 +64,26 @@ foreach ($includeDirectories as $directory) {
         $localPath = str_replace('\\', '/', substr($fullPath, strlen($root) + 1));
 
         if (PharArchiveFilter::shouldExclude($localPath)) {
+            continue;
+        }
+
+        if ($localPath === 'src/ApplicationInfo.php' && $commit !== '') {
+            $contents = file_get_contents($fullPath);
+            if ($contents === false) {
+                fwrite(STDERR, "Failed to read file: {$localPath}\n");
+                exit(1);
+            }
+            $contents = str_replace(
+                "public const string COMMIT = '';",
+                "public const string COMMIT = '{$commit}';",
+                $contents,
+                $replacementCount,
+            );
+            if ($replacementCount !== 1) {
+                fwrite(STDERR, "Failed to embed the YiiPress commit in {$localPath}.\n");
+                exit(1);
+            }
+            $phar->addFromString($localPath, $contents);
             continue;
         }
 
