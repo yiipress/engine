@@ -6,6 +6,7 @@ namespace YiiPress\Tests\Console;
 
 use PHPUnit\Framework\TestCase;
 
+use function escapeshellarg;
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
 use function PHPUnit\Framework\assertStringNotContainsString;
@@ -26,7 +27,7 @@ final class ConsoleRunnerTest extends TestCase
 
     public function testCommandErrorRespectsVerbosity(): void
     {
-        $yii = dirname(__DIR__, 2) . '/yii';
+        $yii = escapeshellarg(dirname(__DIR__, 2) . '/yii');
 
         exec($yii . ' new 2>&1', $defaultOutput, $defaultExitCode);
         exec($yii . ' new -vvv 2>&1', $debugOutput, $debugExitCode);

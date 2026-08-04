@@ -16,9 +16,11 @@ final class ExceptionRenderer
         $verbosity = $output->getVerbosity();
         $output->setVerbosity(OutputInterface::VERBOSITY_NORMAL);
 
-        (new Application())->renderThrowable($throwable, $output);
-
-        $output->setVerbosity($verbosity);
+        try {
+            (new Application())->renderThrowable($throwable, $output);
+        } finally {
+            $output->setVerbosity($verbosity);
+        }
 
         $output->writeln(
             '<comment>Exception:</comment> ' . OutputFormatter::escape($throwable::class),
@@ -33,6 +35,9 @@ final class ExceptionRenderer
             OutputInterface::VERBOSITY_VERY_VERBOSE,
         );
         $output->writeln('<comment>Stack trace:</comment>', OutputInterface::VERBOSITY_DEBUG);
-        $output->writeln($throwable->getTraceAsString(), OutputInterface::VERBOSITY_DEBUG);
+        $output->writeln(
+            $throwable->getTraceAsString(),
+            OutputInterface::VERBOSITY_DEBUG | OutputInterface::OUTPUT_RAW,
+        );
     }
 }

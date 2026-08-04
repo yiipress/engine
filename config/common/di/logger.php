@@ -14,7 +14,7 @@ return [
             'stream' => 'php://stderr',
         ],
         'setEnabled()' => [
-            static fn(): bool => PHP_SAPI !== 'cli',
+            static fn(): bool => PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg',
         ],
     ],
     LoggerInterface::class => [
