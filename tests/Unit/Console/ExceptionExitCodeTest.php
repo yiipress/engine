@@ -18,6 +18,9 @@ final class ExceptionExitCodeTest extends TestCase
     public static function codeProvider(): iterable
     {
         yield 'positive' => [ExitCode::USAGE, ExitCode::USAGE];
+        yield 'maximum' => [254, 254];
+        yield 'reserved' => [255, ExitCode::UNSPECIFIED_ERROR];
+        yield 'too large' => [256, ExitCode::UNSPECIFIED_ERROR];
         yield 'zero' => [ExitCode::OK, ExitCode::UNSPECIFIED_ERROR];
         yield 'negative' => [-1, ExitCode::UNSPECIFIED_ERROR];
     }
