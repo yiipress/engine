@@ -50,14 +50,25 @@ if ! command -v "$checksum_command" >/dev/null 2>&1; then
 fi
 
 asset="yiipress-${platform}-${architecture}.tar.gz"
+work_dir="$(mktemp -d)"
+trap 'rm -rf "$work_dir"' EXIT HUP INT TERM
+
+if [ "$version" = "nightly" ]; then
+    curl -fsSL --retry 3 --retry-delay 2 \
+        "https://api.github.com/repos/${repository}/releases?per_page=100" \
+        -o "${work_dir}/releases.json"
+    version="$(awk -F '"' '$2 == "tag_name" && $4 ~ /^nightly-[0-9]+-[0-9]+-[0-9a-f]+$/ { print $4; exit }' "${work_dir}/releases.json")"
+    if [ -z "$version" ]; then
+        echo "Could not find a YiiPress nightly release for ${repository}." >&2
+        exit 1
+    fi
+fi
+
 if [ "$version" = "latest" ]; then
     release_url="https://github.com/${repository}/releases/latest/download"
 else
     release_url="https://github.com/${repository}/releases/download/${version}"
 fi
-
-work_dir="$(mktemp -d)"
-trap 'rm -rf "$work_dir"' EXIT HUP INT TERM
 
 echo "Downloading YiiPress ${version} for ${platform}/${architecture}..."
 curl -fsSL --retry 3 --retry-delay 2 "${release_url}/${asset}" -o "${work_dir}/${asset}"
