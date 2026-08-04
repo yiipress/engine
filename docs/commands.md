@@ -347,6 +347,23 @@ If `title` is missing, it is inferred from the first `# Heading` in the post bod
 
 Importers implement `YiiPress\Import\ContentImporterInterface` and are registered via [Yii3 DI](https://yiisoft.github.io/docs/guide/concept/di-container.html) in `config/common/di/importer.php`. Each importer declares its own options via the `options()` method. See [Importing content](importing-content.md) for details.
 
+## `self-update`
+
+Updates a packaged YiiPress PHAR or static binary in place. Stable releases are used by default, and every download is verified against the release checksum before the running package is replaced.
+
+```shell
+yiipress self-update
+```
+
+Use the newest successful build from `master` for preview testing:
+
+```shell
+yiipress self-update --nightly
+```
+
+The command is intentionally unavailable in a Composer/source checkout. Use Composer to update those installations. The user running the command must be able to write to the installed PHAR or binary directory.
+On Windows, replacement is completed by a short-lived background helper after the running command exits.
+
 ## `clean` / `clear`
 
 Clears build output and caches.

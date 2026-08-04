@@ -312,6 +312,13 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('type=raw,value=nightly', $workflow);
         self::assertStringContainsString('type=sha,prefix=nightly-', $workflow);
         self::assertStringContainsString('nightly_tag="nightly-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}-${short_sha}"', $workflow);
+        self::assertStringContainsString('needs: [linux, windows, macos]', $workflow);
+        self::assertStringContainsString('Pack nightly release assets', $workflow);
+        self::assertStringContainsString('assets/yiipress-linux-amd64.tar.gz', $workflow);
+        self::assertStringContainsString('assets/yiipress-macos-arm64.tar.gz', $workflow);
+        self::assertStringContainsString('assets/yiipress-windows-amd64.zip', $workflow);
+        self::assertStringContainsString('assets/yiipress.phar', $workflow);
+        self::assertStringContainsString('sha256sum assets/* > assets/SHA256SUMS', $workflow);
         self::assertStringContainsString('gh release create "${nightly_tag}" assets/*', $workflow);
         self::assertStringContainsString('--target "${GITHUB_SHA}"', $workflow);
         self::assertStringContainsString('--latest=false', $workflow);

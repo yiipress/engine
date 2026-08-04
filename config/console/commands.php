@@ -13,5 +13,6 @@ return [
     'import' => Console\ImportCommand::class,
     'new' => Console\NewCommand::class,
     'serve' => Console\ServeCommand::class,
+    'self-update' => Console\SelfUpdateCommand::class,
     'theme:init' => Console\ThemeInitCommand::class,
 ];

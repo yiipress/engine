@@ -62,11 +62,20 @@ The PHAR builder copies only runtime inputs into the build stage: `config/`, `pu
 
 PHPDoc comments are stripped from packaged PHP files to keep the standalone PHAR and embedded static-binary PHAR smaller while preserving runtime comments, code, and dependency PHPDoc that is read through reflection at runtime. Benchmark fixture helpers, Composer's `installed.json`, VCS placeholders, and non-runtime type stubs are omitted because packaged commands do not need them.
 Packaged PHAR entries are gzip-compressed before the archive is finalized. The static binary appends that same PHAR to the micro SAPI executable, so PHAR compression reduces both the standalone PHAR and the Linux, macOS, and Windows static executables.
-The static executable includes `ext-highlighter`, so syntax highlighting does not need FFI or an external shared library. `serve` uses ReactPHP stream sockets, serves built files and live reload SSE in the server loop, keeps one shared live reload watcher per server process, and does not require PHP's native `sockets` extension. On POSIX platforms with PCNTL and signal support, `serve` can prefork worker processes; Windows static binaries run a single server process.
+The static executable includes `ext-highlighter`, so syntax highlighting does not need FFI or an external shared library, and `ext-openssl` for HTTPS self-updates. `serve` uses ReactPHP stream sockets, serves built files and live reload SSE in the server loop, keeps one shared live reload watcher per server process, and does not require PHP's native `sockets` extension. On POSIX platforms with PCNTL and signal support, `serve` can prefork worker processes; Windows static binaries run a single server process.
 Relative `content-dir`, `output-dir`, `new`, `clean`, `serve`, and `import` paths are resolved from the directory where you run `yiipress`, not from the packaged executable location.
 PHAR and static binary runs keep build cache and incremental manifests under the OS temp directory, keyed by the current project directory, instead of writing to `runtime/` in the site checkout. `yiipress clean` removes that packaged cache as well as the configured output directory.
 
-GitHub Actions builds the same outputs in the `Package Static Builds` workflow. Commits to `master` publish separate nightly PHAR, Linux, macOS, and Windows workflow artifacts, create immutable GitHub prereleases tagged as `nightly-<run>-<attempt>-<sha>` with the Linux binary and checksums, and push the distroless image as `ghcr.io/<owner>/<repo>-static:nightly` plus a commit-specific `nightly-<sha>` tag. The reusable build action resolves `version: nightly` to the newest matching nightly prerelease.
+Packaged installations update themselves from release metadata and verify downloads with SHA-256 checksums:
+
+```shell
+yiipress self-update
+yiipress self-update --nightly
+```
+
+The first command installs the latest stable release. The second installs the newest nightly prerelease containing a compatible package. If a nightly package is unavailable for the current installation type or platform, the command reports that clearly instead of selecting an incompatible asset. Composer/source checkouts must be updated with Composer instead.
+
+GitHub Actions builds the same outputs in the `Package Static Builds` workflow. Commits to `master` publish separate nightly PHAR, Linux, macOS, and Windows workflow artifacts, create immutable GitHub prereleases tagged as `nightly-<run>-<attempt>-<sha>` with the PHAR and all three platform packages plus checksums, and push the distroless image as `ghcr.io/<owner>/<repo>-static:nightly` plus a commit-specific `nightly-<sha>` tag. The reusable build action resolves `version: nightly` to the newest matching nightly prerelease.
 
 The `Run Tests` workflow runs PHPUnit in the Linux Docker test image and builds the native Windows and macOS binaries. Both platform jobs exercise a complete site lifecycle with the packaged executable: initialize a project, create content, build it, check generated links, verify output, and clean the build.
 
