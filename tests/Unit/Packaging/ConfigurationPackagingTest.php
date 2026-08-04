@@ -789,6 +789,8 @@ PHP;
     {
         foreach ([
             'config/.gitignore',
+            'install.sh',
+            'install.ps1',
             'runtime/cache/build-manifest.json',
             'vendor/composer/installed.json',
             'vendor\\composer\\installed.json',

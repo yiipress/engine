@@ -27,6 +27,10 @@ final class PharArchiveFilter
             return true;
         }
 
+        if (in_array($path, ['install.sh', 'install.ps1'], true)) {
+            return true;
+        }
+
         if (!str_starts_with($path, 'vendor/')) {
             return false;
         }
