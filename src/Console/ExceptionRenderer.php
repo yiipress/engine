@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace YiiPress\Console;
 
 use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Exception\RuntimeException;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
+
+use function is_int;
 
 final class ExceptionRenderer
 {
@@ -17,7 +20,11 @@ final class ExceptionRenderer
         $output->setVerbosity(OutputInterface::VERBOSITY_NORMAL);
 
         try {
-            (new Application())->renderThrowable($throwable, $output);
+            $code = $throwable->getCode();
+            (new Application())->renderThrowable(
+                new RuntimeException($throwable->getMessage(), is_int($code) ? $code : 0),
+                $output,
+            );
         } finally {
             $output->setVerbosity($verbosity);
         }

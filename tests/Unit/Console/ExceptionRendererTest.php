@@ -40,6 +40,7 @@ final class ExceptionRendererTest extends TestCase
         self::assertSame($hasExceptionClass, str_contains($rendered, 'Exception: RuntimeException'));
         self::assertSame($hasLocation, str_contains($rendered, 'Location:'));
         self::assertSame($hasStackTrace, str_contains($rendered, 'Stack trace:'));
+        self::assertStringNotContainsString('In ExceptionRendererTest.php line', $rendered);
         self::assertSame($verbosity, $output->getVerbosity());
     }
 }
