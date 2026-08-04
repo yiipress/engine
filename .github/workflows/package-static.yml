@@ -197,7 +197,7 @@ jobs:
         run: make package-macos PACKAGE_MACOS_ARCH=arm64 PACKAGE_MACOS_DIST=dist/macos-arm64 YIIPRESS_COMMIT=${GITHUB_SHA}
 
       - name: Smoke test macOS binary
-        run: test "$(./dist/macos-arm64/yiipress --version)" = "YiiPress ${GITHUB_SHA}"
+        run: ./dist/macos-arm64/yiipress --version | grep -Fqx "YiiPress ${GITHUB_SHA}"
 
       - name: Pack macOS artifact
         run: tar -C dist/macos-arm64 -czf dist/yiipress-macos-arm64.tar.gz yiipress

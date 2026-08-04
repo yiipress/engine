@@ -314,7 +314,7 @@ final class ConfigurationPackagingTest extends TestCase
         );
         self::assertStringContainsString('Smoke test macOS binary', $workflow);
         self::assertStringContainsString(
-            'test "$(./dist/macos-arm64/yiipress --version)" = "YiiPress ${GITHUB_SHA}"',
+            './dist/macos-arm64/yiipress --version | grep -Fqx "YiiPress ${GITHUB_SHA}"',
             $workflow,
         );
         self::assertStringContainsString('Pack macOS artifact', $workflow);
@@ -482,7 +482,7 @@ final class ConfigurationPackagingTest extends TestCase
             $workflow,
         );
         self::assertStringContainsString(
-            'test "$(./dist/macos-arm64/yiipress --version)" = "YiiPress ${GITHUB_REF_NAME}"',
+            './dist/macos-arm64/yiipress --version | grep -Fqx "YiiPress ${GITHUB_REF_NAME}"',
             $workflow,
         );
         self::assertStringContainsString(
