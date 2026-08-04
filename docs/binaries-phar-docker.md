@@ -1,5 +1,29 @@
 # Binaries, PHAR, Docker
 
+## Installation
+
+Install the latest stable binary on 64-bit x86 Linux or Apple silicon macOS with:
+
+```shell
+curl -fsSL https://raw.githubusercontent.com/yiipress/engine/master/install.sh | sh
+```
+
+On 64-bit x86 Windows, run in PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/yiipress/engine/master/install.ps1 | iex
+```
+
+The installers download the latest release archive and `SHA256SUMS`, verify the archive, and atomically install the executable.
+The shell installer uses `/usr/local/bin/yiipress`; the PowerShell installer uses the current user's local application directory
+and adds it to the user `PATH`. Re-run the same command to update an existing installation. To use another directory or a fixed
+release, set environment variables before invoking the installer. For example, with the shell installer:
+
+```shell
+curl -fsSL https://raw.githubusercontent.com/yiipress/engine/master/install.sh | YIIPRESS_INSTALL_DIR="$HOME/.local/bin" sh
+curl -fsSL https://raw.githubusercontent.com/yiipress/engine/master/install.sh | YIIPRESS_VERSION=X.Y.Z sh
+```
+
 YiiPress can be packaged as reproducible artifacts:
 
 ```bash

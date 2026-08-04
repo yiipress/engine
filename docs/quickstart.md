@@ -9,21 +9,19 @@ mkdir myblog
 cd myblog
 ```
 
-Download the YiiPress binary from the latest GitHub release or workflow artifact and place it in this directory as `yiipress` (`yiipress.exe` on Windows):
+Install YiiPress for your platform using the command on the [documentation home page](README.md#install-or-update).
+The installer puts the executable on `PATH`, so the same commands work on Linux, macOS, and Windows.
 
 ```bash
-cp /path/to/yiipress ./yiipress
-chmod +x ./yiipress
+yiipress --version
 ```
-
-On Windows, use `yiipress.exe` in the examples below.
 
 ## 2. Create the initial files
 
 Run:
 
 ```bash
-./yiipress init
+yiipress init
 ```
 
 This creates `content/config.yaml`, `content/navigation.yaml`, and two starter collections. Edit `content/config.yaml`:
@@ -61,7 +59,7 @@ content/
 Create the post with the scaffold command:
 
 ```bash
-./yiipress new "Hello World" --collection=blog
+yiipress new "Hello World" --collection=blog
 ```
 
 Then edit the generated file in `content/blog/`. A typical post looks like this:
@@ -89,7 +87,7 @@ YiiPress is a static blog engine built on [Yii3](https://yiisoft.github.io/docs/
 Use the same command without `--collection` for a root-level page:
 
 ```bash
-./yiipress new "About"
+yiipress new "About"
 ```
 
 A simple `content/about.md` page looks like this:
@@ -119,7 +117,7 @@ main:
 ## 7. Build the site
 
 ```bash
-./yiipress build
+yiipress build
 ```
 
 This generates static HTML in the `output/` directory:
@@ -147,7 +145,7 @@ output/
 Start the dev server:
 
 ```bash
-./yiipress serve
+yiipress serve
 ```
 
 Open the URL printed by the command. The preview server rebuilds after content changes and refreshes the browser.
@@ -157,13 +155,13 @@ Open the URL printed by the command. The preview server rebuilds after content c
 Include drafts and future-dated posts during development:
 
 ```bash
-./yiipress build --drafts --future
+yiipress build --drafts --future
 ```
 
 Use multiple workers for faster builds:
 
 ```bash
-./yiipress build --workers=4
+yiipress build --workers=4
 ```
 
 By default, YiiPress uses `--workers=auto`, which detects available CPU capacity and uses up to 4 workers automatically.
@@ -171,7 +169,7 @@ By default, YiiPress uses `--workers=auto`, which detects available CPU capacity
 Disable cache for a clean build:
 
 ```bash
-./yiipress build --no-cache
+yiipress build --no-cache
 ```
 
 ## Next steps

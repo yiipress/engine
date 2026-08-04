@@ -10,6 +10,23 @@ show_title: false
 
 [YiiPress](https://github.com/yiipress/engine) turns Markdown files into a fast static website. Use the static binary for day-to-day work: no PHP, Composer, database, or application server is needed for building or serving a preview.
 
+## Install or update
+
+Linux (x86-64) and macOS (Apple silicon):
+
+```shell
+curl -fsSL https://raw.githubusercontent.com/yiipress/engine/master/install.sh | sh
+```
+
+Windows (x86-64, PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/yiipress/engine/master/install.ps1 | iex
+```
+
+Both installers verify the latest release checksum and put `yiipress` on `PATH`. Run the same command again to update it.
+Set `YIIPRESS_INSTALL_DIR` to install into another directory.
+
 ## Why YiiPress
 
 - **Static binary first** — download `yiipress`, put it in your project, and run it.
