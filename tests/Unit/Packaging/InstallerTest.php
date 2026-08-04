@@ -179,6 +179,20 @@ SH);
         self::assertStringContainsString('YIIPRESS_VERSION', $script);
     }
 
+    #[Test]
+    public function documentationUsesTheSameImmutableInstallerRevision(): void
+    {
+        $root = dirname(__DIR__, 3);
+        $revision = '9ec820b7c9d62160c183d3a6c1497b01afb4b133';
+        foreach (['README.md', 'docs/README.md', 'docs/binaries-phar-docker.md'] as $path) {
+            $documentation = file_get_contents($root . '/' . $path);
+            self::assertIsString($documentation);
+            self::assertStringContainsString("yiipress/engine/$revision/install.sh", $documentation);
+            self::assertStringContainsString("yiipress/engine/$revision/install.ps1", $documentation);
+            self::assertStringNotContainsString('yiipress/engine/master/install.', $documentation);
+        }
+    }
+
     private function createRelease(
         string $contents,
         string $asset = 'yiipress-linux-amd64.tar.gz',

@@ -5,13 +5,13 @@
 Install the latest stable binary on 64-bit x86 Linux or Apple silicon macOS with:
 
 ```shell
-curl -fsSL https://raw.githubusercontent.com/yiipress/engine/master/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/yiipress/engine/9ec820b7c9d62160c183d3a6c1497b01afb4b133/install.sh | sh
 ```
 
 On 64-bit x86 Windows, run in PowerShell:
 
 ```powershell
-irm https://raw.githubusercontent.com/yiipress/engine/master/install.ps1 | iex
+irm https://raw.githubusercontent.com/yiipress/engine/9ec820b7c9d62160c183d3a6c1497b01afb4b133/install.ps1 | iex
 ```
 
 The installers download the latest release archive and `SHA256SUMS`, verify the archive, and atomically install the executable.
@@ -20,8 +20,8 @@ and adds it to the user `PATH`. Re-run the same command to update an existing in
 release, set environment variables before invoking the installer. For example, with the shell installer:
 
 ```shell
-curl -fsSL https://raw.githubusercontent.com/yiipress/engine/master/install.sh | YIIPRESS_INSTALL_DIR="$HOME/.local/bin" sh
-curl -fsSL https://raw.githubusercontent.com/yiipress/engine/master/install.sh | YIIPRESS_VERSION=X.Y.Z sh
+curl -fsSL https://raw.githubusercontent.com/yiipress/engine/9ec820b7c9d62160c183d3a6c1497b01afb4b133/install.sh | YIIPRESS_INSTALL_DIR="$HOME/.local/bin" sh
+curl -fsSL https://raw.githubusercontent.com/yiipress/engine/9ec820b7c9d62160c183d3a6c1497b01afb4b133/install.sh | YIIPRESS_VERSION=X.Y.Z sh
 ```
 
 YiiPress can be packaged as reproducible artifacts:
