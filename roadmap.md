@@ -69,6 +69,7 @@
 - [x] `serve` overlay button to open the current markdown source in a configured editor
 - [x] [Respect console verbosity when rendering errors](https://github.com/yiipress/engine/issues/126)
 - [x] [Hide the internal worker command from the user-facing command list](https://github.com/yiipress/engine/issues/124)
+- [x] [Add one-command Linux, macOS, and Windows installers and updaters](https://github.com/yiipress/engine/issues/129)
 
 ## Priority 4: Templates and theming
 

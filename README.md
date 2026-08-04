@@ -17,6 +17,23 @@ YiiPress is a fast, file-based static website engine powered by [Yii3](https://w
 Write Markdown, build static HTML, and ship blogs, documentation, feeds, sitemaps, taxonomy pages, authors, search, redirects,
 and assets without a database or any runtime.
 
+## Install or update
+
+Linux (x86-64) and macOS (Apple silicon):
+
+```shell
+curl -fsSL https://raw.githubusercontent.com/yiipress/engine/master/install.sh | sh
+```
+
+Windows (x86-64, PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/yiipress/engine/master/install.ps1 | iex
+```
+
+Both installers verify the latest release checksum and put `yiipress` on `PATH`. Run the same command again to update it.
+Set `YIIPRESS_INSTALL_DIR` to install into another directory.
+
 Use the static binary for normal projects: it includes the runtime and native extensions, so you do not need Docker, PHP, Composer,
 or a database on the machine that builds or previews the site.
 
@@ -46,28 +63,26 @@ Source installs require PHP 8.5 and native extensions. Prefer the binary unless 
 
 ## Installation
 
-Download the static binary from the latest GitHub release or workflow artifact, then put it in your site repository as
-`yiipress` (`yiipress.exe` on Windows).
+Use the installer for your platform at the beginning of this README. For unsupported architectures, download the static binary
+from the latest GitHub release and put it in a directory included in `PATH` (`yiipress.exe` on Windows).
 
 Create a content project:
 
 ```shell
 mkdir mysite
 cd mysite
-cp /path/to/yiipress ./yiipress
-chmod +x ./yiipress
 ```
 
 Initialize content:
 
 ```shell
-./yiipress init
+yiipress init
 ```
 
 Start the development server:
 
 ```shell
-./yiipress serve
+yiipress serve
 ```
 
 The preview server prints the URL it is listening on.
@@ -113,7 +128,7 @@ Welcome to my site.
 Build the static site:
 
 ```shell
-./yiipress build
+yiipress build
 ```
 
 Generated files are written to `output/`.
@@ -121,10 +136,10 @@ Generated files are written to `output/`.
 Common commands:
 
 ```shell
-./yiipress new "My First Post" --collection=blog
-./yiipress build --workers=4
-./yiipress build --drafts --future
-./yiipress clean
+yiipress new "My First Post" --collection=blog
+yiipress build --workers=4
+yiipress build --drafts --future
+yiipress clean
 ```
 
 Engine packaging commands, used by maintainers:

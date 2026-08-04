@@ -1,0 +1,198 @@
+<?php
+
+declare(strict_types=1);
+
+namespace YiiPress\Tests\Unit\Packaging;
+
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+
+use function chmod;
+use function dirname;
+use function file_get_contents;
+use function file_put_contents;
+use function getenv;
+use function hash_file;
+use function is_dir;
+use function mkdir;
+use function proc_close;
+use function proc_open;
+use function readdir;
+use function rmdir;
+use function stream_get_contents;
+use function str_replace;
+use function sys_get_temp_dir;
+use function uniqid;
+use function unlink;
+
+final class InstallerTest extends TestCase
+{
+    private string $root;
+
+    protected function setUp(): void
+    {
+        $this->root = sys_get_temp_dir() . '/yiipress-installer-' . uniqid('', true);
+        mkdir($this->root . '/bin', recursive: true);
+        mkdir($this->root . '/release', recursive: true);
+        mkdir($this->root . '/install', recursive: true);
+
+        $curl = str_replace("\r\n", "\n", <<<'SH'
+#!/bin/sh
+set -eu
+url=""
+output=""
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -o) output="$2"; shift 2 ;;
+        http*) url="$1"; shift ;;
+        *) shift ;;
+    esac
+done
+cp "${YIIPRESS_TEST_RELEASE_DIR}/${url##*/}" "$output"
+SH);
+        file_put_contents($this->root . '/bin/curl', $curl);
+        chmod($this->root . '/bin/curl', 0755);
+
+        $uname = "#!/bin/sh\nif [ \"\$1\" = \"-s\" ]; then printf '%s\\n' \"\$YIIPRESS_TEST_SYSTEM\"; else printf '%s\\n' \"\$YIIPRESS_TEST_MACHINE\"; fi\n";
+        file_put_contents($this->root . '/bin/uname', $uname);
+        chmod($this->root . '/bin/uname', 0755);
+
+        $shasum = "#!/bin/sh\nshift 2\nexec sha256sum \"\$@\"\n";
+        file_put_contents($this->root . '/bin/shasum', $shasum);
+        chmod($this->root . '/bin/shasum', 0755);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->removeDirectory($this->root);
+    }
+
+    #[Test]
+    public function installsAndUpdatesTheLatestLinuxBinary(): void
+    {
+        $this->createRelease('version-one');
+
+        [$exitCode, $output] = $this->runInstaller();
+
+        self::assertSame(0, $exitCode, $output);
+        self::assertSame('version-one', file_get_contents($this->root . '/install/yiipress'));
+        self::assertSame(0755, fileperms($this->root . '/install/yiipress') & 0777);
+
+        $this->createRelease('version-two');
+        [$exitCode, $output] = $this->runInstaller();
+
+        self::assertSame(0, $exitCode, $output);
+        self::assertSame('version-two', file_get_contents($this->root . '/install/yiipress'));
+        self::assertSame([], glob($this->root . '/install/.yiipress.*'));
+    }
+
+    #[Test]
+    public function refusesAnArchiveWithAnInvalidChecksum(): void
+    {
+        $this->createRelease('untrusted');
+        file_put_contents($this->root . '/release/SHA256SUMS', sprintf("%064d  yiipress-linux-amd64.tar.gz\n", 0));
+
+        [$exitCode, $output] = $this->runInstaller();
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('Checksum verification failed', $output);
+        self::assertFileDoesNotExist($this->root . '/install/yiipress');
+    }
+
+    #[Test]
+    public function installsTheLatestMacOsArmBinary(): void
+    {
+        $this->createRelease('macos-version', 'yiipress-macos-arm64.tar.gz');
+
+        [$exitCode, $output] = $this->runInstaller('Darwin', 'arm64');
+
+        self::assertSame(0, $exitCode, $output);
+        self::assertStringContainsString('macos/arm64', $output);
+        self::assertSame('macos-version', file_get_contents($this->root . '/install/yiipress'));
+    }
+
+    #[Test]
+    public function windowsInstallerDownloadsVerifiesAndAtomicallyReplacesTheExecutable(): void
+    {
+        $script = file_get_contents(dirname(__DIR__, 3) . '/install.ps1');
+        self::assertIsString($script);
+
+        self::assertStringContainsString('yiipress-windows-amd64.zip', $script);
+        self::assertStringContainsString('OSPlatform]::Windows', $script);
+        self::assertStringContainsString('releases/latest/download', $script);
+        self::assertStringContainsString('Get-FileHash -Algorithm SHA256', $script);
+        self::assertStringContainsString('[IO.File]::Move($TemporaryTarget, $Target, $true)', $script);
+        self::assertStringContainsString('[Environment]::SetEnvironmentVariable("Path", $UpdatedPath, "User")', $script);
+        self::assertStringContainsString('YIIPRESS_INSTALL_DIR', $script);
+        self::assertStringContainsString('YIIPRESS_VERSION', $script);
+    }
+
+    private function createRelease(string $contents, string $asset = 'yiipress-linux-amd64.tar.gz'): void
+    {
+        $archiveRoot = $this->root . '/archive';
+        if (!is_dir($archiveRoot)) {
+            mkdir($archiveRoot);
+        }
+        file_put_contents($archiveRoot . '/yiipress', $contents);
+
+        $archive = $this->root . '/release/' . $asset;
+        $pipes = [];
+        $process = proc_open(
+            ['tar', '-C', $archiveRoot, '-czf', $archive, 'yiipress'],
+            [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+            $pipes,
+        );
+        self::assertIsResource($process);
+        $output = stream_get_contents($pipes[1]) . stream_get_contents($pipes[2]);
+        self::assertSame(0, proc_close($process), $output);
+
+        $checksum = hash_file('sha256', $archive);
+        self::assertIsString($checksum);
+        file_put_contents($this->root . '/release/SHA256SUMS', "$checksum  assets/$asset\n");
+    }
+
+    /** @return array{int, string} */
+    private function runInstaller(string $system = 'Linux', string $machine = 'x86_64'): array
+    {
+        $systemPath = getenv('PATH');
+        self::assertIsString($systemPath);
+        $environment = [
+            'PATH' => $this->root . '/bin:' . $systemPath,
+            'YIIPRESS_INSTALL_DIR' => $this->root . '/install',
+            'YIIPRESS_REPOSITORY' => 'test/engine',
+            'YIIPRESS_TEST_RELEASE_DIR' => $this->root . '/release',
+            'YIIPRESS_TEST_SYSTEM' => $system,
+            'YIIPRESS_TEST_MACHINE' => $machine,
+        ];
+        $pipes = [];
+        $process = proc_open(
+            ['sh', dirname(__DIR__, 3) . '/install.sh'],
+            [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+            $pipes,
+            null,
+            $environment,
+        );
+        self::assertIsResource($process);
+        $output = stream_get_contents($pipes[1]) . stream_get_contents($pipes[2]);
+
+        return [proc_close($process), $output];
+    }
+
+    private function removeDirectory(string $directory): void
+    {
+        if (!is_dir($directory)) {
+            return;
+        }
+        $handle = opendir($directory);
+        self::assertIsResource($handle);
+        while (($name = readdir($handle)) !== false) {
+            if ($name === '.' || $name === '..') {
+                continue;
+            }
+            $path = $directory . '/' . $name;
+            is_dir($path) ? $this->removeDirectory($path) : unlink($path);
+        }
+        closedir($handle);
+        rmdir($directory);
+    }
+}
