@@ -21,7 +21,7 @@ yiipress --version
 Run:
 
 ```bash
-yiipress init
+yiipress init:content
 ```
 
 This creates `content/config.yaml`, `content/navigation.yaml`, and two starter collections. Edit `content/config.yaml`:
@@ -44,7 +44,7 @@ taxonomies:
 
 ## 3. Review collections
 
-`yiipress init` creates a `page` collection for standalone pages and a `blog` collection for dated posts:
+`yiipress init:content` creates a `page` collection for standalone pages and a `blog` collection for dated posts:
 
 ```text
 content/

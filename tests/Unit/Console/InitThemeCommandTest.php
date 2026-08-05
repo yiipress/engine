@@ -12,7 +12,7 @@ use SplFileInfo;
 use Symfony\Component\Console\Tester\CommandTester;
 use YiiPress\Build\Theme;
 use YiiPress\Build\ThemeRegistry;
-use YiiPress\Console\ThemeInitCommand;
+use YiiPress\Console\InitThemeCommand;
 use Yiisoft\Yii\Console\ExitCode;
 
 use function file_get_contents;
@@ -25,7 +25,7 @@ use function sys_get_temp_dir;
 use function unlink;
 use function uniqid;
 
-final class ThemeInitCommandTest extends TestCase
+final class InitThemeCommandTest extends TestCase
 {
     private string $rootDir;
 
@@ -45,7 +45,7 @@ final class ThemeInitCommandTest extends TestCase
 
     public function testInitializesMinimalThemeIntoDefaultCustomDirectory(): void
     {
-        $tester = new CommandTester(new ThemeInitCommand($this->rootDir, $this->registry()));
+        $tester = new CommandTester(new InitThemeCommand($this->rootDir, $this->registry()));
 
         $exitCode = $tester->execute([]);
 
@@ -58,7 +58,7 @@ final class ThemeInitCommandTest extends TestCase
 
     public function testInitializesThemeIntoCustomDirectory(): void
     {
-        $tester = new CommandTester(new ThemeInitCommand($this->rootDir, $this->registry()));
+        $tester = new CommandTester(new InitThemeCommand($this->rootDir, $this->registry()));
 
         $exitCode = $tester->execute(['target-dir' => 'themes/brand']);
 
@@ -70,7 +70,7 @@ final class ThemeInitCommandTest extends TestCase
     public function testInitializesThemeIntoAbsoluteDirectory(): void
     {
         $absoluteTarget = $this->rootDir . '/abs-target';
-        $tester = new CommandTester(new ThemeInitCommand($this->rootDir, $this->registry()));
+        $tester = new CommandTester(new InitThemeCommand($this->rootDir, $this->registry()));
 
         $exitCode = $tester->execute(['target-dir' => $absoluteTarget]);
 
@@ -82,7 +82,7 @@ final class ThemeInitCommandTest extends TestCase
     public function testReplacesExistingThemeInContentConfig(): void
     {
         file_put_contents($this->rootDir . '/content/config.yaml', "title: Test\ntheme: minimal\nlanguages: [en]\n");
-        $tester = new CommandTester(new ThemeInitCommand($this->rootDir, $this->registry()));
+        $tester = new CommandTester(new InitThemeCommand($this->rootDir, $this->registry()));
 
         $exitCode = $tester->execute([]);
 
@@ -94,7 +94,7 @@ final class ThemeInitCommandTest extends TestCase
     {
         mkdir($this->rootDir . '/site-content');
         file_put_contents($this->rootDir . '/site-content/config.yaml', "title: Site\n");
-        $tester = new CommandTester(new ThemeInitCommand($this->rootDir, $this->registry()));
+        $tester = new CommandTester(new InitThemeCommand($this->rootDir, $this->registry()));
 
         $exitCode = $tester->execute(['--content-dir' => 'site-content']);
 
@@ -106,7 +106,7 @@ final class ThemeInitCommandTest extends TestCase
     public function testDoesNotCopyFilesWhenContentConfigIsMissing(): void
     {
         unlink($this->rootDir . '/content/config.yaml');
-        $tester = new CommandTester(new ThemeInitCommand($this->rootDir, $this->registry()));
+        $tester = new CommandTester(new InitThemeCommand($this->rootDir, $this->registry()));
 
         $exitCode = $tester->execute([]);
 
@@ -117,7 +117,7 @@ final class ThemeInitCommandTest extends TestCase
 
     public function testDoesNotCopyFilesWhenTargetThemeNameIsInvalid(): void
     {
-        $tester = new CommandTester(new ThemeInitCommand($this->rootDir, $this->registry()));
+        $tester = new CommandTester(new InitThemeCommand($this->rootDir, $this->registry()));
 
         $exitCode = $tester->execute(['target-dir' => 'themes/.custom']);
 
@@ -128,7 +128,7 @@ final class ThemeInitCommandTest extends TestCase
 
     public function testReturnsDataErrorForUnknownTheme(): void
     {
-        $tester = new CommandTester(new ThemeInitCommand($this->rootDir, $this->registry()));
+        $tester = new CommandTester(new InitThemeCommand($this->rootDir, $this->registry()));
 
         $exitCode = $tester->execute(['--theme' => 'missing']);
 

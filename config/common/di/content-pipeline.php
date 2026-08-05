@@ -7,9 +7,10 @@ use YiiPress\Build\ThemeRegistry;
 use YiiPress\Console\BuildCommand;
 use YiiPress\Console\CheckCommand;
 use YiiPress\Console\CleanCommand;
-use YiiPress\Console\InitCommand;
+use YiiPress\Console\InitContentCommand;
+use YiiPress\Console\InitPluginCommand;
+use YiiPress\Console\InitThemeCommand;
 use YiiPress\Console\NewCommand;
-use YiiPress\Console\ThemeInitCommand;
 use YiiPress\Console\WorkerCommand;
 use YiiPress\Processor\ContentProcessorPipeline;
 use YiiPress\Processor\LatexMath\LatexMathProcessor;
@@ -102,7 +103,7 @@ return [
             'rootPath' => $workingDirectory,
         ],
     ],
-    InitCommand::class => [
+    InitContentCommand::class => [
         '__construct()' => [
             'rootPath' => $workingDirectory,
         ],
@@ -112,7 +113,12 @@ return [
             'rootPath' => $workingDirectory,
         ],
     ],
-    ThemeInitCommand::class => [
+    InitPluginCommand::class => [
+        '__construct()' => [
+            'rootPath' => $workingDirectory,
+        ],
+    ],
+    InitThemeCommand::class => [
         '__construct()' => [
             'rootPath' => $workingDirectory,
             'themeRegistry' => Reference::to(ThemeRegistry::class),

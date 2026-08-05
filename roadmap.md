@@ -58,7 +58,8 @@
 - [x] macOS binary test pipeline in CI
 - [x] Reusable GitHub Action for downloading the Linux binary and building third-party sites
 - [x] `yiipress new` command — scaffold new entries from archetypes/templates
-- [x] `yiipress init` command — scaffold initial content structure
+- [x] `yiipress init:content` command — scaffold initial content structure
+- [x] [Namespaced content, theme, and plugin scaffolding commands](https://github.com/yiipress/engine/issues/125)
 - [x] Incremental builds (only rebuild changed files)
 - [x] Smaller static package by removing unused runtime extension dependencies
 - [x] Build diagnostics (warn on broken internal links, missing images, invalid front matter)
