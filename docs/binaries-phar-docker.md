@@ -80,7 +80,7 @@ yiipress self-update
 yiipress self-update --nightly
 ```
 
-The first command installs the latest stable release. The second installs the newest nightly prerelease containing a compatible package. Static binaries identify their outer executable through the micro SAPI runtime and replace that executable in place. If a nightly package is unavailable for the current installation type or platform, the command reports that clearly instead of selecting an incompatible asset. Composer/source checkouts must be updated with Composer instead.
+The first command installs the latest stable release. The second installs the newest nightly prerelease containing a compatible package. Static binaries identify their outer executable through the micro SAPI runtime. The verified replacement is staged beside the installed package and activated only after normal command shutdown, avoiding stale PHAR metadata while the old package is still running. If a nightly package is unavailable for the current installation type or platform, the command reports that clearly instead of selecting an incompatible asset. Composer/source checkouts must be updated with Composer instead.
 
 GitHub Actions builds the same outputs in the `Package Static Builds` workflow. Commits to `master` publish separate nightly PHAR, Linux, macOS, and Windows workflow artifacts, create immutable GitHub prereleases tagged as `nightly-<run>-<attempt>-<sha>` with the PHAR and all three platform packages plus checksums, and push the distroless image as `ghcr.io/<owner>/<repo>-static:nightly` plus a commit-specific `nightly-<sha>` tag. The reusable build action resolves `version: nightly` to the newest matching nightly prerelease.
 
