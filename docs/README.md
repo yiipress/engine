@@ -12,17 +12,23 @@ show_title: false
 
 ## Install or update
 
-Linux (x86-64) and macOS (Apple silicon):
-
+[code-group]
+[code-tab label="Linux (x86-64)"]
 ```shell
 curl -fsSL https://raw.githubusercontent.com/yiipress/engine/master/install.sh | sh
 ```
-
-Windows (x86-64, PowerShell):
-
+[/code-tab]
+[code-tab label="macOS (Apple silicon)"]
+```shell
+curl -fsSL https://raw.githubusercontent.com/yiipress/engine/master/install.sh | sh
+```
+[/code-tab]
+[code-tab label="Windows (x86-64)"]
 ```powershell
 irm https://raw.githubusercontent.com/yiipress/engine/master/install.ps1 | iex
 ```
+[/code-tab]
+[/code-group]
 
 Both installers verify the latest release checksum and put `yiipress` on `PATH`. Run the same command again to update it.
 Set `YIIPRESS_INSTALL_DIR` to install into another directory.
