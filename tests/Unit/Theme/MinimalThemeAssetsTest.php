@@ -145,9 +145,24 @@ final class MinimalThemeAssetsTest extends TestCase
         $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');
 
         self::assertNotFalse($css);
-        assertStringContainsString('padding: .25rem .375rem;', $css);
-        assertStringContainsString('background: var(--c-code-bg);', $css);
-        assertStringContainsString('font-weight: 400;', $css);
+        self::assertSame(1, preg_match('/\.code-block \{(?<rule>[^}]*)}/', $css, $blockMatches));
+        self::assertSame(1, preg_match('/\.code-block pre \{(?<rule>[^}]*)}/', $css, $preMatches));
+        self::assertSame(1, preg_match('/\.code-language-label \{(?<rule>[^}]*)}/', $css, $matches));
+
+        assertStringContainsString('--code-language-label-width: 8rem;', $blockMatches['rule']);
+        assertStringContainsString(
+            'padding-right: calc(var(--code-language-label-width) + 1.5rem);',
+            $preMatches['rule'],
+        );
+
+        $rule = $matches['rule'];
+        assertStringContainsString('max-width: var(--code-language-label-width);', $rule);
+        assertStringContainsString('padding: .25rem .375rem;', $rule);
+        assertStringContainsString('background: var(--c-code-bg);', $rule);
+        assertStringContainsString('font-weight: 400;', $rule);
+        assertStringContainsString('overflow: hidden;', $rule);
+        assertStringContainsString('text-overflow: ellipsis;', $rule);
+        assertStringContainsString('white-space: nowrap;', $rule);
     }
 
     public function testCodeCopyScriptEnhancesContentPreBlocks(): void

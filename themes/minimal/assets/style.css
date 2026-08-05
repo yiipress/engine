@@ -297,18 +297,20 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
     transition: background .2s;
 }
 .code-block {
+    --code-language-label-width: 8rem;
     position: relative;
     margin: 1.25rem 0;
 }
 .code-block pre {
     margin: 0;
-    padding-right: 4.5rem;
+    padding-right: calc(var(--code-language-label-width) + 1.5rem);
 }
 .code-language-label {
     position: absolute;
     top: .75rem;
     right: .75rem;
     z-index: 1;
+    max-width: var(--code-language-label-width);
     padding: .25rem .375rem;
     border-radius: .25rem;
     background: var(--c-code-bg);
@@ -316,6 +318,9 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
     font-size: .75rem;
     font-weight: 400;
     line-height: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     pointer-events: none;
     transition: opacity .15s;
 }

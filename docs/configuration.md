@@ -221,8 +221,9 @@ Language-tagged fenced blocks retain their normalized language identifier in gen
 ```
 
 The bundled `minimal` theme displays this label next to the copy button with regular-weight text
-on the same background as the code block. Highlighted code remains readable when visitors switch
-between the light and dark color schemes. Custom themes can use `data-language` and
+on the same background as the code block. Long labels are truncated so they do not overlap the
+first line of code. Highlighted code remains readable when visitors switch between the light and
+dark color schemes. Custom themes can use `data-language` and
 `.code-language-label` without parsing the highlighted code.
 
 ### Assets
