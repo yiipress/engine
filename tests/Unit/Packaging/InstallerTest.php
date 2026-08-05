@@ -83,7 +83,8 @@ SH);
         );
         file_put_contents(
             $this->root . '/releases-page-2.json',
-            "[{\"prerelease\":true,\"draft\":false,\"tag_name\":\"nightly-42-1-abcdef123456\"}]\n",
+            "[{\"prerelease\":false,\"draft\":false,\"tag_name\":\"nightly-41-1-deadbeef1234\"},"
+            . "{\"prerelease\":true,\"draft\":false,\"tag_name\":\"nightly-42-1-abcdef123456\"}]\n",
         );
     }
 
@@ -204,6 +205,24 @@ SH);
         self::assertSame(1, $exitCode);
         self::assertStringContainsString('Could not find a YiiPress nightly release for test/engine.', $output);
         self::assertFileDoesNotExist($this->root . '/install/yiipress');
+    }
+
+    #[Test]
+    public function stopsNightlyDiscoveryAfterTenPages(): void
+    {
+        file_put_contents(
+            $this->root . '/releases-page-2.json',
+            "[{\"prerelease\":false,\"tag_name\":\"1.2.2\"}]\n",
+        );
+
+        [$exitCode, $output] = $this->runInstaller(version: 'nightly');
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('Could not find a YiiPress nightly release for test/engine.', $output);
+        $curlLog = file_get_contents($this->root . '/curl.log');
+        self::assertIsString($curlLog);
+        self::assertStringContainsString('/releases?per_page=100&page=10', $curlLog);
+        self::assertStringNotContainsString('/releases?per_page=100&page=11', $curlLog);
     }
 
     #[Test]

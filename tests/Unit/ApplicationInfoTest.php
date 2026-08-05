@@ -39,4 +39,19 @@ final class ApplicationInfoTest extends TestCase
 
         self::assertSame(ApplicationInfo::VERSION, $method->invoke(null, null, null));
     }
+
+    #[Test]
+    public function packagedCommitTakesPrecedenceOverStaleReleaseMetadata(): void
+    {
+        $method = new ReflectionMethod(ApplicationInfo::class, 'resolveVersion');
+        self::assertSame(
+            'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            $method->invoke(
+                null,
+                '1.0.0',
+                'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+                'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            ),
+        );
+    }
 }

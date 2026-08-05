@@ -20,8 +20,12 @@ final class ApplicationInfo
         return self::resolveVersion($version, $reference);
     }
 
-    private static function resolveVersion(?string $version, ?string $reference): string
+    private static function resolveVersion(?string $version, ?string $reference, string $commit = self::COMMIT): string
     {
+        if ($commit !== '') {
+            return $commit;
+        }
+
         if (
             $version !== null
             && !str_ends_with($version, '+no-version-set')
@@ -31,6 +35,6 @@ final class ApplicationInfo
             return $version;
         }
 
-        return self::COMMIT !== '' ? self::COMMIT : ($reference ?? self::VERSION);
+        return $reference ?? self::VERSION;
     }
 }
