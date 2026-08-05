@@ -105,6 +105,17 @@ final class OutputMinifierTest extends TestCase
         );
     }
 
+    public function testPreservesMermaidDiagramWhitespaceWithGreaterThanSignInEarlierAttribute(): void
+    {
+        $html = <<<'HTML'
+            <div data-expression="1 > 0" class="diagram mermaid">flowchart LR
+                parse["Parse"] --> render["Render"]
+            </div>
+            HTML;
+
+        assertSame($html, OutputMinifier::html($html));
+    }
+
     public function testKeepsTagsWithGreaterThanSignInQuotedAttributesIntact(): void
     {
         $html = <<<'HTML'

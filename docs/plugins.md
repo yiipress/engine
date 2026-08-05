@@ -160,7 +160,7 @@ gantt
 
 The processor converts the code block to a `<div class="mermaid">` element.
 Mermaid.js (loaded via CDN in the template) renders the diagram as SVG in the browser.
-HTML minification preserves the diagram source whitespace because Mermaid uses line breaks to separate statements.
+HTML minification preserves the diagram source whitespace because Mermaid uses line breaks to separate statements when semicolons are omitted.
 
 Supported diagram types: flowcharts, sequence diagrams, Gantt charts, pie charts, class diagrams, state diagrams, 
 user journey maps, and more.
