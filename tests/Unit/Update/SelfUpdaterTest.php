@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace YiiPress\Tests\Unit\Update;
 
+use Closure;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Phar;
 use PharData;
 use YiiPress\Update\Package;
 use YiiPress\Update\PackageLocator;
+use YiiPress\Update\PackageReplacer;
 use YiiPress\Update\ReleaseClient;
 use YiiPress\Update\SelfUpdater;
 
@@ -198,6 +200,9 @@ final class SelfUpdaterTest extends TestCase
                 'file://' . $this->directory . '/releases',
                 'file://' . $this->directory . '/releases.json',
             ),
+            new PackageReplacer('Linux', static function (Closure $callback): void {
+                $callback();
+            }),
         );
     }
 
