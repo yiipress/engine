@@ -13,6 +13,7 @@ use YiiPress\Update\PackageLocator;
 use YiiPress\Update\ReleaseClient;
 use YiiPress\Update\SelfUpdater;
 
+use function chmod;
 use function file_put_contents;
 use function hash;
 use function json_encode;
@@ -94,6 +95,24 @@ final class SelfUpdaterTest extends TestCase
             $this->updater()->update(package: new Package($target, 'yiipress.phar'));
         } finally {
             self::assertSame('old-build', file_get_contents($target));
+        }
+    }
+
+    #[Test]
+    public function rejectsUnwritableInstallationDirectoryBeforeDownloading(): void
+    {
+        $installationDirectory = $this->directory . '/installation';
+        mkdir($installationDirectory);
+        $target = $installationDirectory . '/yiipress.phar';
+        file_put_contents($target, 'old-build');
+        chmod($installationDirectory, 0555);
+
+        $this->expectExceptionMessage('installation directory ' . $installationDirectory . ' is not writable');
+
+        try {
+            $this->updater()->update(package: new Package($target, 'missing.phar'));
+        } finally {
+            chmod($installationDirectory, 0755);
         }
     }
 
