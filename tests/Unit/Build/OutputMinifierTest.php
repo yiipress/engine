@@ -83,6 +83,28 @@ final class OutputMinifierTest extends TestCase
         );
     }
 
+    public function testPreservesMermaidDiagramWhitespace(): void
+    {
+        $html = <<<'HTML'
+            <article>
+                <div class="diagram mermaid" tabindex="0">flowchart LR
+                    parse["Parse"] --> index["Index"]
+                    index --> render["Render"]
+                </div>
+            </article>
+            HTML;
+
+        assertSame(
+            <<<'HTML'
+            <article><div class="diagram mermaid" tabindex="0">flowchart LR
+                    parse["Parse"] --> index["Index"]
+                    index --> render["Render"]
+                </div></article>
+            HTML,
+            OutputMinifier::html($html),
+        );
+    }
+
     public function testKeepsTagsWithGreaterThanSignInQuotedAttributesIntact(): void
     {
         $html = <<<'HTML'
