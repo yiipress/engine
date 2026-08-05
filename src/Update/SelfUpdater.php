@@ -14,6 +14,7 @@ use function hash;
 use function hash_equals;
 use function hash_file;
 use function is_dir;
+use function is_writable;
 use function mkdir;
 use function preg_match;
 use function preg_quote;
@@ -33,6 +34,14 @@ final readonly class SelfUpdater
     public function update(bool $nightly = false, ?Package $package = null): string
     {
         $package ??= $this->packageLocator->locate();
+        $targetDirectory = dirname($package->targetPath);
+        if (!is_writable($targetDirectory)) {
+            throw new RuntimeException(
+                "Could not update {$package->targetPath}: installation directory $targetDirectory is not writable. "
+                . 'Check its permissions or rerun with appropriate privileges.',
+            );
+        }
+
         $downloadPath = sys_get_temp_dir() . '/yiipress-download-' . hash('xxh128', $package->targetPath) . '-' . $package->assetName;
         $release = $this->releaseClient->download($package->assetName, $nightly, $downloadPath);
         $expectedHash = $this->checksum($release['checksums'], $package->assetName);
@@ -64,7 +73,7 @@ final readonly class SelfUpdater
     private function preparePackage(string $downloadPath, string $temporaryPath, Package $package): void
     {
         if ($package->archiveMember === null) {
-            if (!copy($downloadPath, $temporaryPath)) {
+            if (!@copy($downloadPath, $temporaryPath)) {
                 throw new RuntimeException("Could not write the update next to {$package->targetPath}.");
             }
 
@@ -81,7 +90,7 @@ final readonly class SelfUpdater
             if (!$archive->extractTo($extractPath, $package->archiveMember, true)) {
                 throw new RuntimeException("{$package->assetName} does not contain {$package->archiveMember}.");
             }
-            if (!copy($extractPath . '/' . $package->archiveMember, $temporaryPath)) {
+            if (!@copy($extractPath . '/' . $package->archiveMember, $temporaryPath)) {
                 throw new RuntimeException("Could not write the update next to {$package->targetPath}.");
             }
         } finally {

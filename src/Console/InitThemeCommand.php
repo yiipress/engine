@@ -27,10 +27,10 @@ use function str_starts_with;
 use function str_replace;
 
 #[AsCommand(
-    name: 'theme:init',
+    name: 'init:theme',
     description: 'Initializes editable theme files in the project',
 )]
-final class ThemeInitCommand extends Command
+final class InitThemeCommand extends Command
 {
     private const string DEFAULT_CONTENT_DIR = 'content';
     private const string DEFAULT_TARGET_DIR = 'themes/custom';

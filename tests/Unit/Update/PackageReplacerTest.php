@@ -50,4 +50,26 @@ final class PackageReplacerTest extends TestCase
 
         (new PackageReplacer('Windows'))->replace('C:\\Temp\\%update%', 'C:\\YiiPress\\yiipress.exe');
     }
+
+    #[Test]
+    public function reportsDeferredReplacementFailureWithoutThrowing(): void
+    {
+        $replacement = null;
+        $failure = null;
+        $registrar = static function (Closure $callback) use (&$replacement): void {
+            $replacement = $callback;
+        };
+        $failureHandler = static function (string $message) use (&$failure): void {
+            $failure = $message;
+        };
+        (new PackageReplacer('Linux', $registrar, $failureHandler))->replace(
+            '/missing/update',
+            '/missing/yiipress',
+        );
+        self::assertInstanceOf(Closure::class, $replacement);
+
+        $replacement();
+
+        self::assertSame('Could not replace /missing/yiipress. Check its permissions.', $failure);
+    }
 }

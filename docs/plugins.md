@@ -255,7 +255,7 @@ without JavaScript. The answer is normal Markdown:
 
 ```markdown
 [question title="How do I install YiiPress?"]
-Download the binary for your platform and run **`yiipress init`**.
+Download the binary for your platform and run **`yiipress init:content`**.
 [/question]
 ```
 
@@ -287,6 +287,14 @@ content policy.
 ### Project Processors
 
 Static binary users can add site-level content processors without editing Yii3 DI configuration. Put PHP processor files in `content/processors/`; files matching `*.php` are discovered automatically, sorted by filename, and inserted before Markdown rendering in both the page and feed pipelines.
+
+Create a no-op processor scaffold, then edit its returned callable:
+
+```shell
+yiipress init:plugin "Badge Labels"
+```
+
+This creates `content/processors/badge-labels.php`. Pass `--content-dir` when the project uses a different content directory.
 
 Each file must return either a `YiiPress\Processor\ContentProcessorInterface` instance or a callable with the same shape:
 

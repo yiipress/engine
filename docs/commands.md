@@ -98,7 +98,7 @@ Before starting the server, `serve` verifies that the content directory exists a
 
 See [Preview](preview.md) for static file serving and live reload behavior. Implementation details are in [Engine](engine.md#serve-mode).
 
-## `init`
+## `init:content`
 
 Initializes a content directory with the minimal YiiPress structure:
 
@@ -108,7 +108,7 @@ Initializes a content directory with the minimal YiiPress structure:
 - `blog/_collection.yaml`
 
 ```
-./yiipress init [--content-dir=content]
+./yiipress init:content [--content-dir=content]
 ```
 
 **Options:**
@@ -117,12 +117,30 @@ Initializes a content directory with the minimal YiiPress structure:
 
 The command creates parent directories as needed and fails if any scaffolded file already exists.
 
-## `theme:init`
+## `init:plugin`
+
+Initializes a project content processor plugin with a no-op callable ready to customize.
+
+```
+./yiipress init:plugin <name> [--content-dir=content]
+```
+
+**Arguments:**
+
+- `name` — plugin name used to create a slugged PHP filename (required).
+
+**Options:**
+
+- `--content-dir`, `-c` — path to the existing content directory (default: `content`). Absolute or relative to project root.
+
+For example, `init:plugin "Badge Labels"` creates `content/processors/badge-labels.php`. The command creates the `processors` directory when needed and does not overwrite an existing plugin.
+
+## `init:theme`
 
 Initializes editable theme files in the project from a bundled theme.
 
 ```
-./yiipress theme:init [target-dir] [--theme=minimal] [--content-dir=content]
+./yiipress init:theme [target-dir] [--theme=minimal] [--content-dir=content]
 ```
 
 **Arguments:**
@@ -361,7 +379,7 @@ Use the newest successful build from `master` for preview testing:
 yiipress self-update --nightly
 ```
 
-The command is intentionally unavailable in a Composer/source checkout. Use Composer to update those installations. The user running the command must be able to write to the installed PHAR or binary directory.
+The command is intentionally unavailable in a Composer/source checkout. Use Composer to update those installations. Before downloading a release, the command verifies that the user can write to the installed PHAR or binary directory and reports an actionable permissions error otherwise.
 The verified package is staged next to the installation and replacement is deferred until the running command has shut down, so PHP never reads the new archive using cached metadata from the old one. On Windows, replacement is completed by a short-lived background helper after the running command exits.
 
 ## `clean` / `clear`

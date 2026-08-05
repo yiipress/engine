@@ -76,7 +76,7 @@ cd mysite
 Initialize content:
 
 ```shell
-yiipress init
+yiipress init:content
 ```
 
 Start the development server:

@@ -6,11 +6,12 @@ namespace YiiPress\Tests\Unit\Packaging;
 
 use YiiPress\Console\BuildCommand;
 use YiiPress\Console\CleanCommand;
-use YiiPress\Console\InitCommand;
+use YiiPress\Console\InitContentCommand;
+use YiiPress\Console\InitPluginCommand;
+use YiiPress\Console\InitThemeCommand;
 use YiiPress\Console\ImportCommand;
 use YiiPress\Console\NewCommand;
 use YiiPress\Console\ServeCommand;
-use YiiPress\Console\ThemeInitCommand;
 use YiiPress\Console\WorkerCommand;
 use YiiPress\Build\PharArchiveFilter;
 use YiiPress\Build\PhpDocStripper;
@@ -57,9 +58,10 @@ final class ConfigurationPackagingTest extends TestCase
 
             assertSame($workingDirectory, $contentPipelineConfiguration[BuildCommand::class]['__construct()']['rootPath']);
             assertSame($workingDirectory, $contentPipelineConfiguration[CleanCommand::class]['__construct()']['rootPath']);
-            assertSame($workingDirectory, $contentPipelineConfiguration[InitCommand::class]['__construct()']['rootPath']);
+            assertSame($workingDirectory, $contentPipelineConfiguration[InitContentCommand::class]['__construct()']['rootPath']);
             assertSame($workingDirectory, $contentPipelineConfiguration[NewCommand::class]['__construct()']['rootPath']);
-            assertSame($workingDirectory, $contentPipelineConfiguration[ThemeInitCommand::class]['__construct()']['rootPath']);
+            assertSame($workingDirectory, $contentPipelineConfiguration[InitPluginCommand::class]['__construct()']['rootPath']);
+            assertSame($workingDirectory, $contentPipelineConfiguration[InitThemeCommand::class]['__construct()']['rootPath']);
             assertSame($workingDirectory, $importerConfiguration[ImportCommand::class]['__construct()']['rootPath']);
         } finally {
             chdir($previousDirectory);
@@ -74,8 +76,9 @@ final class ConfigurationPackagingTest extends TestCase
 
         /** @psalm-suppress RedundantCondition */
         assertSame(ServeCommand::class, $commands['serve']);
-        assertSame(InitCommand::class, $commands['init']);
-        assertSame(ThemeInitCommand::class, $commands['theme:init']);
+        assertSame(InitContentCommand::class, $commands['init:content']);
+        assertSame(InitPluginCommand::class, $commands['init:plugin']);
+        assertSame(InitThemeCommand::class, $commands['init:theme']);
         assertSame(WorkerCommand::class, $commands['|worker']);
     }
 
@@ -373,7 +376,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('runtime\package-windows\static-php-cli', $workflow);
         self::assertStringContainsString('build/package-windows.ps1 -DistDir dist/windows-amd64', $workflow);
         self::assertStringContainsString('Resolve-Path "dist/windows-amd64/yiipress.exe"', $workflow);
-        self::assertStringContainsString('Invoke-YiiPress "init"', $workflow);
+        self::assertStringContainsString('Invoke-YiiPress "init:content"', $workflow);
         self::assertStringContainsString('Invoke-YiiPress "new" "Hello Windows" "--collection=blog"', $workflow);
         self::assertStringContainsString('Set-Content -Path "content/index.md"', $workflow);
         self::assertStringContainsString('"permalink: /"', $workflow);
@@ -391,7 +394,7 @@ final class ConfigurationPackagingTest extends TestCase
             $workflow,
         );
         self::assertStringContainsString('binary="$(pwd)/dist/macos-arm64/yiipress"', $workflow);
-        self::assertStringContainsString('"$binary" init', $workflow);
+        self::assertStringContainsString('"$binary" init:content', $workflow);
         self::assertStringContainsString('"$binary" new "Hello macOS" --collection=blog', $workflow);
         self::assertStringContainsString("'permalink: /'", $workflow);
         self::assertStringContainsString('"$binary" build --no-cache', $workflow);

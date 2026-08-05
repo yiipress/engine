@@ -9,6 +9,7 @@ use RuntimeException;
 
 use function fclose;
 use function file_put_contents;
+use function fwrite;
 use function proc_close;
 use function proc_open;
 use function register_shutdown_function;
@@ -21,22 +22,33 @@ final readonly class PackageReplacer
     /** @var Closure(Closure(): void): void */
     private Closure $shutdownRegistrar;
 
+    /** @var Closure(string): void */
+    private Closure $failureHandler;
+
     /**
      * @param Closure(Closure(): void): void|null $shutdownRegistrar
+     * @param Closure(string): void|null $failureHandler
      */
-    public function __construct(private string $osFamily = PHP_OS_FAMILY, ?Closure $shutdownRegistrar = null)
-    {
+    public function __construct(
+        private string $osFamily = PHP_OS_FAMILY,
+        ?Closure $shutdownRegistrar = null,
+        ?Closure $failureHandler = null,
+    ) {
         $this->shutdownRegistrar = $shutdownRegistrar ?? static function (Closure $callback): void {
             register_shutdown_function($callback);
+        };
+        $this->failureHandler = $failureHandler ?? static function (string $message): never {
+            fwrite(STDERR, $message . "\n");
+            exit(1);
         };
     }
 
     public function replace(string $temporaryPath, string $targetPath): void
     {
         if ($this->osFamily !== 'Windows') {
-            ($this->shutdownRegistrar)(static function () use ($temporaryPath, $targetPath): void {
-                if (!rename($temporaryPath, $targetPath)) {
-                    throw new RuntimeException("Could not replace $targetPath. Check its permissions.");
+            ($this->shutdownRegistrar)(function () use ($temporaryPath, $targetPath): void {
+                if (!@rename($temporaryPath, $targetPath)) {
+                    ($this->failureHandler)("Could not replace $targetPath. Check its permissions.");
                 }
             });
 
