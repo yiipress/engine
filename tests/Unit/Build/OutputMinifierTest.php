@@ -116,6 +116,18 @@ final class OutputMinifierTest extends TestCase
         assertSame($html, OutputMinifier::html($html));
     }
 
+    public function testMinifiesDivWithoutExactMermaidClass(): void
+    {
+        assertSame(
+            '<div data-class="mermaid"> Ordinary content </div>',
+            OutputMinifier::html("<div data-class=\"mermaid\">\n    Ordinary content\n</div>"),
+        );
+        assertSame(
+            '<div class="not-mermaid"> Ordinary content </div>',
+            OutputMinifier::html("<div class=\"not-mermaid\">\n    Ordinary content\n</div>"),
+        );
+    }
+
     public function testKeepsTagsWithGreaterThanSignInQuotedAttributesIntact(): void
     {
         $html = <<<'HTML'
