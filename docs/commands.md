@@ -362,7 +362,7 @@ yiipress self-update --nightly
 ```
 
 The command is intentionally unavailable in a Composer/source checkout. Use Composer to update those installations. The user running the command must be able to write to the installed PHAR or binary directory.
-On Windows, replacement is completed by a short-lived background helper after the running command exits.
+The verified package is staged next to the installation and replacement is deferred until the running command has shut down, so PHP never reads the new archive using cached metadata from the old one. On Windows, replacement is completed by a short-lived background helper after the running command exits.
 
 ## `clean` / `clear`
 
