@@ -9,10 +9,11 @@ return [
     'build' => Console\BuildCommand::class,
     'check:links' => Console\CheckCommand::class,
     'clean|clear' => Console\CleanCommand::class,
-    'init' => Console\InitCommand::class,
+    'init:content' => Console\InitCommand::class,
+    'init:plugin' => Console\PluginInitCommand::class,
+    'init:theme' => Console\ThemeInitCommand::class,
     'import' => Console\ImportCommand::class,
     'new' => Console\NewCommand::class,
     'serve' => Console\ServeCommand::class,
     'self-update' => Console\SelfUpdateCommand::class,
-    'theme:init' => Console\ThemeInitCommand::class,
 ];

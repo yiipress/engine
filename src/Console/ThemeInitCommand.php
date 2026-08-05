@@ -27,7 +27,7 @@ use function str_starts_with;
 use function str_replace;
 
 #[AsCommand(
-    name: 'theme:init',
+    name: 'init:theme',
     description: 'Initializes editable theme files in the project',
 )]
 final class ThemeInitCommand extends Command

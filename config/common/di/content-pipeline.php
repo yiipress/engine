@@ -9,6 +9,7 @@ use YiiPress\Console\CheckCommand;
 use YiiPress\Console\CleanCommand;
 use YiiPress\Console\InitCommand;
 use YiiPress\Console\NewCommand;
+use YiiPress\Console\PluginInitCommand;
 use YiiPress\Console\ThemeInitCommand;
 use YiiPress\Console\WorkerCommand;
 use YiiPress\Processor\ContentProcessorPipeline;
@@ -108,6 +109,11 @@ return [
         ],
     ],
     NewCommand::class => [
+        '__construct()' => [
+            'rootPath' => $workingDirectory,
+        ],
+    ],
+    PluginInitCommand::class => [
         '__construct()' => [
             'rootPath' => $workingDirectory,
         ],

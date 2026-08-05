@@ -9,6 +9,7 @@ use YiiPress\Console\CleanCommand;
 use YiiPress\Console\InitCommand;
 use YiiPress\Console\ImportCommand;
 use YiiPress\Console\NewCommand;
+use YiiPress\Console\PluginInitCommand;
 use YiiPress\Console\ServeCommand;
 use YiiPress\Console\ThemeInitCommand;
 use YiiPress\Console\WorkerCommand;
@@ -59,6 +60,7 @@ final class ConfigurationPackagingTest extends TestCase
             assertSame($workingDirectory, $contentPipelineConfiguration[CleanCommand::class]['__construct()']['rootPath']);
             assertSame($workingDirectory, $contentPipelineConfiguration[InitCommand::class]['__construct()']['rootPath']);
             assertSame($workingDirectory, $contentPipelineConfiguration[NewCommand::class]['__construct()']['rootPath']);
+            assertSame($workingDirectory, $contentPipelineConfiguration[PluginInitCommand::class]['__construct()']['rootPath']);
             assertSame($workingDirectory, $contentPipelineConfiguration[ThemeInitCommand::class]['__construct()']['rootPath']);
             assertSame($workingDirectory, $importerConfiguration[ImportCommand::class]['__construct()']['rootPath']);
         } finally {
@@ -74,8 +76,9 @@ final class ConfigurationPackagingTest extends TestCase
 
         /** @psalm-suppress RedundantCondition */
         assertSame(ServeCommand::class, $commands['serve']);
-        assertSame(InitCommand::class, $commands['init']);
-        assertSame(ThemeInitCommand::class, $commands['theme:init']);
+        assertSame(InitCommand::class, $commands['init:content']);
+        assertSame(PluginInitCommand::class, $commands['init:plugin']);
+        assertSame(ThemeInitCommand::class, $commands['init:theme']);
         assertSame(WorkerCommand::class, $commands['|worker']);
     }
 

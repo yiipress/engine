@@ -19,7 +19,7 @@ use function file_exists;
 use function str_starts_with;
 
 #[AsCommand(
-    name: 'init',
+    name: 'init:content',
     description: 'Initialize a YiiPress content directory',
 )]
 final class InitCommand extends Command
