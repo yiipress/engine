@@ -361,7 +361,7 @@ Use the newest successful build from `master` for preview testing:
 yiipress self-update --nightly
 ```
 
-The command is intentionally unavailable in a Composer/source checkout. Use Composer to update those installations. The user running the command must be able to write to the installed PHAR or binary directory.
+The command is intentionally unavailable in a Composer/source checkout. Use Composer to update those installations. Before downloading a release, the command verifies that the user can write to the installed PHAR or binary directory and reports an actionable permissions error otherwise.
 On Windows, replacement is completed by a short-lived background helper after the running command exits.
 
 ## `clean` / `clear`
