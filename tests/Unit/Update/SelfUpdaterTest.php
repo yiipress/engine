@@ -106,6 +106,19 @@ final class SelfUpdaterTest extends TestCase
     }
 
     #[Test]
+    public function packageLocatorDetectsStaticBinaryInstallation(): void
+    {
+        $target = $this->directory . '/yiipress';
+        file_put_contents($target, 'binary-build');
+
+        $package = (new PackageLocator('Linux', 'x86_64', $target))->locate();
+
+        self::assertSame($target, $package->targetPath);
+        self::assertSame('yiipress-linux-amd64.tar.gz', $package->assetName);
+        self::assertSame('yiipress', $package->archiveMember);
+    }
+
+    #[Test]
     public function packageLocatorRejectsNonAmd64LinuxBinary(): void
     {
         $this->expectExceptionMessage('Unsupported Linux architecture: aarch64');

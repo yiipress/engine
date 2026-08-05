@@ -8,6 +8,8 @@ use Phar;
 use RuntimeException;
 
 use function class_exists;
+use function call_user_func;
+use function function_exists;
 use function is_file;
 use function pathinfo;
 use function strtolower;
@@ -19,16 +21,21 @@ final class PackageLocator
 {
     private readonly string $osFamily;
     private readonly string $architecture;
+    private readonly string $staticBinaryPath;
 
-    public function __construct(?string $osFamily = null, ?string $architecture = null)
+    public function __construct(?string $osFamily = null, ?string $architecture = null, ?string $staticBinaryPath = null)
     {
         $this->osFamily = $osFamily ?? PHP_OS_FAMILY;
         $this->architecture = strtolower($architecture ?? php_uname('m'));
+        $this->staticBinaryPath = $staticBinaryPath ?? $this->detectStaticBinaryPath();
     }
 
     public function locate(): Package
     {
         $targetPath = class_exists(Phar::class, false) ? Phar::running(false) : '';
+        if ($targetPath === '') {
+            $targetPath = $this->staticBinaryPath;
+        }
         if ($targetPath === '' || !is_file($targetPath)) {
             throw new RuntimeException('Self-update is available only for PHAR and static binary installations.');
         }
@@ -55,5 +62,10 @@ final class PackageLocator
             'Windows' => in_array($this->architecture, ['x86_64', 'amd64'], true) ? 'yiipress-windows-amd64.zip' : throw new RuntimeException("Unsupported Windows architecture: {$this->architecture}."),
             default => throw new RuntimeException('Self-update is not available for this operating system.'),
         };
+    }
+
+    private function detectStaticBinaryPath(): string
+    {
+        return function_exists('micro_get_self_filename') ? (string) call_user_func('micro_get_self_filename') : '';
     }
 }
