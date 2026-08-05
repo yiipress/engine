@@ -327,6 +327,10 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('type=sha,prefix=nightly-', $workflow);
         self::assertStringContainsString('nightly_tag="nightly-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}-${short_sha}"', $workflow);
         self::assertStringContainsString('needs: [linux, windows, macos]', $workflow);
+        self::assertMatchesRegularExpression(
+            '/nightly-release:.*?steps:\s+- name: Checkout repository\s+uses: actions\/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5/s',
+            $workflow,
+        );
         self::assertStringContainsString('Pack nightly release assets', $workflow);
         self::assertStringContainsString('assets/yiipress-linux-amd64.tar.gz', $workflow);
         self::assertStringContainsString('assets/yiipress-macos-arm64.tar.gz', $workflow);
@@ -345,7 +349,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('yiipress-macos-arm64.tar.gz', $workflow);
         self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@v\d+/', $workflow);
         self::assertStringNotContainsString('dtolnay/rust-toolchain@stable', $workflow);
-        self::assertSame(3, substr_count($workflow, 'persist-credentials: false'));
+        self::assertSame(4, substr_count($workflow, 'persist-credentials: false'));
     }
 
     #[Test]
