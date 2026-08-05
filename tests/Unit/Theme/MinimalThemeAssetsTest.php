@@ -129,6 +129,27 @@ final class MinimalThemeAssetsTest extends TestCase
         assertStringContainsString('pointer-events: auto;', $css);
     }
 
+    public function testStyleKeepsHighlightedCodeReadableInDarkMode(): void
+    {
+        $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');
+
+        self::assertNotFalse($css);
+        assertStringContainsString(
+            '[data-theme="dark"] .content pre[style] { color: var(--c-text) !important; }',
+            $css,
+        );
+    }
+
+    public function testCodeLanguageLabelMatchesCodeBlock(): void
+    {
+        $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');
+
+        self::assertNotFalse($css);
+        assertStringContainsString('padding: .25rem .375rem;', $css);
+        assertStringContainsString('background: var(--c-code-bg);', $css);
+        assertStringContainsString('font-weight: 400;', $css);
+    }
+
     public function testCodeCopyScriptEnhancesContentPreBlocks(): void
     {
         $script = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/code-copy.js');

@@ -220,8 +220,10 @@ Language-tagged fenced blocks retain their normalized language identifier in gen
 </div>
 ```
 
-The bundled `minimal` theme displays this label next to the copy button. Custom themes can use
-`data-language` and `.code-language-label` without parsing the highlighted code.
+The bundled `minimal` theme displays this label next to the copy button with regular-weight text
+on the same background as the code block. Highlighted code remains readable when visitors switch
+between the light and dark color schemes. Custom themes can use `data-language` and
+`.code-language-label` without parsing the highlighted code.
 
 ### Assets
 

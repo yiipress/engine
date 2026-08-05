@@ -309,9 +309,12 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
     top: .75rem;
     right: .75rem;
     z-index: 1;
+    padding: .25rem .375rem;
+    border-radius: .25rem;
+    background: var(--c-code-bg);
     color: var(--c-text-muted);
     font-size: .75rem;
-    font-weight: 600;
+    font-weight: 400;
     line-height: 1;
     pointer-events: none;
     transition: opacity .15s;
@@ -359,6 +362,7 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
     border-color: #ef4444;
 }
 .content pre[style] { background-color: var(--c-code-bg) !important; }
+[data-theme="dark"] .content pre[style] { color: var(--c-text) !important; }
 [data-theme="dark"] .content pre[style] span[style] { filter: invert(.85) hue-rotate(180deg); }
 .content code { font-family: var(--font-mono); font-size: .9em; }
 .content :not(pre) > code {
