@@ -1,6 +1,6 @@
 # Commands
 
-The examples below assume the static binary is in your project directory and use `./yiipress` so they work without changing `PATH`. Source checkouts expose the same commands through `./yii`; engine contributors should run them through the repository `make` targets.
+The examples below assume the static binary is installed on `PATH`. Source checkouts expose the same commands through `./yii`; engine contributors should run them through the repository `make` targets.
 
 All commands support Symfony's standard verbosity options. By default, errors contain only information useful to an end user. Use `-v` to include the exception type, `-vv` to include its source location, or `-vvv` to include the debugging stack trace.
 
@@ -8,8 +8,8 @@ All commands support Symfony's standard verbosity options. By default, errors co
 
 Generates static HTML content from source files.
 
-```
-./yiipress build [--content-dir=content] [--output-dir=output] [--workers=auto] [--no-cache] [--drafts] [--future] [--dry-run] [--no-write] [--profile]
+```shell
+yiipress build [--content-dir=content] [--output-dir=output] [--workers=auto] [--no-cache] [--drafts] [--future] [--dry-run] [--no-write] [--profile]
 ```
 
 **Options:**
@@ -65,7 +65,7 @@ With `--workers=N` (N > 1), entry rendering and writing is parallelized across N
 Checks generated HTML output for broken local links, missing `src` targets, and missing anchor fragments.
 
 ```bash
-./yiipress check:links [--output-dir=output] [--external]
+yiipress check:links [--output-dir=output] [--external]
 ```
 
 **Options:**
@@ -79,8 +79,8 @@ Run `build` first, then `check:links` against the generated output. Local checks
 
 Starts the preview server for local development.
 
-```
-./yiipress serve [address] [--content-dir=content] [--output-dir=output] [--port=19777] [--workers=2]
+```shell
+yiipress serve [address] [--content-dir=content] [--output-dir=output] [--port=19777] [--workers=2]
 ```
 
 **Options:**
@@ -94,7 +94,7 @@ On startup, `serve` prints the URL it is listening on. Build progress is printed
 
 HTML pages served by `serve` include a fixed bottom-right **Edit** button. It opens the markdown source file for the current page using the `editor` command from `content/config.yaml`; when `editor` is omitted, YiiPress uses the platform default opener (`open`, `xdg-open`, or Windows `start`). The button resolves source files through the build manifest, so it is available for entry and standalone markdown pages and hidden failures are reported in the browser console.
 
-Before starting the server, `serve` verifies that the content directory exists and that the output directory exists or can be created and written to. If the check fails, pass explicit paths, for example `./yiipress serve --content-dir=content --output-dir=output`.
+Before starting the server, `serve` verifies that the content directory exists and that the output directory exists or can be created and written to. If the check fails, pass explicit paths, for example `yiipress serve --content-dir=content --output-dir=output`.
 
 See [Preview](preview.md) for static file serving and live reload behavior. Implementation details are in [Engine](engine.md#serve-mode).
 
@@ -107,8 +107,8 @@ Initializes a content directory with the minimal YiiPress structure:
 - `page/_collection.yaml`
 - `blog/_collection.yaml`
 
-```
-./yiipress init:content [--content-dir=content]
+```shell
+yiipress init:content [--content-dir=content]
 ```
 
 **Options:**
@@ -121,8 +121,8 @@ The command creates parent directories as needed and fails if any scaffolded fil
 
 Initializes a project content processor plugin with a no-op callable ready to customize.
 
-```
-./yiipress init:plugin <name> [--content-dir=content]
+```shell
+yiipress init:plugin <name> [--content-dir=content]
 ```
 
 **Arguments:**
@@ -139,8 +139,8 @@ For example, `init:plugin "Badge Labels"` creates `content/processors/badge-labe
 
 Initializes editable theme files in the project from a bundled theme.
 
-```
-./yiipress init:theme [target-dir] [--theme=minimal] [--content-dir=content]
+```shell
+yiipress init:theme [target-dir] [--theme=minimal] [--content-dir=content]
 ```
 
 **Arguments:**
@@ -158,8 +158,8 @@ The command creates parent directories as needed, fails if any target file alrea
 
 Scaffolds a new content entry or standalone page.
 
-```
-./yiipress new <title> [--collection=<name>] [--content-dir=content] [--draft]
+```shell
+yiipress new <title> [--collection=<name>] [--content-dir=content] [--draft]
 ```
 
 **Arguments:**
@@ -183,17 +183,17 @@ Scaffolds a new content entry or standalone page.
 **Examples:**
 
 ```bash
-./yiipress new "My First Post" --collection=blog
-./yiipress new "Draft Ideas" --collection=blog --draft
-./yiipress new "About Us"
+yiipress new "My First Post" --collection=blog
+yiipress new "Draft Ideas" --collection=blog --draft
+yiipress new "About Us"
 ```
 
 ## `import`
 
 Imports content from external sources into a YiiPress collection.
 
-```
-./yiipress import <source> [--collection=blog] [--content-dir=content] [--<importer-options>...]
+```shell
+yiipress import <source> [--collection=blog] [--content-dir=content] [--<importer-options>...]
 ```
 
 **Arguments:**
@@ -240,9 +240,9 @@ Supports both single-chat exports (`result.json` with `messages` array) and full
 **Examples:**
 
 ```bash
-./yiipress import telegram --directory=/path/to/telegram-export
-./yiipress import telegram --directory=/path/to/telegram-export --collection=channel
-./yiipress import telegram --directory=./telegram-data --content-dir=content
+yiipress import telegram --directory=/path/to/telegram-export
+yiipress import telegram --directory=/path/to/telegram-export --collection=channel
+yiipress import telegram --directory=./telegram-data --content-dir=content
 ```
 
 ### Medium Markdown import
@@ -260,8 +260,8 @@ Duplicate output filenames get numeric suffixes so earlier files are not overwri
 **Examples:**
 
 ```bash
-./yiipress import medium --directory=/path/to/medium-markdown-export
-./yiipress import medium --directory=./medium --collection=blog
+yiipress import medium --directory=/path/to/medium-markdown-export
+yiipress import medium --directory=./medium --collection=blog
 ```
 
 ### Ghost import
@@ -283,8 +283,8 @@ Published posts are imported normally. Non-published posts and pages are importe
 **Examples:**
 
 ```bash
-./yiipress import ghost --file=/path/to/ghost-export.json
-./yiipress import ghost --file=./ghost.json --collection=blog
+yiipress import ghost --file=/path/to/ghost-export.json
+yiipress import ghost --file=./ghost.json --collection=blog
 ```
 
 ### WordPress import
@@ -306,8 +306,8 @@ Published posts are imported normally. Non-published posts and pages are importe
 **Examples:**
 
 ```bash
-./yiipress import wordpress --file=/path/to/wordpress-export.xml
-./yiipress import wordpress --file=./export.xml --collection=blog
+yiipress import wordpress --file=/path/to/wordpress-export.xml
+yiipress import wordpress --file=./export.xml --collection=blog
 ```
 
 ### Jekyll import
@@ -331,8 +331,8 @@ If `title` is missing, it is inferred from the first `# Heading` in the post bod
 **Examples:**
 
 ```bash
-./yiipress import jekyll --directory=/path/to/jekyll-site
-./yiipress import jekyll --directory=../old-blog --collection=blog
+yiipress import jekyll --directory=/path/to/jekyll-site
+yiipress import jekyll --directory=../old-blog --collection=blog
 ```
 
 ### Hugo import
@@ -357,8 +357,8 @@ If `title` is missing, it is inferred from the first `# Heading` in the post bod
 **Examples:**
 
 ```bash
-./yiipress import hugo --directory=/path/to/hugo-site
-./yiipress import hugo --directory=../old-hugo-site --collection=blog
+yiipress import hugo --directory=/path/to/hugo-site
+yiipress import hugo --directory=../old-hugo-site --collection=blog
 ```
 
 ### Adding custom importers
@@ -386,9 +386,9 @@ The verified package is staged next to the installation and replacement is defer
 
 Clears build output and caches.
 
-```
-./yiipress clean [--output-dir=output]
-./yiipress clear [--output-dir=output]
+```shell
+yiipress clean [--output-dir=output]
+yiipress clear [--output-dir=output]
 ```
 
 **Options:**

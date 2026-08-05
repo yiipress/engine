@@ -129,6 +129,74 @@ final class MinimalThemeAssetsTest extends TestCase
         assertStringContainsString('pointer-events: auto;', $css);
     }
 
+    public function testStyleKeepsHighlightedCodeReadableInDarkMode(): void
+    {
+        $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');
+
+        self::assertNotFalse($css);
+        assertStringContainsString(
+            '[data-theme="dark"] .content pre[style] { color: var(--c-text) !important; }',
+            $css,
+        );
+    }
+
+    public function testCodeLanguageLabelMatchesCodeBlock(): void
+    {
+        $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');
+
+        self::assertNotFalse($css);
+        self::assertSame(1, preg_match('/\.code-block \{(?<rule>[^}]*)}/', $css, $blockMatches));
+        self::assertSame(1, preg_match('/\.code-block pre \{(?<rule>[^}]*)}/', $css, $preMatches));
+        self::assertSame(1, preg_match('/\.code-language-label \{(?<rule>[^}]*)}/', $css, $matches));
+
+        assertStringContainsString('--code-language-label-width: 8rem;', $blockMatches['rule']);
+        assertStringContainsString(
+            'padding-right: calc(var(--code-language-label-width) + 1.5rem);',
+            $preMatches['rule'],
+        );
+
+        $rule = $matches['rule'];
+        assertStringContainsString('max-width: var(--code-language-label-width);', $rule);
+        assertStringContainsString('padding: .25rem .375rem;', $rule);
+        assertStringContainsString('background: var(--c-code-bg);', $rule);
+        assertStringContainsString('font-weight: 400;', $rule);
+        assertStringContainsString('overflow: hidden;', $rule);
+        assertStringContainsString('text-overflow: ellipsis;', $rule);
+        assertStringContainsString('white-space: nowrap;', $rule);
+    }
+
+    public function testCopyButtonTextAlignsWithLanguageLabel(): void
+    {
+        $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');
+
+        self::assertNotFalse($css);
+        self::assertSame(1, preg_match('/\.code-language-label \{(?<rule>[^}]*)}/', $css, $labelMatches));
+        self::assertSame(1, preg_match('/\.code-copy-button \{(?<rule>[^}]*)}/', $css, $buttonMatches));
+
+        $labelRule = $labelMatches['rule'];
+        $buttonRule = $buttonMatches['rule'];
+
+        $sharedDeclarations = [
+            'top: .75rem;',
+            'right: .75rem;',
+            'font-size: .75rem;',
+            'font-weight: 400;',
+            'line-height: 1;',
+        ];
+        foreach ($sharedDeclarations as $declaration) {
+            assertStringContainsString($declaration, $labelRule);
+        }
+        $buttonDeclarations = [
+            'top: .75rem;',
+            'right: .75rem;',
+            'height: 1.25rem;',
+            'font: 400 .75rem/1 var(--font-sans);',
+        ];
+        foreach ($buttonDeclarations as $declaration) {
+            assertStringContainsString($declaration, $buttonRule);
+        }
+    }
+
     public function testCodeCopyScriptEnhancesContentPreBlocks(): void
     {
         $script = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/code-copy.js');

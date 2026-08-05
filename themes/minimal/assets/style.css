@@ -297,22 +297,30 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
     transition: background .2s;
 }
 .code-block {
+    --code-language-label-width: 8rem;
     position: relative;
     margin: 1.25rem 0;
 }
 .code-block pre {
     margin: 0;
-    padding-right: 4.5rem;
+    padding-right: calc(var(--code-language-label-width) + 1.5rem);
 }
 .code-language-label {
     position: absolute;
     top: .75rem;
     right: .75rem;
     z-index: 1;
+    max-width: var(--code-language-label-width);
+    padding: .25rem .375rem;
+    border-radius: .25rem;
+    background: var(--c-code-bg);
     color: var(--c-text-muted);
     font-size: .75rem;
-    font-weight: 600;
+    font-weight: 400;
     line-height: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     pointer-events: none;
     transition: opacity .15s;
 }
@@ -322,17 +330,17 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
 }
 .code-copy-button {
     position: absolute;
-    top: .5rem;
-    right: .5rem;
+    top: .75rem;
+    right: .75rem;
     z-index: 1;
     min-width: 3rem;
-    height: 2rem;
-    padding: 0 .625rem;
+    height: 1.25rem;
+    padding: 0 .375rem;
     border: 1px solid var(--c-border);
-    border-radius: .375rem;
+    border-radius: .25rem;
     background: color-mix(in srgb, var(--c-bg) 88%, transparent);
     color: var(--c-text-muted);
-    font: 600 .75rem/1 var(--font-sans);
+    font: 400 .75rem/1 var(--font-sans);
     cursor: pointer;
     opacity: 0;
     pointer-events: none;
@@ -359,6 +367,7 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
     border-color: #ef4444;
 }
 .content pre[style] { background-color: var(--c-code-bg) !important; }
+[data-theme="dark"] .content pre[style] { color: var(--c-text) !important; }
 [data-theme="dark"] .content pre[style] span[style] { filter: invert(.85) hue-rotate(180deg); }
 .content code { font-family: var(--font-mono); font-size: .9em; }
 .content :not(pre) > code {

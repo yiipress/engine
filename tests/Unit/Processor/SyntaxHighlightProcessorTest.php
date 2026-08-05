@@ -67,6 +67,20 @@ final class SyntaxHighlightProcessorTest extends TestCase
         assertStringContainsString('some code', $result);
     }
 
+    public function testPreservesArbitrarilyLongLanguageIdentifier(): void
+    {
+        $language = 'custom-language-identifier-that-is-longer-than-the-label';
+        $html = '<pre><code class="language-' . $language . '">some code</code></pre>';
+
+        $result = (new SyntaxHighlightProcessor(new Highlighter()))->process($html, $this->createEntry());
+
+        assertStringContainsString('data-language="' . $language . '"', $result);
+        assertStringContainsString(
+            '<span class="code-language-label">' . strtoupper($language) . '</span>',
+            $result,
+        );
+    }
+
     public function testLeavesUnlabeledCodeBlockUnwrapped(): void
     {
         $html = '<pre><code>plain code</code></pre>';

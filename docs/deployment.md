@@ -5,7 +5,7 @@ YiiPress generates static HTML, CSS, JavaScript, feeds, and metadata files durin
 The recommended build tool is the static `yiipress` binary:
 
 ```bash
-./yiipress build --content-dir=content
+yiipress build --content-dir=content
 ```
 
 The generated files will be placed in the output directory (default: `output`). You can then host this directory with any static file server or hosting service.
@@ -22,7 +22,7 @@ Prefer these options in this order:
 
 The simplest deployment option is to upload the build output directly to your hosting provider's webroot:
 
-1. Build your site: `./yiipress build --content-dir=content`
+1. Build your site: `yiipress build --content-dir=content`
 2. Open your hosting control panel or FTP client.
 3. Upload the entire contents of the `output` directory to your server's webroot folder. This folder is commonly named `www`, `public_html`, `htdocs`, or `html` depending on your provider.
 4. Your site is live. The server only serves static files.
@@ -103,7 +103,7 @@ For project sites such as `https://user.github.io/project/`, set `base_url` to t
      ```bash
      curl -fsSLO https://github.com/yiipress/engine/releases/download/X.Y.Z/yiipress-linux-amd64.tar.gz && curl -fsSLO https://github.com/yiipress/engine/releases/download/X.Y.Z/SHA256SUMS && checksum="$(awk '$2 ~ /(^|\/)yiipress-linux-amd64\.tar\.gz$/ { print $1; exit }' SHA256SUMS)" && test -n "$checksum" && printf '%s  yiipress-linux-amd64.tar.gz\n' "$checksum" | sha256sum -c - && tar -xzf yiipress-linux-amd64.tar.gz && chmod +x yiipress
      ```
-   - **Build command:** `./yiipress build --output-dir=_site --no-cache`
+   - **Build command:** `yiipress build --output-dir=_site --no-cache`
    - **Build output directory:** `_site`
 4. Click **Save and Deploy**.
 
@@ -121,7 +121,7 @@ You can package your generated static site into a tiny Docker image using [`lipa
 Build the site first:
 
 ```bash
-./yiipress build --output-dir=_site --no-cache
+yiipress build --output-dir=_site --no-cache
 ```
 
 Then create a `Dockerfile` in your project root:
