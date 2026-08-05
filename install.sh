@@ -56,16 +56,43 @@ trap 'rm -rf "$work_dir"' EXIT HUP INT TERM
 if [ "$version" = "nightly" ]; then
     version=""
     page=1
-    while [ -z "$version" ]; do
+    max_pages=10
+    while [ -z "$version" ] && [ "$page" -le "$max_pages" ]; do
         curl -fsSL --retry 3 --retry-delay 2 \
             "https://api.github.com/repos/${repository}/releases?per_page=100&page=${page}" \
             -o "${work_dir}/releases.json"
-        version="$(awk -F '"' '
+        version="$(awk '
             {
-                for (field = 2; field + 2 <= NF; field += 2) {
-                    if ($field == "tag_name" && $(field + 2) ~ /^nightly-[0-9]+-[0-9]+-[0-9a-f]+$/) {
-                        print $(field + 2)
-                        exit
+                for (position = 1; position <= length($0); position++) {
+                    character = substr($0, position, 1)
+                    if (depth > 0) {
+                        release = release character
+                    }
+                    if (escaped) {
+                        escaped = 0
+                    } else if (in_string && character == "\\") {
+                        escaped = 1
+                    } else if (character == "\"") {
+                        in_string = !in_string
+                    } else if (!in_string && character == "{") {
+                        if (depth == 0) {
+                            release = "{"
+                        }
+                        depth++
+                    } else if (!in_string && character == "}") {
+                        depth--
+                        if (depth == 0) {
+                            if (release ~ /"prerelease"[[:space:]]*:[[:space:]]*true/) {
+                                fields = split(release, values, "\"")
+                                for (field = 2; field + 2 <= fields; field += 2) {
+                                    if (values[field] == "tag_name" && values[field + 2] ~ /^nightly-[0-9]+-[0-9]+-[0-9a-f]+$/) {
+                                        print values[field + 2]
+                                        exit
+                                    }
+                                }
+                            }
+                            release = ""
+                        }
                     }
                 }
             }

@@ -20,10 +20,10 @@ final class ApplicationInfo
         return self::resolveVersion($version, $reference);
     }
 
-    private static function resolveVersion(?string $version, ?string $reference): string
+    private static function resolveVersion(?string $version, ?string $reference, string $commit = self::COMMIT): string
     {
-        if (self::COMMIT !== '') {
-            return self::COMMIT;
+        if ($commit !== '') {
+            return $commit;
         }
 
         if (
