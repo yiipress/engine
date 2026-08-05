@@ -6,12 +6,12 @@ namespace YiiPress\Tests\Unit\Packaging;
 
 use YiiPress\Console\BuildCommand;
 use YiiPress\Console\CleanCommand;
-use YiiPress\Console\InitCommand;
+use YiiPress\Console\InitContentCommand;
+use YiiPress\Console\InitPluginCommand;
+use YiiPress\Console\InitThemeCommand;
 use YiiPress\Console\ImportCommand;
 use YiiPress\Console\NewCommand;
-use YiiPress\Console\PluginInitCommand;
 use YiiPress\Console\ServeCommand;
-use YiiPress\Console\ThemeInitCommand;
 use YiiPress\Console\WorkerCommand;
 use YiiPress\Build\PharArchiveFilter;
 use YiiPress\Build\PhpDocStripper;
@@ -58,10 +58,10 @@ final class ConfigurationPackagingTest extends TestCase
 
             assertSame($workingDirectory, $contentPipelineConfiguration[BuildCommand::class]['__construct()']['rootPath']);
             assertSame($workingDirectory, $contentPipelineConfiguration[CleanCommand::class]['__construct()']['rootPath']);
-            assertSame($workingDirectory, $contentPipelineConfiguration[InitCommand::class]['__construct()']['rootPath']);
+            assertSame($workingDirectory, $contentPipelineConfiguration[InitContentCommand::class]['__construct()']['rootPath']);
             assertSame($workingDirectory, $contentPipelineConfiguration[NewCommand::class]['__construct()']['rootPath']);
-            assertSame($workingDirectory, $contentPipelineConfiguration[PluginInitCommand::class]['__construct()']['rootPath']);
-            assertSame($workingDirectory, $contentPipelineConfiguration[ThemeInitCommand::class]['__construct()']['rootPath']);
+            assertSame($workingDirectory, $contentPipelineConfiguration[InitPluginCommand::class]['__construct()']['rootPath']);
+            assertSame($workingDirectory, $contentPipelineConfiguration[InitThemeCommand::class]['__construct()']['rootPath']);
             assertSame($workingDirectory, $importerConfiguration[ImportCommand::class]['__construct()']['rootPath']);
         } finally {
             chdir($previousDirectory);
@@ -76,9 +76,9 @@ final class ConfigurationPackagingTest extends TestCase
 
         /** @psalm-suppress RedundantCondition */
         assertSame(ServeCommand::class, $commands['serve']);
-        assertSame(InitCommand::class, $commands['init:content']);
-        assertSame(PluginInitCommand::class, $commands['init:plugin']);
-        assertSame(ThemeInitCommand::class, $commands['init:theme']);
+        assertSame(InitContentCommand::class, $commands['init:content']);
+        assertSame(InitPluginCommand::class, $commands['init:plugin']);
+        assertSame(InitThemeCommand::class, $commands['init:theme']);
         assertSame(WorkerCommand::class, $commands['|worker']);
     }
 

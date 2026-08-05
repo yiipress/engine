@@ -22,7 +22,7 @@ use function str_starts_with;
     name: 'init:content',
     description: 'Initialize a YiiPress content directory',
 )]
-final class InitCommand extends Command
+final class InitContentCommand extends Command
 {
     public function __construct(private readonly string $rootPath)
     {

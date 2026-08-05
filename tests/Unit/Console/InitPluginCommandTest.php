@@ -11,7 +11,7 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 use Symfony\Component\Console\Tester\CommandTester;
-use YiiPress\Console\PluginInitCommand;
+use YiiPress\Console\InitPluginCommand;
 use YiiPress\Content\Model\ProcessorConfig;
 use YiiPress\Processor\ProjectProcessorLoader;
 use Yiisoft\Yii\Console\ExitCode;
@@ -25,7 +25,7 @@ use function sys_get_temp_dir;
 use function unlink;
 use function uniqid;
 
-final class PluginInitCommandTest extends TestCase
+final class InitPluginCommandTest extends TestCase
 {
     private string $rootPath;
 
@@ -44,7 +44,7 @@ final class PluginInitCommandTest extends TestCase
     #[Test]
     public function createsLoadableProjectProcessor(): void
     {
-        $tester = new CommandTester(new PluginInitCommand($this->rootPath));
+        $tester = new CommandTester(new InitPluginCommand($this->rootPath));
 
         $exitCode = $tester->execute(['name' => 'Badge Labels']);
         $filePath = $this->rootPath . '/content/processors/badge-labels.php';
@@ -64,7 +64,7 @@ final class PluginInitCommandTest extends TestCase
     public function supportsCustomContentDirectory(): void
     {
         mkdir($this->rootPath . '/site-content');
-        $tester = new CommandTester(new PluginInitCommand($this->rootPath));
+        $tester = new CommandTester(new InitPluginCommand($this->rootPath));
 
         $exitCode = $tester->execute(['name' => 'Badge', '--content-dir' => 'site-content']);
 
@@ -78,7 +78,7 @@ final class PluginInitCommandTest extends TestCase
         mkdir($this->rootPath . '/content/processors');
         $filePath = $this->rootPath . '/content/processors/badge.php';
         file_put_contents($filePath, 'existing');
-        $tester = new CommandTester(new PluginInitCommand($this->rootPath));
+        $tester = new CommandTester(new InitPluginCommand($this->rootPath));
 
         $exitCode = $tester->execute(['name' => 'Badge']);
 
@@ -89,7 +89,7 @@ final class PluginInitCommandTest extends TestCase
     #[Test]
     public function rejectsMissingContentDirectory(): void
     {
-        $tester = new CommandTester(new PluginInitCommand($this->rootPath));
+        $tester = new CommandTester(new InitPluginCommand($this->rootPath));
 
         $exitCode = $tester->execute(['name' => 'Badge', '--content-dir' => 'missing']);
 
@@ -100,7 +100,7 @@ final class PluginInitCommandTest extends TestCase
     #[Test]
     public function preservesWindowsAbsoluteContentDirectory(): void
     {
-        $tester = new CommandTester(new PluginInitCommand($this->rootPath));
+        $tester = new CommandTester(new InitPluginCommand($this->rootPath));
 
         $exitCode = $tester->execute(['name' => 'Badge', '--content-dir' => 'C:\\site\\content']);
 

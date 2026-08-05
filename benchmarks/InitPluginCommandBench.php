@@ -13,11 +13,11 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 use Symfony\Component\Console\Tester\CommandTester;
-use YiiPress\Console\PluginInitCommand;
+use YiiPress\Console\InitPluginCommand;
 
 #[BeforeMethods('setUp')]
 #[AfterMethods('tearDown')]
-final class PluginInitCommandBench
+final class InitPluginCommandBench
 {
     private string $rootPath;
 
@@ -44,6 +44,6 @@ final class PluginInitCommandBench
     #[Iterations(5)]
     public function benchScaffoldPlugin(): void
     {
-        new CommandTester(new PluginInitCommand($this->rootPath))->execute(['name' => 'Badge Labels']);
+        new CommandTester(new InitPluginCommand($this->rootPath))->execute(['name' => 'Badge Labels']);
     }
 }

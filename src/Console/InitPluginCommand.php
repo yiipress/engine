@@ -25,7 +25,7 @@ use function str_starts_with;
     name: 'init:plugin',
     description: 'Initialize a project content processor plugin',
 )]
-final class PluginInitCommand extends Command
+final class InitPluginCommand extends Command
 {
     public function __construct(private readonly string $rootPath)
     {

@@ -11,7 +11,7 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 use Symfony\Component\Console\Tester\CommandTester;
-use YiiPress\Console\InitCommand;
+use YiiPress\Console\InitContentCommand;
 use YiiPress\Content\Parser\CollectionConfigParser;
 use YiiPress\Content\Parser\NavigationParser;
 use YiiPress\Content\Parser\SiteConfigParser;
@@ -26,7 +26,7 @@ use function sys_get_temp_dir;
 use function unlink;
 use function uniqid;
 
-final class InitCommandTest extends TestCase
+final class InitContentCommandTest extends TestCase
 {
     private string $rootPath;
 
@@ -44,7 +44,7 @@ final class InitCommandTest extends TestCase
     #[Test]
     public function initCreatesDefaultContentStructure(): void
     {
-        $tester = new CommandTester(new InitCommand($this->rootPath));
+        $tester = new CommandTester(new InitContentCommand($this->rootPath));
 
         $exitCode = $tester->execute([]);
         $contentDir = $this->rootPath . '/content';
@@ -78,7 +78,7 @@ final class InitCommandTest extends TestCase
     #[Test]
     public function initCreatesCustomContentDirectory(): void
     {
-        $tester = new CommandTester(new InitCommand($this->rootPath));
+        $tester = new CommandTester(new InitContentCommand($this->rootPath));
 
         $exitCode = $tester->execute(['--content-dir' => 'site-content']);
 
@@ -94,7 +94,7 @@ final class InitCommandTest extends TestCase
         mkdir($this->rootPath . '/content', 0o755, true);
         file_put_contents($this->rootPath . '/content/config.yaml', 'title: Existing');
 
-        $tester = new CommandTester(new InitCommand($this->rootPath));
+        $tester = new CommandTester(new InitContentCommand($this->rootPath));
 
         $exitCode = $tester->execute([]);
 

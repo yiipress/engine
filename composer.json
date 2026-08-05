@@ -103,7 +103,7 @@
     "autoload-dev": {
         "classmap": [
             "benchmarks/MarkdownParserComparisonBench.php",
-            "benchmarks/PluginInitCommandBench.php",
+            "benchmarks/InitPluginCommandBench.php",
             "build/PharArchiveFilter.php",
             "build/PhpDocStripper.php"
         ],
