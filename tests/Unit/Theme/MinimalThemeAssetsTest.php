@@ -165,6 +165,38 @@ final class MinimalThemeAssetsTest extends TestCase
         assertStringContainsString('white-space: nowrap;', $rule);
     }
 
+    public function testCopyButtonTextAlignsWithLanguageLabel(): void
+    {
+        $css = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/style.css');
+
+        self::assertNotFalse($css);
+        self::assertSame(1, preg_match('/\.code-language-label \{(?<rule>[^}]*)}/', $css, $labelMatches));
+        self::assertSame(1, preg_match('/\.code-copy-button \{(?<rule>[^}]*)}/', $css, $buttonMatches));
+
+        $labelRule = $labelMatches['rule'];
+        $buttonRule = $buttonMatches['rule'];
+
+        $sharedDeclarations = [
+            'top: .75rem;',
+            'right: .75rem;',
+            'font-size: .75rem;',
+            'font-weight: 400;',
+            'line-height: 1;',
+        ];
+        foreach ($sharedDeclarations as $declaration) {
+            assertStringContainsString($declaration, $labelRule);
+        }
+        $buttonDeclarations = [
+            'top: .75rem;',
+            'right: .75rem;',
+            'height: 1.25rem;',
+            'font: 400 .75rem/1 var(--font-sans);',
+        ];
+        foreach ($buttonDeclarations as $declaration) {
+            assertStringContainsString($declaration, $buttonRule);
+        }
+    }
+
     public function testCodeCopyScriptEnhancesContentPreBlocks(): void
     {
         $script = file_get_contents(dirname(__DIR__, 3) . '/themes/minimal/assets/code-copy.js');
