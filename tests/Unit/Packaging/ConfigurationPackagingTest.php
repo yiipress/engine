@@ -376,7 +376,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('runtime\package-windows\static-php-cli', $workflow);
         self::assertStringContainsString('build/package-windows.ps1 -DistDir dist/windows-amd64', $workflow);
         self::assertStringContainsString('Resolve-Path "dist/windows-amd64/yiipress.exe"', $workflow);
-        self::assertStringContainsString('Invoke-YiiPress "init"', $workflow);
+        self::assertStringContainsString('Invoke-YiiPress "init:content"', $workflow);
         self::assertStringContainsString('Invoke-YiiPress "new" "Hello Windows" "--collection=blog"', $workflow);
         self::assertStringContainsString('Set-Content -Path "content/index.md"', $workflow);
         self::assertStringContainsString('"permalink: /"', $workflow);
@@ -394,7 +394,7 @@ final class ConfigurationPackagingTest extends TestCase
             $workflow,
         );
         self::assertStringContainsString('binary="$(pwd)/dist/macos-arm64/yiipress"', $workflow);
-        self::assertStringContainsString('"$binary" init', $workflow);
+        self::assertStringContainsString('"$binary" init:content', $workflow);
         self::assertStringContainsString('"$binary" new "Hello macOS" --collection=blog', $workflow);
         self::assertStringContainsString("'permalink: /'", $workflow);
         self::assertStringContainsString('"$binary" build --no-cache', $workflow);

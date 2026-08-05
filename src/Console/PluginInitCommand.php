@@ -18,6 +18,7 @@ use Yiisoft\Yii\Console\ExitCode;
 use function dirname;
 use function is_dir;
 use function is_file;
+use function preg_match;
 use function str_starts_with;
 
 #[AsCommand(
@@ -93,7 +94,11 @@ PHP;
 
     private function resolvePath(string $path): string
     {
-        if (str_starts_with($path, '/')) {
+        if (
+            str_starts_with($path, '/')
+            || str_starts_with($path, '\\')
+            || preg_match('/^[A-Za-z]:[\/\\\\]/D', $path) === 1
+        ) {
             return $path;
         }
 

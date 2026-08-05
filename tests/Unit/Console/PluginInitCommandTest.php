@@ -97,6 +97,18 @@ final class PluginInitCommandTest extends TestCase
         self::assertStringContainsString('Content directory not found', $tester->getDisplay());
     }
 
+    #[Test]
+    public function preservesWindowsAbsoluteContentDirectory(): void
+    {
+        $tester = new CommandTester(new PluginInitCommand($this->rootPath));
+
+        $exitCode = $tester->execute(['name' => 'Badge', '--content-dir' => 'C:\\site\\content']);
+
+        self::assertSame(ExitCode::DATAERR, $exitCode);
+        self::assertStringContainsString('Content directory not found: C:\\site\\content', $tester->getDisplay());
+        self::assertStringNotContainsString($this->rootPath, $tester->getDisplay());
+    }
+
     private function removeDir(string $path): void
     {
         if (!is_dir($path)) {

@@ -152,7 +152,7 @@ jobs:
 
           Push-Location $sitePath
           try {
-              Invoke-YiiPress "init"
+              Invoke-YiiPress "init:content"
               Invoke-YiiPress "new" "Hello Windows" "--collection=blog"
               Set-Content -Path "content/index.md" -Encoding utf8NoBOM -Value @(
                   "---"
@@ -251,7 +251,7 @@ jobs:
           mkdir -p "$site_path"
           cd "$site_path"
 
-          "$binary" init
+          "$binary" init:content
           "$binary" new "Hello macOS" --collection=blog
           printf '%s\n' \
             '---' \
