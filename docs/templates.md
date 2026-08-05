@@ -77,7 +77,7 @@ theme: brand
 To start editing the bundled theme in a PHAR or static binary build, initialize it into `themes/custom/`:
 
 ```bash
-./yiipress init:theme
+yiipress init:theme
 ```
 
 The command updates `content/config.yaml` automatically to set `theme: custom`.
