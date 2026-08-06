@@ -16,6 +16,24 @@ if ([Runtime.InteropServices.RuntimeInformation]::OSArchitecture -ne [Runtime.In
 }
 
 $Asset = "yiipress-windows-amd64.zip"
+if ($Version -eq "nightly") {
+    $ResolvedVersion = $null
+    for ($Page = 1; -not $ResolvedVersion -and $Page -le 10; $Page++) {
+        $Releases = @(
+            Invoke-RestMethod -Uri "https://api.github.com/repos/$Repository/releases?per_page=100&page=$Page"
+        )
+        $ResolvedVersion = $Releases | Where-Object {
+            $_.prerelease -eq $true -and $_.tag_name -match '^nightly-[0-9]+-[0-9]+-[0-9a-f]+$'
+        } | Select-Object -First 1 -ExpandProperty tag_name
+        if ($Releases.Count -eq 0) {
+            break
+        }
+    }
+    if (-not $ResolvedVersion) {
+        throw "Could not find a YiiPress nightly release for $Repository."
+    }
+    $Version = $ResolvedVersion
+}
 $ReleaseUrl = if ($Version -eq "latest") {
     "https://github.com/$Repository/releases/latest/download"
 } else {

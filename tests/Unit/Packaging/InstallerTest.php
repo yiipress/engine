@@ -256,6 +256,15 @@ SH);
         self::assertStringContainsString('[Environment]::SetEnvironmentVariable("Path", $UpdatedPath, "User")', $script);
         self::assertStringContainsString('YIIPRESS_INSTALL_DIR', $script);
         self::assertStringContainsString('YIIPRESS_VERSION', $script);
+        self::assertStringContainsString('if ($Version -eq "nightly")', $script);
+        self::assertStringContainsString(
+            'https://api.github.com/repos/$Repository/releases?per_page=100&page=$Page',
+            $script,
+        );
+        self::assertStringContainsString("-match '^nightly-[0-9]+-[0-9]+-[0-9a-f]+$'", $script);
+        self::assertStringContainsString('Select-Object -First 1 -ExpandProperty tag_name', $script);
+        self::assertStringContainsString('$Page -le 10', $script);
+        self::assertStringContainsString('Could not find a YiiPress nightly release for $Repository.', $script);
     }
 
     private function createRelease(
