@@ -177,8 +177,8 @@ final class MinimalThemeAssetsTest extends TestCase
         $buttonRule = $buttonMatches['rule'];
 
         $sharedDeclarations = [
-            'top: .75rem;',
-            'right: .75rem;',
+            'top: .25rem;',
+            'right: .25rem;',
             'font-size: .75rem;',
             'font-weight: 400;',
             'line-height: 1;',
@@ -187,8 +187,8 @@ final class MinimalThemeAssetsTest extends TestCase
             assertStringContainsString($declaration, $labelRule);
         }
         $buttonDeclarations = [
-            'top: .75rem;',
-            'right: .75rem;',
+            'top: .25rem;',
+            'right: .25rem;',
             'height: 1.25rem;',
             'font: 400 .75rem/1 var(--font-sans);',
         ];

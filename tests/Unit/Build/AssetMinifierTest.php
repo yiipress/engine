@@ -66,10 +66,14 @@ final class AssetMinifierTest extends TestCase
             .content :is(h1, h2) .header-anchor {
                 margin: 1rem 1.25rem;
             }
+
+            .code-group-tabs [role="tab"] {
+                cursor: pointer;
+            }
             CSS;
 
         assertSame(
-            '.site-header .container{display:grid;padding:0 .125rem}.container:has(.docs-layout){max-width:calc(100% - (var(--page-gutter) * 2))}.content :is(h1,h2) .header-anchor{margin:1rem 1.25rem}',
+            '.site-header .container{display:grid;padding:0 .125rem}.container:has(.docs-layout){max-width:calc(100% - (var(--page-gutter) * 2))}.content :is(h1,h2) .header-anchor{margin:1rem 1.25rem}.code-group-tabs [role="tab"]{cursor:pointer}',
             AssetMinifier::minify('app.css', $css),
         );
     }
