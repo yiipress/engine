@@ -14,8 +14,6 @@ return (new Configuration())
     ->addPathToScan($root . '/yii', isDev: false)
     ->addPathToScan($root . '/tests', isDev: true)
     ->ignoreErrorsOnPackage('psr/container', [ErrorType::UNUSED_DEPENDENCY])
-    // Required by PHP's HTTPS stream wrapper used by ReleaseClient.
-    ->ignoreErrorsOnExtension('ext-openssl', [ErrorType::UNUSED_DEPENDENCY])
     ->ignoreErrorsOnPackage('yiisoft/config', [ErrorType::UNUSED_DEPENDENCY])
     ->ignoreErrorsOnPackage('yiisoft/di', [ErrorType::UNUSED_DEPENDENCY])
     ->ignoreErrorsOnPackage('yiisoft/yii-event', [ErrorType::UNUSED_DEPENDENCY])

@@ -9,6 +9,14 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use YiiPress\Update\PackageReplacer;
 
+use function file_get_contents;
+use function file_put_contents;
+use function mkdir;
+use function rmdir;
+use function sys_get_temp_dir;
+use function unlink;
+use function uniqid;
+
 final class PackageReplacerTest extends TestCase
 {
     #[Test]
@@ -33,11 +41,11 @@ final class PackageReplacerTest extends TestCase
             self::assertInstanceOf(Closure::class, $replacement);
 
             $replacement();
-
             self::assertSame('new', file_get_contents($targetPath));
             self::assertFileDoesNotExist($temporaryPath);
         } finally {
             @unlink($temporaryPath);
+            @unlink($temporaryPath . '.sh');
             @unlink($targetPath);
             @rmdir($directory);
         }
