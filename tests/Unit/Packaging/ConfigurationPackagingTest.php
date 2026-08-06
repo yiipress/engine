@@ -707,12 +707,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringNotContainsString("'content'", $packageScript);
         self::assertStringNotContainsString("'runtime'", $packageScript);
         self::assertStringContainsString('PharArchiveFilter::shouldExclude($localPath)', $packageScript);
-        self::assertStringContainsString('Excluded file was added to the PHAR:', $packageScript);
-        self::assertStringContainsString('Could not resolve PHAR entry path:', $packageScript);
-        self::assertStringContainsString('Required runtime file is missing from the PHAR:', $packageScript);
-        self::assertStringContainsString("'vendor/yiisoft/config/src/Composer/Options.php'", $packageScript);
-        self::assertStringContainsString("'vendor/yiisoft/yii-console/src/Command/Game.php'", $packageScript);
-        self::assertStringContainsString("'vendor/yiisoft/yii-console/src/Command/Serve.php'", $packageScript);
+        self::assertStringContainsString('PharArchiveValidator::validate(new Phar($target))', $packageScript);
         self::assertStringContainsString("getenv('YIIPRESS_COMMIT')", $packageScript);
         self::assertStringContainsString("strtolower(getenv('YIIPRESS_COMMIT')", $packageScript);
         self::assertStringContainsString("\$localPath === 'src/ApplicationInfo.php'", $packageScript);
@@ -725,7 +720,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('COPY src /app/src', $stage);
         self::assertStringContainsString('COPY themes /app/themes', $stage);
         self::assertStringContainsString(
-            'COPY build/package-phar.php build/PharArchiveFilter.php build/PhpDocStripper.php /app/build/',
+            'COPY build/package-phar.php build/PharArchiveFilter.php build/PharArchiveValidator.php build/PhpDocStripper.php /app/build/',
             $stage,
         );
         self::assertStringContainsString('COPY yii composer.json composer.lock /app/', $stage);
@@ -749,6 +744,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('PhpDocStripper::strip($contents)', $packageScript);
         self::assertStringContainsString('$phar->addFromString($localPath', $packageScript);
         self::assertContains('build/PharArchiveFilter.php', $composer['autoload-dev']['classmap'] ?? []);
+        self::assertContains('build/PharArchiveValidator.php', $composer['autoload-dev']['classmap'] ?? []);
         self::assertContains('build/PhpDocStripper.php', $composer['autoload-dev']['classmap'] ?? []);
         self::assertArrayNotHasKey('classmap', $composer['autoload']);
         self::assertTrue(PhpDocStripper::shouldStrip('src/Render/MarkdownRenderer.php'));
@@ -819,6 +815,8 @@ PHP;
 
         self::assertStringContainsString('build/PhpDocStripper.php', $macosScript);
         self::assertStringContainsString('build/PhpDocStripper.php', $windowsScript);
+        self::assertStringContainsString('build/PharArchiveValidator.php', $macosScript);
+        self::assertStringContainsString('build/PharArchiveValidator.php', $windowsScript);
         self::assertStringContainsString('Invoke-NativeCommand "php" @("-d", "phar.readonly=0", "build/package-phar.php", $pharPath)', $windowsScript);
         self::assertStringContainsString('invoke php -d phar.readonly=0 build/package-phar.php "$PHAR_PATH"', $macosScript);
     }
