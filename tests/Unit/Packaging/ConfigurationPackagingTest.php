@@ -610,15 +610,13 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('make -- composer install --no-progress --no-interaction', $workflow);
         self::assertStringContainsString('make test-coverage-clover', $workflow);
         self::assertStringContainsString('runtime/coverage/clover.xml', $workflow);
-        self::assertStringContainsString('id-token: write', $workflow);
-        self::assertStringContainsString('use_oidc: true', $workflow);
-        self::assertStringContainsString(
-            "if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository",
-            $workflow,
-        );
+        self::assertStringContainsString('CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}', $workflow);
+        self::assertStringContainsString("if: env.CODECOV_TOKEN != ''", $workflow);
+        self::assertStringContainsString('token: ${{ env.CODECOV_TOKEN }}', $workflow);
         self::assertStringContainsString('uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354', $workflow);
         self::assertStringContainsString('fail_ci_if_error: true', $workflow);
-        self::assertStringNotContainsString('CODECOV_TOKEN', $workflow);
+        self::assertStringContainsString("if: env.CODECOV_TOKEN == ''", $workflow);
+        self::assertStringContainsString('generated coverage but skipped Codecov upload', $workflow);
         self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@v\d+/', $workflow);
         self::assertStringContainsString('test-coverage-clover: ## Run tests with Clover coverage', $makefile);
         self::assertStringContainsString('--coverage-clover runtime/coverage/clover.xml', $makefile);
