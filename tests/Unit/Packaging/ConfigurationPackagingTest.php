@@ -255,6 +255,8 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('$env:RUSTFLAGS = "-C target-feature=+crt-static"', $script);
         self::assertStringContainsString('upx', $script);
         self::assertStringNotContainsString('opcache,openssl,phar', $script);
+        self::assertStringContainsString('foreach ($directory in @("config", "src", "themes"))', $script);
+        self::assertStringNotContainsString('"public"', $script);
     }
 
     #[Test]
@@ -293,6 +295,8 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('cargo build --release --target "$CARGO_BUILD_TARGET"', $script);
         self::assertStringContainsString('chmod +x "$BIN_PATH"', $script);
         self::assertStringNotContainsString('opcache,openssl,pcntl', $script);
+        self::assertStringContainsString('for directory in config src themes; do', $script);
+        self::assertStringNotContainsString('config public src themes', $script);
     }
 
     #[Test]
@@ -715,7 +719,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringNotContainsString('packages/highlighter-extension/php', $stage);
         self::assertStringNotContainsString("'packages/highlighter-extension/php'", $packageScript);
         self::assertStringContainsString('COPY config /app/config', $stage);
-        self::assertStringContainsString('COPY public /app/public', $stage);
+        self::assertStringNotContainsString('COPY public /app/public', $stage);
         self::assertStringContainsString('COPY src /app/src', $stage);
         self::assertStringContainsString('COPY themes /app/themes', $stage);
         self::assertStringContainsString(

@@ -37,7 +37,6 @@ $phar->startBuffering();
 
 $includeDirectories = [
     'config',
-    'public',
     'src',
     'themes',
     'vendor',
