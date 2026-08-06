@@ -4,22 +4,23 @@ declare(strict_types=1);
 
 namespace YiiPress\Tests\Unit\Update;
 
-use Closure;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Phar;
 use PharData;
 use YiiPress\Update\Package;
 use YiiPress\Update\PackageLocator;
-use YiiPress\Update\PackageReplacer;
+use YiiPress\Update\PackageReplacerInterface;
 use YiiPress\Update\ReleaseClient;
 use YiiPress\Update\SelfUpdater;
+use YiiPress\Update\StreamUrlDownloader;
 
 use function chmod;
 use function file_put_contents;
 use function hash;
 use function json_encode;
 use function mkdir;
+use function rename;
 use function sys_get_temp_dir;
 use function uniqid;
 
@@ -199,10 +200,14 @@ final class SelfUpdaterTest extends TestCase
             new ReleaseClient(
                 'file://' . $this->directory . '/releases',
                 'file://' . $this->directory . '/releases.json',
+                new StreamUrlDownloader(),
             ),
-            new PackageReplacer('Linux', static function (Closure $callback): void {
-                $callback();
-            }),
+            new class implements PackageReplacerInterface {
+                public function replace(string $temporaryPath, string $targetPath): void
+                {
+                    rename($temporaryPath, $targetPath);
+                }
+            },
         );
     }
 

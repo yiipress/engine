@@ -28,7 +28,7 @@ final readonly class SelfUpdater
     public function __construct(
         private PackageLocator $packageLocator,
         private ReleaseClient $releaseClient,
-        private PackageReplacer $packageReplacer = new PackageReplacer(),
+        private PackageReplacerInterface $packageReplacer = new PackageReplacer(),
     ) {}
 
     public function update(bool $nightly = false, ?Package $package = null): string
