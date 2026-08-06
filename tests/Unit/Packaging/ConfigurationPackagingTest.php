@@ -711,6 +711,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringNotContainsString("'content'", $packageScript);
         self::assertStringNotContainsString("'runtime'", $packageScript);
         self::assertStringContainsString('PharArchiveFilter::shouldExclude($localPath)', $packageScript);
+        self::assertStringContainsString('PharArchiveValidator::validate(new Phar($target))', $packageScript);
         self::assertStringContainsString("getenv('YIIPRESS_COMMIT')", $packageScript);
         self::assertStringContainsString("strtolower(getenv('YIIPRESS_COMMIT')", $packageScript);
         self::assertStringContainsString("\$localPath === 'src/ApplicationInfo.php'", $packageScript);
@@ -723,7 +724,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('COPY src /app/src', $stage);
         self::assertStringContainsString('COPY themes /app/themes', $stage);
         self::assertStringContainsString(
-            'COPY build/package-phar.php build/PharArchiveFilter.php build/PhpDocStripper.php /app/build/',
+            'COPY build/package-phar.php build/PharArchiveFilter.php build/PharArchiveValidator.php build/PhpDocStripper.php /app/build/',
             $stage,
         );
         self::assertStringContainsString('COPY yii composer.json composer.lock /app/', $stage);
@@ -747,6 +748,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('PhpDocStripper::strip($contents)', $packageScript);
         self::assertStringContainsString('$phar->addFromString($localPath', $packageScript);
         self::assertContains('build/PharArchiveFilter.php', $composer['autoload-dev']['classmap'] ?? []);
+        self::assertContains('build/PharArchiveValidator.php', $composer['autoload-dev']['classmap'] ?? []);
         self::assertContains('build/PhpDocStripper.php', $composer['autoload-dev']['classmap'] ?? []);
         self::assertArrayNotHasKey('classmap', $composer['autoload']);
         self::assertTrue(PhpDocStripper::shouldStrip('src/Render/MarkdownRenderer.php'));
@@ -817,6 +819,8 @@ PHP;
 
         self::assertStringContainsString('build/PhpDocStripper.php', $macosScript);
         self::assertStringContainsString('build/PhpDocStripper.php', $windowsScript);
+        self::assertStringContainsString('build/PharArchiveValidator.php', $macosScript);
+        self::assertStringContainsString('build/PharArchiveValidator.php', $windowsScript);
         self::assertStringContainsString('Invoke-NativeCommand "php" @("-d", "phar.readonly=0", "build/package-phar.php", $pharPath)', $windowsScript);
         self::assertStringContainsString('invoke php -d phar.readonly=0 build/package-phar.php "$PHAR_PATH"', $macosScript);
     }
@@ -905,6 +909,15 @@ PHP;
             'vendor/acme/package/phpstan.neon.dist',
             'vendor/acme/package/rector.php',
             'vendor/acme/package/Makefile',
+            'config/configuration.php',
+            'vendor/cebe/markdown/bin/markdown',
+            'vendor/yiisoft/html/src/test-functions.php',
+            'vendor/yiisoft/http/.phpstorm.meta.php/Header.php',
+            'vendor/yiisoft/router/.phpstorm.meta.php/Route.php',
+            'vendor/yiisoft/config/src/Command/RebuildCommand.php',
+            'vendor/yiisoft/config/src/Composer/EventHandler.php',
+            'vendor/yiisoft/middleware-dispatcher/src/Debug/MiddlewareCollector.php',
+            'vendor/yiisoft/router/src/Debug/RouterCollector.php',
         ] as $path) {
             self::assertTrue(PharArchiveFilter::shouldExclude($path), $path);
         }
@@ -920,6 +933,16 @@ PHP;
             'vendor/acme/package/LICENSE',
             'vendor/acme/package/LICENSE.md',
             'vendor/acme/package/LICENCE.md',
+            'config/web/di/application.php',
+            'config/environments/dev/params.php',
+            'config/environments/test/params.php',
+            'vendor/yiisoft/config/src/Composer/Options.php',
+            'vendor/yiisoft/error-handler/templates/development.php',
+            'vendor/yiisoft/error-handler/templates/highlight.min.js',
+            'vendor/yiisoft/yii-console/src/Command/Game.php',
+            'vendor/yiisoft/yii-console/src/Command/Serve.php',
+            'vendor/symfony/console/Resources/completion.bash',
+            'vendor/symfony/console/Resources/bin/hiddeninput.exe',
         ] as $path) {
             self::assertFalse(PharArchiveFilter::shouldExclude($path), $path);
         }

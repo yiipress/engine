@@ -104,6 +104,7 @@
             "benchmarks/MarkdownParserComparisonBench.php",
             "benchmarks/InitPluginCommandBench.php",
             "build/PharArchiveFilter.php",
+            "build/PharArchiveValidator.php",
             "build/PhpDocStripper.php"
         ],
         "psr-4": {

@@ -157,6 +157,7 @@ done
 mkdir -p "${APP_PATH}/build"
 cp "${ROOT}/build/package-phar.php" "${APP_PATH}/build/package-phar.php"
 cp "${ROOT}/build/PharArchiveFilter.php" "${APP_PATH}/build/PharArchiveFilter.php"
+cp "${ROOT}/build/PharArchiveValidator.php" "${APP_PATH}/build/PharArchiveValidator.php"
 cp "${ROOT}/build/PhpDocStripper.php" "${APP_PATH}/build/PhpDocStripper.php"
 cp "${ROOT}/yii" "${APP_PATH}/yii"
 cp "${ROOT}/composer.json" "${APP_PATH}/composer.json"

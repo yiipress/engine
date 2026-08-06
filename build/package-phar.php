@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use YiiPress\Build\PharArchiveFilter;
+use YiiPress\Build\PharArchiveValidator;
 use YiiPress\Build\PhpDocStripper;
 
 if (PHP_SAPI !== 'cli') {
@@ -12,6 +13,7 @@ if (PHP_SAPI !== 'cli') {
 
 $root = dirname(__DIR__);
 require_once __DIR__ . '/PharArchiveFilter.php';
+require_once __DIR__ . '/PharArchiveValidator.php';
 require_once __DIR__ . '/PhpDocStripper.php';
 
 $target = $argv[1] ?? $root . '/dist/yiipress.phar';
@@ -118,6 +120,14 @@ if (!Phar::canCompress(Phar::GZ)) {
 
 $phar->compressFiles(Phar::GZ);
 $phar->stopBuffering();
+
+try {
+    PharArchiveValidator::validate(new Phar($target));
+} catch (RuntimeException $exception) {
+    fwrite(STDERR, $exception->getMessage() . "\n");
+    exit(1);
+}
+
 chmod($target, 0755);
 
 fwrite(STDOUT, "Built {$target}\n");
