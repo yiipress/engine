@@ -558,7 +558,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertIsString($readme);
 
         self::assertStringContainsString(
-            '[![Latest Stable Version](https://img.shields.io/github/v/release/yiipress/engine?sort=semver)]',
+            '[![Latest Stable Version](https://img.shields.io/github/v/release/yiipress/engine?sort=semver)](https://github.com/yiipress/engine/releases/latest)',
             $readme,
         );
         self::assertStringContainsString(
