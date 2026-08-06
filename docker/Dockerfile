@@ -178,10 +178,7 @@ ADD https://repo.packagist.org/p2/yiipress/highlighter.json /tmp/static-yiipress
 RUN --mount=type=cache,target=/tmp/composer-cache \
     curl -fsSL "https://github.com/crazywhalecc/static-php-cli/archive/${STATIC_PHP_CLI_REF}.tar.gz" \
     | tar -xz --strip-components=1 -C /static-php \
-    && COMPOSER_CACHE_DIR=/tmp/composer-cache composer install --no-dev --no-progress --no-interaction --classmap-authoritative \
-    && sed -i \
-        's#https://musl.libc.org/releases/{$musl_version_name}.tar.gz#https://github.com/ifduyue/musl/archive/refs/tags/v1.2.5.tar.gz#' \
-        src/SPC/doctor/item/LinuxMuslCheck.php
+    && COMPOSER_CACHE_DIR=/tmp/composer-cache composer install --no-dev --no-progress --no-interaction --classmap-authoritative
 RUN --mount=type=cache,target=/tmp/composer-cache \
     COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project --no-dev --no-progress --no-interaction iliaal/mdparser /opt/mdparser
 RUN --mount=type=cache,target=/tmp/composer-cache \
@@ -199,12 +196,7 @@ RUN --mount=type=cache,target=/root/.cargo/git \
     && bin/spc install-pkg upx \
     && mkdir -p buildroot/bin \
     && ln -sf /usr/bin/pkg-config buildroot/bin/pkg-config \
-    && attempts=0 \
-    && until SPC_TOOLCHAIN='SPC\toolchain\MuslToolchain' SPC_TARGET=x86_64-linux-musl bin/spc doctor --auto-fix; do \
-        attempts=$((attempts + 1)); \
-        [ "$attempts" -ge 3 ] && exit 1; \
-        sleep $((attempts * 5)); \
-    done \
+    && SPC_TOOLCHAIN='SPC\toolchain\MuslToolchain' SPC_TARGET=x86_64-linux-musl bin/spc doctor --auto-fix \
     && (HIGHLIGHTER_VERSION="$(php -r '$package = "yiipress/highlighter"; $data = json_decode(file_get_contents("/tmp/static-yiipress-highlighter.json"), true, 512, JSON_THROW_ON_ERROR); foreach ($data["packages"][$package] as $release) { $version = $release["version"]; if (!preg_match("/(?:^dev-|dev$|alpha|beta|RC)/i", $version)) { echo $version; exit(0); } } exit(1);')" \
         bin/spc build "${STATIC_PHP_EXTENSIONS}" --build-micro --with-micro-fake-cli --with-upx-pack -P /opt/register-yiipress-highlighter.php \
         || (tail -n 200 /static-php/log/spc.shell.log && false))

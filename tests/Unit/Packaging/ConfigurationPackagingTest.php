@@ -158,23 +158,6 @@ final class ConfigurationPackagingTest extends TestCase
     }
 
     #[Test]
-    public function linuxStaticBuildRetriesMuslToolchainBootstrap(): void
-    {
-        $dockerfile = file_get_contents(dirname(__DIR__, 3) . '/docker/Dockerfile');
-        self::assertIsString($dockerfile);
-
-        self::assertStringContainsString(
-            "until SPC_TOOLCHAIN='SPC\\toolchain\\MuslToolchain' SPC_TARGET=x86_64-linux-musl bin/spc doctor --auto-fix",
-            $dockerfile,
-        );
-        self::assertStringContainsString('[ "$attempts" -ge 3 ] && exit 1', $dockerfile);
-        self::assertStringContainsString(
-            'https://github.com/ifduyue/musl/archive/refs/tags/v1.2.5.tar.gz',
-            $dockerfile,
-        );
-    }
-
-    #[Test]
     public function distrolessImageCopiesOnlyStaticBinary(): void
     {
         $dockerfile = file_get_contents(dirname(__DIR__, 3) . '/docker/Dockerfile');
