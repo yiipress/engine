@@ -8,10 +8,12 @@ use Closure;
 use RuntimeException;
 
 use function fclose;
+use function getenv;
 use function in_array;
 use function is_file;
 use function is_resource;
 use function is_string;
+use function mb_strcut;
 use function parse_url;
 use function proc_close;
 use function proc_open;
@@ -19,7 +21,6 @@ use function stream_get_contents;
 use function stream_get_wrappers;
 use function strlen;
 use function strtolower;
-use function substr;
 use function trim;
 use function unlink;
 
@@ -27,12 +28,12 @@ final class AvailableUrlDownloader implements UrlDownloaderInterface
 {
     private const int MAX_ERROR_LENGTH = 2_000;
 
-    /** @var Closure(list<string>): array{exitCode: int, stdout: string, stderr: string} */
+    /** @var Closure(list<string>, array<string, string>): array{exitCode: int, stdout: string, stderr: string} */
     private Closure $runner;
     private ?string $transport = null;
 
     /**
-     * @param null|callable(list<string>): array{exitCode: int, stdout: string, stderr: string} $runner
+     * @param null|callable(list<string>, array<string, string>): array{exitCode: int, stdout: string, stderr: string} $runner
      */
     public function __construct(
         ?callable $runner = null,
@@ -73,16 +74,18 @@ final class AvailableUrlDownloader implements UrlDownloaderInterface
                 '$ProgressPreference = "SilentlyContinue"; '
                 . '$lastError = $null; '
                 . 'for ($attempt = 1; $attempt -le 3; $attempt++) { '
-                . 'try { Invoke-WebRequest -UseBasicParsing -TimeoutSec 300 -Uri $args[0] -OutFile $args[1]; exit 0 } '
+                . 'try { Invoke-WebRequest -UseBasicParsing -TimeoutSec 300 '
+                . '-Uri $env:YIIPRESS_DOWNLOAD_URL -OutFile $env:YIIPRESS_DOWNLOAD_DESTINATION; exit 0 } '
                 . 'catch { $lastError = $_; if ($attempt -lt 3) { Start-Sleep -Seconds 2 } } }; '
                 . 'Write-Error $lastError; exit 1',
-                $url,
-                $destination,
             ],
             default => throw new RuntimeException("Unsupported download transport: $transport."),
         };
 
-        $result = ($this->runner)($command);
+        $environment = in_array($transport, ['pwsh', 'powershell.exe'], true)
+            ? ['YIIPRESS_DOWNLOAD_URL' => $url, 'YIIPRESS_DOWNLOAD_DESTINATION' => $destination]
+            : [];
+        $result = ($this->runner)($command, $environment);
         if ($result['exitCode'] !== 0 || !is_file($destination)) {
             @unlink($destination);
             $details = $this->errorDetails($result['stderr']);
@@ -127,7 +130,7 @@ final class AvailableUrlDownloader implements UrlDownloaderInterface
     /** @param list<string> $command */
     private function available(array $command): bool
     {
-        return ($this->runner)($command)['exitCode'] === 0;
+        return ($this->runner)($command, [])['exitCode'] === 0;
     }
 
     private function errorDetails(string $stderr): string
@@ -138,7 +141,7 @@ final class AvailableUrlDownloader implements UrlDownloaderInterface
         }
 
         if (strlen($stderr) > self::MAX_ERROR_LENGTH) {
-            $stderr = substr($stderr, 0, self::MAX_ERROR_LENGTH) . '…';
+            $stderr = mb_strcut($stderr, 0, self::MAX_ERROR_LENGTH) . '…';
         }
 
         return ' ' . $stderr;
@@ -148,13 +151,17 @@ final class AvailableUrlDownloader implements UrlDownloaderInterface
      * @param list<string> $command
      * @return array{exitCode: int, stdout: string, stderr: string}
      */
-    private function run(array $command): array
+    private function run(array $command, array $environment): array
     {
         $pipes = [];
+        $inheritedEnvironment = getenv();
         $process = @proc_open(
             $command,
             [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
             $pipes,
+            env_vars: $environment === []
+                ? null
+                : [...$inheritedEnvironment, ...$environment],
             options: ['bypass_shell' => true],
         );
         if (!is_resource($process)) {

@@ -12,6 +12,8 @@ use YiiPress\Update\AvailableUrlDownloader;
 use function array_filter;
 use function file_get_contents;
 use function file_put_contents;
+use function mb_check_encoding;
+use function str_repeat;
 use function sys_get_temp_dir;
 use function unlink;
 use function uniqid;
@@ -34,7 +36,7 @@ final class AvailableUrlDownloaderTest extends TestCase
     public function prefersCurlAndCachesSelection(): void
     {
         $commands = [];
-        $runner = static function (array $command) use (&$commands): array {
+        $runner = static function (array $command, array $environment = []) use (&$commands): array {
             $commands[] = $command;
             if ($command === ['curl', '--version']) {
                 return self::commandResult();
@@ -72,7 +74,7 @@ final class AvailableUrlDownloaderTest extends TestCase
     public function usesPhpStreamsForNonHttpUrlsWithoutProbingPlatformCommands(): void
     {
         $commands = [];
-        $runner = static function (array $command) use (&$commands): array {
+        $runner = static function (array $command, array $environment = []) use (&$commands): array {
             $commands[] = $command;
             return self::commandResult(127);
         };
@@ -94,7 +96,7 @@ final class AvailableUrlDownloaderTest extends TestCase
     public function usesWgetOnUnix(): void
     {
         $commands = [];
-        $runner = static function (array $command) use (&$commands): array {
+        $runner = static function (array $command, array $environment = []) use (&$commands): array {
             $commands[] = $command;
             if ($command === ['wget', '--help']) {
                 return self::commandResult();
@@ -119,13 +121,15 @@ final class AvailableUrlDownloaderTest extends TestCase
     public function usesPowerShellOnWindows(): void
     {
         $commands = [];
-        $runner = static function (array $command) use (&$commands): array {
+        $environments = [];
+        $runner = static function (array $command, array $environment = []) use (&$commands, &$environments): array {
             $commands[] = $command;
+            $environments[] = $environment;
             if ($command[0] === 'pwsh' && $command[5] === 'exit 0') {
                 return self::commandResult();
             }
             if ($command[0] === 'pwsh') {
-                file_put_contents($command[7], 'downloaded');
+                file_put_contents($environment['YIIPRESS_DOWNLOAD_DESTINATION'], 'downloaded');
                 return self::commandResult();
             }
             return self::commandResult(127);
@@ -137,13 +141,16 @@ final class AvailableUrlDownloaderTest extends TestCase
         self::assertSame('downloaded', file_get_contents($this->destination));
         self::assertSame('pwsh', $commands[2][0]);
         self::assertStringContainsString('Invoke-WebRequest', $commands[2][5]);
+        self::assertStringContainsString('$env:YIIPRESS_DOWNLOAD_URL', $commands[2][5]);
+        self::assertSame('https://example.com/package', $environments[2]['YIIPRESS_DOWNLOAD_URL']);
+        self::assertSame($this->destination, $environments[2]['YIIPRESS_DOWNLOAD_DESTINATION']);
     }
 
     #[Test]
     public function doesNotFallBackAfterTransferFailure(): void
     {
         $commands = [];
-        $runner = static function (array $command) use (&$commands): array {
+        $runner = static function (array $command, array $environment = []) use (&$commands): array {
             $commands[] = $command;
             return $command === ['curl', '--version']
                 ? self::commandResult()
@@ -166,13 +173,34 @@ final class AvailableUrlDownloaderTest extends TestCase
     public function reportsWhenNoDownloaderIsAvailable(): void
     {
         $downloader = new AvailableUrlDownloader(
-            static fn(array $command): array => self::commandResult(127),
+            static fn(array $command, array $environment = []): array => self::commandResult(127),
             'Linux',
             false,
         );
 
         $this->expectExceptionMessage('Install curl and retry');
         $downloader->download('https://example.com/package', $this->destination);
+    }
+
+    #[Test]
+    public function truncatesErrorDetailsWithoutSplittingUtf8Characters(): void
+    {
+        $stderr = str_repeat('a', 1_999) . '😀trailing';
+        $downloader = new AvailableUrlDownloader(
+            static fn(array $command, array $environment = []): array => $command === ['curl', '--version']
+                ? self::commandResult()
+                : self::commandResult(1, $stderr),
+            'Linux',
+            false,
+        );
+
+        try {
+            $downloader->download('https://example.com/package', $this->destination);
+            self::fail('Expected the download to fail.');
+        } catch (RuntimeException $exception) {
+            self::assertTrue(mb_check_encoding($exception->getMessage(), 'UTF-8'));
+            self::assertStringEndsWith(str_repeat('a', 1_999) . '…', $exception->getMessage());
+        }
     }
 
     /** @return array{exitCode: int, stdout: string, stderr: string} */
