@@ -255,6 +255,8 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('$env:RUSTFLAGS = "-C target-feature=+crt-static"', $script);
         self::assertStringContainsString('upx', $script);
         self::assertStringNotContainsString('opcache,openssl,phar', $script);
+        self::assertStringContainsString('foreach ($directory in @("config", "src", "themes"))', $script);
+        self::assertStringNotContainsString('"public"', $script);
     }
 
     #[Test]
@@ -293,6 +295,8 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('cargo build --release --target "$CARGO_BUILD_TARGET"', $script);
         self::assertStringContainsString('chmod +x "$BIN_PATH"', $script);
         self::assertStringNotContainsString('opcache,openssl,pcntl', $script);
+        self::assertStringContainsString('for directory in config src themes; do', $script);
+        self::assertStringNotContainsString('config public src themes', $script);
     }
 
     #[Test]
