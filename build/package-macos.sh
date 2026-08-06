@@ -151,7 +151,7 @@ mkdir -p "$DIST_PATH" "$WORK_PATH"
 rm -f "${DIST_PATH}/yiipress.phar"
 
 mkdir -p "$APP_PATH"
-for directory in config public src themes; do
+for directory in config src themes; do
     copy_clean_path "${ROOT}/${directory}" "${APP_PATH}/${directory}"
 done
 mkdir -p "${APP_PATH}/build"

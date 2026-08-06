@@ -115,7 +115,7 @@ if (Test-Path $legacyDistPharPath) {
 }
 
 New-Item -ItemType Directory -Force -Path $appPath | Out-Null
-foreach ($directory in @("config", "public", "src", "themes")) {
+foreach ($directory in @("config", "src", "themes")) {
     Copy-CleanPath (Join-Path $root $directory) (Join-Path $appPath $directory)
 }
 New-Item -ItemType Directory -Force -Path (Join-Path $appPath "build") | Out-Null
