@@ -247,6 +247,9 @@ non-empty `label`. Content outside the tab shortcodes is not allowed within a gr
 
 Visitors can select tabs with a pointer or use Left/Right arrow, Home, and End keys.
 When JavaScript is unavailable, all labeled examples remain visible.
+The built-in processor registers its tab stylesheet and script only on pages containing a
+code group. Plugin assets are copied and linked automatically, including on nested pages
+and when asset fingerprinting is disabled.
 
 ### FAQ question blocks
 
