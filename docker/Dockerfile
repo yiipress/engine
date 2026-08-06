@@ -98,7 +98,6 @@ FROM app-base AS prod-builder
 COPY --from=composer /composer /usr/bin/composer
 WORKDIR /app
 COPY config /app/config
-COPY public /app/public
 COPY src /app/src
 COPY themes /app/themes
 COPY yii composer.json composer.lock /app/
@@ -125,7 +124,6 @@ ENV APP_ENV=prod
 COPY --from=composer /composer /usr/bin/composer
 WORKDIR /app
 COPY config /app/config
-COPY public /app/public
 COPY src /app/src
 COPY themes /app/themes
 COPY build/package-phar.php build/PharArchiveFilter.php build/PhpDocStripper.php /app/build/

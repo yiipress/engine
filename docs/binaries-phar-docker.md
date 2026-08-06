@@ -65,7 +65,7 @@ make package-distroless-push
 
 `docker/Dockerfile.distroless-binary` is the final image assembly Dockerfile for GitHub Actions. It does not build PHP, Composer dependencies, the PHAR, or static-php-cli. It copies an already-built `dist/linux-amd64/yiipress` binary into the distroless base image, so nightly and release container images reuse the Linux binary artifact instead of rebuilding it.
 
-The PHAR builder copies only runtime inputs into the build stage: `config/`, `public/`, `src/`, `themes/`, `yii`, Composer metadata, and the PHAR build scripts. Dependencies are installed with `--no-dev` inside that stage before the PHAR is assembled.
+The PHAR builder copies only runtime inputs into the build stage: `config/`, `src/`, `themes/`, `yii`, Composer metadata, and the PHAR build scripts. Dependencies are installed with `--no-dev` inside that stage before the PHAR is assembled. YiiPress has no public PHP front controller: `yiipress serve` creates the preview HTTP application internally, while production output consists only of generated static files.
 
 PHPDoc comments are stripped from packaged PHP files to keep the standalone PHAR and embedded static-binary PHAR smaller while preserving runtime comments, code, and dependency PHPDoc that is read through reflection at runtime. Benchmark fixture helpers, Composer's `installed.json`, VCS placeholders, and non-runtime type stubs are omitted because packaged commands do not need them.
 Packaged PHAR entries are gzip-compressed before the archive is finalized. The static binary appends that same PHAR to the micro SAPI executable, so PHAR compression reduces both the standalone PHAR and the Linux, macOS, and Windows static executables.

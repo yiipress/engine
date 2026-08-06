@@ -695,7 +695,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringNotContainsString('packages/highlighter-extension/php', $stage);
         self::assertStringNotContainsString("'packages/highlighter-extension/php'", $packageScript);
         self::assertStringContainsString('COPY config /app/config', $stage);
-        self::assertStringContainsString('COPY public /app/public', $stage);
+        self::assertStringNotContainsString('COPY public /app/public', $stage);
         self::assertStringContainsString('COPY src /app/src', $stage);
         self::assertStringContainsString('COPY themes /app/themes', $stage);
         self::assertStringContainsString(

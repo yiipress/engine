@@ -50,7 +50,7 @@ or a database on the machine that builds or previews the site.
 - Feeds, sitemap, canonical URLs, social meta tags, redirects, and static `404.html`.
 - Native server-side syntax highlighting powered by Rust and syntect.
 - Table of contents, Mermaid diagrams, video embeds, fuzzy search, asset fingerprinting, and Telegram import.
-- Yii3-based web application, routing, dependency injection, middleware, and PHP template support.
+- Yii3-based preview routing, dependency injection, middleware, and PHP template support.
 
 ## Requirements
 
