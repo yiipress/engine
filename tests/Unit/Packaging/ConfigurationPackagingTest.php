@@ -552,17 +552,25 @@ final class ConfigurationPackagingTest extends TestCase
     }
 
     #[Test]
-    public function readmeExposesStaticAnalysisAndCoverageBadges(): void
+    public function readmeExposesReleaseDownloadAnalysisAndCoverageBadges(): void
     {
         $readme = file_get_contents(dirname(__DIR__, 3) . '/README.md');
         self::assertIsString($readme);
 
         self::assertStringContainsString(
+            '[![Latest Stable Version](https://img.shields.io/github/v/release/yiipress/engine?sort=semver)]',
+            $readme,
+        );
+        self::assertStringContainsString(
+            '[![Total Downloads](https://img.shields.io/github/downloads/yiipress/engine/total)]',
+            $readme,
+        );
+        self::assertStringContainsString(
             '[![Static Analysis](https://github.com/yiipress/engine/actions/workflows/static-analysis.yml/badge.svg)]',
             $readme,
         );
         self::assertStringContainsString(
-            '[![Coverage](https://codecov.io/gh/yiipress/engine/branch/master/graph/badge.svg)]',
+            '[![Coverage](https://codecov.io/github/yiipress/engine/graph/badge.svg)]',
             $readme,
         );
     }
