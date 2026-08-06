@@ -11,8 +11,12 @@ use PhpBench\Attributes\Revs;
 use PhpBench\Attributes\Warmup;
 use YiiPress\Update\Package;
 use YiiPress\Update\PackageLocator;
+use YiiPress\Update\PackageReplacerInterface;
 use YiiPress\Update\ReleaseClient;
 use YiiPress\Update\SelfUpdater;
+use YiiPress\Update\StreamUrlDownloader;
+
+use function rename;
 
 #[BeforeMethods('setUp')]
 #[AfterMethods('tearDown')]
@@ -37,7 +41,16 @@ final class SelfUpdaterBench
         $this->package = new Package($target, 'yiipress.phar');
         $this->updater = new SelfUpdater(
             new PackageLocator(),
-            new ReleaseClient('file://' . $this->directory . '/releases'),
+            new ReleaseClient(
+                'file://' . $this->directory . '/releases',
+                downloader: new StreamUrlDownloader(),
+            ),
+            new class implements PackageReplacerInterface {
+                public function replace(string $temporaryPath, string $targetPath): void
+                {
+                    rename($temporaryPath, $targetPath);
+                }
+            },
         );
     }
 
