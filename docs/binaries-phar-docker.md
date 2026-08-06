@@ -28,8 +28,16 @@ curl -fsSL https://raw.githubusercontent.com/yiipress/engine/master/install.sh |
 curl -fsSL https://raw.githubusercontent.com/yiipress/engine/master/install.sh | YIIPRESS_VERSION=nightly sh
 ```
 
+Or, with the PowerShell installer:
+
+```powershell
+$env:YIIPRESS_VERSION = "nightly"
+irm https://raw.githubusercontent.com/yiipress/engine/master/install.ps1 | iex
+```
+
 `YIIPRESS_VERSION=nightly` resolves the newest immutable nightly prerelease through the GitHub releases API. It does not require
-`jq` or GitHub CLI. Nightly builds contain unreleased changes and are intended for preview and testing.
+`jq` or GitHub CLI. Both installers inspect up to ten release pages and use the first prerelease whose tag matches the immutable
+`nightly-<run>-<attempt>-<sha>` format. Nightly builds contain unreleased changes and are intended for preview and testing.
 
 YiiPress can be packaged as reproducible artifacts:
 
