@@ -262,8 +262,12 @@ SH);
             $script,
         );
         self::assertStringContainsString("-match '^nightly-[0-9]+-[0-9]+-[0-9a-f]+$'", $script);
+        self::assertStringContainsString('$_.draft -ne $true', $script);
         self::assertStringContainsString('Select-Object -First 1 -ExpandProperty tag_name', $script);
         self::assertStringContainsString('$Page -le 10', $script);
+        self::assertStringContainsString('$Attempt -le 3', $script);
+        self::assertStringContainsString('Start-Sleep -Seconds 2', $script);
+        self::assertStringContainsString('if ($Attempt -eq 3)', $script);
         self::assertStringContainsString('Could not find a YiiPress nightly release for $Repository.', $script);
     }
 
