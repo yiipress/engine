@@ -7,13 +7,14 @@ namespace YiiPress\Update;
 use JsonException;
 use RuntimeException;
 
-use function fclose;
-use function fopen;
+use function bin2hex;
+use function file_get_contents;
 use function is_array;
 use function is_string;
 use function json_decode;
+use function random_bytes;
 use function sprintf;
-use function stream_copy_to_stream;
+use function sys_get_temp_dir;
 use function unlink;
 use function str_starts_with;
 
@@ -26,6 +27,7 @@ final class ReleaseClient
     public function __construct(
         private readonly string $downloadBaseUrl = 'https://github.com/' . self::REPOSITORY . '/releases',
         private readonly string $apiUrl = 'https://api.github.com/repos/' . self::REPOSITORY . '/releases?per_page=100',
+        private readonly UrlDownloaderInterface $downloader = new AvailableUrlDownloader(),
     ) {}
 
     /** @return array{version: string, checksums: string} */
@@ -82,47 +84,23 @@ final class ReleaseClient
 
     private function get(string $url): string
     {
-        $context = stream_context_create(['http' => ['header' => "User-Agent: YiiPress self-update\r\n", 'timeout' => 30]]);
-        $stream = @fopen($url, 'rb', false, $context);
-        if ($stream === false) {
-            throw new RuntimeException("Could not download $url.");
-        }
+        $destination = sys_get_temp_dir() . '/yiipress-metadata-' . bin2hex(random_bytes(16));
 
         try {
-            $contents = stream_get_contents($stream);
+            $this->downloader->download($url, $destination);
+            $contents = file_get_contents($destination);
             if ($contents === false) {
                 throw new RuntimeException("Could not download $url.");
             }
 
             return $contents;
         } finally {
-            fclose($stream);
+            @unlink($destination);
         }
     }
 
     private function downloadTo(string $url, string $destination): void
     {
-        $context = stream_context_create(['http' => ['header' => "User-Agent: YiiPress self-update\r\n", 'timeout' => 30]]);
-        $source = @fopen($url, 'rb', false, $context);
-        if ($source === false) {
-            throw new RuntimeException("Could not download $url.");
-        }
-        $target = @fopen($destination, 'wb');
-        if ($target === false) {
-            fclose($source);
-            throw new RuntimeException("Could not write temporary update file $destination.");
-        }
-
-        $copied = false;
-        try {
-            $copied = stream_copy_to_stream($source, $target) !== false;
-        } finally {
-            fclose($source);
-            fclose($target);
-        }
-        if (!$copied) {
-            @unlink($destination);
-            throw new RuntimeException("Could not download $url.");
-        }
+        $this->downloader->download($url, $destination);
     }
 }

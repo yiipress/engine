@@ -139,6 +139,25 @@ final class ConfigurationPackagingTest extends TestCase
     }
 
     #[Test]
+    public function shippedStaticBinariesOmitOpenSsl(): void
+    {
+        $root = dirname(__DIR__, 3);
+        $dockerfile = file_get_contents($root . '/docker/Dockerfile');
+        $macosScript = file_get_contents($root . '/build/package-macos.sh');
+        $windowsScript = file_get_contents($root . '/build/package-windows.ps1');
+        $composer = file_get_contents($root . '/composer.json');
+
+        self::assertIsString($dockerfile);
+        self::assertIsString($macosScript);
+        self::assertIsString($windowsScript);
+        self::assertIsString($composer);
+        self::assertDoesNotMatchRegularExpression('/STATIC_PHP_EXTENSIONS=.*openssl/', $dockerfile);
+        self::assertDoesNotMatchRegularExpression('/STATIC_PHP_EXTENSIONS=.*openssl/', $macosScript);
+        self::assertDoesNotMatchRegularExpression('/StaticPhpExtensions = .*openssl/', $windowsScript);
+        self::assertStringNotContainsString('"ext-openssl"', $composer);
+    }
+
+    #[Test]
     public function distrolessImageCopiesOnlyStaticBinary(): void
     {
         $dockerfile = file_get_contents(dirname(__DIR__, 3) . '/docker/Dockerfile');
@@ -235,6 +254,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('highlighter.lib', $script);
         self::assertStringContainsString('$env:RUSTFLAGS = "-C target-feature=+crt-static"', $script);
         self::assertStringContainsString('upx', $script);
+        self::assertStringNotContainsString('opcache,openssl,phar', $script);
     }
 
     #[Test]
@@ -272,6 +292,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('rustup target add "$CARGO_BUILD_TARGET"', $script);
         self::assertStringContainsString('cargo build --release --target "$CARGO_BUILD_TARGET"', $script);
         self::assertStringContainsString('chmod +x "$BIN_PATH"', $script);
+        self::assertStringNotContainsString('opcache,openssl,pcntl', $script);
     }
 
     #[Test]
@@ -609,7 +630,6 @@ final class ConfigurationPackagingTest extends TestCase
                         'curl' => ['repo' => 'curl/curl', 'match' => '^curl-(.*)$', 'prefer-stable' => true, 'alt' => []],
                         'icu' => ['repo' => 'unicode-org/icu', 'match' => '^release-(.*)$', 'prefer-stable' => true, 'alt' => []],
                         'libyaml' => ['repo' => 'yaml/libyaml', 'match' => '^(.*)$', 'prefer-stable' => true, 'alt' => []],
-                        'openssl' => ['repo' => 'openssl/openssl', 'match' => '^openssl-(.*)$', 'prefer-stable' => true, 'alt' => []],
                         'zlib' => ['repo' => 'madler/zlib', 'match' => '^(.*)$', 'prefer-stable' => true, 'alt' => []],
                     ],
                     JSON_THROW_ON_ERROR,
@@ -706,7 +726,7 @@ final class ConfigurationPackagingTest extends TestCase
     }
 
     #[Test]
-    public function pharBuilderStripsPhpDocFromPackagedPhpFiles(): void
+    public function pharBuilderStripsCommentsAndWhitespaceFromPackagedPhpFiles(): void
     {
         $packageScript = file_get_contents(dirname(__DIR__, 3) . '/build/package-phar.php');
         $composer = json_decode(
@@ -741,13 +761,14 @@ final class ConfigurationPackagingTest extends TestCase
  */
 final class Example
 {
-    // Runtime comment kept.
+    // Runtime comment removed.
 
     /**
      * Method documentation.
      */
-    public function run(): void
+    public    function run(): void
     {
+        $message = 'Comments inside strings are preserved: // yes';
     }
 }
 PHP;
@@ -756,9 +777,11 @@ PHP;
 
         self::assertStringNotContainsString('Class documentation', $stripped);
         self::assertStringNotContainsString('Method documentation', $stripped);
-        self::assertStringContainsString('// Runtime comment kept.', $stripped);
+        self::assertStringNotContainsString('// Runtime comment removed.', $stripped);
         self::assertStringContainsString('final class Example', $stripped);
-        self::assertStringContainsString('public function run(): void', $stripped);
+        self::assertStringContainsString("public function run(): void\n{", $stripped);
+        self::assertStringContainsString("'Comments inside strings are preserved: // yes'", $stripped);
+        self::assertSame(substr_count($code, "\n"), substr_count($stripped, "\n"));
     }
 
     #[Test]
