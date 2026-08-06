@@ -6,11 +6,11 @@
     <br>
 </p>
 
-[![Latest Stable Version](https://poser.pugx.org/yiipress/engine/v)](https://packagist.org/packages/yiipress/engine)
-[![Total Downloads](https://poser.pugx.org/yiipress/engine/downloads)](https://packagist.org/packages/yiipress/engine)
+[![Latest Stable Version](https://img.shields.io/github/v/release/yiipress/engine?sort=semver)](https://github.com/yiipress/engine/releases/latest)
+[![Total Downloads](https://img.shields.io/github/downloads/yiipress/engine/total)](https://github.com/yiipress/engine/releases)
 [![Tests](https://github.com/yiipress/engine/actions/workflows/run-tests.yml/badge.svg)](https://github.com/yiipress/engine/actions/workflows/run-tests.yml)
 [![Static Analysis](https://github.com/yiipress/engine/actions/workflows/static-analysis.yml/badge.svg)](https://github.com/yiipress/engine/actions/workflows/static-analysis.yml)
-[![Coverage](https://codecov.io/gh/yiipress/engine/branch/master/graph/badge.svg)](https://codecov.io/gh/yiipress/engine)
+[![Coverage](https://codecov.io/github/yiipress/engine/graph/badge.svg)](https://codecov.io/github/yiipress/engine)
 [![Package](https://github.com/yiipress/engine/actions/workflows/package-static.yml/badge.svg)](https://github.com/yiipress/engine/actions/workflows/package-static.yml)
 
 YiiPress is a fast, file-based static website engine powered by [Yii3](https://www.yiiframework.com/).
