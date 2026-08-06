@@ -2,6 +2,7 @@
     --code-group-accent: var(--c-link, var(--link-color, #2563eb));
     --code-group-border: var(--c-border-strong, var(--border-color, #d1d5db));
     --code-group-tab-hover: rgb(127 127 127 / 10%);
+
     margin: 1.5rem 0;
 }
 

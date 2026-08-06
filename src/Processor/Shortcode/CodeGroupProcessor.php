@@ -60,8 +60,8 @@ final class CodeGroupProcessor implements ContentProcessorInterface, AssetProces
 
         return sprintf(
             "    <link rel=\"stylesheet\" href=\"%s\">\n    <script defer src=\"%s\"></script>\n",
-            $stylesheet,
-            $script,
+            htmlspecialchars($stylesheet, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5),
+            htmlspecialchars($script, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5),
         );
     }
 

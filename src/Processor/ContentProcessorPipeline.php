@@ -70,8 +70,8 @@ final class ContentProcessorPipeline
     public function process(string $content, Entry $entry, ?string $rootPath = null): string
     {
         foreach ($this->processors as $processor) {
-            if ($rootPath !== null && $processor instanceof RootPathAwareProcessorInterface) {
-                $processor->applyRootPath($rootPath);
+            if ($processor instanceof RootPathAwareProcessorInterface) {
+                $processor->applyRootPath($rootPath ?? './');
             }
             $content = $processor->process($content, $entry);
         }
