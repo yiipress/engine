@@ -41,7 +41,6 @@ final class PackageReplacerTest extends TestCase
             self::assertInstanceOf(Closure::class, $replacement);
 
             $replacement();
-
             self::assertSame('new', file_get_contents($targetPath));
             self::assertFileDoesNotExist($temporaryPath);
         } finally {

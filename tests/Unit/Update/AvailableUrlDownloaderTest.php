@@ -69,7 +69,7 @@ final class AvailableUrlDownloaderTest extends TestCase
     }
 
     #[Test]
-    public function usesPhpStreamsBeforePlatformCommands(): void
+    public function usesPhpStreamsForNonHttpUrlsWithoutProbingPlatformCommands(): void
     {
         $commands = [];
         $runner = static function (array $command) use (&$commands): array {
@@ -87,7 +87,7 @@ final class AvailableUrlDownloaderTest extends TestCase
         }
 
         self::assertSame('streamed', file_get_contents($this->destination));
-        self::assertSame([['curl', '--version']], $commands);
+        self::assertSame([], $commands);
     }
 
     #[Test]

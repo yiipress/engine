@@ -9,6 +9,7 @@ use RuntimeException;
 use function fclose;
 use function fopen;
 use function stream_copy_to_stream;
+use function stream_context_create;
 use function unlink;
 
 final readonly class StreamUrlDownloader implements UrlDownloaderInterface

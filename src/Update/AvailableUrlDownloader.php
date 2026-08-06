@@ -11,11 +11,14 @@ use function fclose;
 use function in_array;
 use function is_file;
 use function is_resource;
+use function is_string;
+use function parse_url;
 use function proc_close;
 use function proc_open;
 use function stream_get_contents;
 use function stream_get_wrappers;
 use function strlen;
+use function strtolower;
 use function substr;
 use function trim;
 use function unlink;
@@ -41,9 +44,14 @@ final class AvailableUrlDownloader implements UrlDownloaderInterface
 
     public function download(string $url, string $destination): void
     {
-        $transport = $this->transport ??= $this->selectTransport();
         @unlink($destination);
 
+        if (!$this->isHttpUrl($url)) {
+            (new StreamUrlDownloader())->download($url, $destination);
+            return;
+        }
+
+        $transport = $this->transport ??= $this->selectTransport();
         if ($transport === 'stream') {
             (new StreamUrlDownloader())->download($url, $destination);
             return;
@@ -80,6 +88,13 @@ final class AvailableUrlDownloader implements UrlDownloaderInterface
             $details = $this->errorDetails($result['stderr']);
             throw new RuntimeException("Could not download $url using $transport.$details");
         }
+    }
+
+    private function isHttpUrl(string $url): bool
+    {
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+
+        return is_string($scheme) && in_array(strtolower($scheme), ['http', 'https'], true);
     }
 
     private function selectTransport(): string
