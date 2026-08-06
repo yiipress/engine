@@ -17,7 +17,7 @@ use function rename;
 use function str_contains;
 use function unlink;
 
-final readonly class PackageReplacer
+final readonly class PackageReplacer implements PackageReplacerInterface
 {
     /** @var Closure(Closure(): void): void */
     private Closure $shutdownRegistrar;
@@ -51,7 +51,6 @@ final readonly class PackageReplacer
                     ($this->failureHandler)("Could not replace $targetPath. Check its permissions.");
                 }
             });
-
             return;
         }
 

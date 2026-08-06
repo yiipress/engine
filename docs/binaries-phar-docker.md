@@ -69,7 +69,7 @@ The PHAR builder copies only runtime inputs into the build stage: `config/`, `pu
 
 Comments and redundant whitespace are stripped from packaged PHP files while preserving line numbers, strings, executable code, and dependency PHPDoc that is read through reflection at runtime. This keeps the standalone PHAR and embedded static-binary PHAR smaller without changing stack-trace line numbers. Benchmark fixture helpers, Composer's `installed.json`, VCS placeholders, and non-runtime type stubs are omitted because packaged commands do not need them.
 Packaged PHAR entries are gzip-compressed before the archive is finalized. The static binary appends that same PHAR to the micro SAPI executable, so PHAR compression reduces both the standalone PHAR and the Linux, macOS, and Windows static executables.
-The static executable includes `ext-highlighter`, so syntax highlighting does not need FFI or an external shared library, and `ext-openssl` for HTTPS self-updates. `serve` uses ReactPHP stream sockets, serves built files and live reload SSE in the server loop, keeps one shared live reload watcher per server process, and does not require PHP's native `sockets` extension. On POSIX platforms with PCNTL and signal support, `serve` can prefork worker processes; Windows static binaries run a single server process.
+The static executable includes `ext-highlighter`, so syntax highlighting does not need FFI or an external shared library. It intentionally omits `ext-openssl`; self-update uses an available host downloader instead. `serve` uses ReactPHP stream sockets, serves built files and live reload SSE in the server loop, keeps one shared live reload watcher per server process, and does not require PHP's native `sockets` extension. On POSIX platforms with PCNTL and signal support, `serve` can prefork worker processes; Windows static binaries run a single server process.
 Relative `content-dir`, `output-dir`, `new`, `clean`, `serve`, and `import` paths are resolved from the directory where you run `yiipress`, not from the packaged executable location.
 PHAR and static binary runs keep build cache and incremental manifests under the OS temp directory, keyed by the current project directory, instead of writing to `runtime/` in the site checkout. `yiipress clean` removes that packaged cache as well as the configured output directory.
 
@@ -79,6 +79,11 @@ Packaged installations update themselves from release metadata and verify downlo
 yiipress self-update
 yiipress self-update --nightly
 ```
+
+The updater prefers `curl`, then uses the PHP HTTPS wrapper when the host PHP provides it,
+PowerShell on Windows, or `wget` on Linux and macOS. If none is available, install `curl`
+and retry. Distroless containers should be updated by pulling a newer image rather than by
+running `self-update` inside the container.
 
 The first command installs the latest stable release. The second installs the newest nightly prerelease containing a compatible package. Static binaries identify their outer executable through the micro SAPI runtime. The verified replacement is staged beside the installed package and activated only after normal command shutdown, avoiding stale PHAR metadata while the old package is still running. If a nightly package is unavailable for the current installation type or platform, the command reports that clearly instead of selecting an incompatible asset. Composer/source checkouts must be updated with Composer instead.
 

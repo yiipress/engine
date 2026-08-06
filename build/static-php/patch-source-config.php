@@ -25,10 +25,6 @@ $pinnedSources = [
         'url' => 'https://pyyaml.org/download/libyaml/yaml-0.2.5.tar.gz',
         'filename' => 'yaml-0.2.5.tar.gz',
     ],
-    'openssl' => [
-        'url' => 'https://github.com/openssl/openssl/releases/download/openssl-3.5.4/openssl-3.5.4.tar.gz',
-        'filename' => 'openssl-3.5.4.tar.gz',
-    ],
     'zlib' => [
         'url' => 'https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz',
         'filename' => 'zlib-1.3.1.tar.gz',
