@@ -14,9 +14,6 @@ $finder = (new Finder())
         $root . '/config',
         $root . '/src',
         $root . '/tests',
-    ])
-    ->append([
-        $root . '/public/index.php',
     ]);
 
 return (new Config())
