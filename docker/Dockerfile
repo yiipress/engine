@@ -178,7 +178,10 @@ ADD https://repo.packagist.org/p2/yiipress/highlighter.json /tmp/static-yiipress
 RUN --mount=type=cache,target=/tmp/composer-cache \
     curl -fsSL "https://github.com/crazywhalecc/static-php-cli/archive/${STATIC_PHP_CLI_REF}.tar.gz" \
     | tar -xz --strip-components=1 -C /static-php \
-    && COMPOSER_CACHE_DIR=/tmp/composer-cache composer install --no-dev --no-progress --no-interaction --classmap-authoritative
+    && COMPOSER_CACHE_DIR=/tmp/composer-cache composer install --no-dev --no-progress --no-interaction --classmap-authoritative \
+    && sed -i \
+        's#https://musl.libc.org/releases/{$musl_version_name}.tar.gz#https://github.com/ifduyue/musl/archive/refs/tags/v1.2.5.tar.gz#' \
+        src/SPC/doctor/item/LinuxMuslCheck.php
 RUN --mount=type=cache,target=/tmp/composer-cache \
     COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project --no-dev --no-progress --no-interaction iliaal/mdparser /opt/mdparser
 RUN --mount=type=cache,target=/tmp/composer-cache \

@@ -168,6 +168,10 @@ final class ConfigurationPackagingTest extends TestCase
             $dockerfile,
         );
         self::assertStringContainsString('[ "$attempts" -ge 3 ] && exit 1', $dockerfile);
+        self::assertStringContainsString(
+            'https://github.com/ifduyue/musl/archive/refs/tags/v1.2.5.tar.gz',
+            $dockerfile,
+        );
     }
 
     #[Test]
