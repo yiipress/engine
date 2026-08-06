@@ -687,6 +687,12 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringNotContainsString("'content'", $packageScript);
         self::assertStringNotContainsString("'runtime'", $packageScript);
         self::assertStringContainsString('PharArchiveFilter::shouldExclude($localPath)', $packageScript);
+        self::assertStringContainsString('Excluded file was added to the PHAR:', $packageScript);
+        self::assertStringContainsString('Could not resolve PHAR entry path:', $packageScript);
+        self::assertStringContainsString('Required runtime file is missing from the PHAR:', $packageScript);
+        self::assertStringContainsString("'vendor/yiisoft/config/src/Composer/Options.php'", $packageScript);
+        self::assertStringContainsString("'vendor/yiisoft/yii-console/src/Command/Game.php'", $packageScript);
+        self::assertStringContainsString("'vendor/yiisoft/yii-console/src/Command/Serve.php'", $packageScript);
         self::assertStringContainsString("getenv('YIIPRESS_COMMIT')", $packageScript);
         self::assertStringContainsString("strtolower(getenv('YIIPRESS_COMMIT')", $packageScript);
         self::assertStringContainsString("\$localPath === 'src/ApplicationInfo.php'", $packageScript);
@@ -878,6 +884,15 @@ PHP;
             'vendor/acme/package/phpstan.neon.dist',
             'vendor/acme/package/rector.php',
             'vendor/acme/package/Makefile',
+            'config/configuration.php',
+            'vendor/cebe/markdown/bin/markdown',
+            'vendor/yiisoft/html/src/test-functions.php',
+            'vendor/yiisoft/http/.phpstorm.meta.php/Header.php',
+            'vendor/yiisoft/router/.phpstorm.meta.php/Route.php',
+            'vendor/yiisoft/config/src/Command/RebuildCommand.php',
+            'vendor/yiisoft/config/src/Composer/EventHandler.php',
+            'vendor/yiisoft/middleware-dispatcher/src/Debug/MiddlewareCollector.php',
+            'vendor/yiisoft/router/src/Debug/RouterCollector.php',
         ] as $path) {
             self::assertTrue(PharArchiveFilter::shouldExclude($path), $path);
         }
@@ -893,6 +908,16 @@ PHP;
             'vendor/acme/package/LICENSE',
             'vendor/acme/package/LICENSE.md',
             'vendor/acme/package/LICENCE.md',
+            'config/web/di/application.php',
+            'config/environments/dev/params.php',
+            'config/environments/test/params.php',
+            'vendor/yiisoft/config/src/Composer/Options.php',
+            'vendor/yiisoft/error-handler/templates/development.php',
+            'vendor/yiisoft/error-handler/templates/highlight.min.js',
+            'vendor/yiisoft/yii-console/src/Command/Game.php',
+            'vendor/yiisoft/yii-console/src/Command/Serve.php',
+            'vendor/symfony/console/Resources/completion.bash',
+            'vendor/symfony/console/Resources/bin/hiddeninput.exe',
         ] as $path) {
             self::assertFalse(PharArchiveFilter::shouldExclude($path), $path);
         }

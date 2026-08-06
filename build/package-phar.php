@@ -101,6 +101,37 @@ foreach ($includeDirectories as $directory) {
     }
 }
 
+$archivePrefix = 'phar://' . str_replace('\\', '/', $phar->getPath()) . '/';
+foreach (new RecursiveIteratorIterator($phar) as $file) {
+    $archivePath = str_replace('\\', '/', $file->getPathname());
+    if (!str_starts_with($archivePath, $archivePrefix)) {
+        fwrite(STDERR, "Could not resolve PHAR entry path: {$archivePath}\n");
+        exit(1);
+    }
+    $archivePath = substr($archivePath, strlen($archivePrefix));
+    if (PharArchiveFilter::shouldExclude($archivePath)) {
+        fwrite(STDERR, "Excluded file was added to the PHAR: {$archivePath}\n");
+        exit(1);
+    }
+}
+
+foreach ([
+    'config/environments/dev/params.php',
+    'config/environments/test/params.php',
+    'config/web/di/application.php',
+    'vendor/symfony/console/Resources/bin/hiddeninput.exe',
+    'vendor/symfony/console/Resources/completion.bash',
+    'vendor/yiisoft/config/src/Composer/Options.php',
+    'vendor/yiisoft/error-handler/templates/development.php',
+    'vendor/yiisoft/yii-console/src/Command/Game.php',
+    'vendor/yiisoft/yii-console/src/Command/Serve.php',
+] as $requiredPath) {
+    if (!isset($phar[$requiredPath])) {
+        fwrite(STDERR, "Required runtime file is missing from the PHAR: {$requiredPath}\n");
+        exit(1);
+    }
+}
+
 $phar->addFile($root . '/yii', 'yii');
 $phar->setStub(<<<'PHP'
 #!/usr/bin/env php

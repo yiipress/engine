@@ -27,6 +27,10 @@ final class PharArchiveFilter
             return true;
         }
 
+        if ($path === 'config/configuration.php') {
+            return true;
+        }
+
         if (in_array($path, ['install.sh', 'install.ps1'], true)) {
             return true;
         }
@@ -48,12 +52,35 @@ final class PharArchiveFilter
         $lowerBasename = strtolower($basename);
         $lowerPath = strtolower($path);
 
+        if (in_array($lowerPath, [
+            'vendor/cebe/markdown/bin/markdown',
+            'vendor/yiisoft/html/src/test-functions.php',
+        ], true)) {
+            return true;
+        }
+
+        if (
+            str_starts_with($lowerPath, 'vendor/yiisoft/config/src/command/')
+            || str_starts_with($lowerPath, 'vendor/yiisoft/middleware-dispatcher/src/debug/')
+            || str_starts_with($lowerPath, 'vendor/yiisoft/router/src/debug/')
+        ) {
+            return true;
+        }
+
+        if (
+            str_starts_with($lowerPath, 'vendor/yiisoft/config/src/composer/')
+            && $lowerPath !== 'vendor/yiisoft/config/src/composer/options.php'
+        ) {
+            return true;
+        }
+
         foreach ($segments as $segment) {
             $lowerSegment = strtolower($segment);
             if (in_array($lowerSegment, [
                 '.git',
                 '.github',
                 '.phan',
+                '.phpstorm.meta.php',
                 '.vscode',
                 'benchmark',
                 'benchmarks',
