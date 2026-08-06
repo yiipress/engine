@@ -61,7 +61,7 @@ final class AssetMinifier
     {
         $content = self::stripComments($content, preserveNewLines: false, stripLineComments: false);
         $content = self::collapseCssWhitespace($content);
-        $content = (string) preg_replace('/\s*([{};,>~=\[\]])\s*/', '$1', $content);
+        $content = (string) preg_replace('/\s*([{};,>~=])\s*/', '$1', $content);
         $content = (string) preg_replace('/:\s*/', ':', $content);
         $content = (string) preg_replace('/;}/', '}', $content);
 

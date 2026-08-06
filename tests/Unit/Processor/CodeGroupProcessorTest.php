@@ -159,6 +159,7 @@ MARKDOWN;
         self::assertStringContainsString('.code-group-tabs [role="tab"]:hover', $style);
         self::assertStringContainsString('.code-group-tabs [role="tab"][aria-selected="true"]', $style);
         self::assertStringContainsString('.code-group-tabs [role="tab"]:focus-visible', $style);
+        self::assertStringContainsString('overflow-y: hidden;', $style);
         self::assertStringContainsString('@media (prefers-reduced-motion: reduce)', $style);
         self::assertStringContainsString('transition: none;', $style);
     }
