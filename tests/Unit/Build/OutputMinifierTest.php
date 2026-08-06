@@ -83,6 +83,51 @@ final class OutputMinifierTest extends TestCase
         );
     }
 
+    public function testPreservesMermaidDiagramWhitespace(): void
+    {
+        $html = <<<'HTML'
+            <article>
+                <div class="diagram mermaid" tabindex="0">flowchart LR
+                    parse["Parse"] --> index["Index"]
+                    index --> render["Render"]
+                </div>
+            </article>
+            HTML;
+
+        assertSame(
+            <<<'HTML'
+            <article><div class="diagram mermaid" tabindex="0">flowchart LR
+                    parse["Parse"] --> index["Index"]
+                    index --> render["Render"]
+                </div></article>
+            HTML,
+            OutputMinifier::html($html),
+        );
+    }
+
+    public function testPreservesMermaidDiagramWhitespaceWithGreaterThanSignInEarlierAttribute(): void
+    {
+        $html = <<<'HTML'
+            <div data-expression="1 > 0" class="diagram mermaid">flowchart LR
+                parse["Parse"] --> render["Render"]
+            </div>
+            HTML;
+
+        assertSame($html, OutputMinifier::html($html));
+    }
+
+    public function testMinifiesDivWithoutExactMermaidClass(): void
+    {
+        assertSame(
+            '<div data-class="mermaid"> Ordinary content </div>',
+            OutputMinifier::html("<div data-class=\"mermaid\">\n    Ordinary content\n</div>"),
+        );
+        assertSame(
+            '<div class="not-mermaid"> Ordinary content </div>',
+            OutputMinifier::html("<div class=\"not-mermaid\">\n    Ordinary content\n</div>"),
+        );
+    }
+
     public function testKeepsTagsWithGreaterThanSignInQuotedAttributesIntact(): void
     {
         $html = <<<'HTML'

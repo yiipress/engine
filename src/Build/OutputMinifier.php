@@ -16,7 +16,7 @@ use function trim;
 
 final class OutputMinifier
 {
-    private const string PROTECTED_START_TAG_PATTERN = '~<(?<tag>pre|textarea|script|style)\b(?:[^>"\']+|"[^"]*"|\'[^\']*\')*>~i';
+    private const string PROTECTED_START_TAG_PATTERN = '~<(?<tag>pre|textarea|script|style|div(?=(?:[^>"\']+|"[^"]*"|\'[^\']*\')*\sclass\s*=\s*(?:"[^"]*(?<![^\s"])mermaid(?![^\s"])[^"]*"|\'[^\']*(?<![^\s\'])mermaid(?![^\s\'])[^\']*\')))\b(?:[^>"\']+|"[^"]*"|\'[^\']*\')*>~i';
     private const string TAG_PATTERN = '~(<(?:[^>"\']+|"[^"]*"|\'[^\']*\')*>)~';
 
     /**
