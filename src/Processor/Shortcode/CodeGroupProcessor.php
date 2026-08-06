@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace YiiPress\Processor\Shortcode;
 
+use YiiPress\Build\UrlResolver;
 use YiiPress\Content\Model\Entry;
 use YiiPress\Processor\AssetProcessorInterface;
 use YiiPress\Processor\ContentProcessorInterface;
+use YiiPress\Processor\RootPathAwareProcessorInterface;
 
 use function htmlspecialchars;
 use function implode;
@@ -23,9 +25,16 @@ use function trim;
  * The same processor is intentionally run on both sides of MarkdownProcessor: the first pass
  * preserves shortcode metadata in HTML comments, and the second pass builds the final markup.
  */
-final readonly class CodeGroupProcessor implements ContentProcessorInterface, AssetProcessorInterface
+final class CodeGroupProcessor implements ContentProcessorInterface, AssetProcessorInterface, RootPathAwareProcessorInterface
 {
     use ParsesShortcodeAttributesTrait;
+
+    private string $rootPath = './';
+
+    public function applyRootPath(string $rootPath): void
+    {
+        $this->rootPath = $rootPath;
+    }
 
     public function process(string $content, Entry $entry): string
     {
@@ -46,11 +55,14 @@ final readonly class CodeGroupProcessor implements ContentProcessorInterface, As
             return '';
         }
 
-        return <<<'HTML'
-    <link rel="stylesheet" href="assets/plugins/code-groups.css">
-    <script defer src="assets/plugins/code-groups.js"></script>
+        $stylesheet = UrlResolver::sitePath('assets/plugins/code-groups.css', $this->rootPath);
+        $script = UrlResolver::sitePath('assets/plugins/code-groups.js', $this->rootPath);
 
-HTML;
+        return sprintf(
+            "    <link rel=\"stylesheet\" href=\"%s\">\n    <script defer src=\"%s\"></script>\n",
+            htmlspecialchars($stylesheet, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5),
+            htmlspecialchars($script, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5),
+        );
     }
 
     public function assetFiles(): array

@@ -7,6 +7,7 @@ namespace YiiPress\Tests\Unit\Processor;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 use YiiPress\Content\Model\Entry;
+use YiiPress\Processor\ContentProcessorPipeline;
 use YiiPress\Processor\MarkdownProcessor;
 use YiiPress\Processor\Shortcode\CodeGroupProcessor;
 use YiiPress\Render\MarkdownRenderer;
@@ -103,6 +104,42 @@ MARKDOWN;
         self::assertCount(2, $processor->assetFiles());
     }
 
+    public function testProvidesRootRelativePluginAssetsForNestedPages(): void
+    {
+        $processor = new CodeGroupProcessor();
+        $processor->applyRootPath('../../');
+
+        $assets = $processor->headAssets('<div class="code-group"></div>');
+
+        self::assertStringContainsString('href="../../assets/plugins/code-groups.css"', $assets);
+        self::assertStringContainsString('src="../../assets/plugins/code-groups.js"', $assets);
+    }
+
+    public function testEscapesPluginAssetUrls(): void
+    {
+        $processor = new CodeGroupProcessor();
+        $processor->applyRootPath('./\"><script>alert(1)</script>');
+
+        $assets = $processor->headAssets('<div class="code-group"></div>');
+
+        self::assertStringNotContainsString('<script>alert(1)</script>', $assets);
+        self::assertStringContainsString('&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;', $assets);
+    }
+
+    public function testPipelineResetsRootPathWhenNextPageDoesNotProvideOne(): void
+    {
+        $processor = new CodeGroupProcessor();
+        $pipeline = new ContentProcessorPipeline($processor);
+
+        $pipeline->process('nested', $this->entry(), '../../');
+        $pipeline->process('root', $this->entry());
+
+        $assets = $pipeline->collectHeadAssets('<div class="code-group"></div>');
+
+        self::assertStringContainsString('href="./assets/plugins/code-groups.css"', $assets);
+        self::assertStringContainsString('src="./assets/plugins/code-groups.js"', $assets);
+    }
+
     public function testBrowserAssetsUseDelegationKeyboardNavigationAndProgressiveEnhancement(): void
     {
         $directory = dirname(__DIR__, 3) . '/src/Processor/Shortcode/assets/';
@@ -119,6 +156,11 @@ MARKDOWN;
         self::assertStringContainsString("group.classList.add('is-enhanced')", $script);
         self::assertStringContainsString("if (!tab)", $script);
         self::assertStringContainsString('.code-group.is-enhanced .code-group-panel[hidden]', $style);
+        self::assertStringContainsString('.code-group-tabs [role="tab"]:hover', $style);
+        self::assertStringContainsString('.code-group-tabs [role="tab"][aria-selected="true"]', $style);
+        self::assertStringContainsString('.code-group-tabs [role="tab"]:focus-visible', $style);
+        self::assertStringContainsString('@media (prefers-reduced-motion: reduce)', $style);
+        self::assertStringContainsString('transition: none;', $style);
     }
 
     private function entry(): Entry
