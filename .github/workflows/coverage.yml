@@ -14,8 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    env:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      id-token: write
 
     steps:
       - name: Checkout repository
@@ -30,13 +29,9 @@ jobs:
         run: make test-coverage-clover
 
       - name: Upload coverage to Codecov
-        if: env.CODECOV_TOKEN != ''
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354
         with:
-          token: ${{ env.CODECOV_TOKEN }}
+          use_oidc: true
           files: runtime/coverage/clover.xml
           fail_ci_if_error: true
-
-      - name: Skip Codecov upload
-        if: env.CODECOV_TOKEN == ''
-        run: echo "CODECOV_TOKEN is not configured; generated coverage but skipped Codecov upload."
