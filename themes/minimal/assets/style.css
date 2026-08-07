@@ -13,15 +13,15 @@
     --c-blockquote: #6b7280;
     --c-blockquote-border: #d1d5db;
     --c-admonition-note: #0969da;
-    --c-admonition-note-bg: #eff6ff;
+    --c-admonition-note-bg: #ddf4ff;
     --c-admonition-tip: #1a7f37;
-    --c-admonition-tip-bg: #f0fdf4;
+    --c-admonition-tip-bg: #dafbe1;
     --c-admonition-important: #8250df;
-    --c-admonition-important-bg: #faf5ff;
+    --c-admonition-important-bg: #fbefff;
     --c-admonition-warning: #9a6700;
-    --c-admonition-warning-bg: #fffbeb;
+    --c-admonition-warning-bg: #fff8c5;
     --c-admonition-caution: #cf222e;
-    --c-admonition-caution-bg: #fef2f2;
+    --c-admonition-caution-bg: #ffebe9;
     --c-image-zoom-bg: rgba(255, 255, 255, 0.94);
     --c-image-zoom-control: #111827;
     --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -45,15 +45,15 @@
     --c-blockquote: #9ca3af;
     --c-blockquote-border: #4b5563;
     --c-admonition-note: #4493f8;
-    --c-admonition-note-bg: rgba(37, 99, 235, .14);
+    --c-admonition-note-bg: rgba(56, 139, 253, .1);
     --c-admonition-tip: #3fb950;
-    --c-admonition-tip-bg: rgba(22, 163, 74, .14);
+    --c-admonition-tip-bg: rgba(46, 160, 67, .15);
     --c-admonition-important: #ab7df8;
-    --c-admonition-important-bg: rgba(147, 51, 234, .14);
+    --c-admonition-important-bg: rgba(163, 113, 247, .15);
     --c-admonition-warning: #d29922;
-    --c-admonition-warning-bg: rgba(217, 119, 6, .14);
+    --c-admonition-warning-bg: rgba(187, 128, 9, .15);
     --c-admonition-caution: #f85149;
-    --c-admonition-caution-bg: rgba(220, 38, 38, .14);
+    --c-admonition-caution-bg: rgba(248, 81, 73, .1);
     --c-image-zoom-bg: rgba(0, 0, 0, 0.9);
     --c-image-zoom-control: #fff;
 }
@@ -315,7 +315,7 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
     border: 1px solid color-mix(in srgb, var(--admonition-color) 24%, transparent);
     border-left: .3rem solid var(--admonition-color);
     border-radius: .625rem;
-    background: linear-gradient(135deg, var(--admonition-bg), color-mix(in srgb, var(--admonition-bg) 72%, transparent));
+    background: var(--admonition-bg);
     box-shadow: 0 1px 2px rgba(15, 23, 42, .05);
 }
 .content .admonition-tip {
@@ -362,7 +362,11 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
 }
 .content .admonition-tip .admonition-title::before { content: "✓"; }
 .content .admonition-important .admonition-title::before { content: "!"; }
-.content .admonition-warning .admonition-title::before { content: "!"; }
+.content .admonition-warning .admonition-title::before {
+    content: "⚠";
+    border: 0;
+    font-size: 1.1rem;
+}
 .content .admonition-caution .admonition-title::before { content: "×"; }
 .content div[class^="admonition-"] > :last-child { margin-bottom: 0; }
 .content pre {

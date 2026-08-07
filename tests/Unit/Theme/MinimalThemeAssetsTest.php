@@ -112,14 +112,25 @@ final class MinimalThemeAssetsTest extends TestCase
         self::assertNotFalse($css);
         assertStringContainsString('--c-admonition-note: #0969da;', $css);
         assertStringContainsString('--c-admonition-note: #4493f8;', $css);
+        assertStringContainsString('--c-admonition-note-bg: #ddf4ff;', $css);
+        assertStringContainsString('--c-admonition-tip-bg: #dafbe1;', $css);
+        assertStringContainsString('--c-admonition-important-bg: #fbefff;', $css);
+        assertStringContainsString('--c-admonition-warning-bg: #fff8c5;', $css);
+        assertStringContainsString('--c-admonition-caution-bg: #ffebe9;', $css);
+        assertStringContainsString('--c-admonition-note-bg: rgba(56, 139, 253, .1);', $css);
+        assertStringContainsString('--c-admonition-tip-bg: rgba(46, 160, 67, .15);', $css);
+        assertStringContainsString('--c-admonition-important-bg: rgba(163, 113, 247, .15);', $css);
+        assertStringContainsString('--c-admonition-warning-bg: rgba(187, 128, 9, .15);', $css);
+        assertStringContainsString('--c-admonition-caution-bg: rgba(248, 81, 73, .1);', $css);
         assertStringContainsString('--c-admonition-tip:', $css);
         assertStringContainsString('--c-admonition-important:', $css);
         assertStringContainsString('--c-admonition-warning:', $css);
         assertStringContainsString('--c-admonition-caution:', $css);
         assertStringContainsString('.content div[class^="admonition-"] {', $css);
         assertStringContainsString('.content .admonition-title {', $css);
-        assertStringContainsString('background: linear-gradient(', $css);
+        assertStringContainsString('background: var(--admonition-bg);', $css);
         assertStringContainsString('color-mix(in srgb, var(--admonition-color) 24%, transparent);', $css);
+        assertStringContainsString('content: "⚠";', $css);
         assertStringContainsString('.content .admonition-caution .admonition-title::before', $css);
     }
 
