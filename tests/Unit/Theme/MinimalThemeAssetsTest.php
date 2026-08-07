@@ -127,10 +127,16 @@ final class MinimalThemeAssetsTest extends TestCase
         assertStringContainsString('--c-admonition-warning:', $css);
         assertStringContainsString('--c-admonition-caution:', $css);
         assertStringContainsString('.content div[class^="admonition-"] {', $css);
+        assertStringContainsString('.content div.admonition-tip {', $css);
+        assertStringContainsString('.content div.admonition-important {', $css);
+        assertStringContainsString('.content div.admonition-warning {', $css);
+        assertStringContainsString('.content div.admonition-caution {', $css);
         assertStringContainsString('.content .admonition-title {', $css);
         assertStringContainsString('background: var(--admonition-bg);', $css);
         assertStringContainsString('color-mix(in srgb, var(--admonition-color) 24%, transparent);', $css);
         assertStringContainsString('content: "⚠";', $css);
+        assertStringContainsString('--admonition-icon: url(', $css);
+        assertStringContainsString('-webkit-mask: var(--admonition-icon)', $css);
         assertStringContainsString('.content .admonition-caution .admonition-title::before', $css);
     }
 
