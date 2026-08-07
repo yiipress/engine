@@ -23,6 +23,7 @@ final class MarkdownRenderer
             latexMath: $config->latexMath,
             wikiLinks: $config->wikilinks,
             underline: $config->underline,
+            admonitions: $config->admonitions,
             unsafe: !$config->noHtmlBlocks || !$config->noHtmlSpans,
             permissiveAtxHeadings: $config->permissiveAtxHeaders,
             noIndentedCodeBlocks: $config->noIndentedCodeBlocks,

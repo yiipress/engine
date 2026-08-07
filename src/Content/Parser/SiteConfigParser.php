@@ -211,6 +211,9 @@ final class SiteConfigParser
         if (array_key_exists('underline', $data)) {
             $constructorArgs['underline'] = (bool) $data['underline'];
         }
+        if (array_key_exists('admonitions', $data)) {
+            $constructorArgs['admonitions'] = (bool) $data['admonitions'];
+        }
         if (array_key_exists('no_html_blocks', $data)) {
             $constructorArgs['noHtmlBlocks'] = (bool) $data['no_html_blocks'];
         }
