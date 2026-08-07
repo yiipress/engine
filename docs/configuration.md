@@ -354,40 +354,6 @@ markdown:
 
 If the `markdown` section is omitted, all defaults apply.
 
-With admonitions enabled, the minimal theme gives each GitHub-style alert a distinct color in both light and dark modes:
-
-```markdown
-> [!NOTE]
-> Highlights information that users should notice, even when skimming.
-
-> [!TIP]
-> Optional information that helps users succeed.
-
-> [!IMPORTANT]
-> Essential information required for success.
-
-> [!WARNING]
-> Urgent information about a potential risk.
-
-> [!CAUTION]
-> Negative consequences of an action.
-```
-
-> [!NOTE]
-> Highlights information that users should notice, even when skimming.
-
-> [!TIP]
-> Optional information that helps users succeed.
-
-> [!IMPORTANT]
-> Essential information required for success.
-
-> [!WARNING]
-> Urgent information about a potential risk.
-
-> [!CAUTION]
-> Negative consequences of an action.
-
 ### Defaults and overrides
 
 Collection `_collection.yaml` fields override content config defaults:
