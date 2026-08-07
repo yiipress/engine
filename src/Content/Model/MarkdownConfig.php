@@ -17,6 +17,7 @@ final readonly class MarkdownConfig
      * @param bool $latexMath Enable $ and $$ containing LaTeX equations.
      * @param bool $wikilinks Enable wiki links extension.
      * @param bool $underline Enable underline extension (and disables '_' for normal emphasis).
+     * @param bool $admonitions Enable GitHub-style alert blockquotes.
      * @param bool $noHtmlBlocks Disable raw HTML blocks.
      * @param bool $noHtmlSpans Disable raw HTML (inline).
      * @param bool $permissiveAtxHeaders Do not require space in ATX headers ( ###header ).
@@ -34,6 +35,7 @@ final readonly class MarkdownConfig
         public bool $latexMath = false,
         public bool $wikilinks = false,
         public bool $underline = false,
+        public bool $admonitions = true,
         public bool $noHtmlBlocks = false,
         public bool $noHtmlSpans = false,
         public bool $permissiveAtxHeaders = false,

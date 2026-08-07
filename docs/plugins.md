@@ -41,7 +41,7 @@ Two separate pipelines are configured via the [Yii3 DI container](https://yiisof
 ### MarkdownProcessor
 
 Converts Markdown to HTML using the reusable native PHP extension package, `iliaal/mdparser`. Accepts `MarkdownConfig` via constructor for feature toggles
-(tables, strikethrough, tasklists, etc.).
+(tables, strikethrough, tasklists, GitHub-style alerts, etc.).
 
 The extension exposes the PHP API as `MdParser\Parser` and
 `MdParser\Options`, backed by bundled MD4C sources. YiiPress

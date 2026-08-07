@@ -12,6 +12,16 @@
     --c-tag-text: #374151;
     --c-blockquote: #6b7280;
     --c-blockquote-border: #d1d5db;
+    --c-admonition-note: #0969da;
+    --c-admonition-note-bg: #ddf4ff;
+    --c-admonition-tip: #1a7f37;
+    --c-admonition-tip-bg: #dafbe1;
+    --c-admonition-important: #8250df;
+    --c-admonition-important-bg: #fbefff;
+    --c-admonition-warning: #9a6700;
+    --c-admonition-warning-bg: #fff8c5;
+    --c-admonition-caution: #cf222e;
+    --c-admonition-caution-bg: #ffebe9;
     --c-image-zoom-bg: rgba(255, 255, 255, 0.94);
     --c-image-zoom-control: #111827;
     --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -34,6 +44,16 @@
     --c-tag-text: #d1d5db;
     --c-blockquote: #9ca3af;
     --c-blockquote-border: #4b5563;
+    --c-admonition-note: #4493f8;
+    --c-admonition-note-bg: rgba(56, 139, 253, .1);
+    --c-admonition-tip: #3fb950;
+    --c-admonition-tip-bg: rgba(46, 160, 67, .15);
+    --c-admonition-important: #ab7df8;
+    --c-admonition-important-bg: rgba(163, 113, 247, .15);
+    --c-admonition-warning: #d29922;
+    --c-admonition-warning-bg: rgba(187, 128, 9, .15);
+    --c-admonition-caution: #f85149;
+    --c-admonition-caution-bg: rgba(248, 81, 73, .1);
     --c-image-zoom-bg: rgba(0, 0, 0, 0.9);
     --c-image-zoom-control: #fff;
 }
@@ -286,6 +306,72 @@ article h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; margin-bottom
     color: var(--c-blockquote);
     font-style: italic;
 }
+.content div[class^="admonition-"] {
+    --admonition-color: var(--c-admonition-note);
+    --admonition-bg: var(--c-admonition-note-bg);
+    position: relative;
+    padding: 1rem 1.125rem 1rem 1.25rem;
+    margin: 1.5rem 0;
+    border: 1px solid color-mix(in srgb, var(--admonition-color) 24%, transparent);
+    border-left: .3rem solid var(--admonition-color);
+    border-radius: .625rem;
+    background: var(--admonition-bg);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .05);
+}
+.content div.admonition-tip {
+    --admonition-color: var(--c-admonition-tip);
+    --admonition-bg: var(--c-admonition-tip-bg);
+}
+.content div.admonition-important {
+    --admonition-color: var(--c-admonition-important);
+    --admonition-bg: var(--c-admonition-important-bg);
+}
+.content div.admonition-warning {
+    --admonition-color: var(--c-admonition-warning);
+    --admonition-bg: var(--c-admonition-warning-bg);
+}
+.content div.admonition-caution {
+    --admonition-color: var(--c-admonition-caution);
+    --admonition-bg: var(--c-admonition-caution-bg);
+}
+.content .admonition-title {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    margin-bottom: .4rem;
+    color: var(--admonition-color);
+    font-size: .875rem;
+    font-weight: 700;
+    letter-spacing: .025em;
+    line-height: 1.4;
+    text-transform: uppercase;
+}
+.content .admonition-title::before {
+    content: "";
+    display: inline-block;
+    flex: 0 0 1.15rem;
+    width: 1.15rem;
+    height: 1.15rem;
+    background: currentColor;
+    -webkit-mask: var(--admonition-icon) center / contain no-repeat;
+    mask: var(--admonition-icon) center / contain no-repeat;
+}
+.content .admonition-note .admonition-title::before {
+    --admonition-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z'/%3E%3C/svg%3E");
+}
+.content .admonition-tip .admonition-title::before {
+    --admonition-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z'/%3E%3C/svg%3E");
+}
+.content .admonition-important .admonition-title::before {
+    --admonition-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z'/%3E%3C/svg%3E");
+}
+.content .admonition-warning .admonition-title::before {
+    --admonition-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z'/%3E%3C/svg%3E");
+}
+.content .admonition-caution .admonition-title::before {
+    --admonition-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z'/%3E%3C/svg%3E");
+}
+.content div[class^="admonition-"] > :last-child { margin-bottom: 0; }
 .content pre {
     background: var(--c-code-bg);
     border-radius: .5rem;

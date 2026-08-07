@@ -327,6 +327,7 @@ markdown:
   latex_math: false
   wikilinks: false
   underline: false
+  admonitions: true
   no_html_blocks: false
   no_html_spans: false
   permissive_atx_headers: false
@@ -344,6 +345,7 @@ markdown:
 - **latex_math** — enable LaTeX math spans `$...$` and `$$...$$` (default: `false`). Pages that contain math automatically include KaTeX CSS/JS and the shipped YiiPress math enhancer script.
 - **wikilinks** — enable wiki-style links `[[link]]` (default: `false`)
 - **underline** — underscore `_` denotes underline instead of emphasis (default: `false`)
+- **admonitions** — enable GitHub-style alert blockquotes such as `> [!NOTE]` (default: `true`)
 - **no_html_blocks** — disable raw HTML blocks (default: `false`)
 - **no_html_spans** — disable inline raw HTML (default: `false`)
 - **permissive_atx_headers** — do not require space in ATX headers ( `###header` ) (default: `false`)

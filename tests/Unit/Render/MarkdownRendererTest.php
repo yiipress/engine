@@ -87,7 +87,7 @@ final class MarkdownRendererTest extends TestCase
 <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled />todo</li>
 </ul>
 EXPECTED
-        , $html);
+            , $html);
     }
 
     public function testAllowsRawHtmlByDefault(): void
@@ -128,5 +128,19 @@ MARKDOWN);
         assertStringContainsString('<span class="math">x</span>', $html);
         assertStringContainsString('<span class="math display">', $html);
         assertStringContainsString('y', $html);
+    }
+
+    public function testRendersGitHubAlertOnlyWhenConfigured(): void
+    {
+        $markdown = "> [!NOTE]\n> Useful information.\n";
+
+        $disabledHtml = new MarkdownRenderer(new MarkdownConfig(admonitions: false))->render($markdown);
+        $enabledHtml = new MarkdownRenderer(new MarkdownConfig(admonitions: true))->render($markdown);
+
+        assertSame("<blockquote>\n<p>[!NOTE]<br />\nUseful information.</p>\n</blockquote>\n", $disabledHtml);
+        assertSame(
+            "<div class=\"admonition-note\">\n<p class=\"admonition-title\">note</p>\n<p>Useful information.</p>\n</div>\n",
+            $enabledHtml,
+        );
     }
 }
