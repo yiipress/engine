@@ -35,7 +35,7 @@ final readonly class MarkdownConfig
         public bool $latexMath = false,
         public bool $wikilinks = false,
         public bool $underline = false,
-        public bool $admonitions = false,
+        public bool $admonitions = true,
         public bool $noHtmlBlocks = false,
         public bool $noHtmlSpans = false,
         public bool $permissiveAtxHeaders = false,

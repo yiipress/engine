@@ -29,7 +29,7 @@ final class MarkdownConfigTest extends TestCase
         assertFalse($config->latexMath);
         assertFalse($config->wikilinks);
         assertFalse($config->underline);
-        assertFalse($config->admonitions);
+        assertTrue($config->admonitions);
         assertFalse($config->noHtmlBlocks);
         assertFalse($config->noHtmlSpans);
         assertFalse($config->permissiveAtxHeaders);

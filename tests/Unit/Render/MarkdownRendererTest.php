@@ -134,7 +134,7 @@ MARKDOWN);
     {
         $markdown = "> [!NOTE]\n> Useful information.\n";
 
-        $disabledHtml = $this->renderer->render($markdown);
+        $disabledHtml = new MarkdownRenderer(new MarkdownConfig(admonitions: false))->render($markdown);
         $enabledHtml = new MarkdownRenderer(new MarkdownConfig(admonitions: true))->render($markdown);
 
         assertSame("<blockquote>\n<p>[!NOTE]<br />\nUseful information.</p>\n</blockquote>\n", $disabledHtml);
