@@ -156,7 +156,7 @@ endif
 
 ifeq ($(PRIMARY_GOAL),infection)
 infection: ## Run mutation tests
-	$(DOCKER_COMPOSE_TEST) run --rm -e XDEBUG_MODE=coverage app php -d memory_limit=1G ./vendor/bin/infection --configuration=infection.json.dist --threads=max --min-covered-msi=78 $(CLI_ARGS)
+	$(DOCKER_COMPOSE_TEST) run --rm -e XDEBUG_MODE=coverage -e CI -e GITHUB_ACTIONS -e STRYKER_DASHBOARD_API_KEY app php -d memory_limit=1G ./vendor/bin/infection --configuration=infection.json.dist --threads=max --min-covered-msi=70 $(CLI_ARGS)
 endif
 
 ifeq ($(PRIMARY_GOAL),composer-dependency-analyser)

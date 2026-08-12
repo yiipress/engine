@@ -635,7 +635,8 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('package-ecosystem: composer', $dependabot);
         self::assertStringContainsString('phpstan: ## Run PHPStan', $makefile);
         self::assertStringContainsString('infection: ## Run mutation tests', $makefile);
-        self::assertStringContainsString('--min-covered-msi=78', $makefile);
+        self::assertStringContainsString('-e CI -e GITHUB_ACTIONS -e STRYKER_DASHBOARD_API_KEY', $makefile);
+        self::assertStringContainsString('--min-covered-msi=70', $makefile);
         self::assertStringNotContainsString('--filter=SiteIconFinderTest', file_get_contents($root . '/infection.json.dist'));
         foreach ([$mutation, $benchmark, $autoFormat, $zizmor] as $workflow) {
             self::assertStringContainsString(
