@@ -12,6 +12,7 @@ on:
       - 'composer.json'
       - 'composer.lock'
       - 'phpunit.xml'
+      - 'codecov.yml'
       - 'Makefile'
       - 'docker/**'
       - '.github/workflows/coverage.yml'

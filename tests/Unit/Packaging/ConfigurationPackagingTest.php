@@ -665,9 +665,12 @@ final class ConfigurationPackagingTest extends TestCase
     #[Test]
     public function coverageWorkflowPublishesRealCloverReport(): void
     {
-        $workflow = file_get_contents(dirname(__DIR__, 3) . '/.github/workflows/coverage.yml');
-        $makefile = file_get_contents(dirname(__DIR__, 3) . '/Makefile');
+        $root = dirname(__DIR__, 3);
+        $workflow = file_get_contents($root . '/.github/workflows/coverage.yml');
+        $codecov = file_get_contents($root . '/codecov.yml');
+        $makefile = file_get_contents($root . '/Makefile');
         self::assertIsString($workflow);
+        self::assertIsString($codecov);
         self::assertIsString($makefile);
 
         self::assertStringContainsString('name: Coverage', $workflow);
@@ -683,7 +686,10 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('fail_ci_if_error: true', $workflow);
         self::assertStringContainsString("if: env.CODECOV_TOKEN == ''", $workflow);
         self::assertStringContainsString('generated coverage but skipped Codecov upload', $workflow);
+        self::assertStringContainsString("- 'codecov.yml'", $workflow);
         self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@v\d+/', $workflow);
+        self::assertStringContainsString('threshold: 0.1%', $codecov);
+        self::assertStringContainsString('informational: true', $codecov);
         self::assertStringContainsString('test-coverage-clover: ## Run tests with Clover coverage', $makefile);
         self::assertStringContainsString('--coverage-clover runtime/coverage/clover.xml', $makefile);
     }
