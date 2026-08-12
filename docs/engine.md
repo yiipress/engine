@@ -171,7 +171,7 @@ This approach avoids shared memory and synchronization. Feed generation can spli
 Development and CI commands run in Docker through `make`:
 
 - `make test`, `make phpstan`, and `make composer-dependency-analyser` validate behavior and static correctness;
-- `make infection` mutation-tests all covered production code, enforces the current 78% covered-code MSI baseline, and publishes its mutation score on `master`;
+- `make infection` mutation-tests all covered production code, enforces the current 70% covered-code MSI baseline, and publishes its mutation score on `master`;
 - `make bench` records aggregate results together with environment information.
 
 CI workflows use path filters and concurrency cancellation to avoid obsolete or unrelated runs. Pull requests compare PHPBench results with `master`, and same-repository branches receive automatic Rector and PHP CS Fixer commits. Infection enforces a 70% covered-code mutation score and publishes the `master` mutation score to Stryker Dashboard when the `STRYKER_DASHBOARD_API_KEY` repository secret is configured. Dependabot maintains Composer and pinned GitHub Actions dependencies, while Zizmor checks workflow changes for security issues. PHPStan starts at level 6 with an explicit baseline for existing findings; new findings fail CI and baseline entries can be removed as existing code is improved.
