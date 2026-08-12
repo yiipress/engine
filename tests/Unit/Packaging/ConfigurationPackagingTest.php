@@ -624,6 +624,8 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertIsString($makefile);
         self::assertStringContainsString('make infection', $mutation);
         self::assertStringContainsString('STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}', $mutation);
+        self::assertStringContainsString('make bench-generate', $benchmark);
+        self::assertStringContainsString('make bench-generate-realistic', $benchmark);
         self::assertStringContainsString('make bench-baseline', $benchmark);
         self::assertStringContainsString('make bench-compare BENCH_ASSERT=', $benchmark);
         self::assertStringContainsString('make rector', $autoFormat);
@@ -635,7 +637,13 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('infection: ## Run mutation tests', $makefile);
         self::assertStringContainsString('--min-covered-msi=78', $makefile);
         self::assertStringNotContainsString('--filter=SiteIconFinderTest', file_get_contents($root . '/infection.json.dist'));
-        self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@v\d+/', $mutation . $benchmark . $autoFormat . $zizmor);
+        foreach ([$mutation, $benchmark, $autoFormat, $zizmor] as $workflow) {
+            self::assertStringContainsString(
+                'uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5',
+                $workflow,
+            );
+            self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@(?![a-f0-9]{40}(?:\s|$))\S+/', $workflow);
+        }
     }
 
     #[Test]

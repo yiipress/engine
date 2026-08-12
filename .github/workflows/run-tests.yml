@@ -18,7 +18,7 @@ on:
       - 'phpunit.xml'
       - 'Makefile'
       - 'yii'
-      - '.github/workflows/run-tests.yml'
+      - '.github/**'
   pull_request:
     branches:
       - master

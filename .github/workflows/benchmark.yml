@@ -45,6 +45,12 @@ jobs:
         working-directory: baseline
         run: make -- composer install --no-progress --no-interaction
 
+      - name: Generate baseline benchmark data
+        working-directory: baseline
+        run: |
+          make bench-generate
+          make bench-generate-realistic
+
       - name: Record baseline
         working-directory: baseline
         run: make bench-baseline
@@ -52,6 +58,12 @@ jobs:
       - name: Install pull request dependencies
         working-directory: current
         run: make -- composer install --no-progress --no-interaction
+
+      - name: Generate pull request benchmark data
+        working-directory: current
+        run: |
+          make bench-generate
+          make bench-generate-realistic
 
       - name: Copy baseline results
         run: cp -R baseline/.phpbench current/.phpbench

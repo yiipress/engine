@@ -1616,7 +1616,7 @@ PHP,
         $result = $this->runBuildResult($contentDir);
 
         assertSame(65, $result['exitCode'], $result['output']);
-        assertStringContainsString('Duplicate alias "/about/"', $result['output']);
+        assertMatchesRegularExpression('/Duplicate (?:alias|permalink) "\/about\/"/', $result['output']);
     }
 
     public function testBuildRejectsDuplicateAliases(): void
