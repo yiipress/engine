@@ -576,6 +576,14 @@ final class ConfigurationPackagingTest extends TestCase
             '[![Coverage](https://codecov.io/github/yiipress/engine/graph/badge.svg)]',
             $readme,
         );
+        self::assertStringContainsString(
+            '[![Mutation Tests](https://github.com/yiipress/engine/actions/workflows/mutation.yml/badge.svg)]',
+            $readme,
+        );
+        self::assertStringContainsString(
+            '[![Workflow Security](https://github.com/yiipress/engine/actions/workflows/zizmor.yml/badge.svg)]',
+            $readme,
+        );
     }
 
     #[Test]
