@@ -1,3 +1,25 @@
+* text=auto eol=lf
+
+*.php text
+*.css text
+*.js text
+*.md text
+*.xml text
+*.json text
+*.yml text
+*.yaml text
+*.svg text
 *.sh text eol=lf
 *.ps1 text eol=crlf
 yii text eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.avif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary

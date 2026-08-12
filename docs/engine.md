@@ -166,6 +166,16 @@ Parallel builds use `pcntl_fork()` where it is available. On Windows, YiiPress s
 
 This approach avoids shared memory and synchronization. Feed generation can split work per collection when workers are enabled because feeds may render every entry body again. Sitemap and robots output remain serial.
 
+## Quality Tooling
+
+Development and CI commands run in Docker through `make`:
+
+- `make test`, `make psalm`, `make phpstan`, and `make composer-dependency-analyser` validate behavior and static correctness;
+- `make infection` mutation-tests the initially scoped content icon discovery code at a required 100% MSI;
+- `make bench` records aggregate results together with environment information.
+
+CI workflows use path filters and concurrency cancellation to avoid obsolete or unrelated runs. Dependabot maintains Composer and pinned GitHub Actions dependencies, Zizmor checks workflow changes for security issues, and Roave BC Check reports changes to the PHP API. PHPStan starts at level 6 with an explicit baseline for existing findings; new findings fail CI and baseline entries can be removed as existing code is improved.
+
 ## Caching
 
 Source installs use `runtime/cache/`. PHAR and static binary runs use a project-scoped cache under the OS temp directory, so packaged commands do not write framework state into the site checkout.

@@ -4,10 +4,26 @@ on:
   push:
     branches:
       - master
+    paths: &coverage-paths
+      - 'src/**'
+      - 'config/**'
+      - 'tests/**'
+      - 'themes/**'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'phpunit.xml'
+      - 'Makefile'
+      - 'docker/**'
+      - '.github/workflows/coverage.yml'
   pull_request:
     branches:
       - master
+    paths: *coverage-paths
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   coverage:

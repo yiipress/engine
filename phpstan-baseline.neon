@@ -1,0 +1,259 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Using nullsafe property access "\?\-\>results" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: src/Build/AuthorPageWriter.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between non\-empty\-string and '''' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/Build/BuildDiagnostics.php
+
+		-
+			message: '#^Parameter \#1 \$array \(list\<string\>\) of array_values is already a list, call has no effect\.$#'
+			identifier: arrayValues.list
+			count: 1
+			path: src/Build/BuildManifest.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>results" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Build/CollectionListingWriter.php
+
+		-
+			message: '#^Parameter \#6 \$months of method YiiPress\\Build\\DateArchiveWriter\:\:writeYearlyPage\(\) expects list\<string\>, list\{0\: 10\|11\|12\|''01''\|''02''\|''03''\|''04''\|''05''\|''06''\|''07''\|''08''\|''09'', 1\?\: 10\|11\|12\|''02''\|''03''\|''04''\|''05''\|''06''\|''07''\|''08''\|''09'', 2\?\: 10\|11\|12\|''03''\|''04''\|''05''\|''06''\|''07''\|''08''\|''09'', 3\?\: 10\|11\|12\|''04''\|''05''\|''06''\|''07''\|''08''\|''09'', 4\?\: 10\|11\|12\|''05''\|''06''\|''07''\|''08''\|''09'', 5\?\: 10\|11\|12\|''06''\|''07''\|''08''\|''09'', 6\?\: 10\|11\|12\|''07''\|''08''\|''09'', 7\?\: 10\|11\|12\|''08''\|''09'', \.\.\.\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Build/DateArchiveWriter.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>results" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 3
+			path: src/Build/DateArchiveWriter.php
+
+		-
+			message: '#^Method YiiPress\\Build\\EntryRenderer\:\:cacheContext\(\) has parameter \$navigationPager with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Build/EntryRenderer.php
+
+		-
+			message: '#^Method YiiPress\\Build\\EntryRenderer\:\:render\(\) has parameter \$navigationPager with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Build/EntryRenderer.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>defaultLanguage" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Build/EntryRenderer.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>results" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Build/EntryRenderer.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>results" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Build/NotFoundPageWriter.php
+
+		-
+			message: '#^Call to function is_callable\(\) with ''pcntl_fork'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Build/ParallelEntryWriter.php
+
+		-
+			message: '#^Call to function is_callable\(\) with ''proc_open'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Build/ParallelEntryWriter.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 1
+			path: src/Build/ParallelEntryWriter.php
+
+		-
+			message: '#^Offset ''running'' on array\{command\: string, pid\: int, running\: bool, signaled\: bool, stopped\: bool, exitcode\: int, termsig\: int, stopsig\: int\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Build/PortableWorkerPool.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>minify" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Build/RedirectPageWriter.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>results" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: src/Build/TaxonomyPageWriter.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>languages" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Build/UiViewData.php
+
+		-
+			message: '#^Ternary operator condition is always true\.$#'
+			identifier: ternary.alwaysTrue
+			count: 1
+			path: src/Console/BuildCommand.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>defaultLanguage" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Console/BuildCommand.php
+
+		-
+			message: '#^Variable \$feedTasks in PHPDoc tag @var does not exist\.$#'
+			identifier: varTag.variableNotFound
+			count: 1
+			path: src/Console/BuildCommand.php
+
+		-
+			message: '#^Offset 0 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: src/Console/ServeCommand.php
+
+		-
+			message: '#^Method YiiPress\\Content\\Parser\\ContentParser\:\:setAuthors\(\) has parameter \$authors with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Content/Parser/ContentParser.php
+
+		-
+			message: '#^Method YiiPress\\Content\\Parser\\EntryParser\:\:__construct\(\) has parameter \$authors with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Content/Parser/EntryParser.php
+
+		-
+			message: '#^Property YiiPress\\Content\\Parser\\EntryParser\:\:\$authors is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/Content/Parser/EntryParser.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Content/Parser/NavigationParser.php
+
+		-
+			message: '#^Property YiiPress\\Environment\:\:\$values type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Environment.php
+
+		-
+			message: '#^Static method YiiPress\\Environment\:\:setInteger\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: src/Environment.php
+
+		-
+			message: '#^Static method YiiPress\\Environment\:\:setString\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: src/Environment.php
+
+		-
+			message: '#^Method YiiPress\\Import\\Telegram\\Channel\:\:__construct\(\) has parameter \$message with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Import/Telegram/Channel.php
+
+		-
+			message: '#^Method YiiPress\\Import\\Telegram\\Message\:\:__construct\(\) has parameter \$message with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Import/Telegram/Message.php
+
+		-
+			message: '#^Method YiiPress\\Import\\Telegram\\Message\:\:convertTextArrayToMarkdown\(\) has parameter \$textArray with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Import/Telegram/Message.php
+
+		-
+			message: '#^Offset ''language'' on array\{type\: ''pre'', href\: mixed, language\: mixed, start\: true, end\: bool\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Import/Telegram/Message.php
+
+		-
+			message: '#^Property YiiPress\\Import\\Telegram\\Message\:\:\$tags type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Import/Telegram/Message.php
+
+		-
+			message: '#^Variable \$lines in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: src/Import/Telegram/Message.php
+
+		-
+			message: '#^Method YiiPress\\Import\\Telegram\\TelegramContentImporter\:\:parseIgnoredIds\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Import/Telegram/TelegramContentImporter.php
+
+		-
+			message: '#^Offset ''filename'' on array\{dirname\?\: string, basename\: string, extension\?\: string, filename\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Import/Telegram/TelegramContentImporter.php
+
+		-
+			message: '#^Parameter \#1 \$array \(non\-empty\-list\<YiiPress\\Processor\\ContentProcessorInterface\>\) of array_values is already a list, call has no effect\.$#'
+			identifier: arrayValues.list
+			count: 2
+			path: src/Processor/ContentProcessorPipeline.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between non\-empty\-string and '''' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/Processor/Shortcode/YouTubeProcessor.php
+
+		-
+			message: '#^Offset 2 on array\{non\-falsy\-string, non\-falsy\-string, string, non\-empty\-string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Processor/Toc/TocProcessor.php
+
+		-
+			message: '#^Method YiiPress\\Update\\AvailableUrlDownloader\:\:run\(\) has parameter \$environment with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Update/AvailableUrlDownloader.php
+
+		-
+			message: '#^Parameter \#1 \$callback of function call_user_func expects callable\(\)\: mixed, ''micro_get_self…'' given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Update/PackageLocator.php
+
+		-
+			message: '#^PHPDoc tag @var with type string is not subtype of native type non\-falsy\-string\.$#'
+			identifier: varTag.nativeType
+			count: 1
+			path: src/Update/ReleaseClient.php

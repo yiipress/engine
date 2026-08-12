@@ -33,7 +33,7 @@ MACOS_PACKAGE_ARGS ?=
 WINDOWS_PACKAGE_ARGS ?=
 export YIIPRESS_COMMIT
 
-.PHONY: build up open down stop clear shell yii composer rector cs-fix test test-coverage test-coverage-clover psalm composer-dependency-analyser bench-generate bench-generate-realistic bench bench-baseline bench-compare bench-profile profile-build php build-docs package package-phar package-linux package-macos package-windows package-distroless package-distroless-push prod-build prod-push prod-deploy help
+.PHONY: build up open down stop clear shell yii composer rector cs-fix test test-coverage test-coverage-clover psalm phpstan infection composer-dependency-analyser bench-generate bench-generate-realistic bench bench-baseline bench-compare bench-profile profile-build php build-docs package package-phar package-linux package-macos package-windows package-distroless package-distroless-push prod-build prod-push prod-deploy help
 
 #
 # Development
@@ -151,6 +151,16 @@ endif
 ifeq ($(PRIMARY_GOAL),psalm)
 psalm: ## Run Psalm
 	$(DOCKER_COMPOSE_DEV) run --rm app ./vendor/bin/psalm $(CLI_ARGS)
+endif
+
+ifeq ($(PRIMARY_GOAL),phpstan)
+phpstan: ## Run PHPStan
+	$(DOCKER_COMPOSE_DEV) run --rm app ./vendor/bin/phpstan analyse --configuration=phpstan.neon --memory-limit=1G $(CLI_ARGS)
+endif
+
+ifeq ($(PRIMARY_GOAL),infection)
+infection: ## Run mutation tests
+	$(DOCKER_COMPOSE_TEST) run --rm -e XDEBUG_MODE=coverage app ./vendor/bin/infection --configuration=infection.json.dist --threads=max --min-msi=100 $(CLI_ARGS)
 endif
 
 ifeq ($(PRIMARY_GOAL),composer-dependency-analyser)

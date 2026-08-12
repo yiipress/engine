@@ -1,0 +1,12 @@
+includes:
+    - phpstan-baseline.neon
+
+parameters:
+    level: 6
+    paths:
+        - src
+        - yii
+    tmpDir: runtime/cache/phpstan
+    excludePaths:
+        analyse:
+            - src/autoload.php

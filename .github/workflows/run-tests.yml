@@ -6,10 +6,28 @@ on:
       - master
     tags:
       - '*.*.*'
+    paths: &test-paths
+      - 'src/**'
+      - 'config/**'
+      - 'tests/**'
+      - 'themes/**'
+      - 'build/**'
+      - 'docker/**'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'phpunit.xml'
+      - 'Makefile'
+      - 'yii'
+      - '.github/workflows/run-tests.yml'
   pull_request:
     branches:
       - master
+    paths: *test-paths
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   portable-workers:

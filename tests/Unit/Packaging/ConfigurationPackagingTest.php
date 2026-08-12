@@ -594,10 +594,35 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('persist-credentials: false', $workflow);
         self::assertStringContainsString('make -- composer install --no-progress --no-interaction', $workflow);
         self::assertStringContainsString('make psalm', $workflow);
+        self::assertStringContainsString('make phpstan', $workflow);
         self::assertStringContainsString('make composer-dependency-analyser', $workflow);
         self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@v\d+/', $workflow);
         self::assertStringContainsString('errorBaseline="psalm-baseline.xml"', $psalmConfiguration);
         self::assertStringContainsString('<files psalm-version=', $psalmBaseline);
+    }
+
+    #[Test]
+    public function qualityWorkflowsUsePinnedActionsAndProjectMakeTargets(): void
+    {
+        $root = dirname(__DIR__, 3);
+        $mutation = file_get_contents($root . '/.github/workflows/mutation.yml');
+        $zizmor = file_get_contents($root . '/.github/workflows/zizmor.yml');
+        $bc = file_get_contents($root . '/.github/workflows/bc.yml');
+        $dependabot = file_get_contents($root . '/.github/dependabot.yml');
+        $makefile = file_get_contents($root . '/Makefile');
+
+        self::assertIsString($mutation);
+        self::assertIsString($zizmor);
+        self::assertIsString($bc);
+        self::assertIsString($dependabot);
+        self::assertIsString($makefile);
+        self::assertStringContainsString('make infection', $mutation);
+        self::assertStringContainsString('zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054', $zizmor);
+        self::assertStringContainsString('yiisoft/actions/.github/workflows/bc.yml@7a638dcf828c88690161f6f82f07519826a63152', $bc);
+        self::assertStringContainsString('package-ecosystem: composer', $dependabot);
+        self::assertStringContainsString('phpstan: ## Run PHPStan', $makefile);
+        self::assertStringContainsString('infection: ## Run mutation tests', $makefile);
+        self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@v\d+/', $mutation . $zizmor . $bc);
     }
 
     #[Test]

@@ -1,0 +1,15 @@
+{
+    "$schema": "vendor/infection/infection/resources/schema.json",
+    "source": {
+        "directories": [
+            "src/Content/Parser"
+        ]
+    },
+    "logs": {
+        "text": "php://stderr"
+    },
+    "mutators": {
+        "@default": true
+    },
+    "testFrameworkOptions": "--filter=SiteIconFinderTest"
+}

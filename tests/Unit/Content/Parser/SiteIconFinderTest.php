@@ -46,6 +46,16 @@ final class SiteIconFinderTest extends TestCase
         assertSame([], (new SiteIconFinder())->find($this->contentDir));
     }
 
+    public function testFindsMultipleSupportedIcons(): void
+    {
+        file_put_contents($this->contentDir . '/icon.svg', '<svg/>');
+        file_put_contents($this->contentDir . '/icon.png', 'png');
+
+        $icons = (new SiteIconFinder())->find($this->contentDir);
+
+        assertSame(['icon.svg', 'icon.png'], array_column($icons, 'path'));
+    }
+
     public function testReturnsNoIconsWhenContentDirectoryHasNone(): void
     {
         assertSame([], (new SiteIconFinder())->find($this->contentDir));
