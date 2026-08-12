@@ -633,6 +633,8 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('package-ecosystem: composer', $dependabot);
         self::assertStringContainsString('phpstan: ## Run PHPStan', $makefile);
         self::assertStringContainsString('infection: ## Run mutation tests', $makefile);
+        self::assertStringContainsString('--min-covered-msi=78', $makefile);
+        self::assertStringNotContainsString('--filter=SiteIconFinderTest', file_get_contents($root . '/infection.json.dist'));
         self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@v\d+/', $mutation . $benchmark . $autoFormat . $zizmor);
     }
 

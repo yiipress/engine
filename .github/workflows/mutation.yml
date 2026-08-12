@@ -3,9 +3,10 @@ name: Mutation Tests
 on:
   pull_request:
     paths: &mutation-paths
-      - 'src/Content/Parser/**'
-      - 'tests/Unit/Content/Parser/SiteIconFinderTest.php'
-      - 'tests/bootstrap.php'
+      - 'src/**'
+      - 'config/**'
+      - 'tests/**'
+      - 'themes/**'
       - 'composer.json'
       - 'composer.lock'
       - 'infection.json.dist'
