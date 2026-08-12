@@ -617,7 +617,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}', $workflow);
         self::assertStringContainsString("if: env.CODECOV_TOKEN != ''", $workflow);
         self::assertStringContainsString('token: ${{ env.CODECOV_TOKEN }}', $workflow);
-        self::assertStringContainsString('uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354', $workflow);
+        self::assertStringContainsString('uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f', $workflow);
         self::assertStringContainsString('fail_ci_if_error: true', $workflow);
         self::assertStringContainsString("if: env.CODECOV_TOKEN == ''", $workflow);
         self::assertStringContainsString('generated coverage but skipped Codecov upload', $workflow);
