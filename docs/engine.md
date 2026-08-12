@@ -170,7 +170,7 @@ This approach avoids shared memory and synchronization. Feed generation can spli
 
 Development and CI commands run in Docker through `make`:
 
-- `make test`, `make psalm`, `make phpstan`, and `make composer-dependency-analyser` validate behavior and static correctness;
+- `make test`, `make phpstan`, and `make composer-dependency-analyser` validate behavior and static correctness;
 - `make infection` mutation-tests the initially scoped content icon discovery code at a required 100% MSI;
 - `make bench` records aggregate results together with environment information.
 

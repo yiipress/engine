@@ -11,9 +11,6 @@ on:
       - 'yii'
       - 'composer.json'
       - 'composer.lock'
-      - 'psalm.xml'
-      - 'psalm-baseline.xml'
-      - 'stubs/**'
       - 'phpstan.neon'
       - 'phpstan-baseline.neon'
       - 'composer-dependency-analyser.php'
@@ -31,23 +28,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  psalm:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
-        with:
-          persist-credentials: false
-
-      - name: Install dependencies
-        run: make -- composer install --no-progress --no-interaction
-
-      - name: Run Psalm
-        run: make psalm
-
   phpstan:
     runs-on: ubuntu-latest
     permissions:

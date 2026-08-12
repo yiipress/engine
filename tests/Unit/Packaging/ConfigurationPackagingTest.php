@@ -74,7 +74,6 @@ final class ConfigurationPackagingTest extends TestCase
     {
         $commands = require dirname(__DIR__, 3) . '/config/console/commands.php';
 
-        /** @psalm-suppress RedundantCondition */
         assertSame(ServeCommand::class, $commands['serve']);
         assertSame(InitContentCommand::class, $commands['init:content']);
         assertSame(InitPluginCommand::class, $commands['init:plugin']);
@@ -583,22 +582,15 @@ final class ConfigurationPackagingTest extends TestCase
     public function staticAnalysisWorkflowRunsProjectAnalysisTargets(): void
     {
         $workflow = file_get_contents(dirname(__DIR__, 3) . '/.github/workflows/static-analysis.yml');
-        $psalmConfiguration = file_get_contents(dirname(__DIR__, 3) . '/psalm.xml');
-        $psalmBaseline = file_get_contents(dirname(__DIR__, 3) . '/psalm-baseline.xml');
         self::assertIsString($workflow);
-        self::assertIsString($psalmConfiguration);
-        self::assertIsString($psalmBaseline);
 
         self::assertStringContainsString('name: Static Analysis', $workflow);
         self::assertStringContainsString('uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5', $workflow);
         self::assertStringContainsString('persist-credentials: false', $workflow);
         self::assertStringContainsString('make -- composer install --no-progress --no-interaction', $workflow);
-        self::assertStringContainsString('make psalm', $workflow);
         self::assertStringContainsString('make phpstan', $workflow);
         self::assertStringContainsString('make composer-dependency-analyser', $workflow);
         self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@v\d+/', $workflow);
-        self::assertStringContainsString('errorBaseline="psalm-baseline.xml"', $psalmConfiguration);
-        self::assertStringContainsString('<files psalm-version=', $psalmBaseline);
     }
 
     #[Test]
