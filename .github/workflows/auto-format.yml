@@ -50,7 +50,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           HEAD_REF: ${{ github.head_ref || github.ref_name }}
         run: |
-          git add -- ':glob:**/*.php'
+          git add -- '*.php'
           if git diff --cached --quiet; then
             echo 'No formatting changes.'
             exit 0
