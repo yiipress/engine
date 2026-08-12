@@ -87,7 +87,7 @@ final class EntryRendererTest extends TestCase
         assertStringContainsString('<title>Logo First — Test Site</title>', $html);
     }
 
-    public function testRendersDetectedSiteIcons(): void
+    public function testRendersConfiguredSiteIcons(): void
     {
         $entryFile = $this->contentDir . '/blog/post.md';
         file_put_contents($entryFile, "---\ntitle: Icon\n---\n\nBody.\n");

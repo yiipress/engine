@@ -7,7 +7,7 @@ Content that YiiPress is generating from is stored in the `content` directory.
 ```
 content/
 ├── icon.svg                       # Site favicon (other image formats are supported)
-├── assets/                        # Global assets (logo, favicon, fonts)
+├── assets/                        # Global assets (logo, fonts, downloads)
 │   └── logo.svg
 ├── blog/                          # Collection: blog
 │   ├── _collection.yaml           # Collection config (title, description, pagination settings)

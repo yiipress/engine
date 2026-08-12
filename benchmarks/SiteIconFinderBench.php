@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiPress\Benchmarks;
 
 use PhpBench\Attributes as Bench;
+use RuntimeException;
 use YiiPress\Content\Parser\SiteIconFinder;
 
 #[Bench\BeforeMethods('setUp')]
@@ -15,8 +16,7 @@ final class SiteIconFinderBench
 
     public function setUp(): void
     {
-        $this->contentDir = sys_get_temp_dir() . '/yiipress-icon-bench-' . uniqid();
-        mkdir($this->contentDir);
+        $this->contentDir = $this->createTempDirectory();
         file_put_contents($this->contentDir . '/icon.svg', '<svg/>');
     }
 
@@ -31,5 +31,17 @@ final class SiteIconFinderBench
     public function benchFindIcon(): void
     {
         (new SiteIconFinder())->find($this->contentDir);
+    }
+
+    private function createTempDirectory(): string
+    {
+        for ($attempt = 0; $attempt < 10; $attempt++) {
+            $path = sys_get_temp_dir() . '/yiipress-icon-bench-' . bin2hex(random_bytes(16));
+            if (@mkdir($path, 0o700)) {
+                return $path;
+            }
+        }
+
+        throw new RuntimeException('Could not create benchmark temp directory.');
     }
 }
