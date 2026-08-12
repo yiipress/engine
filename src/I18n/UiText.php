@@ -14,7 +14,6 @@ use function array_values;
 use function explode;
 use function file_get_contents;
 use function is_array;
-use function is_string;
 use function sprintf;
 use function str_replace;
 use function strtolower;
@@ -94,8 +93,7 @@ final class UiText
         TemplateResolver $templateResolver,
         string $themeName = '',
         string $defaultLanguage = 'en',
-    ): self
-    {
+    ): self {
         $normalizedLanguage = self::normalizeLanguage($language);
         $normalizedDefaultLanguage = self::normalizeLanguage($defaultLanguage);
         $catalogs = [

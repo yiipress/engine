@@ -327,7 +327,7 @@ final class MediumContentImporter implements ContentImporterInterface
     private function listField(mixed $value): array
     {
         if (is_array($value)) {
-            return array_values(array_filter(array_map(static fn (mixed $item): string => trim((string) $item), $value)));
+            return array_values(array_filter(array_map(static fn(mixed $item): string => trim((string) $item), $value)));
         }
 
         $value = trim((string) $value);
@@ -339,7 +339,7 @@ final class MediumContentImporter implements ContentImporterInterface
             ? explode(',', $value)
             : (preg_split('/\s+/', $value) ?: []);
 
-        return array_values(array_filter(array_map(static fn (string $item): string => trim($item), $items)));
+        return array_values(array_filter(array_map(trim(...), $items)));
     }
 
     private function filesystemSlug(string $slug): string

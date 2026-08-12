@@ -40,7 +40,7 @@ final class EntrySorterTest extends TestCase
 
         $sorted = EntrySorter::sort($entries, $collection);
 
-        assertSame(['new', 'mid', 'old'], array_map(static fn (Entry $e) => $e->slug, $sorted));
+        assertSame(['new', 'mid', 'old'], array_map(static fn(Entry $e) => $e->slug, $sorted));
     }
 
     public function testSortByDateAscending(): void
@@ -54,7 +54,7 @@ final class EntrySorterTest extends TestCase
 
         $sorted = EntrySorter::sort($entries, $collection);
 
-        assertSame(['old', 'mid', 'new'], array_map(static fn (Entry $e) => $e->slug, $sorted));
+        assertSame(['old', 'mid', 'new'], array_map(static fn(Entry $e) => $e->slug, $sorted));
     }
 
     public function testSortByWeight(): void
@@ -68,7 +68,7 @@ final class EntrySorterTest extends TestCase
 
         $sorted = EntrySorter::sort($entries, $collection);
 
-        assertSame(['light', 'medium', 'heavy'], array_map(static fn (Entry $e) => $e->slug, $sorted));
+        assertSame(['light', 'medium', 'heavy'], array_map(static fn(Entry $e) => $e->slug, $sorted));
     }
 
     public function testSortByTitle(): void
@@ -82,7 +82,7 @@ final class EntrySorterTest extends TestCase
 
         $sorted = EntrySorter::sort($entries, $collection);
 
-        assertSame(['a', 'b', 'c'], array_map(static fn (Entry $e) => $e->slug, $sorted));
+        assertSame(['a', 'b', 'c'], array_map(static fn(Entry $e) => $e->slug, $sorted));
     }
 
     public function testNullDatesAreSortedFirst(): void
@@ -95,7 +95,7 @@ final class EntrySorterTest extends TestCase
 
         $sorted = EntrySorter::sort($entries, $collection);
 
-        assertSame(['undated', 'dated'], array_map(static fn (Entry $e) => $e->slug, $sorted));
+        assertSame(['undated', 'dated'], array_map(static fn(Entry $e) => $e->slug, $sorted));
     }
 
     public function testSortByExplicitOrder(): void
@@ -109,7 +109,7 @@ final class EntrySorterTest extends TestCase
 
         $sorted = EntrySorter::sort($entries, $collection);
 
-        assertSame(['second', 'third', 'first'], array_map(static fn (Entry $e) => $e->slug, $sorted));
+        assertSame(['second', 'third', 'first'], array_map(static fn(Entry $e) => $e->slug, $sorted));
     }
 
     public function testExplicitOrderOverridesSortBy(): void
@@ -122,7 +122,7 @@ final class EntrySorterTest extends TestCase
 
         $sorted = EntrySorter::sort($entries, $collection);
 
-        assertSame(['heavy', 'light'], array_map(static fn (Entry $e) => $e->slug, $sorted));
+        assertSame(['heavy', 'light'], array_map(static fn(Entry $e) => $e->slug, $sorted));
     }
 
     public function testExplicitOrderUnlistedEntriesGoToEnd(): void

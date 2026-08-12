@@ -48,13 +48,13 @@ final class AvailableUrlDownloader implements UrlDownloaderInterface
         @unlink($destination);
 
         if (!$this->isHttpUrl($url)) {
-            (new StreamUrlDownloader())->download($url, $destination);
+            new StreamUrlDownloader()->download($url, $destination);
             return;
         }
 
         $transport = $this->transport ??= $this->selectTransport();
         if ($transport === 'stream') {
-            (new StreamUrlDownloader())->download($url, $destination);
+            new StreamUrlDownloader()->download($url, $destination);
             return;
         }
 

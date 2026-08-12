@@ -15,10 +15,8 @@ use DateTimeImmutable;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
-
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-
 use SplFileInfo;
 
 use function PHPUnit\Framework\assertFileExists;

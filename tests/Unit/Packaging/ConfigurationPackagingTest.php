@@ -581,6 +581,10 @@ final class ConfigurationPackagingTest extends TestCase
             $readme,
         );
         self::assertStringContainsString(
+            '[![Mutation Score](https://img.shields.io/endpoint?style=flat&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2Fyiipress%2Fengine%2Fmaster)]',
+            $readme,
+        );
+        self::assertStringContainsString(
             '[![Workflow Security](https://github.com/yiipress/engine/actions/workflows/zizmor.yml/badge.svg)]',
             $readme,
         );
@@ -606,20 +610,46 @@ final class ConfigurationPackagingTest extends TestCase
     {
         $root = dirname(__DIR__, 3);
         $mutation = file_get_contents($root . '/.github/workflows/mutation.yml');
+        $benchmark = file_get_contents($root . '/.github/workflows/benchmark.yml');
+        $autoFormat = file_get_contents($root . '/.github/workflows/auto-format.yml');
         $zizmor = file_get_contents($root . '/.github/workflows/zizmor.yml');
         $dependabot = file_get_contents($root . '/.github/dependabot.yml');
         $makefile = file_get_contents($root . '/Makefile');
 
         self::assertIsString($mutation);
+        self::assertIsString($benchmark);
+        self::assertIsString($autoFormat);
         self::assertIsString($zizmor);
         self::assertIsString($dependabot);
         self::assertIsString($makefile);
         self::assertStringContainsString('make infection', $mutation);
+        self::assertStringContainsString('STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}', $mutation);
+        self::assertStringContainsString('make bench-baseline', $benchmark);
+        self::assertStringContainsString('make bench-compare BENCH_ASSERT=', $benchmark);
+        self::assertStringContainsString('make rector', $autoFormat);
+        self::assertStringContainsString('make cs-fix', $autoFormat);
+        self::assertStringContainsString('git push origin "HEAD:${HEAD_REF}"', $autoFormat);
         self::assertStringContainsString('zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054', $zizmor);
         self::assertStringContainsString('package-ecosystem: composer', $dependabot);
         self::assertStringContainsString('phpstan: ## Run PHPStan', $makefile);
         self::assertStringContainsString('infection: ## Run mutation tests', $makefile);
-        self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@v\d+/', $mutation . $zizmor);
+        self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@v\d+/', $mutation . $benchmark . $autoFormat . $zizmor);
+    }
+
+    #[Test]
+    public function repositoryProvidesContributionAndSecurityGuidance(): void
+    {
+        $root = dirname(__DIR__, 3);
+        $security = file_get_contents($root . '/.github/SECURITY.md');
+        $contributing = file_get_contents($root . '/.github/CONTRIBUTING.md');
+        $pullRequestTemplate = file_get_contents($root . '/.github/PULL_REQUEST_TEMPLATE.md');
+
+        self::assertIsString($security);
+        self::assertIsString($contributing);
+        self::assertIsString($pullRequestTemplate);
+        self::assertStringContainsString('/security/advisories/new', $security);
+        self::assertStringContainsString('make test', $contributing);
+        self::assertStringContainsString('Benchmark added or updated?', $pullRequestTemplate);
     }
 
     #[Test]

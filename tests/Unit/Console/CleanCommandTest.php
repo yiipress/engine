@@ -7,7 +7,6 @@ namespace YiiPress\Tests\Unit\Console;
 use YiiPress\RuntimePaths;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
-
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;

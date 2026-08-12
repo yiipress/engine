@@ -1,0 +1,61 @@
+name: Benchmark Regression
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths: &benchmark-paths
+      - 'src/**'
+      - 'config/**'
+      - 'themes/**'
+      - 'benchmarks/**'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'phpbench.json'
+      - 'Makefile'
+      - 'docker/**'
+      - '.github/workflows/benchmark.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pull request
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          path: current
+          persist-credentials: false
+
+      - name: Checkout baseline
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          path: baseline
+          ref: master
+          persist-credentials: false
+
+      - name: Install baseline dependencies
+        working-directory: baseline
+        run: make -- composer install --no-progress --no-interaction
+
+      - name: Record baseline
+        working-directory: baseline
+        run: make bench-baseline
+
+      - name: Install pull request dependencies
+        working-directory: current
+        run: make -- composer install --no-progress --no-interaction
+
+      - name: Copy baseline results
+        run: cp -R baseline/.phpbench current/.phpbench
+
+      - name: Reject benchmark regressions
+        working-directory: current
+        run: make bench-compare BENCH_ASSERT='mode(variant.time.avg) <= mode(baseline.time.avg) +/- 10%'

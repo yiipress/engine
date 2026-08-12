@@ -29,6 +29,7 @@ PACKAGE_WINDOWS_DIST ?= dist/windows-amd64
 PACKAGE_PHAR_DIST ?= dist/phar
 PACKAGE_IMAGE ?= ${IMAGE}-static
 YIIPRESS_COMMIT ?= $(shell git rev-parse HEAD)
+BENCH_ASSERT ?=
 MACOS_PACKAGE_ARGS ?=
 WINDOWS_PACKAGE_ARGS ?=
 export YIIPRESS_COMMIT
@@ -185,7 +186,7 @@ endif
 
 ifeq ($(PRIMARY_GOAL),bench-compare)
 bench-compare: ## Run benchmarks (xdebug off) and compare with baseline. Use BENCH_FILTER=ClassName to filter.
-	$(DOCKER_COMPOSE_DEV) run --rm -e XDEBUG_MODE=off app ./vendor/bin/phpbench run --report=aggregate --ref=original --retry-threshold=2 $(if $(BENCH_FILTER),--filter=$(BENCH_FILTER)) $(CLI_ARGS)
+	$(DOCKER_COMPOSE_DEV) run --rm -e XDEBUG_MODE=off app ./vendor/bin/phpbench run --report=aggregate --ref=original --retry-threshold=2 $(if $(BENCH_ASSERT),--assert='$(BENCH_ASSERT)') $(if $(BENCH_FILTER),--filter=$(BENCH_FILTER)) $(CLI_ARGS)
 endif
 
 ifeq ($(PRIMARY_GOAL),bench-profile)

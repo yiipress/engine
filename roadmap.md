@@ -47,7 +47,7 @@
 
 ## Priority 3: Developer experience
 
-- [x] CI quality tooling: PHPStan, mutation testing, workflow security analysis, dependency updates, concurrency, and path filtering
+- [x] CI quality tooling: PHPStan, mutation testing with Stryker reporting, benchmark regression checks, automatic formatting, workflow security analysis, dependency updates, concurrency, and path filtering
 - [x] Live reload / file watching during `yiipress serve`
 - [x] Windows-compatible `yiipress serve` without PCNTL or POSIX signal handlers
 - [x] Multiple build workers on Windows without PCNTL

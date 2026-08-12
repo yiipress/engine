@@ -62,7 +62,7 @@ final class SiteConfigParserTest extends TestCase
         file_put_contents($contentDir . '/icon.webp', 'webp');
 
         try {
-            $config = (new SiteConfigParser())->parse($contentDir . '/config.yaml');
+            $config = new SiteConfigParser()->parse($contentDir . '/config.yaml');
 
             assertSame('icon.webp', $config->icons[0]->path);
             assertSame('image/webp', $config->icons[0]->type);
@@ -84,7 +84,7 @@ final class SiteConfigParserTest extends TestCase
         file_put_contents($contentDir . '/data/ignored.txt', "name: Ignored\n");
 
         try {
-            $config = (new SiteConfigParser())->parse($contentDir . '/config.yaml');
+            $config = new SiteConfigParser()->parse($contentDir . '/config.yaml');
 
             assertSame([
                 'active' => false,
@@ -111,7 +111,7 @@ final class SiteConfigParserTest extends TestCase
         file_put_contents($dataFile, "name: [broken\n");
 
         try {
-            (new SiteConfigParser())->parse($contentDir . '/config.yaml');
+            new SiteConfigParser()->parse($contentDir . '/config.yaml');
             $this->fail('Expected invalid content configuration exception.');
         } catch (InvalidContentConfigException $e) {
             assertSame($dataFile, $e->filePath());
@@ -141,7 +141,7 @@ final class SiteConfigParserTest extends TestCase
             . "      - processors/feed-before.php\n",
         );
 
-        $config = (new SiteConfigParser())->parse($filePath);
+        $config = new SiteConfigParser()->parse($filePath);
 
         assertFalse($config->processors->discover);
         assertSame(['processors/before.php'], $config->processors->contentBeforeMarkdown);
@@ -157,7 +157,7 @@ final class SiteConfigParserTest extends TestCase
         $filePath = sys_get_temp_dir() . '/yiipress-site-config-' . uniqid() . '.yaml';
         file_put_contents($filePath, "title: Test\nlanguages: [en]\nprocessors: false\n");
 
-        $config = (new SiteConfigParser())->parse($filePath);
+        $config = new SiteConfigParser()->parse($filePath);
 
         assertFalse($config->processors->discover);
 
@@ -264,7 +264,7 @@ final class SiteConfigParserTest extends TestCase
         file_put_contents($filePath, "title: Test\n");
 
         try {
-            (new SiteConfigParser())->parse($filePath);
+            new SiteConfigParser()->parse($filePath);
             $this->fail('Expected invalid content configuration exception.');
         } catch (InvalidContentConfigException $e) {
             assertSame('Invalid content configuration', $e->getName());
@@ -285,7 +285,7 @@ final class SiteConfigParserTest extends TestCase
         file_put_contents($filePath, "- title\n");
 
         try {
-            (new SiteConfigParser())->parse($filePath);
+            new SiteConfigParser()->parse($filePath);
             $this->fail('Expected invalid content configuration exception.');
         } catch (InvalidContentConfigException $e) {
             assertSame('The site configuration file must contain YAML key-value pairs.', $e->getMessage());

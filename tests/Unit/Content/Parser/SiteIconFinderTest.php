@@ -33,7 +33,7 @@ final class SiteIconFinderTest extends TestCase
     {
         file_put_contents($this->contentDir . '/' . $filename, 'icon');
 
-        $icons = (new SiteIconFinder())->find($this->contentDir);
+        $icons = new SiteIconFinder()->find($this->contentDir);
 
         assertSame([$filename], array_column($icons, 'path'));
         assertSame([$type], array_column($icons, 'type'));
@@ -43,7 +43,7 @@ final class SiteIconFinderTest extends TestCase
     {
         file_put_contents($this->contentDir . '/favicon.ico', 'ignored');
 
-        assertSame([], (new SiteIconFinder())->find($this->contentDir));
+        assertSame([], new SiteIconFinder()->find($this->contentDir));
     }
 
     public function testFindsMultipleSupportedIcons(): void
@@ -51,14 +51,14 @@ final class SiteIconFinderTest extends TestCase
         file_put_contents($this->contentDir . '/icon.svg', '<svg/>');
         file_put_contents($this->contentDir . '/icon.png', 'png');
 
-        $icons = (new SiteIconFinder())->find($this->contentDir);
+        $icons = new SiteIconFinder()->find($this->contentDir);
 
         assertSame(['icon.svg', 'icon.png'], array_column($icons, 'path'));
     }
 
     public function testReturnsNoIconsWhenContentDirectoryHasNone(): void
     {
-        assertSame([], (new SiteIconFinder())->find($this->contentDir));
+        assertSame([], new SiteIconFinder()->find($this->contentDir));
     }
 
     /**

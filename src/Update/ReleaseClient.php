@@ -20,14 +20,14 @@ use function str_starts_with;
 
 use const JSON_THROW_ON_ERROR;
 
-final class ReleaseClient
+final readonly class ReleaseClient
 {
     private const string REPOSITORY = 'yiipress/engine';
 
     public function __construct(
-        private readonly string $downloadBaseUrl = 'https://github.com/' . self::REPOSITORY . '/releases',
-        private readonly string $apiUrl = 'https://api.github.com/repos/' . self::REPOSITORY . '/releases?per_page=100',
-        private readonly UrlDownloaderInterface $downloader = new AvailableUrlDownloader(),
+        private string $downloadBaseUrl = 'https://github.com/' . self::REPOSITORY . '/releases',
+        private string $apiUrl = 'https://api.github.com/repos/' . self::REPOSITORY . '/releases?per_page=100',
+        private UrlDownloaderInterface $downloader = new AvailableUrlDownloader(),
     ) {}
 
     /** @return array{version: string, checksums: string} */

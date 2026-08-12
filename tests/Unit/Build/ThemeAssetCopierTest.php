@@ -10,14 +10,12 @@ use YiiPress\Build\ThemeAssetCopier;
 use YiiPress\Build\ThemeRegistry;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
-
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
 use function PHPUnit\Framework\assertFileExists;
 use function PHPUnit\Framework\assertFileDoesNotExist;
 use function PHPUnit\Framework\assertSame;
-use function PHPUnit\Framework\assertStringContainsString;
 use function PHPUnit\Framework\assertStringEqualsFile;
 
 final class ThemeAssetCopierTest extends TestCase
@@ -145,7 +143,7 @@ final class ThemeAssetCopierTest extends TestCase
         $registry = new ThemeRegistry();
         $registry->register(new Theme('test', $this->tempDir . '/theme'));
 
-        $mappings = (new ThemeAssetCopier())->mappings($registry);
+        $mappings = new ThemeAssetCopier()->mappings($registry);
 
         assertSame('assets/themes/test/style.css', $mappings[$this->tempDir . '/theme/assets/style.css']);
     }

@@ -70,14 +70,14 @@ final class ApplicationRunner extends BaseApplicationRunner
         $exitCode = ExitCode::UNSPECIFIED_ERROR;
         $input = new ArgvInput();
         $output = new ConsoleBufferedOutput();
-        (new ConsoleOutputConfigurator())->configure($input, $output);
+        new ConsoleOutputConfigurator()->configure($input, $output);
 
         try {
             $application->start($input);
             $exitCode = $application->run($input, $output);
         } catch (Throwable $throwable) {
-            $exitCode = (new ExceptionExitCode())->resolve($throwable);
-            (new ExceptionRenderer())->render($throwable, $output);
+            $exitCode = new ExceptionExitCode()->resolve($throwable);
+            new ExceptionRenderer()->render($throwable, $output);
         } finally {
             $application->shutdown($exitCode);
             exit($exitCode);

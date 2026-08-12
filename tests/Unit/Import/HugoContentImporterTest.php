@@ -49,7 +49,7 @@ final class HugoContentImporterTest extends TestCase
             . "Body text.\n",
         );
 
-        $result = (new HugoContentImporter())->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
+        $result = new HugoContentImporter()->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
 
         assertSame(1, $result->importedCount());
         assertSame(1, $result->totalMessages());
@@ -79,7 +79,7 @@ final class HugoContentImporterTest extends TestCase
             . "Body.\n",
         );
 
-        $result = (new HugoContentImporter())->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
+        $result = new HugoContentImporter()->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
 
         assertSame(1, $result->importedCount());
         $content = file_get_contents($this->targetDir . '/blog/2024-04-01-heading-title.md');
@@ -93,7 +93,7 @@ final class HugoContentImporterTest extends TestCase
     {
         $this->removeDir($this->sourceDir . '/content');
 
-        $result = (new HugoContentImporter())->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
+        $result = new HugoContentImporter()->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
 
         assertSame(0, $result->importedCount());
         assertCount(1, $result->warnings());
@@ -111,7 +111,7 @@ final class HugoContentImporterTest extends TestCase
             . "Body.\n",
         );
 
-        $result = (new HugoContentImporter())->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
+        $result = new HugoContentImporter()->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
 
         assertSame(1, $result->importedCount());
         $this->assertFileExists($this->targetDir . '/blog/outside.md');

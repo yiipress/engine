@@ -6,7 +6,10 @@
         ]
     },
     "logs": {
-        "text": "php://stderr"
+        "text": "php://stderr",
+        "stryker": {
+            "report": "master"
+        }
     },
     "mutators": {
         "@default": true

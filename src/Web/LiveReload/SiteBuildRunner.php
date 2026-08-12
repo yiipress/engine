@@ -6,15 +6,9 @@ namespace YiiPress\Web\LiveReload;
 
 final class SiteBuildRunner
 {
-    private string $lastOutput;
+    private string $lastOutput = '';
 
-    public function __construct(
-        private string $yiiBinary,
-        private string $contentDir,
-        private string $outputDir,
-    ) {
-        $this->lastOutput = '';
-    }
+    public function __construct(private string $yiiBinary, private string $contentDir, private string $outputDir) {}
 
     public function build(): SiteBuildResult
     {

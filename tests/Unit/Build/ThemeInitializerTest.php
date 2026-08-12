@@ -44,7 +44,7 @@ final class ThemeInitializerTest extends TestCase
 
     public function testInitializesThemeFilesRecursively(): void
     {
-        $copied = (new ThemeInitializer())->initialize(
+        $copied = new ThemeInitializer()->initialize(
             new Theme('minimal', $this->rootDir . '/source'),
             $this->rootDir . '/target',
         );
@@ -64,7 +64,7 @@ final class ThemeInitializerTest extends TestCase
         $this->expectExceptionMessage('Target file already exists');
 
         try {
-            (new ThemeInitializer())->initialize(
+            new ThemeInitializer()->initialize(
                 new Theme('minimal', $this->rootDir . '/source'),
                 $this->rootDir . '/target',
             );

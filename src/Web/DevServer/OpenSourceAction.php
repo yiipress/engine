@@ -39,7 +39,7 @@ final readonly class OpenSourceAction
         $outputDir = $this->serverPath($request, 'YIIPRESS_OUTPUT_DIR', $projectRoot . '/output');
         $manifestPath = RuntimePaths::cachePath($projectRoot) . '/build-manifest-' . hash('xxh128', $outputDir) . '.json';
 
-        $sourceFile = (new SourceFileResolver($manifestPath, $contentDir, $outputDir))->resolve($path);
+        $sourceFile = new SourceFileResolver($manifestPath, $contentDir, $outputDir)->resolve($path);
         if ($sourceFile === null) {
             return $this->json(404, ['error' => 'Source file not found.']);
         }

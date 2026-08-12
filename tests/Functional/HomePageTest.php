@@ -34,7 +34,7 @@ final class HomePageTest extends TestCase
     {
         $this->removeDir($this->outputDir);
 
-        $errorHandler = set_error_handler(static fn () => false);
+        $errorHandler = set_error_handler(static fn() => false);
         restore_error_handler();
         $exceptionHandler = set_exception_handler(null);
         restore_exception_handler();
@@ -57,7 +57,7 @@ final class HomePageTest extends TestCase
         assertStringContainsString('Hello', $body->getContents());
 
         while (true) {
-            $current = set_error_handler(static fn () => false);
+            $current = set_error_handler(static fn() => false);
             restore_error_handler();
             if ($current === $errorHandler) {
                 break;
@@ -77,7 +77,7 @@ final class HomePageTest extends TestCase
 
     public function testReturns404WhenOutputMissing(): void
     {
-        $errorHandler = set_error_handler(static fn () => false);
+        $errorHandler = set_error_handler(static fn() => false);
         restore_error_handler();
         $exceptionHandler = set_exception_handler(null);
         restore_exception_handler();
@@ -94,7 +94,7 @@ final class HomePageTest extends TestCase
         assertSame(404, $response->getStatusCode());
 
         while (true) {
-            $current = set_error_handler(static fn () => false);
+            $current = set_error_handler(static fn() => false);
             restore_error_handler();
             if ($current === $errorHandler) {
                 break;

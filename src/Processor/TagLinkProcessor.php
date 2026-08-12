@@ -18,9 +18,9 @@ use function strip_tags;
 
 final class TagLinkProcessor implements ContentProcessorInterface, RootPathAwareProcessorInterface
 {
-    private const HASHTAG_PATTERN = '/(?<!\w)#(\w+(?:-\w+)*)(?![\w-])/';
-    private const PROTECTED_BLOCK_PATTERN = '/<pre[^>]*>.*?<\/pre>|<code[^>]*>.*?<\/code>|<a[^>]*>.*?<\/a>/is';
-    private const HTML_SPLIT_PATTERN = '/(<pre[^>]*>.*?<\/pre>|<code[^>]*>.*?<\/code>|<a[^>]*>.*?<\/a>|<[^>]+>)/is';
+    private const string HASHTAG_PATTERN = '/(?<!\w)#(\w+(?:-\w+)*)(?![\w-])/';
+    private const string PROTECTED_BLOCK_PATTERN = '/<pre[^>]*>.*?<\/pre>|<code[^>]*>.*?<\/code>|<a[^>]*>.*?<\/a>/is';
+    private const string HTML_SPLIT_PATTERN = '/(<pre[^>]*>.*?<\/pre>|<code[^>]*>.*?<\/code>|<a[^>]*>.*?<\/a>|<[^>]+>)/is';
 
     public function __construct(
         private string $rootPath = '/',
@@ -79,7 +79,7 @@ final class TagLinkProcessor implements ContentProcessorInterface, RootPathAware
                 $url = UrlResolver::sitePath('/tags/' . $tagUrl . '/', $this->rootPath);
                 return '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" class="tag-link">#' . htmlspecialchars($tagDisplay, ENT_QUOTES, 'UTF-8') . '</a>';
             },
-            $text
+            $text,
         );
 
         return $result ?? $text;

@@ -36,10 +36,10 @@ use function sys_get_temp_dir;
 use function trim;
 use function unlink;
 
-final class PortableWorkerPool
+final readonly class PortableWorkerPool
 {
     /** @param list<string>|null $executableCommand */
-    public function __construct(private readonly ?array $executableCommand = null) {}
+    public function __construct(private ?array $executableCommand = null) {}
 
     /**
      * @param list<WorkerJobInterface> $jobs

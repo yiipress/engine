@@ -127,7 +127,7 @@ final class OEmbedProcessorTest extends TestCase
     public function testSupportsCustomProvidersViaInterface(): void
     {
         $processor = new OEmbedProcessor(
-            new class () implements OEmbedInterface {
+            new class implements OEmbedInterface {
                 public function supportsOEmbed(string $url): bool
                 {
                     return $url === 'https://example.com/custom';

@@ -30,7 +30,7 @@ final class ParallelTaskRunnerTest extends TestCase
     {
         $runner = new ParallelTaskRunner();
 
-        $count = $runner->run([1, 2, 3], 1, static fn (int $task): int => $task);
+        $count = $runner->run([1, 2, 3], 1, static fn(int $task): int => $task);
 
         assertSame(6, $count);
     }
@@ -39,7 +39,7 @@ final class ParallelTaskRunnerTest extends TestCase
     {
         $runner = new ParallelTaskRunner();
 
-        $count = $runner->run([1, 2, 3, 4], 2, static fn (int $task): int => $task);
+        $count = $runner->run([1, 2, 3, 4], 2, static fn(int $task): int => $task);
 
         assertSame(10, $count);
     }

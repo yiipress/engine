@@ -78,7 +78,7 @@ final class GhostContentImporterTest extends TestCase
             ]],
         ], JSON_THROW_ON_ERROR));
 
-        $result = (new GhostContentImporter())->import(['file' => $this->sourceFile], $this->targetDir, 'blog');
+        $result = new GhostContentImporter()->import(['file' => $this->sourceFile], $this->targetDir, 'blog');
 
         assertSame(2, $result->totalMessages());
         assertSame(2, $result->importedCount());
@@ -127,7 +127,7 @@ final class GhostContentImporterTest extends TestCase
             ],
         ], JSON_THROW_ON_ERROR));
 
-        $result = (new GhostContentImporter())->import(['file' => $this->sourceFile], $this->targetDir, 'blog');
+        $result = new GhostContentImporter()->import(['file' => $this->sourceFile], $this->targetDir, 'blog');
 
         assertSame(2, $result->totalMessages());
         assertSame(1, $result->importedCount());
@@ -163,7 +163,7 @@ final class GhostContentImporterTest extends TestCase
             ],
         ], JSON_THROW_ON_ERROR));
 
-        $result = (new GhostContentImporter())->import(['file' => $this->sourceFile], $this->targetDir, 'blog');
+        $result = new GhostContentImporter()->import(['file' => $this->sourceFile], $this->targetDir, 'blog');
 
         assertSame(2, $result->importedCount());
         $this->assertFileExists($this->targetDir . '/blog/2024-05-01-duplicate.md');
@@ -172,7 +172,7 @@ final class GhostContentImporterTest extends TestCase
 
     public function testWarnsWhenFileIsMissing(): void
     {
-        $result = (new GhostContentImporter())->import(['file' => $this->sourceFile], $this->targetDir, 'blog');
+        $result = new GhostContentImporter()->import(['file' => $this->sourceFile], $this->targetDir, 'blog');
 
         assertSame(0, $result->importedCount());
         assertCount(1, $result->warnings());
@@ -183,7 +183,7 @@ final class GhostContentImporterTest extends TestCase
     {
         file_put_contents($this->sourceFile, '{');
 
-        $result = (new GhostContentImporter())->import(['file' => $this->sourceFile], $this->targetDir, 'blog');
+        $result = new GhostContentImporter()->import(['file' => $this->sourceFile], $this->targetDir, 'blog');
 
         assertSame(0, $result->importedCount());
         assertCount(1, $result->warnings());

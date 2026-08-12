@@ -52,8 +52,7 @@ final class NavigationRenderer
         string $language,
         string $defaultLanguage,
         string $normalizedCurrentUrl,
-    ): array
-    {
+    ): array {
         $html = '<ul>';
         $hasCurrent = false;
         foreach ($items as $item) {
@@ -103,16 +102,8 @@ final class NavigationRenderer
      */
     private static function itemsContainCurrent(array $items, string $normalizedCurrentUrl): bool
     {
-        foreach ($items as $item) {
-            if (
-                self::isCurrentUrl($item->url, $normalizedCurrentUrl)
-                || self::itemsContainCurrent($item->children, $normalizedCurrentUrl)
-            ) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($items, fn($item) => self::isCurrentUrl($item->url, $normalizedCurrentUrl)
+        || self::itemsContainCurrent($item->children, $normalizedCurrentUrl));
     }
 
     private static function isCurrentUrl(string $url, string $normalizedCurrentUrl): bool

@@ -11,7 +11,7 @@ use function is_int;
 
 final class ExceptionExitCode
 {
-    private const MAX_EXIT_CODE = 254;
+    private const int MAX_EXIT_CODE = 254;
 
     public function resolve(Throwable $throwable): int
     {

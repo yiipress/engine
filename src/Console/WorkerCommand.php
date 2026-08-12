@@ -71,13 +71,13 @@ final class WorkerCommand extends Command
 
     private function runEntryWriteJob(EntryWriteWorkerJob $job): int
     {
-        (new ProjectThemeDiscovery())->register($this->themeRegistry, $this->rootPath . '/themes');
+        new ProjectThemeDiscovery()->register($this->themeRegistry, $this->rootPath . '/themes');
         $localTemplatesDir = $job->contentDir() . '/templates';
         if (is_dir($localTemplatesDir)) {
             $this->themeRegistry->register(new Theme('local', $localTemplatesDir));
         }
 
-        (new ProjectProcessorConfigurator($this->contentPipeline, $this->feedPipeline))->configure($job->contentDir(), $job->siteConfig());
+        new ProjectProcessorConfigurator($this->contentPipeline, $this->feedPipeline)->configure($job->contentDir(), $job->siteConfig());
 
         $writer = new ParallelEntryWriter(
             $this->contentPipeline,

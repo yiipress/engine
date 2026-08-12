@@ -54,7 +54,7 @@ final class PageTemplateRenderer
         $variables['partial'] = $this->partialClosures[$this->themeName];
         $variables['assetManifest'] = $this->assetManifest;
         $variables['themeName'] = $this->themeName;
-        $variables['themeAsset'] = fn (string $path): string => Asset::themeUrl(
+        $variables['themeAsset'] = fn(string $path): string => Asset::themeUrl(
             $path,
             $this->templateResolver->resolveResourceThemeName('assets/' . ltrim($path, '/'), $this->themeName),
             $rootPath,

@@ -46,7 +46,7 @@ final class SyntaxHighlightProcessorTest extends TestCase
     {
         $html = '<pre><code class="language-PHP">&lt;?php echo 1;</code></pre>';
 
-        $result = (new SyntaxHighlightProcessor(new Highlighter()))->process($html, $this->createEntry());
+        $result = new SyntaxHighlightProcessor(new Highlighter())->process($html, $this->createEntry());
 
         assertStringContainsString(
             '<div class="code-block" data-language="php"><span class="code-language-label">PHP</span><pre',
@@ -60,7 +60,7 @@ final class SyntaxHighlightProcessorTest extends TestCase
     {
         $html = '<pre><code class="language-custom-lang">some code</code></pre>';
 
-        $result = (new SyntaxHighlightProcessor(new Highlighter()))->process($html, $this->createEntry());
+        $result = new SyntaxHighlightProcessor(new Highlighter())->process($html, $this->createEntry());
 
         assertStringContainsString('data-language="custom-lang"', $result);
         assertStringContainsString('<span class="code-language-label">CUSTOM-LANG</span>', $result);
@@ -72,7 +72,7 @@ final class SyntaxHighlightProcessorTest extends TestCase
         $language = 'custom-language-identifier-that-is-longer-than-the-label';
         $html = '<pre><code class="language-' . $language . '">some code</code></pre>';
 
-        $result = (new SyntaxHighlightProcessor(new Highlighter()))->process($html, $this->createEntry());
+        $result = new SyntaxHighlightProcessor(new Highlighter())->process($html, $this->createEntry());
 
         assertStringContainsString('data-language="' . $language . '"', $result);
         assertStringContainsString(
@@ -85,7 +85,7 @@ final class SyntaxHighlightProcessorTest extends TestCase
     {
         $html = '<pre><code>plain code</code></pre>';
 
-        $result = (new SyntaxHighlightProcessor(new Highlighter()))->process($html, $this->createEntry());
+        $result = new SyntaxHighlightProcessor(new Highlighter())->process($html, $this->createEntry());
 
         assertSame($html, $result);
     }

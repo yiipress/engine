@@ -37,4 +37,6 @@ jobs:
       - name: Install dependencies
         run: make -- composer install --no-progress --no-interaction
       - name: Run scoped mutation tests
+        env:
+          STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
         run: make infection

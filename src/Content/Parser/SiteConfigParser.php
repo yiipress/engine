@@ -94,10 +94,10 @@ final class SiteConfigParser
             authorPages: (bool) ($data['author_pages'] ?? false),
             minify: (bool) ($data['minify'] ?? true),
             data: basename($filePath) === 'config.yaml'
-                ? (new SiteDataParser())->parse(dirname($filePath) . '/data')
+                ? new SiteDataParser()->parse(dirname($filePath) . '/data')
                 : [],
             processors: self::parseProcessorConfig($data['processors'] ?? null),
-            icons: (new SiteIconFinder())->find(dirname($filePath)),
+            icons: new SiteIconFinder()->find(dirname($filePath)),
         );
     }
 

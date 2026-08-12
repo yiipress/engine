@@ -82,7 +82,7 @@
         "phpbench/phpbench": "^1.6.1",
         "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^12.5.23",
-        "rector/rector": "^2.4.2",
+        "rector/rector": "^2.6",
         "shipmonk/composer-dependency-analyser": "^1.8.4",
         "yiisoft/event-dispatcher": "^1.1"
     },

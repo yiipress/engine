@@ -301,7 +301,7 @@ final class FeedGeneratorTest extends TestCase
 
     public function testRenderedFeedContentIsReusedAcrossAtomAndRss(): void
     {
-        $processor = new class () implements ContentProcessorInterface {
+        $processor = new class implements ContentProcessorInterface {
             public int $calls = 0;
 
             public function process(string $content, Entry $entry): string

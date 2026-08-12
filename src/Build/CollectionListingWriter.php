@@ -9,7 +9,6 @@ use YiiPress\Content\Model\Entry;
 use YiiPress\Content\Model\Navigation;
 use YiiPress\Content\Model\SiteConfig;
 use YiiPress\Content\PermalinkResolver;
-
 use RuntimeException;
 
 use function count;

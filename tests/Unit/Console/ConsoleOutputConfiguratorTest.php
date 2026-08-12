@@ -36,7 +36,7 @@ final class ConsoleOutputConfiguratorTest extends TestCase
         $input = new ArgvInput(['yii', 'build', $option]);
         $output = new BufferedOutput();
 
-        (new ConsoleOutputConfigurator())->configure($input, $output);
+        new ConsoleOutputConfigurator()->configure($input, $output);
 
         self::assertSame($verbosity, $output->getVerbosity());
     }
@@ -46,7 +46,7 @@ final class ConsoleOutputConfiguratorTest extends TestCase
         $input = new ArgvInput(['yii', 'build']);
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERY_VERBOSE);
 
-        (new ConsoleOutputConfigurator())->configure($input, $output);
+        new ConsoleOutputConfigurator()->configure($input, $output);
 
         self::assertSame(OutputInterface::VERBOSITY_VERY_VERBOSE, $output->getVerbosity());
     }

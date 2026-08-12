@@ -8,7 +8,6 @@ use DirectoryIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
-
 use RuntimeException;
 
 use function hash;
@@ -23,7 +22,7 @@ final class BuildCache
      */
     public function __construct(
         private readonly string $cacheDir,
-        array $templateDirs
+        array $templateDirs,
     ) {
         if (!is_dir($this->cacheDir) && !mkdir($this->cacheDir, 0o755, true) && !is_dir($this->cacheDir)) {
             throw new RuntimeException(sprintf('Directory "%s" was not created', $this->cacheDir));

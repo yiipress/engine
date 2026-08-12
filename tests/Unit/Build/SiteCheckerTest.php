@@ -39,7 +39,7 @@ final class SiteCheckerTest extends TestCase
         file_put_contents($this->outputDir . '/blog/index.html', '<h2 id="post">Post</h2>');
         file_put_contents($this->outputDir . '/assets/logo.svg', '<svg/>');
 
-        $issues = (new SiteChecker())->check($this->outputDir);
+        $issues = new SiteChecker()->check($this->outputDir);
 
         assertSame([], $issues);
     }
@@ -50,7 +50,7 @@ final class SiteCheckerTest extends TestCase
         file_put_contents($this->outputDir . '/blog/index.html', '<h2 ID="post">Post</h2>');
         file_put_contents($this->outputDir . '/assets/logo.svg', '<svg/>');
 
-        $issues = (new SiteChecker())->check($this->outputDir);
+        $issues = new SiteChecker()->check($this->outputDir);
 
         assertSame([], $issues);
     }
@@ -60,7 +60,7 @@ final class SiteCheckerTest extends TestCase
         file_put_contents($this->outputDir . '/index.html', '<a href="./missing/">Missing</a><a href="./blog/#missing">Bad fragment</a>');
         file_put_contents($this->outputDir . '/blog/index.html', '<h2 id="post">Post</h2>');
 
-        $issues = (new SiteChecker())->check($this->outputDir);
+        $issues = new SiteChecker()->check($this->outputDir);
 
         assertCount(2, $issues);
         assertSame('local target not found', $issues[0]->message);
@@ -72,7 +72,7 @@ final class SiteCheckerTest extends TestCase
     public function testChecksExternalLinksOnlyWhenRequested(): void
     {
         file_put_contents($this->outputDir . '/index.html', '<a href="https://example.test/broken">Broken</a>');
-        $checker = new SiteChecker(static fn (string $url): bool => $url !== 'https://example.test/broken');
+        $checker = new SiteChecker(static fn(string $url): bool => $url !== 'https://example.test/broken');
 
         assertSame([], $checker->check($this->outputDir));
 
@@ -87,7 +87,7 @@ final class SiteCheckerTest extends TestCase
     {
         file_put_contents($this->outputDir . '/blog/index.html', '<a href="../../secret.html">Secret</a>');
 
-        $issues = (new SiteChecker())->check($this->outputDir);
+        $issues = new SiteChecker()->check($this->outputDir);
 
         assertCount(1, $issues);
         assertSame('local target not found', $issues[0]->message);
@@ -99,7 +99,7 @@ final class SiteCheckerTest extends TestCase
         file_put_contents($this->outputDir . '/index.html', '<a href="./blog/#post">Post</a>');
         file_put_contents($this->outputDir . '/blog/index.html', '<h2 id="post">Post</h2>');
 
-        $issues = (new SiteChecker())->check($this->outputDir . '/');
+        $issues = new SiteChecker()->check($this->outputDir . '/');
 
         assertSame([], $issues);
     }

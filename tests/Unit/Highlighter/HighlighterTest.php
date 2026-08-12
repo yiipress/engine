@@ -127,7 +127,7 @@ final class HighlighterTest extends TestCase
         $html = '<pre><code class="language-php">&lt;?php echo 1;</code></pre>';
 
         $defaultResult = $this->highlighter()->highlightHtml($html);
-        $solarizedResult = (new Highlighter('Solarized (dark)'))->highlightHtml($html);
+        $solarizedResult = new Highlighter('Solarized (dark)')->highlightHtml($html);
 
         self::assertNotSame($defaultResult, $solarizedResult);
     }
@@ -163,7 +163,7 @@ final class HighlighterTest extends TestCase
     public function testHighlightsRawCodeWithConstructorDefaultTheme(): void
     {
         $defaultResult = $this->highlighter()->highlight('echo 1;', 'php');
-        $solarizedResult = (new Highlighter('Solarized (dark)'))->highlight('echo 1;', 'php');
+        $solarizedResult = new Highlighter('Solarized (dark)')->highlight('echo 1;', 'php');
 
         self::assertNotSame($defaultResult, $solarizedResult);
     }

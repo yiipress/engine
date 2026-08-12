@@ -22,7 +22,6 @@ use YiiPress\Build\RobotsTxtGenerator;
 use YiiPress\Build\SearchIndexGenerator;
 use YiiPress\Build\ThemeAssetCopier;
 use YiiPress\Build\FeedGenerator;
-use YiiPress\Build\FileCopy;
 use YiiPress\Build\FileWriter;
 use YiiPress\Build\ParallelEntryWriter;
 use YiiPress\Build\ParallelTaskRunner;
@@ -222,7 +221,7 @@ final class BuildCommand extends Command
             return ExitCode::DATAERR;
         }
 
-        (new ProjectThemeDiscovery())->register($this->themeRegistry, $rootPath . '/themes');
+        new ProjectThemeDiscovery()->register($this->themeRegistry, $rootPath . '/themes');
 
         $localTemplatesDir = $contentDir . '/templates';
         if (is_dir($localTemplatesDir)) {
@@ -287,7 +286,7 @@ final class BuildCommand extends Command
                 ]));
 
                 $assetSourceFileSet = array_fill_keys(array_keys($allAssetMappings), true);
-                $assetChanged = array_any($changedSourceFiles, static fn (string $sourceFile): bool => isset($assetSourceFileSet[$sourceFile]));
+                $assetChanged = array_any($changedSourceFiles, static fn(string $sourceFile): bool => isset($assetSourceFileSet[$sourceFile]));
                 if ($assetChanged && $this->assetFingerprintEnabled($contentDir)) {
                     $changedSourceFiles = null;
                     $fullRebuildReason = 'assets changed';
@@ -333,195 +332,393 @@ final class BuildCommand extends Command
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $outputDir));
             }
         } elseif (!$dryRun) {
-            $output->writeln($noWrite
+            $output->writeln(
+                $noWrite
                 ? '<info>Rendering without writing output' . $this->workerMessageSuffix($workerCount, false) . '...</info>'
                 : '<info>Rendering and writing output' . $this->workerMessageSuffix($workerCount, false) . '...</info>',
             );
         }
 
         try {
-        if ($manifest !== null && $allSourceFiles === []) {
-            $sourceInventory = $this->collectSourceInventory(
-                $contentDir,
-                array_keys($allAssetMappings),
-                $siteConfig->processors,
-            );
-            $configFiles = $sourceInventory['configFiles'];
-            $allSourceFiles = $sourceInventory['allSourceFiles'];
-        }
-
-        $output->writeln('<info>Parsing content...</info>');
-        $profile->switchTo('parse content');
-
-        try {
-            $navigation = $parser->parseNavigation($contentDir);
-            $collections = $parser->parseCollections($contentDir);
-            $rootCollection = $parser->parseRootCollection($contentDir);
-            $authors = iterator_to_array($parser->parseAuthors($contentDir));
-            $parser->setAuthors($authors);
-        } catch (FriendlyExceptionInterface $e) {
-            $this->writeFriendlyException($output, $e);
-            $this->writeProfile($output, $profile);
-
-            return ExitCode::DATAERR;
-        }
-
-        $assetManifest = null;
-
-        if ($siteConfig->assets->fingerprint) {
-            $assetManifest = new AssetFingerprintManifest();
-            foreach ($allAssetMappings as $sourcePath => $logicalPath) {
-                $assetManifest->register($logicalPath, $sourcePath);
+            if ($manifest !== null && $allSourceFiles === []) {
+                $sourceInventory = $this->collectSourceInventory(
+                    $contentDir,
+                    array_keys($allAssetMappings),
+                    $siteConfig->processors,
+                );
+                $configFiles = $sourceInventory['configFiles'];
+                $allSourceFiles = $sourceInventory['allSourceFiles'];
             }
-        }
 
-        $output->writeln("  Site: <comment>$siteConfig->title</comment>");
-        $output->writeln('  Collections: <comment>' . count($collections) . '</comment>');
-        $output->writeln('  Authors: <comment>' . count($authors) . '</comment>');
-        $output->writeln('  Menus: <comment>' . count($navigation->menuNames()) . '</comment>');
+            $output->writeln('<info>Parsing content...</info>');
+            $profile->switchTo('parse content');
 
-        if ($dryRun) {
             try {
-                $exitCode = $this->dryRun($output, $parser, $siteConfig, $collections, $authors, $contentDir, $outputDir, $includeDrafts, $includeFuture);
+                $navigation = $parser->parseNavigation($contentDir);
+                $collections = $parser->parseCollections($contentDir);
+                $rootCollection = $parser->parseRootCollection($contentDir);
+                $authors = iterator_to_array($parser->parseAuthors($contentDir));
+                $parser->setAuthors($authors);
             } catch (FriendlyExceptionInterface $e) {
                 $this->writeFriendlyException($output, $e);
                 $this->writeProfile($output, $profile);
 
                 return ExitCode::DATAERR;
             }
-            $this->writeProfile($output, $profile);
-            return $exitCode;
-        }
 
-        if (!$noWrite && $noCache) {
-            try {
-                $atomicOutputDir = $this->prepareOutputDir($outputDir);
-                if ($atomicOutputDir !== null) {
-                    $outputDir = $atomicOutputDir;
+            $assetManifest = null;
+
+            if ($siteConfig->assets->fingerprint) {
+                $assetManifest = new AssetFingerprintManifest();
+                foreach ($allAssetMappings as $sourcePath => $logicalPath) {
+                    $assetManifest->register($logicalPath, $sourcePath);
                 }
-            } catch (RuntimeException $e) {
-                $output->writeln('<error>' . OutputFormatter::escape($e->getMessage()) . '</error>');
-                $this->writeProfile($output, $profile);
-                return ExitCode::DATAERR;
             }
-        }
 
-        $buildContext = new BuildContext(
-            rootPath: $rootPath,
-            contentDir: $contentDir,
-            outputDir: $outputDir,
-            workerCount: $workerCount,
-            noCache: $noCache,
-            includeDrafts: $includeDrafts,
-            includeFuture: $includeFuture,
-            dryRun: $dryRun,
-            noWrite: $noWrite,
-        );
+            $output->writeln("  Site: <comment>$siteConfig->title</comment>");
+            $output->writeln('  Collections: <comment>' . count($collections) . '</comment>');
+            $output->writeln('  Authors: <comment>' . count($authors) . '</comment>');
+            $output->writeln('  Menus: <comment>' . count($navigation->menuNames()) . '</comment>');
 
-        $this->eventDispatcher?->dispatch(new BuildStartedEvent($buildContext, $siteConfig, $navigation, $collections, $authors));
+            if ($dryRun) {
+                try {
+                    $exitCode = $this->dryRun($output, $parser, $siteConfig, $collections, $authors, $contentDir, $outputDir, $includeDrafts, $includeFuture);
+                } catch (FriendlyExceptionInterface $e) {
+                    $this->writeFriendlyException($output, $e);
+                    $this->writeProfile($output, $profile);
 
-        /** @var array<string, list<Entry>> $rawEntriesByCollection */
-        $rawEntriesByCollection = [];
-        $fileToPermalink = [];
-        $permalinkSources = [];
-        $aliasRedirectTasks = [];
-        $aliasOutputsBySource = [];
-        $now = new DateTimeImmutable();
+                    return ExitCode::DATAERR;
+                }
+                $this->writeProfile($output, $profile);
+                return $exitCode;
+            }
 
-        try {
-            foreach ($collections as $collectionName => $collection) {
-                $collectionEntries = [];
-                foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
-                    $sourcePath = $entry->filePath;
-                    if ($entry->title === '') {
+            if (!$noWrite && $noCache) {
+                try {
+                    $atomicOutputDir = $this->prepareOutputDir($outputDir);
+                    if ($atomicOutputDir !== null) {
+                        $outputDir = $atomicOutputDir;
+                    }
+                } catch (RuntimeException $e) {
+                    $output->writeln('<error>' . OutputFormatter::escape($e->getMessage()) . '</error>');
+                    $this->writeProfile($output, $profile);
+                    return ExitCode::DATAERR;
+                }
+            }
+
+            $buildContext = new BuildContext(
+                rootPath: $rootPath,
+                contentDir: $contentDir,
+                outputDir: $outputDir,
+                workerCount: $workerCount,
+                noCache: $noCache,
+                includeDrafts: $includeDrafts,
+                includeFuture: $includeFuture,
+                dryRun: $dryRun,
+                noWrite: $noWrite,
+            );
+
+            $this->eventDispatcher?->dispatch(new BuildStartedEvent($buildContext, $siteConfig, $navigation, $collections, $authors));
+
+            /** @var array<string, list<Entry>> $rawEntriesByCollection */
+            $rawEntriesByCollection = [];
+            $fileToPermalink = [];
+            $permalinkSources = [];
+            $aliasRedirectTasks = [];
+            $aliasOutputsBySource = [];
+            $now = new DateTimeImmutable();
+
+            try {
+                foreach ($collections as $collectionName => $collection) {
+                    $collectionEntries = [];
+                    foreach ($parser->parseEntries($contentDir, $collectionName) as $entry) {
+                        $sourcePath = $entry->filePath;
+                        if ($entry->title === '') {
+                            $output->writeln('<error>  Skipping ' . $sourcePath . ': no title found</error>');
+                            continue;
+                        }
+                        $collectionEntries[] = $entry;
+                        $relativePath = substr($sourcePath, strlen($contentDir) + 1);
+                        $permalink = PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n);
+                        $this->validatePermalink($permalink, $sourcePath);
+                        if ($this->shouldGenerateEntry($entry, $includeDrafts, $includeFuture, $now)) {
+                            $this->registerPermalink($permalinkSources, $permalink, $sourcePath);
+                            foreach ($entry->aliases as $alias) {
+                                $this->registerAliasPermalink($permalinkSources, $this->normalizeAliasPermalink($alias), $sourcePath);
+                            }
+                        }
+                        $fileToPermalink[$relativePath] = $permalink;
+                    }
+                    $rawEntriesByCollection[$collectionName] = $collectionEntries;
+                }
+
+                $standalonePages = [];
+                foreach ($parser->parseStandalonePages($contentDir) as $page) {
+                    $sourcePath = $page->filePath;
+                    if ($page->title === '') {
                         $output->writeln('<error>  Skipping ' . $sourcePath . ': no title found</error>');
                         continue;
                     }
-                    $collectionEntries[] = $entry;
+                    $standalonePages[] = $page;
                     $relativePath = substr($sourcePath, strlen($contentDir) + 1);
-                    $permalink = PermalinkResolver::resolve($entry, $collection, $siteConfig->i18n);
+                    $basePermalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
+                    $permalink = PermalinkResolver::applyLanguagePrefix($basePermalink, $page->language, $siteConfig->i18n);
                     $this->validatePermalink($permalink, $sourcePath);
-                    if ($this->shouldGenerateEntry($entry, $includeDrafts, $includeFuture, $now)) {
+                    if ($this->shouldGenerateEntry($page, $includeDrafts, $includeFuture, $now)) {
                         $this->registerPermalink($permalinkSources, $permalink, $sourcePath);
-                        foreach ($entry->aliases as $alias) {
+                        foreach ($page->aliases as $alias) {
                             $this->registerAliasPermalink($permalinkSources, $this->normalizeAliasPermalink($alias), $sourcePath);
                         }
                     }
                     $fileToPermalink[$relativePath] = $permalink;
                 }
-                $rawEntriesByCollection[$collectionName] = $collectionEntries;
+            } catch (FriendlyExceptionInterface $e) {
+                $this->writeFriendlyException($output, $e);
+                $this->writeProfile($output, $profile);
+
+                return ExitCode::DATAERR;
             }
 
-            $standalonePages = [];
-            foreach ($parser->parseStandalonePages($contentDir) as $page) {
-                $sourcePath = $page->filePath;
-                if ($page->title === '') {
-                    $output->writeln('<error>  Skipping ' . $sourcePath . ': no title found</error>');
-                    continue;
-                }
-                $standalonePages[] = $page;
-                $relativePath = substr($sourcePath, strlen($contentDir) + 1);
-                $basePermalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
-                $permalink = PermalinkResolver::applyLanguagePrefix($basePermalink, $page->language, $siteConfig->i18n);
-                $this->validatePermalink($permalink, $sourcePath);
-                if ($this->shouldGenerateEntry($page, $includeDrafts, $includeFuture, $now)) {
-                    $this->registerPermalink($permalinkSources, $permalink, $sourcePath);
-                    foreach ($page->aliases as $alias) {
-                        $this->registerAliasPermalink($permalinkSources, $this->normalizeAliasPermalink($alias), $sourcePath);
+            $crossRefResolver = new CrossReferenceResolver($fileToPermalink);
+
+            $profile->switchTo('diagnostics');
+            $changedSet = $changedSourceFiles !== null ? array_flip($changedSourceFiles) : null;
+            $diagnostics = new BuildDiagnostics($contentDir, $fileToPermalink, $siteConfig, $authors);
+            foreach ($rawEntriesByCollection as $entries) {
+                foreach ($entries as $entry) {
+                    $sourcePath = $entry->filePath;
+                    if ($changedSet !== null && !isset($changedSet[$sourcePath])) {
+                        continue;
                     }
+                    $diagnostics->check($entry);
                 }
-                $fileToPermalink[$relativePath] = $permalink;
             }
-        } catch (FriendlyExceptionInterface $e) {
-            $this->writeFriendlyException($output, $e);
-            $this->writeProfile($output, $profile);
-
-            return ExitCode::DATAERR;
-        }
-
-        $crossRefResolver = new CrossReferenceResolver($fileToPermalink);
-
-        $profile->switchTo('diagnostics');
-        $changedSet = $changedSourceFiles !== null ? array_flip($changedSourceFiles) : null;
-        $diagnostics = new BuildDiagnostics($contentDir, $fileToPermalink, $siteConfig, $authors);
-        foreach ($rawEntriesByCollection as $entries) {
-            foreach ($entries as $entry) {
-                $sourcePath = $entry->filePath;
+            foreach ($standalonePages as $page) {
+                $sourcePath = $page->filePath;
                 if ($changedSet !== null && !isset($changedSet[$sourcePath])) {
                     continue;
                 }
-                $diagnostics->check($entry);
+                $diagnostics->check($page);
             }
-        }
-        foreach ($standalonePages as $page) {
-            $sourcePath = $page->filePath;
-            if ($changedSet !== null && !isset($changedSet[$sourcePath])) {
-                continue;
+            foreach ($diagnostics->warnings() as $warning) {
+                $output->writeln("<comment>  ⚠ $warning</comment>");
             }
-            $diagnostics->check($page);
-        }
-        foreach ($diagnostics->warnings() as $warning) {
-            $output->writeln("<comment>  ⚠ $warning</comment>");
-        }
 
-        $profile->switchTo('prepare entry tasks');
-        $allTasks = [];
-        $redirectTasks = [];
-        $entriesByCollection = [];
-        $outputClaims = [];
-        foreach ($collections as $collectionName => $collection) {
-            $filtered = [];
-            foreach ($rawEntriesByCollection[$collectionName] as $entry) {
-                if (!$includeDrafts && $entry->draft) {
+            $profile->switchTo('prepare entry tasks');
+            $allTasks = [];
+            $redirectTasks = [];
+            $entriesByCollection = [];
+            $outputClaims = [];
+            foreach ($collections as $collectionName => $collection) {
+                $filtered = [];
+                foreach ($rawEntriesByCollection[$collectionName] as $entry) {
+                    if (!$includeDrafts && $entry->draft) {
+                        continue;
+                    }
+                    if (!$includeFuture && $entry->date !== null && $entry->date > $now) {
+                        continue;
+                    }
+
+                    $sourcePath = $entry->filePath;
+                    $relativePath = substr($sourcePath, strlen($contentDir) + 1);
+                    $permalink = $fileToPermalink[$relativePath];
+                    try {
+                        $filePath = $this->outputFilePath($outputDir, $permalink);
+                    } catch (RuntimeException $e) {
+                        $output->writeln('<error>' . OutputFormatter::escape($e->getMessage()) . '</error>');
+                        $this->writeProfile($output, $profile);
+                        return ExitCode::DATAERR;
+                    }
+                    $outputClaims[] = ['filePath' => $filePath, 'permalink' => $permalink, 'sourcePath' => $sourcePath];
+
+                    if ($entry->redirectTo !== '') {
+                        $redirectTasks[] = ['entry' => $entry, 'filePath' => $filePath, 'permalink' => $permalink, 'sourcePath' => $sourcePath];
+                        foreach ($entry->aliases as $alias) {
+                            $aliasPermalink = $this->normalizeAliasPermalink($alias);
+                            $aliasFilePath = $this->aliasFilePath($outputDir, $aliasPermalink);
+                            $aliasRedirectTasks[] = [
+                                'entry' => $entry,
+                                'filePath' => $aliasFilePath,
+                                'permalink' => $aliasPermalink,
+                                'sourcePath' => $sourcePath,
+                            ];
+                            $aliasOutputsBySource[$sourcePath][] = $aliasFilePath;
+                        }
+                        continue;
+                    }
+
+                    $filtered[] = $entry;
+                    foreach ($entry->aliases as $alias) {
+                        $aliasPermalink = $this->normalizeAliasPermalink($alias);
+                        $aliasFilePath = $this->aliasFilePath($outputDir, $aliasPermalink);
+                        $aliasRedirectTasks[] = [
+                            'entry' => $entry->withRedirectTo($permalink),
+                            'filePath' => $aliasFilePath,
+                            'permalink' => $aliasPermalink,
+                            'sourcePath' => $sourcePath,
+                        ];
+                        $aliasOutputsBySource[$sourcePath][] = $aliasFilePath;
+                    }
+                    $allTasks[] = [
+                        'entry' => $entry,
+                        'filePath' => $filePath,
+                        'permalink' => $permalink,
+                        'sourcePath' => $sourcePath,
+                    ];
+                }
+                $entriesByCollection[$collectionName] = EntrySorter::sort($filtered, $collection);
+            }
+
+            foreach ($standalonePages as $page) {
+                if (!$includeDrafts && $page->draft) {
                     continue;
                 }
-                if (!$includeFuture && $entry->date !== null && $entry->date > $now) {
+                if (!$includeFuture && $page->date !== null && $page->date > $now) {
                     continue;
                 }
 
-                $sourcePath = $entry->filePath;
-                $relativePath = substr($sourcePath, strlen($contentDir) + 1);
-                $permalink = $fileToPermalink[$relativePath];
+                $basePermalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
+                $permalink = PermalinkResolver::applyLanguagePrefix($basePermalink, $page->language, $siteConfig->i18n);
+                $outputClaims[] = [
+                    'filePath' => $outputDir . $permalink . 'index.html',
+                    'permalink' => $permalink,
+                    'sourcePath' => $page->filePath,
+                ];
+            }
+
+            $duplicateOutputClaims = $this->duplicateOutputClaims($outputClaims, $contentDir);
+            foreach ($duplicateOutputClaims as $message) {
+                $output->writeln('<error>  ' . OutputFormatter::escape($message) . '</error>');
+            }
+            if ($duplicateOutputClaims !== []) {
+                $this->writeProfile($output, $profile);
+                return ExitCode::DATAERR;
+            }
+
+            foreach ($allTasks as $index => $task) {
+                $collection = $collections[$task['entry']->collection] ?? null;
+                if ($collection !== null) {
+                    $allTasks[$index] = $this->withNavigationPager($task, $collection, $siteConfig, $navigation);
+                }
+            }
+
+            $cache = null;
+            if (!$noCache && !$noWrite) {
+                $cacheDir = RuntimePaths::cachePath($rootPath) . '/build';
+                $cache = new BuildCache($cacheDir, $this->templateResolver->templateDirs());
+            }
+
+            if ($changedSet !== null) {
+                $tasksToWrite = array_values(array_filter(
+                    $allTasks,
+                    static fn(array $task) => isset($changedSet[$task['sourcePath']]),
+                ));
+            } else {
+                $tasksToWrite = $allTasks;
+            }
+
+            $indexedEntries = [];
+            foreach ($entriesByCollection as $entries) {
+                foreach ($entries as $entry) {
+                    $relative = substr($entry->filePath, strlen($contentDir) + 1);
+                    $indexedEntries[] = ['entry' => $entry, 'permalink' => $fileToPermalink[$relative] ?? ''];
+                }
+            }
+
+            $relatedIndex = $siteConfig->related !== null
+                ? new RelatedIndex($indexedEntries, $siteConfig->related)
+                : null;
+
+            $translationIndex = $siteConfig->i18n !== null
+                ? new TranslationIndex($indexedEntries, $siteConfig->i18n)
+                : null;
+
+            $writer = new ParallelEntryWriter($this->contentPipeline, $this->templateResolver, $cache, $assetManifest, $relatedIndex, $translationIndex, $this->eventDispatcher);
+            $effectiveEntryWorkerCount = $writer->workerCountFor(count($tasksToWrite), $workerCount);
+            $profile->switchTo('write entries');
+            $entriesWritten = $writer->write($siteConfig, $tasksToWrite, $contentDir, $workerCount, $navigation, $crossRefResolver, $authors, $noWrite);
+
+            $output->writeln(
+                '  Entries ' . ($noWrite ? 'rendered' : 'written') . ": <comment>$entriesWritten</comment>"
+                . ($incremental ? ' (of ' . count($allTasks) . ' total)' : '')
+                . ' using <comment>' . $effectiveEntryWorkerCount . '</comment> '
+                . ($effectiveEntryWorkerCount === 1 ? 'worker' : 'workers')
+                . ($autoWorkers ? ' (auto)' : ''),
+            );
+
+            $profile->switchTo('write redirects');
+            /** @var RedirectPageWriter|null $redirectWriter */
+            $redirectWriter = null;
+            if ($redirectTasks !== []) {
+                $redirectWriter = new RedirectPageWriter();
+                foreach ($redirectTasks as $task) {
+                    $language = $task['entry']->language !== '' ? $task['entry']->language : $siteConfig->defaultLanguage;
+                    $redirectWriter->write(
+                        $task['entry'],
+                        $task['filePath'],
+                        $language,
+                        UiText::forTheme($siteConfig->defaultLanguage, $this->templateResolver, $siteConfig->theme, $siteConfig->defaultLanguage),
+                        $noWrite,
+                        $siteConfig,
+                        $task['permalink'],
+                    );
+                }
+            }
+
+            if ($aliasRedirectTasks !== []) {
+                $redirectWriter ??= new RedirectPageWriter();
+                foreach ($aliasRedirectTasks as $task) {
+                    $language = $task['entry']->language !== '' ? $task['entry']->language : $siteConfig->defaultLanguage;
+                    $redirectWriter->write(
+                        $task['entry'],
+                        $task['filePath'],
+                        $language,
+                        UiText::forTheme($siteConfig->defaultLanguage, $this->templateResolver, $siteConfig->theme, $siteConfig->defaultLanguage),
+                        $noWrite,
+                        $siteConfig,
+                        $task['permalink'],
+                    );
+                }
+            }
+
+            $redirectCount = count($redirectTasks) + count($aliasRedirectTasks);
+            if ($redirectCount > 0) {
+                $output->writeln('  Redirects ' . ($noWrite ? 'rendered' : 'written') . ': <comment>' . $redirectCount . '</comment>');
+            }
+
+            if ($manifest !== null) {
+                foreach ($allTasks as $task) {
+                    $outputs = [$task['filePath'], ...($aliasOutputsBySource[$task['sourcePath']] ?? [])];
+                    $this->removeStaleOutputs($manifest->replace($task['sourcePath'], $outputs), $outputDir);
+                }
+                foreach ($redirectTasks as $task) {
+                    $outputs = [$task['filePath'], ...($aliasOutputsBySource[$task['sourcePath']] ?? [])];
+                    $this->removeStaleOutputs($manifest->replace($task['sourcePath'], $outputs), $outputDir);
+                }
+                foreach ($rawEntriesByCollection as $entries) {
+                    foreach ($entries as $entry) {
+                        $sourcePath = $entry->filePath;
+                        if (!isset($manifest->entries()[$sourcePath])) {
+                            $this->removeStaleOutputs($manifest->replace($sourcePath, []), $outputDir);
+                        }
+                    }
+                }
+            }
+
+            if (!$includeDrafts) {
+                $standalonePages = array_values(array_filter($standalonePages, static fn($e) => !$e->draft));
+            }
+            if (!$includeFuture) {
+                $standalonePages = array_values(array_filter($standalonePages, static fn($e) => $e->date === null || $e->date <= $now));
+            }
+            $profile->switchTo('write standalone pages');
+            $standaloneTasks = [];
+            $standaloneRedirectTasks = [];
+            $standaloneAliasRedirectTasks = [];
+            foreach ($standalonePages as $page) {
+                $sourcePath = $page->filePath;
+                $basePermalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
+                $permalink = PermalinkResolver::applyLanguagePrefix($basePermalink, $page->language, $siteConfig->i18n);
                 try {
                     $filePath = $this->outputFilePath($outputDir, $permalink);
                 } catch (RuntimeException $e) {
@@ -529,568 +726,371 @@ final class BuildCommand extends Command
                     $this->writeProfile($output, $profile);
                     return ExitCode::DATAERR;
                 }
-                $outputClaims[] = ['filePath' => $filePath, 'permalink' => $permalink, 'sourcePath' => $sourcePath];
 
-                if ($entry->redirectTo !== '') {
-                    $redirectTasks[] = ['entry' => $entry, 'filePath' => $filePath, 'permalink' => $permalink, 'sourcePath' => $sourcePath];
-                    foreach ($entry->aliases as $alias) {
+                if ($changedSet !== null && !isset($changedSet[$sourcePath])) {
+                    $outputs = [$filePath];
+                    foreach ($page->aliases as $alias) {
+                        $outputs[] = $this->aliasFilePath($outputDir, $this->normalizeAliasPermalink($alias));
+                    }
+                    $manifest?->record($sourcePath, $outputs);
+                    continue;
+                }
+
+                if ($page->redirectTo !== '') {
+                    $standaloneRedirectTasks[] = ['entry' => $page, 'filePath' => $filePath, 'permalink' => $permalink, 'sourcePath' => $sourcePath];
+                    foreach ($page->aliases as $alias) {
                         $aliasPermalink = $this->normalizeAliasPermalink($alias);
                         $aliasFilePath = $this->aliasFilePath($outputDir, $aliasPermalink);
-                        $aliasRedirectTasks[] = [
-                            'entry' => $entry,
+                        $standaloneAliasRedirectTasks[] = [
+                            'entry' => $page,
                             'filePath' => $aliasFilePath,
                             'permalink' => $aliasPermalink,
                             'sourcePath' => $sourcePath,
                         ];
                         $aliasOutputsBySource[$sourcePath][] = $aliasFilePath;
                     }
+                } else {
+                    foreach ($page->aliases as $alias) {
+                        $aliasPermalink = $this->normalizeAliasPermalink($alias);
+                        $aliasFilePath = $this->aliasFilePath($outputDir, $aliasPermalink);
+                        $standaloneAliasRedirectTasks[] = [
+                            'entry' => $page->withRedirectTo($permalink),
+                            'filePath' => $aliasFilePath,
+                            'permalink' => $aliasPermalink,
+                            'sourcePath' => $sourcePath,
+                        ];
+                        $aliasOutputsBySource[$sourcePath][] = $aliasFilePath;
+                    }
+                    $standaloneTask = [
+                        'entry' => $page,
+                        'filePath' => $filePath,
+                        'permalink' => $permalink,
+                        'sourcePath' => $sourcePath,
+                    ];
+                    $standaloneTasks[] = $this->withNavigationPager(
+                        $standaloneTask,
+                        $rootCollection,
+                        $siteConfig,
+                        $navigation,
+                    );
+                }
+            }
+
+            $standalonePagesWritten = $writer->write(
+                $siteConfig,
+                $standaloneTasks,
+                $contentDir,
+                $workerCount,
+                $navigation,
+                $crossRefResolver,
+                $authors,
+                $noWrite,
+            );
+
+            $redirectWriter ??= new RedirectPageWriter();
+            foreach ($standaloneRedirectTasks as $task) {
+                $language = $task['entry']->language !== '' ? $task['entry']->language : $siteConfig->defaultLanguage;
+                $redirectWriter->write(
+                    $task['entry'],
+                    $task['filePath'],
+                    $language,
+                    UiText::forTheme($siteConfig->defaultLanguage, $this->templateResolver, $siteConfig->theme, $siteConfig->defaultLanguage),
+                    $noWrite,
+                    $siteConfig,
+                    $task['permalink'],
+                );
+            }
+            foreach ($standaloneAliasRedirectTasks as $task) {
+                $language = $task['entry']->language !== '' ? $task['entry']->language : $siteConfig->defaultLanguage;
+                $redirectWriter->write(
+                    $task['entry'],
+                    $task['filePath'],
+                    $language,
+                    UiText::forTheme($siteConfig->defaultLanguage, $this->templateResolver, $siteConfig->theme, $siteConfig->defaultLanguage),
+                    $noWrite,
+                    $siteConfig,
+                    $task['permalink'],
+                );
+            }
+            $standalonePagesWritten += count($standaloneRedirectTasks) + count($standaloneAliasRedirectTasks);
+
+            if ($manifest !== null) {
+                foreach ($standaloneTasks as $task) {
+                    $outputs = [$task['filePath'], ...($aliasOutputsBySource[$task['sourcePath']] ?? [])];
+                    $this->removeStaleOutputs($manifest->replace($task['sourcePath'], $outputs), $outputDir);
+                }
+                foreach ($standaloneRedirectTasks as $task) {
+                    $outputs = [$task['filePath'], ...($aliasOutputsBySource[$task['sourcePath']] ?? [])];
+                    $this->removeStaleOutputs($manifest->replace($task['sourcePath'], $outputs), $outputDir);
+                }
+            }
+
+            if ($standalonePages !== []) {
+                $output->writeln("  Standalone pages: <comment>$standalonePagesWritten</comment>" . ($incremental ? ' (of ' . count($standalonePages) . ' total)' : ''));
+            }
+
+            $profile->switchTo('copy assets');
+            $assetsCopied = $contentAssetCopier->copy($contentDir, $outputDir, $assetManifest, $noWrite, $siteConfig->minify);
+            $assetsCopied += $themeAssetCopier->copy($this->themeRegistry, $outputDir, $assetManifest, $noWrite, $siteConfig->minify);
+            $assetWriter = new AssetFileWriter();
+
+            foreach ($pipelineAssetMappings as $source => $target) {
+                $resolvedTarget = $assetManifest?->resolve($target) ?? $target;
+                if ($noWrite) {
+                    $assetsCopied++;
+                    continue;
+                }
+                $targetPath = $outputDir . '/' . $resolvedTarget;
+                $targetDir = dirname($targetPath);
+                if (!is_dir($targetDir) && !mkdir($targetDir, 0o755, true) && !is_dir($targetDir)) {
+                    throw new RuntimeException(sprintf('Directory "%s" was not created', $targetDir));
+                }
+                if ($assetWriter->writeIfChanged($source, $targetPath, $siteConfig->minify)) {
+                    $assetsCopied++;
+                }
+            }
+
+            if ($manifest !== null) {
+                foreach ($allAssetMappings as $sourcePath => $logicalPath) {
+                    $resolvedTarget = $assetManifest?->resolve($logicalPath) ?? $logicalPath;
+                    $this->removeStaleOutputs($manifest->replace($sourcePath, [$outputDir . '/' . $resolvedTarget]), $outputDir);
+                }
+            }
+
+            if ($assetsCopied > 0) {
+                $output->writeln('  Assets ' . ($noWrite ? 'processed' : 'copied') . ": <comment>$assetsCopied</comment>");
+            }
+
+            if ($assetManifest !== null && !$assetManifest->isEmpty()) {
+                $output->writeln('  Asset fingerprints generated: <comment>' . count($assetManifest->all()) . '</comment>');
+            }
+
+            /** @var list<array{collectionName: string, collection: Collection, entries: list<Entry>}> $feedTasks */
+            $profile->switchTo('write feeds');
+            $feedTasks = [];
+            $siteFeedEntries = [];
+            foreach ($collections as $collectionName => $collection) {
+                if (!$collection->feed) {
                     continue;
                 }
 
-                $filtered[] = $entry;
-                foreach ($entry->aliases as $alias) {
-                    $aliasPermalink = $this->normalizeAliasPermalink($alias);
-                    $aliasFilePath = $this->aliasFilePath($outputDir, $aliasPermalink);
-                    $aliasRedirectTasks[] = [
-                        'entry' => $entry->withRedirectTo($permalink),
-                        'filePath' => $aliasFilePath,
-                        'permalink' => $aliasPermalink,
-                        'sourcePath' => $sourcePath,
-                    ];
-                    $aliasOutputsBySource[$sourcePath][] = $aliasFilePath;
-                }
-                $allTasks[] = [
-                    'entry' => $entry,
-                    'filePath' => $filePath,
-                    'permalink' => $permalink,
-                    'sourcePath' => $sourcePath,
+                $collectionEntries = $entriesByCollection[$collectionName] ?? [];
+                $feedTasks[] = [
+                    'collectionName' => $collectionName,
+                    'collection' => $collection,
+                    'entries' => $collectionEntries,
                 ];
-            }
-            $entriesByCollection[$collectionName] = EntrySorter::sort($filtered, $collection);
-        }
-
-        foreach ($standalonePages as $page) {
-            if (!$includeDrafts && $page->draft) {
-                continue;
-            }
-            if (!$includeFuture && $page->date !== null && $page->date > $now) {
-                continue;
+                array_push($siteFeedEntries, ...$collectionEntries);
             }
 
-            $basePermalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
-            $permalink = PermalinkResolver::applyLanguagePrefix($basePermalink, $page->language, $siteConfig->i18n);
-            $outputClaims[] = [
-                'filePath' => $outputDir . $permalink . 'index.html',
-                'permalink' => $permalink,
-                'sourcePath' => $page->filePath,
-            ];
-        }
+            $feedCount = new ParallelTaskRunner()->run(
+                $feedTasks,
+                $workerCount,
+                function (array $feedTask) use ($siteConfig, $outputDir, $authors, $noWrite): int {
+                    /** @var Collection $collection */
+                    $collection = $feedTask['collection'];
+                    /** @var list<Entry> $entries */
+                    $entries = $feedTask['entries'];
+                    $collectionName = $feedTask['collectionName'];
 
-        $duplicateOutputClaims = $this->duplicateOutputClaims($outputClaims, $contentDir);
-        foreach ($duplicateOutputClaims as $message) {
-            $output->writeln('<error>  ' . OutputFormatter::escape($message) . '</error>');
-        }
-        if ($duplicateOutputClaims !== []) {
-            $this->writeProfile($output, $profile);
-            return ExitCode::DATAERR;
-        }
+                    $feedGenerator = new FeedGenerator($this->feedPipeline, $authors);
 
-        foreach ($allTasks as $index => $task) {
-            $collection = $collections[$task['entry']->collection] ?? null;
-            if ($collection !== null) {
-                $allTasks[$index] = $this->withNavigationPager($task, $collection, $siteConfig, $navigation);
-            }
-        }
+                    if ($noWrite) {
+                        $feedGenerator->generateAtom($siteConfig, $collection, $entries);
+                        $feedGenerator->generateRss($siteConfig, $collection, $entries);
+                        $feedGenerator->generateJson($siteConfig, $collection, $entries);
+                    } else {
+                        $feedDir = $outputDir . '/' . $collectionName;
+                        if (!is_dir($feedDir) && !mkdir($feedDir, 0o755, true) && !is_dir($feedDir)) {
+                            throw new RuntimeException(sprintf('Directory "%s" was not created', $feedDir));
+                        }
 
-        $cache = null;
-        if (!$noCache && !$noWrite) {
-            $cacheDir = RuntimePaths::cachePath($rootPath) . '/build';
-            $cache = new BuildCache($cacheDir, $this->templateResolver->templateDirs());
-        }
-
-        if ($changedSet !== null) {
-            $tasksToWrite = array_values(array_filter(
-                $allTasks,
-                static fn (array $task) => isset($changedSet[$task['sourcePath']]),
-            ));
-        } else {
-            $tasksToWrite = $allTasks;
-        }
-
-        $indexedEntries = [];
-        foreach ($entriesByCollection as $entries) {
-            foreach ($entries as $entry) {
-                $relative = substr($entry->filePath, strlen($contentDir) + 1);
-                $indexedEntries[] = ['entry' => $entry, 'permalink' => $fileToPermalink[$relative] ?? ''];
-            }
-        }
-
-        $relatedIndex = $siteConfig->related !== null
-            ? new RelatedIndex($indexedEntries, $siteConfig->related)
-            : null;
-
-        $translationIndex = $siteConfig->i18n !== null
-            ? new TranslationIndex($indexedEntries, $siteConfig->i18n)
-            : null;
-
-        $writer = new ParallelEntryWriter($this->contentPipeline, $this->templateResolver, $cache, $assetManifest, $relatedIndex, $translationIndex, $this->eventDispatcher);
-        $effectiveEntryWorkerCount = $writer->workerCountFor(count($tasksToWrite), $workerCount);
-        $profile->switchTo('write entries');
-        $entriesWritten = $writer->write($siteConfig, $tasksToWrite, $contentDir, $workerCount, $navigation, $crossRefResolver, $authors, $noWrite);
-
-        $output->writeln(
-            '  Entries ' . ($noWrite ? 'rendered' : 'written') . ": <comment>$entriesWritten</comment>"
-            . ($incremental ? ' (of ' . count($allTasks) . ' total)' : '')
-            . ' using <comment>' . $effectiveEntryWorkerCount . '</comment> '
-            . ($effectiveEntryWorkerCount === 1 ? 'worker' : 'workers')
-            . ($autoWorkers ? ' (auto)' : ''),
-        );
-
-        $profile->switchTo('write redirects');
-        /** @var RedirectPageWriter|null $redirectWriter */
-        $redirectWriter = null;
-        if ($redirectTasks !== []) {
-            $redirectWriter = new RedirectPageWriter();
-            foreach ($redirectTasks as $task) {
-                $language = $task['entry']->language !== '' ? $task['entry']->language : $siteConfig->defaultLanguage;
-                $redirectWriter->write(
-                    $task['entry'],
-                    $task['filePath'],
-                    $language,
-                    UiText::forTheme($siteConfig->defaultLanguage, $this->templateResolver, $siteConfig->theme, $siteConfig->defaultLanguage),
-                    $noWrite,
-                    $siteConfig,
-                    $task['permalink'],
-                );
-            }
-        }
-
-        if ($aliasRedirectTasks !== []) {
-            $redirectWriter ??= new RedirectPageWriter();
-            foreach ($aliasRedirectTasks as $task) {
-                $language = $task['entry']->language !== '' ? $task['entry']->language : $siteConfig->defaultLanguage;
-                $redirectWriter->write(
-                    $task['entry'],
-                    $task['filePath'],
-                    $language,
-                    UiText::forTheme($siteConfig->defaultLanguage, $this->templateResolver, $siteConfig->theme, $siteConfig->defaultLanguage),
-                    $noWrite,
-                    $siteConfig,
-                    $task['permalink'],
-                );
-            }
-        }
-
-        $redirectCount = count($redirectTasks) + count($aliasRedirectTasks);
-        if ($redirectCount > 0) {
-            $output->writeln('  Redirects ' . ($noWrite ? 'rendered' : 'written') . ': <comment>' . $redirectCount . '</comment>');
-        }
-
-        if ($manifest !== null) {
-            foreach ($allTasks as $task) {
-                $outputs = [$task['filePath'], ...($aliasOutputsBySource[$task['sourcePath']] ?? [])];
-                $this->removeStaleOutputs($manifest->replace($task['sourcePath'], $outputs), $outputDir);
-            }
-            foreach ($redirectTasks as $task) {
-                $outputs = [$task['filePath'], ...($aliasOutputsBySource[$task['sourcePath']] ?? [])];
-                $this->removeStaleOutputs($manifest->replace($task['sourcePath'], $outputs), $outputDir);
-            }
-            foreach ($rawEntriesByCollection as $entries) {
-                foreach ($entries as $entry) {
-                    $sourcePath = $entry->filePath;
-                    if (!isset($manifest->entries()[$sourcePath])) {
-                        $this->removeStaleOutputs($manifest->replace($sourcePath, []), $outputDir);
+                        $feedGenerator->writeAtomFile(
+                            $feedDir . '/feed.xml',
+                            $siteConfig,
+                            $collection,
+                            $entries,
+                        );
+                        $feedGenerator->writeRssFile(
+                            $feedDir . '/rss.xml',
+                            $siteConfig,
+                            $collection,
+                            $entries,
+                        );
+                        $feedGenerator->writeJsonFile(
+                            $feedDir . '/feed.json',
+                            $siteConfig,
+                            $collection,
+                            $entries,
+                        );
                     }
-                }
-            }
-        }
+                    return 1;
+                },
+                minTasksPerWorker: 1,
+            );
 
-        if (!$includeDrafts) {
-            $standalonePages = array_values(array_filter($standalonePages, static fn ($e) => !$e->draft));
-        }
-        if (!$includeFuture) {
-            $standalonePages = array_values(array_filter($standalonePages, static fn ($e) => $e->date === null || $e->date <= $now));
-        }
-        $profile->switchTo('write standalone pages');
-        $standaloneTasks = [];
-        $standaloneRedirectTasks = [];
-        $standaloneAliasRedirectTasks = [];
-        foreach ($standalonePages as $page) {
-            $sourcePath = $page->filePath;
-            $basePermalink = $page->permalink !== '' ? $page->permalink : '/' . $page->slug . '/';
-            $permalink = PermalinkResolver::applyLanguagePrefix($basePermalink, $page->language, $siteConfig->i18n);
-            try {
-                $filePath = $this->outputFilePath($outputDir, $permalink);
-            } catch (RuntimeException $e) {
-                $output->writeln('<error>' . OutputFormatter::escape($e->getMessage()) . '</error>');
-                $this->writeProfile($output, $profile);
-                return ExitCode::DATAERR;
-            }
-
-            if ($changedSet !== null && !isset($changedSet[$sourcePath])) {
-                $outputs = [$filePath];
-                foreach ($page->aliases as $alias) {
-                    $outputs[] = $this->aliasFilePath($outputDir, $this->normalizeAliasPermalink($alias));
-                }
-                $manifest?->record($sourcePath, $outputs);
-                continue;
-            }
-
-            if ($page->redirectTo !== '') {
-                $standaloneRedirectTasks[] = ['entry' => $page, 'filePath' => $filePath, 'permalink' => $permalink, 'sourcePath' => $sourcePath];
-                foreach ($page->aliases as $alias) {
-                    $aliasPermalink = $this->normalizeAliasPermalink($alias);
-                    $aliasFilePath = $this->aliasFilePath($outputDir, $aliasPermalink);
-                    $standaloneAliasRedirectTasks[] = [
-                        'entry' => $page,
-                        'filePath' => $aliasFilePath,
-                        'permalink' => $aliasPermalink,
-                        'sourcePath' => $sourcePath,
-                    ];
-                    $aliasOutputsBySource[$sourcePath][] = $aliasFilePath;
-                }
-            } else {
-                foreach ($page->aliases as $alias) {
-                    $aliasPermalink = $this->normalizeAliasPermalink($alias);
-                    $aliasFilePath = $this->aliasFilePath($outputDir, $aliasPermalink);
-                    $standaloneAliasRedirectTasks[] = [
-                        'entry' => $page->withRedirectTo($permalink),
-                        'filePath' => $aliasFilePath,
-                        'permalink' => $aliasPermalink,
-                        'sourcePath' => $sourcePath,
-                    ];
-                    $aliasOutputsBySource[$sourcePath][] = $aliasFilePath;
-                }
-                $standaloneTask = [
-                    'entry' => $page,
-                    'filePath' => $filePath,
-                    'permalink' => $permalink,
-                    'sourcePath' => $sourcePath,
-                ];
-                $standaloneTasks[] = $this->withNavigationPager(
-                    $standaloneTask,
-                    $rootCollection,
-                    $siteConfig,
-                    $navigation,
+            if ($feedTasks !== []) {
+                usort(
+                    $siteFeedEntries,
+                    static fn(Entry $a, Entry $b): int => ($b->date?->getTimestamp() ?? -PHP_INT_MAX)
+                        <=> ($a->date?->getTimestamp() ?? -PHP_INT_MAX),
                 );
-            }
-        }
-
-        $standalonePagesWritten = $writer->write(
-            $siteConfig,
-            $standaloneTasks,
-            $contentDir,
-            $workerCount,
-            $navigation,
-            $crossRefResolver,
-            $authors,
-            $noWrite,
-        );
-
-        $redirectWriter ??= new RedirectPageWriter();
-        foreach ($standaloneRedirectTasks as $task) {
-            $language = $task['entry']->language !== '' ? $task['entry']->language : $siteConfig->defaultLanguage;
-            $redirectWriter->write(
-                $task['entry'],
-                $task['filePath'],
-                $language,
-                UiText::forTheme($siteConfig->defaultLanguage, $this->templateResolver, $siteConfig->theme, $siteConfig->defaultLanguage),
-                $noWrite,
-                $siteConfig,
-                $task['permalink'],
-            );
-        }
-        foreach ($standaloneAliasRedirectTasks as $task) {
-            $language = $task['entry']->language !== '' ? $task['entry']->language : $siteConfig->defaultLanguage;
-            $redirectWriter->write(
-                $task['entry'],
-                $task['filePath'],
-                $language,
-                UiText::forTheme($siteConfig->defaultLanguage, $this->templateResolver, $siteConfig->theme, $siteConfig->defaultLanguage),
-                $noWrite,
-                $siteConfig,
-                $task['permalink'],
-            );
-        }
-        $standalonePagesWritten += count($standaloneRedirectTasks) + count($standaloneAliasRedirectTasks);
-
-        if ($manifest !== null) {
-            foreach ($standaloneTasks as $task) {
-                $outputs = [$task['filePath'], ...($aliasOutputsBySource[$task['sourcePath']] ?? [])];
-                $this->removeStaleOutputs($manifest->replace($task['sourcePath'], $outputs), $outputDir);
-            }
-            foreach ($standaloneRedirectTasks as $task) {
-                $outputs = [$task['filePath'], ...($aliasOutputsBySource[$task['sourcePath']] ?? [])];
-                $this->removeStaleOutputs($manifest->replace($task['sourcePath'], $outputs), $outputDir);
-            }
-        }
-
-        if ($standalonePages !== []) {
-            $output->writeln("  Standalone pages: <comment>$standalonePagesWritten</comment>" . ($incremental ? ' (of ' . count($standalonePages) . ' total)' : ''));
-        }
-
-        $profile->switchTo('copy assets');
-        $assetsCopied = $contentAssetCopier->copy($contentDir, $outputDir, $assetManifest, $noWrite, $siteConfig->minify);
-        $assetsCopied += $themeAssetCopier->copy($this->themeRegistry, $outputDir, $assetManifest, $noWrite, $siteConfig->minify);
-        $assetWriter = new AssetFileWriter();
-
-        foreach ($pipelineAssetMappings as $source => $target) {
-            $resolvedTarget = $assetManifest?->resolve($target) ?? $target;
-            if ($noWrite) {
-                $assetsCopied++;
-                continue;
-            }
-            $targetPath = $outputDir . '/' . $resolvedTarget;
-            $targetDir = dirname($targetPath);
-            if (!is_dir($targetDir) && !mkdir($targetDir, 0o755, true) && !is_dir($targetDir)) {
-                throw new RuntimeException(sprintf('Directory "%s" was not created', $targetDir));
-            }
-            if ($assetWriter->writeIfChanged($source, $targetPath, $siteConfig->minify)) {
-                $assetsCopied++;
-            }
-        }
-
-        if ($manifest !== null) {
-            foreach ($allAssetMappings as $sourcePath => $logicalPath) {
-                $resolvedTarget = $assetManifest?->resolve($logicalPath) ?? $logicalPath;
-                $this->removeStaleOutputs($manifest->replace($sourcePath, [$outputDir . '/' . $resolvedTarget]), $outputDir);
-            }
-        }
-
-        if ($assetsCopied > 0) {
-            $output->writeln('  Assets ' . ($noWrite ? 'processed' : 'copied') . ": <comment>$assetsCopied</comment>");
-        }
-
-        if ($assetManifest !== null && !$assetManifest->isEmpty()) {
-            $output->writeln('  Asset fingerprints generated: <comment>' . count($assetManifest->all()) . '</comment>');
-        }
-
-        /** @var list<array{collectionName: string, collection: Collection, entries: list<Entry>}> $feedTasks */
-        $profile->switchTo('write feeds');
-        $feedTasks = [];
-        $siteFeedEntries = [];
-        foreach ($collections as $collectionName => $collection) {
-            if (!$collection->feed) {
-                continue;
-            }
-
-            $collectionEntries = $entriesByCollection[$collectionName] ?? [];
-            $feedTasks[] = [
-                'collectionName' => $collectionName,
-                'collection' => $collection,
-                'entries' => $collectionEntries,
-            ];
-            array_push($siteFeedEntries, ...$collectionEntries);
-        }
-
-        $feedCount = (new ParallelTaskRunner())->run(
-            $feedTasks,
-            $workerCount,
-            function (array $feedTask) use ($siteConfig, $outputDir, $authors, $noWrite): int {
-                /** @var Collection $collection */
-                $collection = $feedTask['collection'];
-                /** @var list<Entry> $entries */
-                $entries = $feedTask['entries'];
-                $collectionName = $feedTask['collectionName'];
 
                 $feedGenerator = new FeedGenerator($this->feedPipeline, $authors);
-
                 if ($noWrite) {
-                    $feedGenerator->generateAtom($siteConfig, $collection, $entries);
-                    $feedGenerator->generateRss($siteConfig, $collection, $entries);
-                    $feedGenerator->generateJson($siteConfig, $collection, $entries);
+                    $feedGenerator->generateSiteAtom($siteConfig, $collections, $siteFeedEntries);
+                    $feedGenerator->generateSiteRss($siteConfig, $collections, $siteFeedEntries);
+                    $feedGenerator->generateSiteJson($siteConfig, $collections, $siteFeedEntries);
                 } else {
-                    $feedDir = $outputDir . '/' . $collectionName;
-                    if (!is_dir($feedDir) && !mkdir($feedDir, 0o755, true) && !is_dir($feedDir)) {
-                        throw new RuntimeException(sprintf('Directory "%s" was not created', $feedDir));
+                    $feedGenerator->writeSiteAtomFile($outputDir . '/feed.xml', $siteConfig, $collections, $siteFeedEntries);
+                    $feedGenerator->writeSiteRssFile($outputDir . '/rss.xml', $siteConfig, $collections, $siteFeedEntries);
+                    $feedGenerator->writeSiteJsonFile($outputDir . '/feed.json', $siteConfig, $collections, $siteFeedEntries);
+                }
+                $feedCount++;
+            }
+
+            if ($feedCount > 0) {
+                $output->writeln("  Feeds generated: <comment>$feedCount</comment> (Atom + RSS + JSON)");
+            }
+
+            $profile->switchTo('write listings');
+            $listingWriter = new CollectionListingWriter($this->templateResolver, $assetManifest);
+            $listingPageCount = 0;
+            foreach ($collections as $collectionName => $collection) {
+                if (!$collection->listing) {
+                    continue;
+                }
+                $listingPageCount += $listingWriter->write(
+                    $siteConfig,
+                    $collection,
+                    $entriesByCollection[$collectionName] ?? [],
+                    $outputDir,
+                    $navigation,
+                    $workerCount,
+                    $noWrite,
+                );
+            }
+            if ($listingPageCount > 0) {
+                $output->writeln("  Listing pages: <comment>$listingPageCount</comment>");
+            }
+
+            $profile->switchTo('write archives');
+            $archiveWriter = new DateArchiveWriter($this->templateResolver, $assetManifest);
+            $archivePageCount = 0;
+            foreach ($collections as $collectionName => $collection) {
+                if ($collection->sortBy !== 'date') {
+                    continue;
+                }
+                $archivePageCount += $archiveWriter->write(
+                    $siteConfig,
+                    $collection,
+                    $entriesByCollection[$collectionName] ?? [],
+                    $outputDir,
+                    $navigation,
+                    $workerCount,
+                    $noWrite,
+                );
+            }
+            if ($archivePageCount > 0) {
+                $output->writeln("  Archive pages: <comment>$archivePageCount</comment>");
+            }
+
+            $profile->switchTo('write sitemap');
+            $sitemapGenerator = new SitemapGenerator();
+            $sitemapGenerator->generate(
+                $siteConfig,
+                $collections,
+                $entriesByCollection,
+                $outputDir,
+                $standalonePages,
+                $siteConfig->authorPages ? $authors : [],
+                $noWrite,
+            );
+            $output->writeln('  Sitemap generated.');
+
+            $profile->switchTo('write support files');
+            $robotsGenerator = new RobotsTxtGenerator();
+            $robots = $robotsGenerator->generate($siteConfig);
+            if ($robots !== '') {
+                if (!$noWrite) {
+                    FileWriter::write($outputDir . '/robots.txt', $robots);
+                }
+                $output->writeln('  robots.txt generated.');
+            }
+
+            $notFoundWriter = new NotFoundPageWriter($this->templateResolver, $assetManifest);
+            $notFoundWriter->write($siteConfig, $outputDir, $navigation, $noWrite);
+            $output->writeln('  404 page generated.');
+
+            if ($siteConfig->search !== null) {
+                $searchGenerator = new SearchIndexGenerator();
+                $searchGenerator->generate($siteConfig, $collections, $entriesByCollection, $outputDir, $standalonePages, $noWrite);
+                $output->writeln('  Search index generated.');
+            }
+
+            if ($siteConfig->taxonomies !== []) {
+                $profile->switchTo('write taxonomy pages');
+                $allEntries = array_merge(...array_values($entriesByCollection));
+                $taxonomyData = TaxonomyCollector::collect($siteConfig->taxonomies, $allEntries);
+                $taxonomyWriter = new TaxonomyPageWriter($this->templateResolver, $assetManifest);
+                $taxonomyPageCount = $taxonomyWriter->write($siteConfig, $taxonomyData, $collections, $outputDir, $navigation, $noWrite);
+                $output->writeln("  Taxonomy pages: <comment>$taxonomyPageCount</comment>");
+            }
+
+            if ($siteConfig->authorPages && $authors !== []) {
+                $profile->switchTo('write author pages');
+                $allEntries ??= array_merge(...array_values($entriesByCollection));
+                $entriesByAuthor = [];
+                foreach ($allEntries as $entry) {
+                    foreach ($entry->authors as $authorSlug) {
+                        $entriesByAuthor[$authorSlug][] = $entry;
                     }
-
-                    $feedGenerator->writeAtomFile(
-                        $feedDir . '/feed.xml',
-                        $siteConfig,
-                        $collection,
-                        $entries,
-                    );
-                    $feedGenerator->writeRssFile(
-                        $feedDir . '/rss.xml',
-                        $siteConfig,
-                        $collection,
-                        $entries,
-                    );
-                    $feedGenerator->writeJsonFile(
-                        $feedDir . '/feed.json',
-                        $siteConfig,
-                        $collection,
-                        $entries,
-                    );
                 }
-                return 1;
-            },
-            minTasksPerWorker: 1,
-        );
-
-        if ($feedTasks !== []) {
-            usort(
-                $siteFeedEntries,
-                static fn (Entry $a, Entry $b): int => ($b->date?->getTimestamp() ?? -PHP_INT_MAX)
-                    <=> ($a->date?->getTimestamp() ?? -PHP_INT_MAX),
-            );
-
-            $feedGenerator = new FeedGenerator($this->feedPipeline, $authors);
-            if ($noWrite) {
-                $feedGenerator->generateSiteAtom($siteConfig, $collections, $siteFeedEntries);
-                $feedGenerator->generateSiteRss($siteConfig, $collections, $siteFeedEntries);
-                $feedGenerator->generateSiteJson($siteConfig, $collections, $siteFeedEntries);
-            } else {
-                $feedGenerator->writeSiteAtomFile($outputDir . '/feed.xml', $siteConfig, $collections, $siteFeedEntries);
-                $feedGenerator->writeSiteRssFile($outputDir . '/rss.xml', $siteConfig, $collections, $siteFeedEntries);
-                $feedGenerator->writeSiteJsonFile($outputDir . '/feed.json', $siteConfig, $collections, $siteFeedEntries);
+                $authorWriter = new AuthorPageWriter($this->templateResolver, $assetManifest);
+                $authorPageCount = $authorWriter->write($siteConfig, $authors, $entriesByAuthor, $collections, $outputDir, $navigation, $noWrite);
+                $output->writeln("  Author pages: <comment>$authorPageCount</comment>");
             }
-            $feedCount++;
-        }
 
-        if ($feedCount > 0) {
-            $output->writeln("  Feeds generated: <comment>$feedCount</comment> (Atom + RSS + JSON)");
-        }
-
-        $profile->switchTo('write listings');
-        $listingWriter = new CollectionListingWriter($this->templateResolver, $assetManifest);
-        $listingPageCount = 0;
-        foreach ($collections as $collectionName => $collection) {
-            if (!$collection->listing) {
-                continue;
+            $profile->switchTo('save manifest');
+            if ($manifest !== null) {
+                $manifest->setConfigFiles($configFiles);
+                $manifest->setTrackedDirectories($trackedDirectories);
+                foreach ($configFiles as $configFile) {
+                    $this->removeStaleOutputs($manifest->replace($configFile, []), $outputDir);
+                }
+                $manifest->save();
             }
-            $listingPageCount += $listingWriter->write(
-                $siteConfig,
-                $collection,
-                $entriesByCollection[$collectionName] ?? [],
-                $outputDir,
-                $navigation,
-                $workerCount,
-                $noWrite,
-            );
-        }
-        if ($listingPageCount > 0) {
-            $output->writeln("  Listing pages: <comment>$listingPageCount</comment>");
-        }
 
-        $profile->switchTo('write archives');
-        $archiveWriter = new DateArchiveWriter($this->templateResolver, $assetManifest);
-        $archivePageCount = 0;
-        foreach ($collections as $collectionName => $collection) {
-            if ($collection->sortBy !== 'date') {
-                continue;
-            }
-            $archivePageCount += $archiveWriter->write(
-                $siteConfig,
-                $collection,
-                $entriesByCollection[$collectionName] ?? [],
-                $outputDir,
-                $navigation,
-                $workerCount,
-                $noWrite,
-            );
-        }
-        if ($archivePageCount > 0) {
-            $output->writeln("  Archive pages: <comment>$archivePageCount</comment>");
-        }
-
-        $profile->switchTo('write sitemap');
-        $sitemapGenerator = new SitemapGenerator();
-        $sitemapGenerator->generate(
-            $siteConfig,
-            $collections,
-            $entriesByCollection,
-            $outputDir,
-            $standalonePages,
-            $siteConfig->authorPages ? $authors : [],
-            $noWrite,
-        );
-        $output->writeln('  Sitemap generated.');
-
-        $profile->switchTo('write support files');
-        $robotsGenerator = new RobotsTxtGenerator();
-        $robots = $robotsGenerator->generate($siteConfig);
-        if ($robots !== '') {
             if (!$noWrite) {
-                FileWriter::write($outputDir . '/robots.txt', $robots);
-            }
-            $output->writeln('  robots.txt generated.');
-        }
+                try {
+                    $this->writeOutputMarker($outputDir);
 
-        $notFoundWriter = new NotFoundPageWriter($this->templateResolver, $assetManifest);
-        $notFoundWriter->write($siteConfig, $outputDir, $navigation, $noWrite);
-        $output->writeln('  404 page generated.');
+                    if ($atomicOutputDir !== null) {
+                        $this->replaceOutputDir($atomicOutputDir, $finalOutputDir);
+                        $outputDir = $finalOutputDir;
+                        $atomicOutputDir = null;
+                    }
+                } catch (RuntimeException $e) {
+                    $output->writeln('<error>' . OutputFormatter::escape($e->getMessage()) . '</error>');
+                    $this->writeProfile($output, $profile);
 
-        if ($siteConfig->search !== null) {
-            $searchGenerator = new SearchIndexGenerator();
-            $searchGenerator->generate($siteConfig, $collections, $entriesByCollection, $outputDir, $standalonePages, $noWrite);
-            $output->writeln('  Search index generated.');
-        }
-
-        if ($siteConfig->taxonomies !== []) {
-            $profile->switchTo('write taxonomy pages');
-            $allEntries = array_merge(...array_values($entriesByCollection));
-            $taxonomyData = TaxonomyCollector::collect($siteConfig->taxonomies, $allEntries);
-            $taxonomyWriter = new TaxonomyPageWriter($this->templateResolver, $assetManifest);
-            $taxonomyPageCount = $taxonomyWriter->write($siteConfig, $taxonomyData, $collections, $outputDir, $navigation, $noWrite);
-            $output->writeln("  Taxonomy pages: <comment>$taxonomyPageCount</comment>");
-        }
-
-        if ($siteConfig->authorPages && $authors !== []) {
-            $profile->switchTo('write author pages');
-            $allEntries ??= array_merge(...array_values($entriesByCollection));
-            $entriesByAuthor = [];
-            foreach ($allEntries as $entry) {
-                foreach ($entry->authors as $authorSlug) {
-                    $entriesByAuthor[$authorSlug][] = $entry;
+                    return ExitCode::DATAERR;
                 }
             }
-            $authorWriter = new AuthorPageWriter($this->templateResolver, $assetManifest);
-            $authorPageCount = $authorWriter->write($siteConfig, $authors, $entriesByAuthor, $collections, $outputDir, $navigation, $noWrite);
-            $output->writeln("  Author pages: <comment>$authorPageCount</comment>");
-        }
 
-        $profile->switchTo('save manifest');
-        if ($manifest !== null) {
-            $manifest->setConfigFiles($configFiles);
-            $manifest->setTrackedDirectories($trackedDirectories);
-            foreach ($configFiles as $configFile) {
-                $this->removeStaleOutputs($manifest->replace($configFile, []), $outputDir);
-            }
-            $manifest->save();
-        }
+            $this->eventDispatcher?->dispatch(new BuildFinishedEvent($buildContext, $siteConfig));
 
-        if (!$noWrite) {
-            try {
-                $this->writeOutputMarker($outputDir);
+            $profile->stop();
+            $this->writeProfile($output, $profile);
+            $output->writeln(
+                '<info>Build complete in '
+                . $this->formatElapsedTime((hrtime(true) - $startedAt) / 1_000_000_000)
+                . '. Peak memory: '
+                . $this->formatMemory(memory_get_peak_usage(true))
+                . '.</info>',
+            );
 
-                if ($atomicOutputDir !== null) {
-                    $this->replaceOutputDir($atomicOutputDir, $finalOutputDir);
-                    $outputDir = $finalOutputDir;
-                    $atomicOutputDir = null;
-                }
-            } catch (RuntimeException $e) {
-                $output->writeln('<error>' . OutputFormatter::escape($e->getMessage()) . '</error>');
-                $this->writeProfile($output, $profile);
-
-                return ExitCode::DATAERR;
-            }
-        }
-
-        $this->eventDispatcher?->dispatch(new BuildFinishedEvent($buildContext, $siteConfig));
-
-        $profile->stop();
-        $this->writeProfile($output, $profile);
-        $output->writeln(
-            '<info>Build complete in '
-            . $this->formatElapsedTime((hrtime(true) - $startedAt) / 1_000_000_000)
-            . '. Peak memory: '
-            . $this->formatMemory(memory_get_peak_usage(true))
-            . '.</info>',
-        );
-
-        return ExitCode::OK;
+            return ExitCode::OK;
         } finally {
             if ($atomicOutputDir !== null) {
                 $this->removeDirectory($atomicOutputDir);
@@ -1826,7 +1826,7 @@ final class BuildCommand extends Command
 
     private function configureProjectProcessors(string $contentDir, SiteConfig $siteConfig): void
     {
-        (new ProjectProcessorConfigurator($this->contentPipeline, $this->feedPipeline))->configure($contentDir, $siteConfig);
+        new ProjectProcessorConfigurator($this->contentPipeline, $this->feedPipeline)->configure($contentDir, $siteConfig);
     }
 
     /**

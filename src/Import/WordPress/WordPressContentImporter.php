@@ -240,7 +240,7 @@ final class WordPressContentImporter implements ContentImporterInterface
         }
 
         try {
-            return (new \DateTimeImmutable($date))->format('Y-m-d H:i:s');
+            return new \DateTimeImmutable($date)->format('Y-m-d H:i:s');
         } catch (Throwable) {
             return '';
         }

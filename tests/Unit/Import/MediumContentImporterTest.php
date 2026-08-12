@@ -50,7 +50,7 @@ final class MediumContentImporterTest extends TestCase
             . "Body text.\n",
         );
 
-        $result = (new MediumContentImporter())->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
+        $result = new MediumContentImporter()->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
 
         assertSame(1, $result->importedCount());
         assertSame(1, $result->totalMessages());
@@ -75,7 +75,7 @@ final class MediumContentImporterTest extends TestCase
             "# Heading Title\n\nBody.\n",
         );
 
-        $result = (new MediumContentImporter())->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
+        $result = new MediumContentImporter()->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
 
         assertSame(1, $result->importedCount());
         $content = file_get_contents($this->targetDir . '/blog/2024-04-01-heading-title.md');
@@ -92,7 +92,7 @@ final class MediumContentImporterTest extends TestCase
             "---\ndate: 2024-05-01\nslug: duplicate\n---\n# Second\n",
         );
 
-        $result = (new MediumContentImporter())->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
+        $result = new MediumContentImporter()->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
 
         assertSame(2, $result->importedCount());
         $this->assertFileExists($this->targetDir . '/blog/2024-05-01-duplicate.md');
@@ -103,7 +103,7 @@ final class MediumContentImporterTest extends TestCase
     {
         $this->removeDir($this->sourceDir);
 
-        $result = (new MediumContentImporter())->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
+        $result = new MediumContentImporter()->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
 
         assertSame(0, $result->importedCount());
         assertCount(1, $result->warnings());

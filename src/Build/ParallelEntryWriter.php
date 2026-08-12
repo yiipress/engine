@@ -107,7 +107,7 @@ final readonly class ParallelEntryWriter
             foreach ($taskChunks as $chunk) {
                 $jobs[] = new EntryWriteWorkerJob($siteConfig, $chunk, $contentDir, $navigation, $crossRefResolver, $authors, $noWrite, $this->cache, $this->assetManifest, $this->relatedIndex, $this->translationIndex);
             }
-            (new PortableWorkerPool())->run($jobs);
+            new PortableWorkerPool()->run($jobs);
             return;
         }
         $pids = [];
