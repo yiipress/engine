@@ -54,6 +54,25 @@ final class SiteConfigParserTest extends TestCase
         unlink($filePath);
     }
 
+    public function testDiscoversIconsNextToSiteConfiguration(): void
+    {
+        $contentDir = sys_get_temp_dir() . '/yiipress-site-icons-' . uniqid();
+        mkdir($contentDir);
+        file_put_contents($contentDir . '/config.yaml', "title: Test\nlanguages: [en]\n");
+        file_put_contents($contentDir . '/icon.webp', 'webp');
+
+        try {
+            $config = (new SiteConfigParser())->parse($contentDir . '/config.yaml');
+
+            assertSame('icon.webp', $config->icons[0]->path);
+            assertSame('image/webp', $config->icons[0]->type);
+        } finally {
+            unlink($contentDir . '/icon.webp');
+            unlink($contentDir . '/config.yaml');
+            rmdir($contentDir);
+        }
+    }
+
     public function testParsesSiteDataFilesFromDataDirectory(): void
     {
         $contentDir = sys_get_temp_dir() . '/yiipress-site-data-' . uniqid();

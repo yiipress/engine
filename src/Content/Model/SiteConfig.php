@@ -10,6 +10,7 @@ final readonly class SiteConfig
      * @param list<string> $taxonomies
      * @param array<string, mixed> $params
      * @param array<string, mixed> $data
+     * @param list<SiteIcon> $icons
      */
     public function __construct(
         public string $title,
@@ -41,5 +42,6 @@ final readonly class SiteConfig
         public bool $minify = true,
         public array $data = [],
         public ProcessorConfig $processors = new ProcessorConfig(),
+        public array $icons = [],
     ) {}
 }

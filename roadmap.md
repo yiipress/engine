@@ -96,6 +96,7 @@
 
 ## Priority 6: SEO and web standards
 
+- [x] Automatic favicon discovery from conventional `content/icon.*` files
 - [x] Open Graph / meta tag helpers
 - [x] Canonical URL support
 - [x] Configurable `robots.txt` generation

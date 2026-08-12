@@ -17,6 +17,7 @@ use YiiPress\Content\Model\Navigation;
 use YiiPress\Content\Model\NavigationItem;
 use YiiPress\Content\Model\SearchConfig;
 use YiiPress\Content\Model\SiteConfig;
+use YiiPress\Content\Model\SiteIcon;
 use YiiPress\Hook\RenderFinishedEvent;
 use YiiPress\Hook\RenderStartedEvent;
 use YiiPress\Processor\ContentProcessorPipeline;
@@ -84,6 +85,22 @@ final class EntryRendererTest extends TestCase
         assertStringNotContainsString('<h1>Logo First</h1>', $html);
         assertStringContainsString('<p>Logo</p>', $html);
         assertStringContainsString('<title>Logo First — Test Site</title>', $html);
+    }
+
+    public function testRendersConfiguredSiteIcons(): void
+    {
+        $entryFile = $this->contentDir . '/blog/post.md';
+        file_put_contents($entryFile, "---\ntitle: Icon\n---\n\nBody.\n");
+
+        $entry = $this->createEntry(filePath: $entryFile, title: 'Icon');
+        $renderer = new EntryRenderer($this->createPipeline(), $this->createTemplateResolver(), contentDir: $this->contentDir);
+        $html = $renderer->render(
+            $this->createSiteConfig(icons: [new SiteIcon('icon.svg', 'image/svg+xml')]),
+            $entry,
+            '/blog/icon/',
+        );
+
+        assertStringContainsString('<link rel="icon" href="../../icon.svg" type="image/svg+xml">', $html);
     }
 
     public function testRendersNavigationPagerWhenProvided(): void
@@ -916,6 +933,9 @@ PHP);
         return new TemplateResolver($registry);
     }
 
+    /**
+     * @param list<SiteIcon> $icons
+     */
     private function createSiteConfig(
         string $theme = '',
         ?SearchConfig $search = null,
@@ -928,6 +948,7 @@ PHP);
         bool $minify = true,
         array $data = [],
         string $baseUrl = 'https://example.com',
+        array $icons = [],
     ): SiteConfig {
         return new SiteConfig(
             title: 'Test Site',
@@ -951,6 +972,7 @@ PHP);
             authorPages: $authorPages,
             minify: $minify,
             data: $data,
+            icons: $icons,
         );
     }
 

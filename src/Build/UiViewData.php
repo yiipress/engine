@@ -19,12 +19,14 @@ final readonly class UiViewData
     /**
      * @param list<string> $languages
      * @param array<string, array<string, string>> $catalogs
+     * @param list<\YiiPress\Content\Model\SiteIcon> $icons
      */
     private function __construct(
         public UiText $ui,
         public string $language,
         public array $languages,
         public array $catalogs,
+        public array $icons,
     ) {}
 
     public static function forSite(SiteConfig $siteConfig, TemplateResolver $templateResolver, string $themeName = ''): self
@@ -40,6 +42,7 @@ final readonly class UiViewData
             language: $language,
             languages: $languages,
             catalogs: UiText::catalogsForTheme($languages, $templateResolver, $themeName, $siteConfig->defaultLanguage),
+            icons: $siteConfig->icons,
         );
     }
 
@@ -53,6 +56,7 @@ final readonly class UiViewData
             'uiLanguage' => $this->language,
             'uiLanguages' => $this->languages,
             'uiCatalogs' => $this->catalogs,
+            'icons' => $this->icons,
         ];
     }
 
