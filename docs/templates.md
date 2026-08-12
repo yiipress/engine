@@ -141,6 +141,7 @@ All built-in page templates receive these additional variables:
 | `$uiCatalogs` | `array<string, array<string, string>>` | Theme UI catalogs for client-side switching |
 | `$ui`       | `YiiPress\I18n\UiText`       | Injected localized UI-text helper for bundled theme labels    |
 | `$data`     | `array<string, mixed>`       | Site data loaded from `content/data/*.yaml` or `content/data/*.yml` |
+| `$icons`    | `list<YiiPress\Content\Model\SiteIcon>` | Favicons discovered from `content/icon.*` files |
 | `$h`        | `Closure(string, int, ?string, bool): string` | Injected alias for `htmlspecialchars()` |
 | `$t`        | `Closure(string, array): string` | Injected shortcut for `$ui->get()` in templates      |
 

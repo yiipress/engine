@@ -97,6 +97,7 @@ final class SiteConfigParser
                 ? (new SiteDataParser())->parse(dirname($filePath) . '/data')
                 : [],
             processors: self::parseProcessorConfig($data['processors'] ?? null),
+            icons: (new SiteIconFinder())->find(dirname($filePath)),
         );
     }
 

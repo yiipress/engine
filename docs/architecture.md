@@ -29,7 +29,7 @@ User content lives under `content/`:
 - `<collection>/*.md` — default-language entries in a collection.
 - `<collection>/<locale>/*.md` — localized collection entries, for example `blog/ru/post.md`.
 - `authors/*.md` — author profiles.
-- `assets/` and `<collection>/assets/` — copied static files.
+- `icon.*`, `assets/`, and `<collection>/assets/` — discovered favicon files and copied static files.
 
 YiiPress turns those files into immutable model objects: site config, navigation, collections, entries, authors, taxonomies, and output pages. Entry settings are resolved in this order:
 

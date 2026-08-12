@@ -6,6 +6,7 @@ Content that YiiPress is generating from is stored in the `content` directory.
 
 ```
 content/
+├── icon.svg                       # Site favicon (other image formats are supported)
 ├── assets/                        # Global assets (logo, favicon, fonts)
 │   └── logo.svg
 ├── blog/                          # Collection: blog
@@ -368,6 +369,15 @@ This renders a `<nav><ul><li>` structure with nested lists for children. You can
 The renderer escapes menu labels and generated attributes with HTML5-compatible Yii helpers, so navigation titles and URLs can contain special characters without breaking markup.
 
 ## Assets
+
+To add a favicon, put one or more files named `icon.svg`, `icon.ico`, `icon.png`, `icon.gif`,
+`icon.webp`, `icon.avif`, `icon.jpg`, or `icon.jpeg` directly in `content/`. YiiPress copies the
+files to the output root and the bundled theme adds MIME-aware `<link rel="icon">` tags. SVG is
+recommended because it stays sharp at every size. Icon URLs work with asset fingerprinting and
+sites deployed below a URL subdirectory.
+
+For a custom theme, the detected icons are available as `$icons`, a list of `SiteIcon` objects with
+`path` and `type` properties.
 
 Assets are stored at two levels:
 

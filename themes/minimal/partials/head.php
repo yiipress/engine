@@ -11,6 +11,7 @@
  * @var string $uiLanguage
  * @var list<string> $uiLanguages
  * @var array<string, array<string, string>> $uiCatalogs
+ * @var list<YiiPress\Content\Model\SiteIcon> $icons
  * @var YiiPress\I18n\UiText $ui
  * @var Closure(string, int, ?string, bool): string $h
  * @var Closure(string): string $url
@@ -29,10 +30,14 @@ $searchResults ??= 10;
 $uiLanguage ??= 'en';
 $uiLanguages ??= [$uiLanguage];
 $uiCatalogs ??= [$uiLanguage => []];
+$icons ??= [];
 ?>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= $h($title) ?></title>
+<?php foreach ($icons as $icon): ?>
+    <link rel="icon" href="<?= $h($url($icon->path)) ?>" type="<?= $h($icon->type) ?>">
+<?php endforeach; ?>
 <?php if ($metaTags !== null): ?>
 <?php if ($metaTags->canonicalUrl !== ''): ?>
     <link rel="canonical" href="<?= $h($metaTags->canonicalUrl) ?>">
