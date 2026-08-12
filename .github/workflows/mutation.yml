@@ -4,12 +4,14 @@ on:
   pull_request:
     paths: &mutation-paths
       - 'src/Content/Parser/**'
-      - 'tests/Unit/Content/Parser/**'
+      - 'tests/Unit/Content/Parser/SiteIconFinderTest.php'
+      - 'tests/bootstrap.php'
       - 'composer.json'
       - 'composer.lock'
       - 'infection.json.dist'
       - 'phpunit.xml'
       - 'Makefile'
+      - 'docker/**'
       - '.github/workflows/mutation.yml'
   push:
     branches:

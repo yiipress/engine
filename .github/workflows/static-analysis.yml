@@ -13,9 +13,12 @@ on:
       - 'composer.lock'
       - 'psalm.xml'
       - 'psalm-baseline.xml'
+      - 'stubs/**'
       - 'phpstan.neon'
+      - 'phpstan-baseline.neon'
       - 'composer-dependency-analyser.php'
       - 'Makefile'
+      - 'docker/**'
       - '.github/workflows/static-analysis.yml'
   pull_request:
     branches:
