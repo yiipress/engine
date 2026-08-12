@@ -6,7 +6,12 @@
     "report.generators": {
         "default": {
             "generator": "composite",
-            "reports": ["aggregate", "env"]
+            "reports": ["table_aggregate", "env"]
+        },
+        "table_aggregate": {
+            "generator": "component",
+            "component": "table_aggregate",
+            "title": "YiiPress Benchmarks"
         }
     }
 }
