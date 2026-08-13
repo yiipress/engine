@@ -641,6 +641,8 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('make cs-fix', $autoFormat);
         self::assertStringContainsString('git push origin "HEAD:${HEAD_REF}"', $autoFormat);
         self::assertActionIsPinned($zizmor, 'zizmorcore/zizmor-action');
+        self::assertStringContainsString('security-events: write', $zizmor);
+        self::assertStringContainsString('advanced-security: true', $zizmor);
         self::assertStringContainsString('config: .github/zizmor.yml', $zizmor);
         self::assertStringContainsString('min-severity: high', $zizmor);
         self::assertStringContainsString("persona: 'pedantic'", $zizmor);
