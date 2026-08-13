@@ -124,7 +124,7 @@ final class SelfUpdaterTest extends TestCase
     {
         $this->expectExceptionMessage('only for PHAR and static binary installations');
 
-        (new PackageLocator())->locate();
+        new PackageLocator()->locate();
     }
 
     #[Test]
@@ -133,7 +133,7 @@ final class SelfUpdaterTest extends TestCase
         $target = $this->directory . '/yiipress';
         file_put_contents($target, 'binary-build');
 
-        $package = (new PackageLocator('Linux', 'x86_64', $target))->locate();
+        $package = new PackageLocator('Linux', 'x86_64', $target)->locate();
 
         self::assertSame($target, $package->targetPath);
         self::assertSame('yiipress-linux-amd64.tar.gz', $package->assetName);
@@ -145,7 +145,7 @@ final class SelfUpdaterTest extends TestCase
     {
         $this->expectExceptionMessage('Unsupported Linux architecture: aarch64');
 
-        (new PackageLocator('Linux', 'aarch64'))->locateBinary('/usr/local/bin/yiipress');
+        new PackageLocator('Linux', 'aarch64')->locateBinary('/usr/local/bin/yiipress');
     }
 
     #[Test]

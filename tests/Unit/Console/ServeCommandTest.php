@@ -59,10 +59,8 @@ final class ServeCommandTest extends TestCase
         file_put_contents($root . '/content/index.md', 'one');
         $command = new ServeCommand();
         $property = new ReflectionProperty(ServeCommand::class, 'contentDir');
-        $property->setAccessible(true);
         $property->setValue($command, $root . '/content');
         $method = new ReflectionMethod(ServeCommand::class, 'liveReloadFileSnapshot');
-        $method->setAccessible(true);
         $before = $method->invoke($command);
         file_put_contents($root . '/content/index.md', 'changed content');
         clearstatcache(true, $root . '/content/index.md');
@@ -507,13 +505,9 @@ final class FakeConnection extends EventEmitter implements ConnectionInterface
         return !$this->closed;
     }
 
-    public function pause(): void
-    {
-    }
+    public function pause(): void {}
 
-    public function resume(): void
-    {
-    }
+    public function resume(): void {}
 
     public function pipe(WritableStreamInterface $dest, array $options = []): WritableStreamInterface
     {

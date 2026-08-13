@@ -1,9 +1,14 @@
 {
+    "$schema": "./vendor/phpbench/phpbench/phpbench.schema.json",
     "runner.bootstrap": "vendor/autoload.php",
     "runner.path": "benchmarks",
     "runner.retry_threshold": 5,
     "report.generators": {
         "default": {
+            "generator": "composite",
+            "reports": ["table_aggregate", "env"]
+        },
+        "table_aggregate": {
             "generator": "component",
             "component": "table_aggregate",
             "title": "YiiPress Benchmarks"

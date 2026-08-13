@@ -33,7 +33,7 @@ final class ExceptionRendererTest extends TestCase
     ): void {
         $output = new BufferedOutput($verbosity, false);
 
-        (new ExceptionRenderer())->render(new RuntimeException('Something went wrong.'), $output);
+        new ExceptionRenderer()->render(new RuntimeException('Something went wrong.'), $output);
 
         $rendered = $output->fetch();
         self::assertStringContainsString('Something went wrong.', $rendered);

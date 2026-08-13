@@ -46,8 +46,8 @@ final class OEmbedProviderTest extends TestCase
 
     public function testProvidersReturnNullForUnsupportedUrlShape(): void
     {
-        $this->assertNull((new YouTubeProcessor())->replaceOEmbed('https://www.youtube.com/watch'));
-        $this->assertNull((new VimeoProcessor())->replaceOEmbed('https://vimeo.com/channels/staffpicks/123456789'));
-        $this->assertNull((new TweetProcessor())->replaceOEmbed('https://x.com/samdark'));
+        $this->assertNull(new YouTubeProcessor()->replaceOEmbed('https://www.youtube.com/watch'));
+        $this->assertNull(new VimeoProcessor()->replaceOEmbed('https://vimeo.com/channels/staffpicks/123456789'));
+        $this->assertNull(new TweetProcessor()->replaceOEmbed('https://x.com/samdark'));
     }
 }

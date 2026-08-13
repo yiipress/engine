@@ -229,7 +229,7 @@ final class EntryRendererTest extends TestCase
 
         $cacheFiles = array_values(array_filter(
             scandir($cacheDir),
-            static fn (string $file): bool => $file !== '.' && $file !== '..',
+            static fn(string $file): bool => $file !== '.' && $file !== '..',
         ));
         $this->assertCount(2, $cacheFiles);
     }
@@ -774,7 +774,7 @@ PHP);
         file_put_contents($entryFile, "---\ntitle: Hooked Post\n---\n\nHooked body.\n");
 
         $events = [];
-        $listenerCollection = (new ListenerCollection())
+        $listenerCollection = new ListenerCollection()
             ->add(static function (RenderStartedEvent $event) use (&$events): void {
                 $events[] = 'render.started:' . $event->entry->title;
             })

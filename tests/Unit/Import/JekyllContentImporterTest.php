@@ -49,7 +49,7 @@ final class JekyllContentImporterTest extends TestCase
             . "Body text.\n",
         );
 
-        $result = (new JekyllContentImporter())->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
+        $result = new JekyllContentImporter()->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
 
         assertSame(1, $result->importedCount());
         assertSame(1, $result->totalMessages());
@@ -78,7 +78,7 @@ final class JekyllContentImporterTest extends TestCase
             . "Body.\n",
         );
 
-        $result = (new JekyllContentImporter())->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
+        $result = new JekyllContentImporter()->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
 
         assertSame(1, $result->importedCount());
         $content = file_get_contents($this->targetDir . '/blog/2024-04-01-heading-title.md');
@@ -91,7 +91,7 @@ final class JekyllContentImporterTest extends TestCase
     {
         file_put_contents($this->sourceDir . '/_posts/not-dated.md', "---\ntitle: Bad\n---\n\nBody.\n");
 
-        $result = (new JekyllContentImporter())->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
+        $result = new JekyllContentImporter()->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
 
         assertSame(0, $result->importedCount());
         assertCount(1, $result->skippedFiles());
@@ -102,7 +102,7 @@ final class JekyllContentImporterTest extends TestCase
     {
         $this->removeDir($this->sourceDir . '/_posts');
 
-        $result = (new JekyllContentImporter())->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
+        $result = new JekyllContentImporter()->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
 
         assertSame(0, $result->importedCount());
         assertCount(1, $result->warnings());

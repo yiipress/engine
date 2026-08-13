@@ -109,7 +109,7 @@ final class NavigationParser
             $titles[$this->normalizeLanguage((string) $language)] = (string) $title;
         }
 
-        $titles = array_filter($titles, static fn (string $title): bool => $title !== '');
+        $titles = array_filter($titles, static fn(string $title): bool => $title !== '');
         if ($titles === []) {
             return ['', []];
         }

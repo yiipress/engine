@@ -33,7 +33,7 @@ final class TemplateContext
         }
         if (!isset($variables['themeAsset'])) {
             $rootPath = (string) ($variables['rootPath'] ?? '');
-            $variables['themeAsset'] = fn (string $path): string => $this->themeAssetUrl($path, $rootPath);
+            $variables['themeAsset'] = fn(string $path): string => $this->themeAssetUrl($path, $rootPath);
         }
         $variables = TemplateHelpers::inject($variables);
 

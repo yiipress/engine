@@ -86,7 +86,7 @@ YAML);
         file_put_contents($file, "- title\n");
 
         try {
-            (new NavigationParser())->parse($file);
+            new NavigationParser()->parse($file);
             $this->fail('Expected invalid content configuration exception.');
         } catch (InvalidContentConfigException $e) {
             assertSame('Invalid content configuration', $e->getName());

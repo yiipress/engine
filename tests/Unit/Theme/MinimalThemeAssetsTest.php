@@ -8,7 +8,6 @@ use PHPUnit\Framework\TestCase;
 
 use function file_get_contents;
 use function PHPUnit\Framework\assertStringContainsString;
-use function PHPUnit\Framework\assertStringNotContainsString;
 
 final class MinimalThemeAssetsTest extends TestCase
 {

@@ -22,7 +22,7 @@ final class TagLinkProcessorTest extends TestCase
 
         assertSame(
             '<p>Check out <a href="/tags/yii3/" class="tag-link">#yii3</a> and <a href="/tags/php/" class="tag-link">#php</a> for more info.</p>',
-            $result
+            $result,
         );
     }
 
@@ -35,7 +35,7 @@ final class TagLinkProcessorTest extends TestCase
 
         assertSame(
             '<p><a href="/tags/yiiframework/" class="tag-link">#YiiFramework</a> <a href="/tags/phpunit/" class="tag-link">#PHPUnit</a></p>',
-            $result
+            $result,
         );
     }
 
@@ -48,7 +48,7 @@ final class TagLinkProcessorTest extends TestCase
 
         assertSame(
             '<p>Example: <code>#hashtag</code> should not be converted.</p>',
-            $result
+            $result,
         );
     }
 
@@ -61,7 +61,7 @@ final class TagLinkProcessorTest extends TestCase
 
         assertSame(
             '<pre>#hashtag in code</pre><p><a href="/tags/hashtag/" class="tag-link">#hashtag</a> outside</p>',
-            $result
+            $result,
         );
     }
 
@@ -74,7 +74,7 @@ final class TagLinkProcessorTest extends TestCase
 
         assertSame(
             '<p><a href="/test">#link</a> and <a href="/tags/standalone/" class="tag-link">#standalone</a></p>',
-            $result
+            $result,
         );
     }
 
@@ -87,7 +87,7 @@ final class TagLinkProcessorTest extends TestCase
 
         assertSame(
             '<p><a href="/tags/multi-word-tag/" class="tag-link">#multi-word-tag</a> and <a href="/tags/another-tag/" class="tag-link">#another-tag</a> here</p>',
-            $result
+            $result,
         );
     }
 
@@ -100,7 +100,7 @@ final class TagLinkProcessorTest extends TestCase
 
         assertSame(
             '<p><a href="/tags/yii_framework/" class="tag-link">#yii_framework</a> and <a href="/tags/php_8/" class="tag-link">#php_8</a></p>',
-            $result
+            $result,
         );
     }
 
@@ -113,7 +113,7 @@ final class TagLinkProcessorTest extends TestCase
 
         assertSame(
             '<p><a href="/tags/php8/" class="tag-link">#php8</a> and <a href="/tags/yii3/" class="tag-link">#yii3</a></p>',
-            $result
+            $result,
         );
     }
 
@@ -126,7 +126,7 @@ final class TagLinkProcessorTest extends TestCase
 
         assertSame(
             '<p>Use # for comments</p>',
-            $result
+            $result,
         );
     }
 
@@ -139,7 +139,7 @@ final class TagLinkProcessorTest extends TestCase
 
         assertSame(
             '<p><a href="/tags/yii/" class="tag-link">#yii</a> <a href="/tags/php/" class="tag-link">#php</a> <a href="/tags/framework/" class="tag-link">#framework</a></p>',
-            $result
+            $result,
         );
     }
 
@@ -170,7 +170,7 @@ final class TagLinkProcessorTest extends TestCase
 
         assertSame(
             '<p><a href="/blog/tags/test/" class="tag-link">#test</a></p>',
-            $result
+            $result,
         );
     }
 
@@ -195,7 +195,7 @@ final class TagLinkProcessorTest extends TestCase
         // Color code in attribute preserved, real hashtag converted
         assertSame(
             '<p style="color: #fff">This is white text with <a href="/tags/realhashtag/" class="tag-link">#realhashtag</a></p>',
-            $result
+            $result,
         );
     }
 

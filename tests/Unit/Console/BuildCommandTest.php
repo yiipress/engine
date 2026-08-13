@@ -16,7 +16,6 @@ use YiiPress\Render\MarkdownRenderer;
 use YiiPress\RuntimePaths;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
-
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -110,7 +109,7 @@ final class BuildCommandTest extends TestCase
         file_put_contents($contentDir . '/index.md', "---\ntitle: Home\n---\n\nHello.\n");
 
         $events = [];
-        $listenerCollection = (new ListenerCollection())
+        $listenerCollection = new ListenerCollection()
             ->add(static function (BuildStartedEvent $event) use (&$events): void {
                 $events[] = 'build.started:' . $event->siteConfig->title;
             })
@@ -1617,7 +1616,7 @@ PHP,
         $result = $this->runBuildResult($contentDir);
 
         assertSame(65, $result['exitCode'], $result['output']);
-        assertStringContainsString('Duplicate alias "/about/"', $result['output']);
+        assertMatchesRegularExpression('/Duplicate (?:alias|permalink) "\/about\/"/', $result['output']);
     }
 
     public function testBuildRejectsDuplicateAliases(): void

@@ -34,7 +34,7 @@ final readonly class AssetUrlRewriter
 
         return preg_replace_callback(
             '/\b(href|src)=(["\'])([^"\']+)\2/i',
-            fn (array $matches): string => $matches[1] . '=' . $matches[2] . $this->rewriteUrl($matches[3], $rootPath) . $matches[2],
+            fn(array $matches): string => $matches[1] . '=' . $matches[2] . $this->rewriteUrl($matches[3], $rootPath) . $matches[2],
             $html,
         ) ?? $html;
     }

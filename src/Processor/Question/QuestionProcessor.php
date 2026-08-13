@@ -180,7 +180,7 @@ final readonly class QuestionProcessor implements ContentProcessorInterface
         if ($level === 0) {
             $withoutQuestions = (string) preg_replace_callback(
                 '/<!-- yiipress-question-slot:\d+ -->/',
-                static fn (): string => '',
+                static fn(): string => '',
                 $withoutQuestions,
             );
 
@@ -194,7 +194,7 @@ final readonly class QuestionProcessor implements ContentProcessorInterface
     {
         return (string) preg_replace_callback(
             self::QUESTION_PATTERN,
-            fn (array $matches): string => $this->details($matches[1], $matches[2]),
+            fn(array $matches): string => $this->details($matches[1], $matches[2]),
             $content,
         );
     }

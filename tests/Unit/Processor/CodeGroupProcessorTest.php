@@ -33,7 +33,7 @@ pnpm install
 MARKDOWN;
 
         $preserved = $processor->process($markdown, $this->entry());
-        $html = (new MarkdownProcessor(new MarkdownRenderer()))->process($preserved, $this->entry());
+        $html = new MarkdownProcessor(new MarkdownRenderer())->process($preserved, $this->entry());
         $result = $processor->process($html, $this->entry());
 
         self::assertStringContainsString('class="code-group"', $result);
@@ -87,7 +87,7 @@ MARKDOWN;
             . "[code-tab label=\"$label\"]\n```text\none\n```\n[/code-tab]\n"
             . "[code-tab label=\"Two\"]\n```text\ntwo\n```\n[/code-tab]\n[/code-group]";
         $preserved = $processor->process($group('<b>One</b>') . "\n" . $group('Three'), $this->entry());
-        $html = (new MarkdownProcessor(new MarkdownRenderer()))->process($preserved, $this->entry());
+        $html = new MarkdownProcessor(new MarkdownRenderer())->process($preserved, $this->entry());
         $result = $processor->process($html, $this->entry());
 
         self::assertStringContainsString('&lt;b&gt;One&lt;/b&gt;', $result);

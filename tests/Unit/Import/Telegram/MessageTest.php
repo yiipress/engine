@@ -106,7 +106,7 @@ final class MessageTest extends TestCase
             'edited_unixtime' => '1671535849',
             'text' => [
                 "Markup test\n", // <-- becomes title and is removed from content
-                $input
+                $input,
             ],
             'text_entities' => [],
         ], null);
@@ -152,7 +152,7 @@ final class MessageTest extends TestCase
                 ['type' => 'hashtag', 'text' => '#yii'],
                 ' ',
                 ['type' => 'hashtag', 'text' => '#yiipress'],
-                ''
+                '',
             ],
             'text_entities' => [
                 ['type' => 'bold', 'text' => '🎁 YiiPress'],
@@ -164,7 +164,7 @@ final class MessageTest extends TestCase
                 ['type' => 'hashtag', 'text' => '#yii'],
                 ['type' => 'plain', 'text' => ' '],
                 ['type' => 'hashtag', 'text' => '#yiipress'],
-                ['type' => 'plain', 'text' => '']
+                ['type' => 'plain', 'text' => ''],
             ],
         ], null);
 

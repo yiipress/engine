@@ -17,11 +17,11 @@ use function php_uname;
 
 use const PATHINFO_EXTENSION;
 
-final class PackageLocator
+final readonly class PackageLocator
 {
-    private readonly string $osFamily;
-    private readonly string $architecture;
-    private readonly string $staticBinaryPath;
+    private string $osFamily;
+    private string $architecture;
+    private string $staticBinaryPath;
 
     public function __construct(?string $osFamily = null, ?string $architecture = null, ?string $staticBinaryPath = null)
     {
@@ -66,6 +66,6 @@ final class PackageLocator
 
     private function detectStaticBinaryPath(): string
     {
-        return function_exists('micro_get_self_filename') ? (string) call_user_func('micro_get_self_filename') : '';
+        return function_exists('micro_get_self_filename') ? (string) call_user_func(micro_get_self_filename(...)) : '';
     }
 }

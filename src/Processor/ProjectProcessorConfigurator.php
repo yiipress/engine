@@ -15,7 +15,7 @@ final readonly class ProjectProcessorConfigurator
 
     public function configure(string $contentDir, SiteConfig $siteConfig): void
     {
-        $processors = (new ProjectProcessorLoader($contentDir, $contentDir . '/config.yaml'))->load($siteConfig->processors);
+        $processors = new ProjectProcessorLoader($contentDir, $contentDir . '/config.yaml')->load($siteConfig->processors);
 
         $this->contentPipeline->reset();
         $this->feedPipeline->reset();

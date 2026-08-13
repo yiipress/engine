@@ -38,9 +38,9 @@ final class ProjectThemeDiscoveryTest extends TestCase
         mkdir($this->rootDir . '/themes/docs_theme');
         file_put_contents($this->rootDir . '/themes/readme.md', 'not a theme');
 
-        $themes = (new ProjectThemeDiscovery())->discover($this->rootDir . '/themes');
+        $themes = new ProjectThemeDiscovery()->discover($this->rootDir . '/themes');
 
-        assertSame(['alpha', 'docs_theme', 'zeta'], array_map(static fn (Theme $theme): string => $theme->name, $themes));
+        assertSame(['alpha', 'docs_theme', 'zeta'], array_map(static fn(Theme $theme): string => $theme->name, $themes));
     }
 
     public function testSkipsInvalidThemeNames(): void
@@ -49,7 +49,7 @@ final class ProjectThemeDiscoveryTest extends TestCase
         mkdir($this->rootDir . '/themes/.hidden');
         mkdir($this->rootDir . '/themes/bad.name');
 
-        $themes = (new ProjectThemeDiscovery())->discover($this->rootDir . '/themes');
+        $themes = new ProjectThemeDiscovery()->discover($this->rootDir . '/themes');
 
         assertCount(1, $themes);
         assertSame('good-theme', $themes[0]->name);
@@ -57,7 +57,7 @@ final class ProjectThemeDiscoveryTest extends TestCase
 
     public function testReturnsEmptyListWhenThemesDirectoryIsMissing(): void
     {
-        $themes = (new ProjectThemeDiscovery())->discover($this->rootDir . '/missing');
+        $themes = new ProjectThemeDiscovery()->discover($this->rootDir . '/missing');
 
         assertSame([], $themes);
     }
@@ -69,7 +69,7 @@ final class ProjectThemeDiscoveryTest extends TestCase
         $registry = new ThemeRegistry();
         $registry->register(new Theme('minimal', '/built-in/minimal'));
 
-        $registered = (new ProjectThemeDiscovery())->register($registry, $this->rootDir . '/themes');
+        $registered = new ProjectThemeDiscovery()->register($registry, $this->rootDir . '/themes');
 
         assertSame(1, $registered);
         assertSame('/built-in/minimal', $registry->get('minimal')->path);

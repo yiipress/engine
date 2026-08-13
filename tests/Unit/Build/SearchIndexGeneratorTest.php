@@ -87,7 +87,7 @@ final class SearchIndexGeneratorTest extends TestCase
             file_get_contents($this->outputDir . '/search-index.json'),
             true,
             512,
-            JSON_THROW_ON_ERROR
+            JSON_THROW_ON_ERROR,
         );
 
         assertSame(1, count($items));
@@ -109,7 +109,7 @@ final class SearchIndexGeneratorTest extends TestCase
             file_get_contents($this->outputDir . '/search-index.json'),
             true,
             512,
-            JSON_THROW_ON_ERROR
+            JSON_THROW_ON_ERROR,
         );
 
         assertSame(false, array_key_exists('body', $items[0]));
@@ -128,7 +128,7 @@ final class SearchIndexGeneratorTest extends TestCase
             file_get_contents($this->outputDir . '/search-index.json'),
             true,
             512,
-            JSON_THROW_ON_ERROR
+            JSON_THROW_ON_ERROR,
         );
 
         assertSame(true, array_key_exists('body', $items[0]));
@@ -147,7 +147,7 @@ final class SearchIndexGeneratorTest extends TestCase
             file_get_contents($this->outputDir . '/search-index.json'),
             true,
             512,
-            JSON_THROW_ON_ERROR
+            JSON_THROW_ON_ERROR,
         );
 
         assertSame(1, count($items));
@@ -165,7 +165,7 @@ final class SearchIndexGeneratorTest extends TestCase
             file_get_contents($this->outputDir . '/search-index.json'),
             true,
             512,
-            JSON_THROW_ON_ERROR
+            JSON_THROW_ON_ERROR,
         );
 
         assertSame([], $items);

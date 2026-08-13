@@ -28,6 +28,6 @@ final class ExceptionExitCodeTest extends TestCase
     #[DataProvider('codeProvider')]
     public function testResolvesExceptionExitCode(int $code, int $expected): void
     {
-        self::assertSame($expected, (new ExceptionExitCode())->resolve(new RuntimeException('Failure.', $code)));
+        self::assertSame($expected, new ExceptionExitCode()->resolve(new RuntimeException('Failure.', $code)));
     }
 }

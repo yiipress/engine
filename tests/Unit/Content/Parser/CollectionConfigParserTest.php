@@ -63,7 +63,7 @@ final class CollectionConfigParserTest extends TestCase
         file_put_contents($file, "title: Docs\nnavigation_pager: true\n");
 
         try {
-            $collection = (new CollectionConfigParser())->parse($file, 'docs');
+            $collection = new CollectionConfigParser()->parse($file, 'docs');
 
             assertTrue($collection->navigationPager);
         } finally {
@@ -78,7 +78,7 @@ final class CollectionConfigParserTest extends TestCase
         file_put_contents($file, "title: Blog\nfeed: true\nfeed_limit: 5\n");
 
         try {
-            $collection = (new CollectionConfigParser())->parse($file, 'blog');
+            $collection = new CollectionConfigParser()->parse($file, 'blog');
 
             assertSame(5, $collection->feedLimit);
         } finally {
@@ -93,7 +93,7 @@ final class CollectionConfigParserTest extends TestCase
         file_put_contents($file, "- title\n");
 
         try {
-            (new CollectionConfigParser())->parse($file, 'blog');
+            new CollectionConfigParser()->parse($file, 'blog');
             $this->fail('Expected invalid content configuration exception.');
         } catch (InvalidContentConfigException $e) {
             assertSame('Invalid content configuration', $e->getName());

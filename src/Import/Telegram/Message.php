@@ -19,9 +19,8 @@ final class Message
      */
     public function __construct(
         private readonly array $message,
-        private readonly ?Channel $channel
-    ) {
-    }
+        private readonly ?Channel $channel,
+    ) {}
 
     public int $id {
         get {
@@ -59,14 +58,14 @@ final class Message
     public DateTimeImmutable $date {
         get {
             $time = $this->message['date_unixtime'] ?? time();
-            return DateTimeImmutable::createFromTimestamp((int)$time);
+            return DateTimeImmutable::createFromTimestamp((int) $time);
         }
     }
 
     public DateTimeImmutable $edited {
         get {
             $time = $this->message['edited_unixtime'] ?? $this->message['date_unixtime'] ?? time();
-            return DateTimeImmutable::createFromTimestamp((int)$time);
+            return DateTimeImmutable::createFromTimestamp((int) $time);
         }
     }
 
@@ -286,9 +285,9 @@ final class Message
         return implode(
             "\n",
             array_map(
-                static fn ($line) => "> $line",
-                explode("\n", $text)
-            )
+                static fn($line) => "> $line",
+                explode("\n", $text),
+            ),
         );
     }
 

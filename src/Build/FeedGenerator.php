@@ -386,8 +386,7 @@ final class FeedGenerator
         Collection $collection,
         array $entries,
         ?array $entryCollections = null,
-    ): array
-    {
+    ): array {
         $collectionUrl = rtrim($siteConfig->baseUrl, '/') . $this->collectionPath($collection);
         $document = [
             'version' => 'https://jsonfeed.org/version/1.1',
@@ -395,7 +394,7 @@ final class FeedGenerator
             'home_page_url' => $collectionUrl,
             'feed_url' => rtrim($siteConfig->baseUrl, '/') . $this->feedPath($collection, 'feed.json'),
             'items' => array_map(
-                fn (Entry $entry): array => $this->jsonItem($siteConfig, $entryCollections[$entry->collection] ?? $collection, $entry),
+                fn(Entry $entry): array => $this->jsonItem($siteConfig, $entryCollections[$entry->collection] ?? $collection, $entry),
                 $entries,
             ),
         ];
@@ -441,7 +440,7 @@ final class FeedGenerator
 
         if ($entry->authors !== []) {
             $item['authors'] = array_map(
-                fn (string $authorSlug): array => ['name' => $this->authors[$authorSlug]->title ?? $authorSlug],
+                fn(string $authorSlug): array => ['name' => $this->authors[$authorSlug]->title ?? $authorSlug],
                 $entry->authors,
             );
         }

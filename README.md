@@ -11,6 +11,9 @@
 [![Tests](https://github.com/yiipress/engine/actions/workflows/run-tests.yml/badge.svg)](https://github.com/yiipress/engine/actions/workflows/run-tests.yml)
 [![Static Analysis](https://github.com/yiipress/engine/actions/workflows/static-analysis.yml/badge.svg)](https://github.com/yiipress/engine/actions/workflows/static-analysis.yml)
 [![Coverage](https://codecov.io/github/yiipress/engine/graph/badge.svg)](https://codecov.io/github/yiipress/engine)
+[![Mutation Tests](https://github.com/yiipress/engine/actions/workflows/mutation.yml/badge.svg)](https://github.com/yiipress/engine/actions/workflows/mutation.yml)
+[![Mutation Score](https://img.shields.io/endpoint?style=flat&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2Fyiipress%2Fengine%2Fmaster)](https://dashboard.stryker-mutator.io/reports/github.com/yiipress/engine/master)
+[![Workflow Security](https://github.com/yiipress/engine/actions/workflows/zizmor.yml/badge.svg)](https://github.com/yiipress/engine/actions/workflows/zizmor.yml)
 [![Package](https://github.com/yiipress/engine/actions/workflows/package-static.yml/badge.svg)](https://github.com/yiipress/engine/actions/workflows/package-static.yml)
 
 YiiPress is a fast, file-based static website engine powered by [Yii3](https://www.yiiframework.com/).

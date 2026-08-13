@@ -63,7 +63,7 @@ final class CheckCommand extends Command
             return ExitCode::DATAERR;
         }
 
-        $issues = (new SiteChecker())->check($outputDir, (bool) $input->getOption('external'));
+        $issues = new SiteChecker()->check($outputDir, (bool) $input->getOption('external'));
         if ($issues === []) {
             $output->writeln('<info>Site check passed.</info>');
             return ExitCode::OK;

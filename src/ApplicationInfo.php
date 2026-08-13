@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiPress;
 
 use Composer\InstalledVersions;
+
 final class ApplicationInfo
 {
     public const string NAME = 'YiiPress';

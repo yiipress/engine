@@ -7,7 +7,6 @@ namespace YiiPress\Tests\Unit\Build;
 use YiiPress\Build\BuildManifest;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
-
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;

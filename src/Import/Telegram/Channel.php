@@ -10,17 +10,17 @@ use InvalidArgumentException;
 final readonly class Channel
 {
     public function __construct(
-        private array $message
+        private array $message,
     ) {
         if ($message['type'] !== 'service') {
             throw new InvalidArgumentException(
-                sprintf('Message type should be "service", "%s" received.', $this->message['type'])
+                sprintf('Message type should be "service", "%s" received.', $this->message['type']),
             );
         }
 
         if ($message['action'] !== 'create_channel') {
             throw new InvalidArgumentException(
-                sprintf('Message action should be "create_channel", "%s" received.', $this->message['action'])
+                sprintf('Message action should be "create_channel", "%s" received.', $this->message['action']),
             );
         }
     }
@@ -32,6 +32,6 @@ final readonly class Channel
 
     public function getDate(): DateTimeImmutable
     {
-        return DateTimeImmutable::createFromTimestamp((int)$this->message['date_unixtime']);
+        return DateTimeImmutable::createFromTimestamp((int) $this->message['date_unixtime']);
     }
 }

@@ -29,11 +29,12 @@ PACKAGE_WINDOWS_DIST ?= dist/windows-amd64
 PACKAGE_PHAR_DIST ?= dist/phar
 PACKAGE_IMAGE ?= ${IMAGE}-static
 YIIPRESS_COMMIT ?= $(shell git rev-parse HEAD)
+BENCH_ASSERT ?=
 MACOS_PACKAGE_ARGS ?=
 WINDOWS_PACKAGE_ARGS ?=
 export YIIPRESS_COMMIT
 
-.PHONY: build up open down stop clear shell yii composer rector cs-fix test test-coverage test-coverage-clover psalm composer-dependency-analyser bench-generate bench-generate-realistic bench bench-baseline bench-compare bench-profile profile-build php build-docs package package-phar package-linux package-macos package-windows package-distroless package-distroless-push prod-build prod-push prod-deploy help
+.PHONY: build up open down stop clear shell yii composer rector cs-fix test test-coverage test-coverage-clover phpstan infection composer-dependency-analyser bench-generate bench-generate-realistic bench bench-baseline bench-compare bench-profile profile-build php build-docs package package-phar package-linux package-macos package-windows package-distroless package-distroless-push prod-build prod-push prod-deploy help
 
 #
 # Development
@@ -148,9 +149,14 @@ test-coverage-clover: ## Run tests with Clover coverage
 	$(DOCKER_COMPOSE_TEST) run --rm app bash -lc 'mkdir -p runtime/coverage && ./vendor/bin/phpunit --coverage-clover runtime/coverage/clover.xml $(CLI_ARGS)'
 endif
 
-ifeq ($(PRIMARY_GOAL),psalm)
-psalm: ## Run Psalm
-	$(DOCKER_COMPOSE_DEV) run --rm app ./vendor/bin/psalm $(CLI_ARGS)
+ifeq ($(PRIMARY_GOAL),phpstan)
+phpstan: ## Run PHPStan
+	$(DOCKER_COMPOSE_DEV) run --rm app ./vendor/bin/phpstan analyse --configuration=phpstan.neon --memory-limit=1G $(CLI_ARGS)
+endif
+
+ifeq ($(PRIMARY_GOAL),infection)
+infection: ## Run mutation tests
+	$(DOCKER_COMPOSE_TEST) run --rm -e XDEBUG_MODE=coverage -e CI -e GITHUB_ACTIONS -e STRYKER_DASHBOARD_API_KEY app php -d memory_limit=1G ./vendor/bin/infection --configuration=infection.json.dist --threads=max --min-covered-msi=70 --logger-project-root-directory=/app $(CLI_ARGS)
 endif
 
 ifeq ($(PRIMARY_GOAL),composer-dependency-analyser)
@@ -180,7 +186,7 @@ endif
 
 ifeq ($(PRIMARY_GOAL),bench-compare)
 bench-compare: ## Run benchmarks (xdebug off) and compare with baseline. Use BENCH_FILTER=ClassName to filter.
-	$(DOCKER_COMPOSE_DEV) run --rm -e XDEBUG_MODE=off app ./vendor/bin/phpbench run --report=aggregate --ref=original --retry-threshold=2 $(if $(BENCH_FILTER),--filter=$(BENCH_FILTER)) $(CLI_ARGS)
+	$(DOCKER_COMPOSE_DEV) run --rm -e XDEBUG_MODE=off app ./vendor/bin/phpbench run --report=aggregate --ref=original --retry-threshold=2 $(if $(BENCH_ASSERT),--assert='$(BENCH_ASSERT)') $(if $(BENCH_FILTER),--filter=$(BENCH_FILTER)) $(CLI_ARGS)
 endif
 
 ifeq ($(PRIMARY_GOAL),bench-profile)

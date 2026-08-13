@@ -10,7 +10,6 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 
-use function array_key_last;
 use function array_pop;
 use function dirname;
 use function explode;
@@ -330,7 +329,7 @@ final readonly class SiteChecker
 
             if (is_array($header)) {
                 if ($header !== []) {
-                    $statusLine = $header[array_key_last($header)];
+                    $statusLine = array_last($header);
                 }
                 continue;
             }

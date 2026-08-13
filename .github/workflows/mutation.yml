@@ -1,0 +1,43 @@
+name: Mutation Tests
+
+on:
+  pull_request:
+    paths: &mutation-paths
+      - 'src/**'
+      - 'config/**'
+      - 'tests/**'
+      - 'themes/**'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'infection.json.dist'
+      - 'phpunit.xml'
+      - 'Makefile'
+      - 'docker/**'
+      - '.github/workflows/mutation.yml'
+  push:
+    branches:
+      - master
+    paths: *mutation-paths
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  infection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - name: Install dependencies
+        run: make -- composer install --no-progress --no-interaction
+      - name: Run mutation tests
+        env:
+          STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
+        run: make infection

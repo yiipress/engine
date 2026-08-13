@@ -121,7 +121,7 @@ final class ServeCommand extends Command
     {
         $this
             ->setHelp(
-                'In order to access server from remote machines use 0.0.0.0:8000. That is especially useful when running server in a virtual machine.'
+                'In order to access server from remote machines use 0.0.0.0:8000. That is especially useful when running server in a virtual machine.',
             )
             ->addUsage('--content-dir=content --output-dir=output')
             ->addArgument('address', InputArgument::OPTIONAL, 'Host to serve at', self::DEFAULT_ADDRESS)
@@ -145,7 +145,7 @@ final class ServeCommand extends Command
                 'w',
                 InputOption::VALUE_OPTIONAL,
                 'Workers number the server will start with',
-                self::DEFAULT_WORKERS
+                self::DEFAULT_WORKERS,
             );
     }
 

@@ -34,7 +34,7 @@ final class PackageReplacerTest extends TestCase
             $registrar = static function (Closure $callback) use (&$replacement): void {
                 $replacement = $callback;
             };
-            (new PackageReplacer('Linux', $registrar))->replace($temporaryPath, $targetPath);
+            new PackageReplacer('Linux', $registrar)->replace($temporaryPath, $targetPath);
 
             self::assertSame('old', file_get_contents($targetPath));
             self::assertFileExists($temporaryPath);
@@ -56,7 +56,7 @@ final class PackageReplacerTest extends TestCase
     {
         $this->expectExceptionMessage('paths containing %');
 
-        (new PackageReplacer('Windows'))->replace('C:\\Temp\\%update%', 'C:\\YiiPress\\yiipress.exe');
+        new PackageReplacer('Windows')->replace('C:\\Temp\\%update%', 'C:\\YiiPress\\yiipress.exe');
     }
 
     #[Test]
@@ -70,7 +70,7 @@ final class PackageReplacerTest extends TestCase
         $failureHandler = static function (string $message) use (&$failure): void {
             $failure = $message;
         };
-        (new PackageReplacer('Linux', $registrar, $failureHandler))->replace(
+        new PackageReplacer('Linux', $registrar, $failureHandler)->replace(
             '/missing/update',
             '/missing/yiipress',
         );

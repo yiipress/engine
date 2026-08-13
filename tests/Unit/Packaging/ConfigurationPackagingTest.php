@@ -74,7 +74,6 @@ final class ConfigurationPackagingTest extends TestCase
     {
         $commands = require dirname(__DIR__, 3) . '/config/console/commands.php';
 
-        /** @psalm-suppress RedundantCondition */
         assertSame(ServeCommand::class, $commands['serve']);
         assertSame(InitContentCommand::class, $commands['init:content']);
         assertSame(InitPluginCommand::class, $commands['init:plugin']);
@@ -577,35 +576,103 @@ final class ConfigurationPackagingTest extends TestCase
             '[![Coverage](https://codecov.io/github/yiipress/engine/graph/badge.svg)]',
             $readme,
         );
+        self::assertStringContainsString(
+            '[![Mutation Tests](https://github.com/yiipress/engine/actions/workflows/mutation.yml/badge.svg)]',
+            $readme,
+        );
+        self::assertStringContainsString(
+            '[![Mutation Score](https://img.shields.io/endpoint?style=flat&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2Fyiipress%2Fengine%2Fmaster)]',
+            $readme,
+        );
+        self::assertStringContainsString(
+            '[![Workflow Security](https://github.com/yiipress/engine/actions/workflows/zizmor.yml/badge.svg)]',
+            $readme,
+        );
     }
 
     #[Test]
     public function staticAnalysisWorkflowRunsProjectAnalysisTargets(): void
     {
         $workflow = file_get_contents(dirname(__DIR__, 3) . '/.github/workflows/static-analysis.yml');
-        $psalmConfiguration = file_get_contents(dirname(__DIR__, 3) . '/psalm.xml');
-        $psalmBaseline = file_get_contents(dirname(__DIR__, 3) . '/psalm-baseline.xml');
         self::assertIsString($workflow);
-        self::assertIsString($psalmConfiguration);
-        self::assertIsString($psalmBaseline);
 
         self::assertStringContainsString('name: Static Analysis', $workflow);
         self::assertStringContainsString('uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5', $workflow);
         self::assertStringContainsString('persist-credentials: false', $workflow);
         self::assertStringContainsString('make -- composer install --no-progress --no-interaction', $workflow);
-        self::assertStringContainsString('make psalm', $workflow);
+        self::assertStringContainsString('make phpstan', $workflow);
         self::assertStringContainsString('make composer-dependency-analyser', $workflow);
         self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@v\d+/', $workflow);
-        self::assertStringContainsString('errorBaseline="psalm-baseline.xml"', $psalmConfiguration);
-        self::assertStringContainsString('<files psalm-version=', $psalmBaseline);
+    }
+
+    #[Test]
+    public function qualityWorkflowsUsePinnedActionsAndProjectMakeTargets(): void
+    {
+        $root = dirname(__DIR__, 3);
+        $mutation = file_get_contents($root . '/.github/workflows/mutation.yml');
+        $benchmark = file_get_contents($root . '/.github/workflows/benchmark.yml');
+        $autoFormat = file_get_contents($root . '/.github/workflows/auto-format.yml');
+        $zizmor = file_get_contents($root . '/.github/workflows/zizmor.yml');
+        $dependabot = file_get_contents($root . '/.github/dependabot.yml');
+        $makefile = file_get_contents($root . '/Makefile');
+
+        self::assertIsString($mutation);
+        self::assertIsString($benchmark);
+        self::assertIsString($autoFormat);
+        self::assertIsString($zizmor);
+        self::assertIsString($dependabot);
+        self::assertIsString($makefile);
+        self::assertStringContainsString('make infection', $mutation);
+        self::assertStringContainsString('STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}', $mutation);
+        self::assertStringContainsString('make bench-generate', $benchmark);
+        self::assertStringContainsString('make bench-generate-realistic', $benchmark);
+        self::assertStringContainsString('make bench-baseline', $benchmark);
+        self::assertStringContainsString('make bench-compare BENCH_ASSERT=', $benchmark);
+        self::assertStringContainsString('make rector', $autoFormat);
+        self::assertStringContainsString('make cs-fix', $autoFormat);
+        self::assertStringContainsString('git push origin "HEAD:${HEAD_REF}"', $autoFormat);
+        self::assertStringContainsString('zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054', $zizmor);
+        self::assertStringContainsString('package-ecosystem: composer', $dependabot);
+        self::assertStringContainsString('phpstan: ## Run PHPStan', $makefile);
+        self::assertStringContainsString('infection: ## Run mutation tests', $makefile);
+        self::assertStringContainsString('-e CI -e GITHUB_ACTIONS -e STRYKER_DASHBOARD_API_KEY', $makefile);
+        self::assertStringContainsString('--min-covered-msi=70', $makefile);
+        self::assertStringContainsString('--logger-project-root-directory=/app', $makefile);
+        self::assertStringNotContainsString('--filter=SiteIconFinderTest', file_get_contents($root . '/infection.json.dist'));
+        foreach ([$mutation, $benchmark, $autoFormat, $zizmor] as $workflow) {
+            self::assertStringContainsString(
+                'uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5',
+                $workflow,
+            );
+            self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@(?![a-f0-9]{40}(?:\s|$))\S+/', $workflow);
+        }
+    }
+
+    #[Test]
+    public function repositoryProvidesContributionAndSecurityGuidance(): void
+    {
+        $root = dirname(__DIR__, 3);
+        $security = file_get_contents($root . '/.github/SECURITY.md');
+        $contributing = file_get_contents($root . '/.github/CONTRIBUTING.md');
+        $pullRequestTemplate = file_get_contents($root . '/.github/PULL_REQUEST_TEMPLATE.md');
+
+        self::assertIsString($security);
+        self::assertIsString($contributing);
+        self::assertIsString($pullRequestTemplate);
+        self::assertStringContainsString('/security/advisories/new', $security);
+        self::assertStringContainsString('make test', $contributing);
+        self::assertStringContainsString('Benchmark added or updated?', $pullRequestTemplate);
     }
 
     #[Test]
     public function coverageWorkflowPublishesRealCloverReport(): void
     {
-        $workflow = file_get_contents(dirname(__DIR__, 3) . '/.github/workflows/coverage.yml');
-        $makefile = file_get_contents(dirname(__DIR__, 3) . '/Makefile');
+        $root = dirname(__DIR__, 3);
+        $workflow = file_get_contents($root . '/.github/workflows/coverage.yml');
+        $codecov = file_get_contents($root . '/codecov.yml');
+        $makefile = file_get_contents($root . '/Makefile');
         self::assertIsString($workflow);
+        self::assertIsString($codecov);
         self::assertIsString($makefile);
 
         self::assertStringContainsString('name: Coverage', $workflow);
@@ -621,7 +688,10 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('fail_ci_if_error: true', $workflow);
         self::assertStringContainsString("if: env.CODECOV_TOKEN == ''", $workflow);
         self::assertStringContainsString('generated coverage but skipped Codecov upload', $workflow);
+        self::assertStringContainsString("- 'codecov.yml'", $workflow);
         self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@v\d+/', $workflow);
+        self::assertStringContainsString('threshold: 0.1%', $codecov);
+        self::assertStringContainsString('informational: true', $codecov);
         self::assertStringContainsString('test-coverage-clover: ## Run tests with Clover coverage', $makefile);
         self::assertStringContainsString('--coverage-clover runtime/coverage/clover.xml', $makefile);
     }

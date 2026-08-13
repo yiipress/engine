@@ -1,0 +1,62 @@
+name: Automatic Code Style
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '**/*.php'
+      - 'yii'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'rector.php'
+      - '.php-cs-fixer.php'
+      - 'Makefile'
+      - 'docker/**'
+      - '.github/workflows/auto-format.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    if: github.event_name == 'workflow_dispatch' || (github.actor != 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout pull request branch
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          persist-credentials: false
+
+      - name: Install dependencies
+        run: make -- composer install --no-progress --no-interaction
+
+      - name: Apply Rector
+        run: make rector
+
+      - name: Apply PHP CS Fixer
+        run: make cs-fix
+
+      - name: Commit changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_REF: ${{ github.head_ref || github.ref_name }}
+        run: |
+          git add -- '*.php'
+          if git diff --cached --quiet; then
+            echo 'No formatting changes.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Apply Rector and PHP CS Fixer'
+          gh auth setup-git
+          git push origin "HEAD:${HEAD_REF}"

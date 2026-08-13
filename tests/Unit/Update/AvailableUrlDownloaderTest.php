@@ -62,7 +62,7 @@ final class AvailableUrlDownloaderTest extends TestCase
         file_put_contents($source, 'host transport');
 
         try {
-            (new AvailableUrlDownloader())->download('file://' . $source, $this->destination);
+            new AvailableUrlDownloader()->download('file://' . $source, $this->destination);
         } finally {
             unlink($source);
         }

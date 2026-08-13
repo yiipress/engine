@@ -90,7 +90,7 @@ final class EntryRenderer
             ? []
             : array_values(array_filter(
                 $this->pipeline->collectToc(),
-                static fn (array $item): bool => $item['level'] >= $tocRange[0] && $item['level'] <= $tocRange[1],
+                static fn(array $item): bool => $item['level'] >= $tocRange[0] && $item['level'] <= $tocRange[1],
             ));
         $related = $this->relatedIndex?->forEntry($entry->filePath) ?? [];
         $translations = $this->translationIndex?->forEntry($entry->filePath) ?? [];
@@ -311,7 +311,7 @@ final class EntryRenderer
             return null;
         }
 
-        $date = (new DateTimeImmutable('@' . $timestamp))
+        $date = new DateTimeImmutable('@' . $timestamp)
             ->setTimezone(new DateTimeZone(date_default_timezone_get()));
 
         return [

@@ -37,7 +37,7 @@ final class ContentParser
         $this->entryParser = new EntryParser(
             $this->frontMatterParser,
             $this->filenameParser,
-            $authors
+            $authors,
         );
     }
 

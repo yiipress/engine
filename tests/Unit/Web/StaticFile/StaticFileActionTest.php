@@ -11,7 +11,6 @@ use HttpSoft\Message\ResponseFactory;
 use HttpSoft\Message\ServerRequest;
 use HttpSoft\Message\StreamFactory;
 use PHPUnit\Framework\TestCase;
-
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;

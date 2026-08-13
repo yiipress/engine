@@ -21,7 +21,7 @@ final class ExceptionRenderer
 
         try {
             $code = $throwable->getCode();
-            (new Application())->renderThrowable(
+            new Application()->renderThrowable(
                 new RuntimeException($throwable->getMessage(), is_int($code) ? $code : 0),
                 $output,
             );

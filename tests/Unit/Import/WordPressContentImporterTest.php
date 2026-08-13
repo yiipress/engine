@@ -66,7 +66,7 @@ final class WordPressContentImporterTest extends TestCase
             ]),
         ]));
 
-        $result = (new WordPressContentImporter())->import(['file' => $this->sourceFile], $this->targetDir, 'blog');
+        $result = new WordPressContentImporter()->import(['file' => $this->sourceFile], $this->targetDir, 'blog');
 
         assertSame(2, $result->totalMessages());
         assertSame(2, $result->importedCount());
@@ -110,7 +110,7 @@ final class WordPressContentImporterTest extends TestCase
             ]),
         ]));
 
-        $result = (new WordPressContentImporter())->import(['file' => $this->sourceFile], $this->targetDir, 'blog');
+        $result = new WordPressContentImporter()->import(['file' => $this->sourceFile], $this->targetDir, 'blog');
 
         assertSame(2, $result->totalMessages());
         assertSame(1, $result->importedCount());
@@ -144,7 +144,7 @@ final class WordPressContentImporterTest extends TestCase
             ]),
         ]));
 
-        $result = (new WordPressContentImporter())->import(['file' => $this->sourceFile], $this->targetDir, 'blog');
+        $result = new WordPressContentImporter()->import(['file' => $this->sourceFile], $this->targetDir, 'blog');
 
         assertSame(2, $result->importedCount());
         $this->assertFileExists($this->targetDir . '/blog/2024-05-01-duplicate.md');
@@ -153,7 +153,7 @@ final class WordPressContentImporterTest extends TestCase
 
     public function testWarnsWhenFileIsMissing(): void
     {
-        $result = (new WordPressContentImporter())->import(['file' => $this->sourceFile], $this->targetDir, 'blog');
+        $result = new WordPressContentImporter()->import(['file' => $this->sourceFile], $this->targetDir, 'blog');
 
         assertSame(0, $result->importedCount());
         assertCount(1, $result->warnings());
@@ -164,7 +164,7 @@ final class WordPressContentImporterTest extends TestCase
     {
         file_put_contents($this->sourceFile, '<rss>');
 
-        $result = (new WordPressContentImporter())->import(['file' => $this->sourceFile], $this->targetDir, 'blog');
+        $result = new WordPressContentImporter()->import(['file' => $this->sourceFile], $this->targetDir, 'blog');
 
         assertSame(0, $result->importedCount());
         assertCount(1, $result->warnings());

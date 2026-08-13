@@ -68,7 +68,6 @@ final readonly class ProjectProcessorLoader
 
     private function loadFile(string $path): ContentProcessorInterface
     {
-        /** @psalm-suppress UnresolvableInclude User-defined processor files are resolved at build time. */
         $processor = require $path;
 
         if ($processor instanceof ContentProcessorInterface) {
