@@ -21,6 +21,7 @@ final class Environment
         self::PROD,
     ];
 
+    /** @var array<string, bool|int|string|null> */
     private static array $values = [];
 
     public static function prepare(?string $defaultEnvironment = null): void
@@ -92,18 +93,6 @@ final class Environment
         self::$values[$key] = $value === null
             ? $default
             : (filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? $default);
-    }
-
-    private static function setInteger(string $key, int $default): void
-    {
-        $value = self::getRawValue($key);
-        self::$values[$key] = $value === null ? $default : (int) $value;
-    }
-
-    private static function setString(string $key, string $default): void
-    {
-        $value = self::getRawValue($key);
-        self::$values[$key] = $value ?? $default;
     }
 
     private static function setNonEmptyStringOrNull(string $key, string|null $default): void

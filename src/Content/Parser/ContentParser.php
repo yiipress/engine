@@ -32,15 +32,6 @@ final class ContentParser
         $this->authorParser = new AuthorParser($this->frontMatterParser);
     }
 
-    public function setAuthors(array $authors): void
-    {
-        $this->entryParser = new EntryParser(
-            $this->frontMatterParser,
-            $this->filenameParser,
-            $authors,
-        );
-    }
-
     public function parseSiteConfig(string $contentDir): SiteConfig
     {
         return $this->siteConfigParser->parse($contentDir . '/config.yaml');

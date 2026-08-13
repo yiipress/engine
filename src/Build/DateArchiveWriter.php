@@ -62,7 +62,7 @@ final readonly class DateArchiveWriter
                 'type' => 'year',
                 'year' => (string) $year,
                 'entries' => $yearEntries,
-                'months' => array_keys($byMonth[$year]),
+                'months' => array_map(strval(...), array_keys($byMonth[$year])),
             ];
 
             $months = $byMonth[$year];
@@ -152,7 +152,7 @@ final readonly class DateArchiveWriter
             'language' => $siteConfig->defaultLanguage,
             'metaTags' => MetaTagsBuilder::forPage($siteConfig, $collection->title . ' ' . $uiViewData->ui->get('archive'), $siteConfig->description, '/' . $collection->name . '/archive/'),
             'search' => $siteConfig->search !== null,
-            'searchResults' => $siteConfig->search?->results ?? 10,
+            'searchResults' => $siteConfig->searchResults(),
         ] + $uiViewData->toArray(), $rootPath);
 
         if (!$noWrite) {
@@ -209,7 +209,7 @@ final readonly class DateArchiveWriter
             'language' => $siteConfig->defaultLanguage,
             'metaTags' => MetaTagsBuilder::forPage($siteConfig, $collection->title . ': ' . $year, $siteConfig->description, '/' . $collection->name . '/' . $year . '/'),
             'search' => $siteConfig->search !== null,
-            'searchResults' => $siteConfig->search?->results ?? 10,
+            'searchResults' => $siteConfig->searchResults(),
         ] + $uiViewData->toArray(), $rootPath);
 
         if (!$noWrite) {
@@ -265,7 +265,7 @@ final readonly class DateArchiveWriter
             'language' => $siteConfig->defaultLanguage,
             'metaTags' => MetaTagsBuilder::forPage($siteConfig, $collection->title . ': ' . $monthName . ' ' . $year, $siteConfig->description, '/' . $collection->name . '/' . $year . '/' . $month . '/'),
             'search' => $siteConfig->search !== null,
-            'searchResults' => $siteConfig->search?->results ?? 10,
+            'searchResults' => $siteConfig->searchResults(),
         ] + $uiViewData->toArray(), $rootPath);
 
         if (!$noWrite) {

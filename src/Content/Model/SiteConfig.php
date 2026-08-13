@@ -44,4 +44,20 @@ final readonly class SiteConfig
         public ProcessorConfig $processors = new ProcessorConfig(),
         public array $icons = [],
     ) {}
+
+    public function searchResults(): int
+    {
+        return $this->search === null ? 10 : $this->search->results;
+    }
+
+    public function defaultContentLanguage(): string
+    {
+        return $this->i18n === null ? $this->defaultLanguage : $this->i18n->defaultLanguage;
+    }
+
+    /** @return list<string> */
+    public function contentLanguages(): array
+    {
+        return $this->i18n === null ? [$this->defaultLanguage] : $this->i18n->languages;
+    }
 }

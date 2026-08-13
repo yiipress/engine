@@ -34,7 +34,7 @@ final readonly class UiViewData
         $language = self::normalizeLanguage($siteConfig->defaultLanguage);
         $languages = array_values(array_unique(array_map(
             self::normalizeLanguage(...),
-            $siteConfig->i18n?->languages ?? [$language],
+            $siteConfig->contentLanguages(),
         )));
 
         return new self(

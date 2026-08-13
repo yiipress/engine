@@ -13,6 +13,7 @@ use SplFileInfo;
 
 use function PHPUnit\Framework\assertCount;
 use function PHPUnit\Framework\assertFileExists;
+use function PHPUnit\Framework\assertMatchesRegularExpression;
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
 
@@ -252,6 +253,41 @@ final class TelegramContentImporterTest extends TestCase
         $content = file_get_contents($result->importedFiles()[0]);
         assertStringContainsString('![](/blog/assets/photo_1.jpg)', $content);
         assertStringContainsString('image: /blog/assets/photo_1.jpg', $content);
+    }
+
+    public function testCopiesExtensionlessPhotoAssetWithoutTrailingDot(): void
+    {
+        mkdir($this->sourceDir . '/photos', 0o755, true);
+        file_put_contents($this->sourceDir . '/photos/photo_1', 'fake-image-data');
+
+        $this->writeResultJson([
+            'type' => 'public_channel',
+            'messages' => [
+                [
+                    'id' => 1,
+                    'type' => 'message',
+                    'date' => '2024-03-15T10:30:00',
+                    'text' => 'Check this photo',
+                    'text_entities' => [['type' => 'plain', 'text' => 'Check this photo']],
+                    'photo' => 'photos/photo_1',
+                ],
+            ],
+        ]);
+
+        $result = new TelegramContentImporter()->import(
+            ['directory' => $this->sourceDir],
+            $this->targetDir,
+            'blog',
+        );
+
+        assertFileExists($this->targetDir . '/blog/assets/photo_1');
+        assertSame(
+            'fake-image-data',
+            file_get_contents($this->targetDir . '/blog/assets/photo_1'),
+        );
+        $content = file_get_contents($result->importedFiles()[0]);
+        assertStringContainsString('![](/blog/assets/photo_1)', $content);
+        assertMatchesRegularExpression('/^image: \/blog\/assets\/photo_1$/m', $content);
     }
 
     public function testRejectsPathTraversalInPhoto(): void

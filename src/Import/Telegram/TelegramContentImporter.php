@@ -232,7 +232,12 @@ final class TelegramContentImporter implements ContentImporterInterface
         }
 
         $info = pathinfo($relativePath);
-        $targetPath = $assetsDir . '/' . ($info['filename'] ?? 'file') . '.' . ($info['extension'] ?? '');
+        $extension = $info['extension'] ?? '';
+        $targetFilename = $info['filename'];
+        if ($extension !== '') {
+            $targetFilename .= '.' . $extension;
+        }
+        $targetPath = $assetsDir . '/' . $targetFilename;
 
         FileHelper::copyFile($realSourcePath, $targetPath, ['dirMode' => 0o755]);
 
@@ -255,6 +260,7 @@ final class TelegramContentImporter implements ContentImporterInterface
         FileWriter::write($configPath, $config);
     }
 
+    /** @return list<int> */
     private function parseIgnoredIds(string $ignoreMessageIds): array
     {
         if ($ignoreMessageIds === '') {
