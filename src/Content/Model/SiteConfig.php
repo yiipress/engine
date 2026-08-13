@@ -54,4 +54,10 @@ final readonly class SiteConfig
     {
         return $this->i18n === null ? $this->defaultLanguage : $this->i18n->defaultLanguage;
     }
+
+    /** @return list<string> */
+    public function contentLanguages(): array
+    {
+        return $this->i18n === null ? [$this->defaultLanguage] : $this->i18n->languages;
+    }
 }

@@ -67,4 +67,32 @@ final class SiteConfigTest extends TestCase
 
         assertSame($expected, $siteConfig->defaultContentLanguage());
     }
+
+    public static function contentLanguagesProvider(): iterable
+    {
+        yield 'multilingual support disabled' => [null, ['en']];
+        yield 'configured languages' => [new I18nConfig(['en', 'de'], 'de'), ['en', 'de']];
+    }
+
+    /** @param list<string> $expected */
+    #[DataProvider('contentLanguagesProvider')]
+    public function testContentLanguages(?I18nConfig $i18n, array $expected): void
+    {
+        $siteConfig = new SiteConfig(
+            title: 'Test',
+            description: '',
+            baseUrl: 'https://example.com',
+            defaultLanguage: 'en',
+            charset: 'utf-8',
+            defaultAuthor: '',
+            dateFormat: 'Y-m-d',
+            entriesPerPage: 10,
+            permalink: '/:slug/',
+            taxonomies: [],
+            params: [],
+            i18n: $i18n,
+        );
+
+        assertSame($expected, $siteConfig->contentLanguages());
+    }
 }

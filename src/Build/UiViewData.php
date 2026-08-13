@@ -32,10 +32,9 @@ final readonly class UiViewData
     public static function forSite(SiteConfig $siteConfig, TemplateResolver $templateResolver, string $themeName = ''): self
     {
         $language = self::normalizeLanguage($siteConfig->defaultLanguage);
-        $i18n = $siteConfig->i18n;
         $languages = array_values(array_unique(array_map(
             self::normalizeLanguage(...),
-            $i18n === null ? [$language] : $i18n->languages,
+            $siteConfig->contentLanguages(),
         )));
 
         return new self(
