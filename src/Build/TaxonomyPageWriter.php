@@ -69,7 +69,7 @@ final readonly class TaxonomyPageWriter
     ): void {
         $rootPath = UrlResolver::rootPath('/' . $taxonomyName . '/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
-        $searchResults = $siteConfig->search === null ? 10 : $siteConfig->search->results;
+        $searchResults = $siteConfig->searchResults();
         $taxonomyLabel = $uiViewData->ui->taxonomyLabel($taxonomyName);
         $html = $renderer->render('taxonomy_index', [
             'siteTitle' => $siteConfig->title,
@@ -118,7 +118,7 @@ final readonly class TaxonomyPageWriter
         $totalPages = count($pages);
         $pageCount = 0;
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
-        $searchResults = $siteConfig->search === null ? 10 : $siteConfig->search->results;
+        $searchResults = $siteConfig->searchResults();
         $taxonomyLabel = $uiViewData->ui->taxonomyLabel($taxonomyName);
 
         foreach ($pages as $pageIndex => $pageEntries) {

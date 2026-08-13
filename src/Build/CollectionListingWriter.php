@@ -111,7 +111,7 @@ final readonly class CollectionListingWriter
         string $permalink,
     ): string {
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
-        $searchResults = $siteConfig->search === null ? 10 : $siteConfig->search->results;
+        $searchResults = $siteConfig->searchResults();
 
         $entryData = [];
         foreach ($entries as $entry) {

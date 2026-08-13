@@ -123,7 +123,7 @@ final class AuthorPageWriter
     ): void {
         $rootPath = UrlResolver::rootPath('/authors/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
-        $searchResults = $siteConfig->search === null ? 10 : $siteConfig->search->results;
+        $searchResults = $siteConfig->searchResults();
 
         $authorList = [];
         foreach ($authors as $slug => $author) {
@@ -172,7 +172,7 @@ final class AuthorPageWriter
     ): void {
         $rootPath = UrlResolver::rootPath('/authors/' . $author->slug . '/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
-        $searchResults = $siteConfig->search === null ? 10 : $siteConfig->search->results;
+        $searchResults = $siteConfig->searchResults();
 
         $authorTitle = $author->title;
         $authorEmail = $author->email;

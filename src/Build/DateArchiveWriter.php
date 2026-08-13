@@ -141,7 +141,7 @@ final readonly class DateArchiveWriter
     ): void {
         $rootPath = UrlResolver::rootPath('/' . $collection->name . '/archive/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
-        $searchResults = $siteConfig->search === null ? 10 : $siteConfig->search->results;
+        $searchResults = $siteConfig->searchResults();
         $html = $renderer->render('archive_index', [
             'siteTitle' => $siteConfig->title,
             'data' => $siteConfig->data,
@@ -183,7 +183,7 @@ final readonly class DateArchiveWriter
     ): void {
         $rootPath = UrlResolver::rootPath('/' . $collection->name . '/' . $year . '/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
-        $searchResults = $siteConfig->search === null ? 10 : $siteConfig->search->results;
+        $searchResults = $siteConfig->searchResults();
 
         rsort($months, SORT_STRING);
 
@@ -240,7 +240,7 @@ final readonly class DateArchiveWriter
     ): void {
         $rootPath = UrlResolver::rootPath('/' . $collection->name . '/' . $year . '/' . $month . '/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
-        $searchResults = $siteConfig->search === null ? 10 : $siteConfig->search->results;
+        $searchResults = $siteConfig->searchResults();
         $monthName = $uiViewData->ui->monthName((int) $month);
 
         $entryData = [];

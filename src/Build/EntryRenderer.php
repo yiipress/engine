@@ -223,7 +223,7 @@ final class EntryRenderer
             ? $entry->language
             : ($i18n === null ? $siteConfig->defaultLanguage : $i18n->defaultLanguage);
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $themeName);
-        $searchResults = $siteConfig->search === null ? 10 : $siteConfig->search->results;
+        $searchResults = $siteConfig->searchResults();
         $variables = [
             'siteTitle' => $siteConfig->title,
             'data' => $siteConfig->data,

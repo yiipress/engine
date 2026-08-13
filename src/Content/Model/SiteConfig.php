@@ -44,4 +44,9 @@ final readonly class SiteConfig
         public ProcessorConfig $processors = new ProcessorConfig(),
         public array $icons = [],
     ) {}
+
+    public function searchResults(): int
+    {
+        return $this->search === null ? 10 : $this->search->results;
+    }
 }
