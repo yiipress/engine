@@ -66,13 +66,16 @@ final class NavigationParser
     }
 
     /**
-     * @param list<array<string, mixed>> $items
+     * @param array<array-key, mixed> $items
      * @return list<NavigationItem>
      */
     private function parseItems(array $items): array
     {
         $result = [];
         foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
             [$title, $titles] = $this->parseTitle($item['title'] ?? '');
             $children = isset($item['children']) && is_array($item['children'])
                 ? $this->parseItems($item['children'])

@@ -123,6 +123,7 @@ final class AuthorPageWriter
     ): void {
         $rootPath = UrlResolver::rootPath('/authors/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
+        $searchResults = $siteConfig->search === null ? 10 : $siteConfig->search->results;
 
         $authorList = [];
         foreach ($authors as $slug => $author) {
@@ -142,7 +143,7 @@ final class AuthorPageWriter
             'language' => $siteConfig->defaultLanguage,
             'metaTags' => MetaTagsBuilder::forPage($siteConfig, $uiViewData->ui->get('authors'), $siteConfig->description, '/authors/'),
             'search' => $siteConfig->search !== null,
-            'searchResults' => $siteConfig->search->results ?? 10,
+            'searchResults' => $searchResults,
         ] + $uiViewData->toArray(), $rootPath);
 
         if (!$noWrite) {
@@ -171,6 +172,7 @@ final class AuthorPageWriter
     ): void {
         $rootPath = UrlResolver::rootPath('/authors/' . $author->slug . '/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
+        $searchResults = $siteConfig->search === null ? 10 : $siteConfig->search->results;
 
         $authorTitle = $author->title;
         $authorEmail = $author->email;
@@ -211,7 +213,7 @@ final class AuthorPageWriter
             'language' => $siteConfig->defaultLanguage,
             'metaTags' => MetaTagsBuilder::forPage($siteConfig, $author->title, $siteConfig->description, '/authors/' . $author->slug . '/'),
             'search' => $siteConfig->search !== null,
-            'searchResults' => $siteConfig->search->results ?? 10,
+            'searchResults' => $searchResults,
         ] + $uiViewData->toArray(), $rootPath);
 
         if (!$noWrite) {

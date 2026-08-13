@@ -20,13 +20,14 @@ final readonly class NotFoundPageWriter
         $rootPath = './';
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
         $renderer = new PageTemplateRenderer($this->templateResolver, $siteConfig->theme, $this->assetManifest, $siteConfig->minify);
+        $searchResults = $siteConfig->search === null ? 10 : $siteConfig->search->results;
         $html = $renderer->render('errors/404', [
             'siteTitle' => $siteConfig->title,
             'data' => $siteConfig->data,
             'nav' => $navigation,
             'rootPath' => $rootPath,
             'search' => $siteConfig->search !== null,
-            'searchResults' => $siteConfig->search->results ?? 10,
+            'searchResults' => $searchResults,
             'language' => $siteConfig->defaultLanguage,
         ] + $uiViewData->toArray(), $rootPath);
 

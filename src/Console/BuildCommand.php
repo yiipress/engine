@@ -1958,9 +1958,10 @@ final class BuildCommand extends Command
         $entry = $task['entry'];
         $navigationPager = null;
         if ($collection->navigationPager) {
+            $i18n = $siteConfig->i18n;
             $language = $entry->language !== ''
                 ? $entry->language
-                : ($siteConfig->i18n->defaultLanguage ?? $siteConfig->defaultLanguage);
+                : ($i18n === null ? $siteConfig->defaultLanguage : $i18n->defaultLanguage);
             $navigationPager = NavigationPager::forUrl(
                 $navigation,
                 'sidebar',

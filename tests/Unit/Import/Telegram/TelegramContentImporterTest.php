@@ -254,6 +254,37 @@ final class TelegramContentImporterTest extends TestCase
         assertStringContainsString('image: /blog/assets/photo_1.jpg', $content);
     }
 
+    public function testCopiesExtensionlessPhotoAssetWithoutTrailingDot(): void
+    {
+        mkdir($this->sourceDir . '/photos', 0o755, true);
+        file_put_contents($this->sourceDir . '/photos/photo_1', 'fake-image-data');
+
+        $this->writeResultJson([
+            'type' => 'public_channel',
+            'messages' => [
+                [
+                    'id' => 1,
+                    'type' => 'message',
+                    'date' => '2024-03-15T10:30:00',
+                    'text' => 'Check this photo',
+                    'text_entities' => [['type' => 'plain', 'text' => 'Check this photo']],
+                    'photo' => 'photos/photo_1',
+                ],
+            ],
+        ]);
+
+        $result = new TelegramContentImporter()->import(
+            ['directory' => $this->sourceDir],
+            $this->targetDir,
+            'blog',
+        );
+
+        assertFileExists($this->targetDir . '/blog/assets/photo_1');
+        $content = file_get_contents($result->importedFiles()[0]);
+        assertStringContainsString('![](/blog/assets/photo_1)', $content);
+        assertStringContainsString('image: /blog/assets/photo_1', $content);
+    }
+
     public function testRejectsPathTraversalInPhoto(): void
     {
         $sensitiveDir = sys_get_temp_dir() . '/yiipress-sensitive-' . uniqid();

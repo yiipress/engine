@@ -80,6 +80,26 @@ YAML);
         }
     }
 
+    public function testIgnoresScalarMenuItems(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-nav-');
+        file_put_contents($file, <<<'YAML'
+main:
+  - invalid
+  - title: Home
+    url: /
+YAML);
+
+        try {
+            $main = new NavigationParser()->parse($file)->menu('main');
+
+            assertCount(1, $main);
+            assertSame('Home', $main[0]->title);
+        } finally {
+            unlink($file);
+        }
+    }
+
     public function testThrowsFriendlyExceptionWhenConfigIsNotMapping(): void
     {
         $file = tempnam(sys_get_temp_dir(), 'yiipress-nav-');

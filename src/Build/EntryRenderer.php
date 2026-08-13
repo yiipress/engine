@@ -218,10 +218,12 @@ final class EntryRenderer
             ? ''
             : PageActionUrlFormatter::format($siteConfig->reportIssueUrl, $siteConfig, $entry, $permalink, $this->contentDir);
         $metaTags = MetaTagsBuilder::forEntry($siteConfig, $entry, $permalink, $translations);
+        $i18n = $siteConfig->i18n;
         $language = $entry->language !== ''
             ? $entry->language
-            : ($siteConfig->i18n->defaultLanguage ?? $siteConfig->defaultLanguage);
+            : ($i18n === null ? $siteConfig->defaultLanguage : $i18n->defaultLanguage);
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $themeName);
+        $searchResults = $siteConfig->search === null ? 10 : $siteConfig->search->results;
         $variables = [
             'siteTitle' => $siteConfig->title,
             'data' => $siteConfig->data,
@@ -264,7 +266,7 @@ final class EntryRenderer
                 $this->assetManifest,
             ),
             'search' => $siteConfig->search !== null,
-            'searchResults' => $siteConfig->search->results ?? 10,
+            'searchResults' => $searchResults,
         ] + $uiViewData->toArray();
 
         $variables = TemplateHelpers::inject($variables);
