@@ -218,10 +218,9 @@ final class EntryRenderer
             ? ''
             : PageActionUrlFormatter::format($siteConfig->reportIssueUrl, $siteConfig, $entry, $permalink, $this->contentDir);
         $metaTags = MetaTagsBuilder::forEntry($siteConfig, $entry, $permalink, $translations);
-        $i18n = $siteConfig->i18n;
         $language = $entry->language !== ''
             ? $entry->language
-            : ($i18n === null ? $siteConfig->defaultLanguage : $i18n->defaultLanguage);
+            : $siteConfig->defaultContentLanguage();
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $themeName);
         $variables = [
             'siteTitle' => $siteConfig->title,

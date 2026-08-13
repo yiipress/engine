@@ -49,4 +49,9 @@ final readonly class SiteConfig
     {
         return $this->search === null ? 10 : $this->search->results;
     }
+
+    public function defaultContentLanguage(): string
+    {
+        return $this->i18n === null ? $this->defaultLanguage : $this->i18n->defaultLanguage;
+    }
 }

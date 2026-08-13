@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiPress\Tests\Unit\Content;
 
+use YiiPress\Content\Model\I18nConfig;
 use YiiPress\Content\Model\SearchConfig;
 use YiiPress\Content\Model\SiteConfig;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -38,5 +39,32 @@ final class SiteConfigTest extends TestCase
         );
 
         assertSame($expected, $siteConfig->searchResults());
+    }
+
+    public static function defaultContentLanguageProvider(): iterable
+    {
+        yield 'multilingual support disabled' => [null, 'en'];
+        yield 'multilingual default' => [new I18nConfig(['en', 'de'], 'de'), 'de'];
+    }
+
+    #[DataProvider('defaultContentLanguageProvider')]
+    public function testDefaultContentLanguage(?I18nConfig $i18n, string $expected): void
+    {
+        $siteConfig = new SiteConfig(
+            title: 'Test',
+            description: '',
+            baseUrl: 'https://example.com',
+            defaultLanguage: 'en',
+            charset: 'utf-8',
+            defaultAuthor: '',
+            dateFormat: 'Y-m-d',
+            entriesPerPage: 10,
+            permalink: '/:slug/',
+            taxonomies: [],
+            params: [],
+            i18n: $i18n,
+        );
+
+        assertSame($expected, $siteConfig->defaultContentLanguage());
     }
 }
