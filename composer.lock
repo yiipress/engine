@@ -1155,16 +1155,16 @@
         },
         {
             "name": "samdark/sitemap",
-            "version": "3.0.1",
+            "version": "3.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/samdark/sitemap.git",
-                "reference": "5244852d7612fb51a83a74e7e0d8ec39f5332ea7"
+                "reference": "08c2a1ad8b60bf27221ec856ac4112d66eb62df0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/samdark/sitemap/zipball/5244852d7612fb51a83a74e7e0d8ec39f5332ea7",
-                "reference": "5244852d7612fb51a83a74e7e0d8ec39f5332ea7",
+                "url": "https://api.github.com/repos/samdark/sitemap/zipball/08c2a1ad8b60bf27221ec856ac4112d66eb62df0",
+                "reference": "08c2a1ad8b60bf27221ec856ac4112d66eb62df0",
                 "shasum": ""
             },
             "require": {
@@ -1217,7 +1217,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2026-04-25T00:01:34+00:00"
+            "time": "2026-07-20T13:47:03+00:00"
         },
         {
             "name": "symfony/console",
