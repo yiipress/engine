@@ -80,7 +80,7 @@ final readonly class TaxonomyPageWriter
             'language' => $siteConfig->defaultLanguage,
             'metaTags' => MetaTagsBuilder::forPage($siteConfig, $taxonomyLabel, $siteConfig->description, '/' . $taxonomyName . '/'),
             'search' => $siteConfig->search !== null,
-            'searchResults' => $siteConfig->search?->results ?? 10,
+            'searchResults' => $siteConfig->search->results ?? 10,
         ] + $uiViewData->toArray(), $rootPath);
 
         if (!$noWrite) {
@@ -157,7 +157,7 @@ final readonly class TaxonomyPageWriter
                 'language' => $siteConfig->defaultLanguage,
                 'metaTags' => MetaTagsBuilder::forPage($siteConfig, $term . ' — ' . $taxonomyLabel, $siteConfig->description, $permalink),
                 'search' => $siteConfig->search !== null,
-                'searchResults' => $siteConfig->search?->results ?? 10,
+                'searchResults' => $siteConfig->search->results ?? 10,
             ] + $uiViewData->toArray(), $rootPath);
 
             if (!$noWrite) {

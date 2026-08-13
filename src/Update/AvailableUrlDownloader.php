@@ -149,6 +149,7 @@ final class AvailableUrlDownloader implements UrlDownloaderInterface
 
     /**
      * @param list<string> $command
+     * @param array<string, string> $environment
      * @return array{exitCode: int, stdout: string, stderr: string}
      */
     private function run(array $command, array $environment): array

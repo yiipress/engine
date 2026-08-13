@@ -153,7 +153,7 @@ final readonly class ParallelEntryWriter
 
     public function workerCountFor(int $taskCount, int $requestedWorkerCount): int
     {
-        if ((!is_callable('pcntl_fork') && !is_callable('proc_open')) || $requestedWorkerCount <= 1 || $taskCount < self::MIN_TASKS_PER_WORKER * 2) {
+        if ($requestedWorkerCount <= 1 || $taskCount < self::MIN_TASKS_PER_WORKER * 2) {
             return 1;
         }
 

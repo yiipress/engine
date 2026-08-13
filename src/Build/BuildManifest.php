@@ -172,7 +172,7 @@ final class BuildManifest
      */
     public function setConfigFiles(array $configFiles): void
     {
-        $this->configFiles = array_values($configFiles);
+        $this->configFiles = $configFiles;
     }
 
     /**

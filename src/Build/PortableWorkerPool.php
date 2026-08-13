@@ -87,7 +87,7 @@ final readonly class PortableWorkerPool
                 $startedAt = time();
                 while (true) {
                     $status = proc_get_status($worker['process']);
-                    if (!($status['running'] ?? false)) {
+                    if (!$status['running']) {
                         break;
                     }
                     if (time() - $startedAt >= 300) {

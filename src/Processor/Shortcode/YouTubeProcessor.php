@@ -95,7 +95,7 @@ final readonly class YouTubeProcessor implements ContentProcessorInterface, OEmb
             $start = $this->extractStart($params);
         }
 
-        if ($videoId === null || $videoId === '') {
+        if ($videoId === null) {
             return null;
         }
 

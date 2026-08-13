@@ -42,7 +42,7 @@ final class TocProcessor implements ContentProcessorInterface, TocAwareInterface
             '/<(h[1-6])(\s[^>]*)?>(.+?)<\/\1>/si',
             function (array $matches) use (&$slugCounts): string {
                 $tag = $matches[1];
-                $attrs = $matches[2] ?? '';
+                $attrs = $matches[2];
                 $inner = $matches[3];
                 $level = (int) $tag[1];
                 $innerWithoutAnchor = $this->removeHeaderAnchor($inner);

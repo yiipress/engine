@@ -53,6 +53,9 @@ final class EntryRenderer
         private readonly ?EventDispatcherInterface $eventDispatcher = null,
     ) {}
 
+    /**
+     * @param array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null $navigationPager
+     */
     public function render(
         SiteConfig $siteConfig,
         Entry $entry,
@@ -124,6 +127,9 @@ final class EntryRenderer
         return $event->html();
     }
 
+    /**
+     * @param array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null $navigationPager
+     */
     private function cacheContext(
         SiteConfig $siteConfig,
         Entry $entry,
@@ -214,7 +220,7 @@ final class EntryRenderer
         $metaTags = MetaTagsBuilder::forEntry($siteConfig, $entry, $permalink, $translations);
         $language = $entry->language !== ''
             ? $entry->language
-            : ($siteConfig->i18n?->defaultLanguage ?? $siteConfig->defaultLanguage);
+            : ($siteConfig->i18n->defaultLanguage ?? $siteConfig->defaultLanguage);
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $themeName);
         $variables = [
             'siteTitle' => $siteConfig->title,
@@ -258,7 +264,7 @@ final class EntryRenderer
                 $this->assetManifest,
             ),
             'search' => $siteConfig->search !== null,
-            'searchResults' => $siteConfig->search?->results ?? 10,
+            'searchResults' => $siteConfig->search->results ?? 10,
         ] + $uiViewData->toArray();
 
         $variables = TemplateHelpers::inject($variables);

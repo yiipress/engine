@@ -17,7 +17,6 @@ final readonly class EntryParser
     public function __construct(
         private FrontMatterParser $frontMatterParser,
         private FilenameParser $filenameParser,
-        private array $authors = [],
     ) {}
 
     public function parse(string $filePath, string $collectionName, string $language = ''): Entry

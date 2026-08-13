@@ -142,7 +142,7 @@ final class AuthorPageWriter
             'language' => $siteConfig->defaultLanguage,
             'metaTags' => MetaTagsBuilder::forPage($siteConfig, $uiViewData->ui->get('authors'), $siteConfig->description, '/authors/'),
             'search' => $siteConfig->search !== null,
-            'searchResults' => $siteConfig->search?->results ?? 10,
+            'searchResults' => $siteConfig->search->results ?? 10,
         ] + $uiViewData->toArray(), $rootPath);
 
         if (!$noWrite) {
@@ -211,7 +211,7 @@ final class AuthorPageWriter
             'language' => $siteConfig->defaultLanguage,
             'metaTags' => MetaTagsBuilder::forPage($siteConfig, $author->title, $siteConfig->description, '/authors/' . $author->slug . '/'),
             'search' => $siteConfig->search !== null,
-            'searchResults' => $siteConfig->search?->results ?? 10,
+            'searchResults' => $siteConfig->search->results ?? 10,
         ] + $uiViewData->toArray(), $rootPath);
 
         if (!$noWrite) {

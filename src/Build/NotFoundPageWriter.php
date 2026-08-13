@@ -26,7 +26,7 @@ final readonly class NotFoundPageWriter
             'nav' => $navigation,
             'rootPath' => $rootPath,
             'search' => $siteConfig->search !== null,
-            'searchResults' => $siteConfig->search?->results ?? 10,
+            'searchResults' => $siteConfig->search->results ?? 10,
             'language' => $siteConfig->defaultLanguage,
         ] + $uiViewData->toArray(), $rootPath);
 

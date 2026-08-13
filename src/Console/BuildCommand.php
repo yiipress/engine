@@ -358,7 +358,6 @@ final class BuildCommand extends Command
                 $collections = $parser->parseCollections($contentDir);
                 $rootCollection = $parser->parseRootCollection($contentDir);
                 $authors = iterator_to_array($parser->parseAuthors($contentDir));
-                $parser->setAuthors($authors);
             } catch (FriendlyExceptionInterface $e) {
                 $this->writeFriendlyException($output, $e);
                 $this->writeProfile($output, $profile);
@@ -865,8 +864,8 @@ final class BuildCommand extends Command
                 $output->writeln('  Asset fingerprints generated: <comment>' . count($assetManifest->all()) . '</comment>');
             }
 
-            /** @var list<array{collectionName: string, collection: Collection, entries: list<Entry>}> $feedTasks */
             $profile->switchTo('write feeds');
+            /** @var list<array{collectionName: string, collection: Collection, entries: list<Entry>}> $feedTasks */
             $feedTasks = [];
             $siteFeedEntries = [];
             foreach ($collections as $collectionName => $collection) {
@@ -1270,7 +1269,7 @@ final class BuildCommand extends Command
     private function countCpuList(string $cpuList): ?int
     {
         $count = 0;
-        foreach (explode(',', $cpuList) ?: [] as $part) {
+        foreach (explode(',', $cpuList) as $part) {
             $part = trim($part);
             if ($part === '') {
                 continue;
@@ -1961,7 +1960,7 @@ final class BuildCommand extends Command
         if ($collection->navigationPager) {
             $language = $entry->language !== ''
                 ? $entry->language
-                : ($siteConfig->i18n?->defaultLanguage ?? $siteConfig->defaultLanguage);
+                : ($siteConfig->i18n->defaultLanguage ?? $siteConfig->defaultLanguage);
             $navigationPager = NavigationPager::forUrl(
                 $navigation,
                 'sidebar',

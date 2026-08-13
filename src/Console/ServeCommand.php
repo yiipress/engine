@@ -618,7 +618,7 @@ final class ServeCommand extends Command
     private function createRequest(string $rawRequest, string $address): ?ServerRequest
     {
         $parts = explode("\r\n\r\n", $rawRequest, 2);
-        $head = $parts[0] ?? '';
+        $head = $parts[0];
         $body = $parts[1] ?? '';
         $requestLine = $this->parseRequestLine($rawRequest);
         if ($requestLine === null) {
@@ -676,7 +676,7 @@ final class ServeCommand extends Command
      */
     private function parseRequestLine(string $rawRequest): ?array
     {
-        $head = explode("\r\n", $rawRequest, 2)[0] ?? '';
+        $head = explode("\r\n", $rawRequest, 2)[0];
         if ($head === '') {
             return null;
         }
