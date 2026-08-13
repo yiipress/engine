@@ -162,13 +162,7 @@ final readonly class ParallelEntryWriter
 
     private function supportsParallelExecution(): bool
     {
-        foreach (['pcntl_fork', 'proc_open'] as $function) {
-            if (function_exists($function)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any(['pcntl_fork', 'proc_open'], fn($function) => function_exists($function));
     }
 
     /**
