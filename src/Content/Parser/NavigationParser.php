@@ -66,7 +66,7 @@ final class NavigationParser
     }
 
     /**
-     * @param list<array<string, mixed>> $items
+     * @param array<array-key, mixed> $items
      * @return list<NavigationItem>
      */
     private function parseItems(array $items): array

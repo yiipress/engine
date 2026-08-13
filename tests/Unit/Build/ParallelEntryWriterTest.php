@@ -72,7 +72,7 @@ final class ParallelEntryWriterTest extends TestCase
     public function testWriteWithMultipleWorkersWritesAllEntries(): void
     {
         $tasks = [];
-        for ($i = 0; $i < 4; $i++) {
+        for ($i = 0; $i < 128; $i++) {
             $entry = $this->createEntry("entry-$i", "Post $i");
             $tasks[] = [
                 'entry' => $entry,
@@ -84,7 +84,7 @@ final class ParallelEntryWriterTest extends TestCase
         $writer = new ParallelEntryWriter($this->createPipeline(), $this->createTemplateResolver());
         $written = $writer->write($this->createSiteConfig(), $tasks, $this->contentDir, 2);
 
-        assertSame(4, $written);
+        assertSame(128, $written);
         foreach ($tasks as $index => $task) {
             assertFileExists($task['filePath']);
             assertStringContainsString('Post ' . $index, (string) file_get_contents($task['filePath']));

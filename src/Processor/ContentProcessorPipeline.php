@@ -44,7 +44,7 @@ final class ContentProcessorPipeline
 
         $updated = $this->processors;
         array_splice($updated, $position, 0, $processors);
-        $this->processors = array_values($updated);
+        $this->processors = $updated;
     }
 
     /**
@@ -64,7 +64,7 @@ final class ContentProcessorPipeline
 
         $updated = $this->processors;
         array_splice($updated, $position + 1, 0, $processors);
-        $this->processors = array_values($updated);
+        $this->processors = $updated;
     }
 
     public function process(string $content, Entry $entry, ?string $rootPath = null): string

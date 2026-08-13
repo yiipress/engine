@@ -136,7 +136,7 @@ final readonly class CollectionListingWriter
             'language' => $siteConfig->defaultLanguage,
             'metaTags' => MetaTagsBuilder::forPage($siteConfig, $collection->title, $collection->description, $permalink),
             'search' => $siteConfig->search !== null,
-            'searchResults' => $siteConfig->search?->results ?? 10,
+            'searchResults' => $siteConfig->searchResults(),
         ] + $uiViewData->toArray(), $rootPath);
     }
 

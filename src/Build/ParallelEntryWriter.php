@@ -153,11 +153,16 @@ final readonly class ParallelEntryWriter
 
     public function workerCountFor(int $taskCount, int $requestedWorkerCount): int
     {
-        if ((!is_callable('pcntl_fork') && !is_callable('proc_open')) || $requestedWorkerCount <= 1 || $taskCount < self::MIN_TASKS_PER_WORKER * 2) {
+        if (!$this->supportsParallelExecution() || $requestedWorkerCount <= 1 || $taskCount < self::MIN_TASKS_PER_WORKER * 2) {
             return 1;
         }
 
         return min($requestedWorkerCount, $taskCount);
+    }
+
+    private function supportsParallelExecution(): bool
+    {
+        return array_any(['pcntl_fork', 'proc_open'], fn($function) => function_exists($function));
     }
 
     /**

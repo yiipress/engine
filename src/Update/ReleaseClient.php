@@ -74,7 +74,6 @@ final readonly class ReleaseClient
                 $hasChecksums = $hasChecksums || $asset['name'] === 'SHA256SUMS';
             }
             if ($hasPackage && $hasChecksums) {
-                /** @var string $tag */
                 return $tag;
             }
         }

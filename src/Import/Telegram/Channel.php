@@ -9,6 +9,7 @@ use InvalidArgumentException;
 
 final readonly class Channel
 {
+    /** @param array<string, mixed> $message */
     public function __construct(
         private array $message,
     ) {

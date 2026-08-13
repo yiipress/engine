@@ -95,7 +95,7 @@ final class BuildDiagnostics
             $isImage = $match[1] === '!';
             $path = $match[3];
 
-            if ($path === '' || $path[0] === '#') {
+            if ($path[0] === '#') {
                 continue;
             }
 

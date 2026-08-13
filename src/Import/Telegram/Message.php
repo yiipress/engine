@@ -14,7 +14,7 @@ final class Message
     private bool $processed = false;
 
     /**
-     * @param array $message Exported message data.
+     * @param array<string, mixed> $message Exported message data.
      * @param Channel|null $channel Channel.
      */
     public function __construct(
@@ -48,6 +48,7 @@ final class Message
         }
     }
 
+    /** @var list<string> */
     public array $tags {
         get {
             $this->ensureProcessed();
@@ -224,7 +225,7 @@ final class Message
     }
 
     /**
-     * @param list<array|string> $textArray
+     * @param list<array<string, mixed>|string> $textArray
      */
     private function convertTextArrayToMarkdown(array $textArray): string
     {
@@ -350,7 +351,7 @@ final class Message
                         'italic' => '*',
                         'strikethrough' => '~~',
                         'code' => '`',
-                        'pre' => "\n```" . ($annotation['language'] ?? '') . "\n",
+                        'pre' => "\n```" . $annotation['language'] . "\n",
                         'text_link' => '[',
                         default => '',
                     };
@@ -426,10 +427,6 @@ final class Message
         }
 
         $lines = explode("\n", $markdown);
-        if (empty($lines)) {
-            return $markdown;
-        }
-
         $firstLine = $lines[0];
         $firstLineTrimmed = trim($firstLine);
 
