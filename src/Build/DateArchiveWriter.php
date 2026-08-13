@@ -141,7 +141,6 @@ final readonly class DateArchiveWriter
     ): void {
         $rootPath = UrlResolver::rootPath('/' . $collection->name . '/archive/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
-        $searchResults = $siteConfig->searchResults();
         $html = $renderer->render('archive_index', [
             'siteTitle' => $siteConfig->title,
             'data' => $siteConfig->data,
@@ -153,7 +152,7 @@ final readonly class DateArchiveWriter
             'language' => $siteConfig->defaultLanguage,
             'metaTags' => MetaTagsBuilder::forPage($siteConfig, $collection->title . ' ' . $uiViewData->ui->get('archive'), $siteConfig->description, '/' . $collection->name . '/archive/'),
             'search' => $siteConfig->search !== null,
-            'searchResults' => $searchResults,
+            'searchResults' => $siteConfig->searchResults(),
         ] + $uiViewData->toArray(), $rootPath);
 
         if (!$noWrite) {
@@ -183,7 +182,6 @@ final readonly class DateArchiveWriter
     ): void {
         $rootPath = UrlResolver::rootPath('/' . $collection->name . '/' . $year . '/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
-        $searchResults = $siteConfig->searchResults();
 
         rsort($months, SORT_STRING);
 
@@ -211,7 +209,7 @@ final readonly class DateArchiveWriter
             'language' => $siteConfig->defaultLanguage,
             'metaTags' => MetaTagsBuilder::forPage($siteConfig, $collection->title . ': ' . $year, $siteConfig->description, '/' . $collection->name . '/' . $year . '/'),
             'search' => $siteConfig->search !== null,
-            'searchResults' => $searchResults,
+            'searchResults' => $siteConfig->searchResults(),
         ] + $uiViewData->toArray(), $rootPath);
 
         if (!$noWrite) {
@@ -240,7 +238,6 @@ final readonly class DateArchiveWriter
     ): void {
         $rootPath = UrlResolver::rootPath('/' . $collection->name . '/' . $year . '/' . $month . '/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
-        $searchResults = $siteConfig->searchResults();
         $monthName = $uiViewData->ui->monthName((int) $month);
 
         $entryData = [];
@@ -268,7 +265,7 @@ final readonly class DateArchiveWriter
             'language' => $siteConfig->defaultLanguage,
             'metaTags' => MetaTagsBuilder::forPage($siteConfig, $collection->title . ': ' . $monthName . ' ' . $year, $siteConfig->description, '/' . $collection->name . '/' . $year . '/' . $month . '/'),
             'search' => $siteConfig->search !== null,
-            'searchResults' => $searchResults,
+            'searchResults' => $siteConfig->searchResults(),
         ] + $uiViewData->toArray(), $rootPath);
 
         if (!$noWrite) {

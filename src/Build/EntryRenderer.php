@@ -223,7 +223,6 @@ final class EntryRenderer
             ? $entry->language
             : ($i18n === null ? $siteConfig->defaultLanguage : $i18n->defaultLanguage);
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $themeName);
-        $searchResults = $siteConfig->searchResults();
         $variables = [
             'siteTitle' => $siteConfig->title,
             'data' => $siteConfig->data,
@@ -266,7 +265,7 @@ final class EntryRenderer
                 $this->assetManifest,
             ),
             'search' => $siteConfig->search !== null,
-            'searchResults' => $searchResults,
+            'searchResults' => $siteConfig->searchResults(),
         ] + $uiViewData->toArray();
 
         $variables = TemplateHelpers::inject($variables);

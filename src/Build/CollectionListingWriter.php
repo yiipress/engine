@@ -111,7 +111,6 @@ final readonly class CollectionListingWriter
         string $permalink,
     ): string {
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
-        $searchResults = $siteConfig->searchResults();
 
         $entryData = [];
         foreach ($entries as $entry) {
@@ -137,7 +136,7 @@ final readonly class CollectionListingWriter
             'language' => $siteConfig->defaultLanguage,
             'metaTags' => MetaTagsBuilder::forPage($siteConfig, $collection->title, $collection->description, $permalink),
             'search' => $siteConfig->search !== null,
-            'searchResults' => $searchResults,
+            'searchResults' => $siteConfig->searchResults(),
         ] + $uiViewData->toArray(), $rootPath);
     }
 

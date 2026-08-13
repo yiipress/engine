@@ -69,7 +69,6 @@ final readonly class TaxonomyPageWriter
     ): void {
         $rootPath = UrlResolver::rootPath('/' . $taxonomyName . '/');
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
-        $searchResults = $siteConfig->searchResults();
         $taxonomyLabel = $uiViewData->ui->taxonomyLabel($taxonomyName);
         $html = $renderer->render('taxonomy_index', [
             'siteTitle' => $siteConfig->title,
@@ -81,7 +80,7 @@ final readonly class TaxonomyPageWriter
             'language' => $siteConfig->defaultLanguage,
             'metaTags' => MetaTagsBuilder::forPage($siteConfig, $taxonomyLabel, $siteConfig->description, '/' . $taxonomyName . '/'),
             'search' => $siteConfig->search !== null,
-            'searchResults' => $searchResults,
+            'searchResults' => $siteConfig->searchResults(),
         ] + $uiViewData->toArray(), $rootPath);
 
         if (!$noWrite) {
@@ -118,7 +117,6 @@ final readonly class TaxonomyPageWriter
         $totalPages = count($pages);
         $pageCount = 0;
         $uiViewData = UiViewData::forSite($siteConfig, $this->templateResolver, $siteConfig->theme);
-        $searchResults = $siteConfig->searchResults();
         $taxonomyLabel = $uiViewData->ui->taxonomyLabel($taxonomyName);
 
         foreach ($pages as $pageIndex => $pageEntries) {
@@ -159,7 +157,7 @@ final readonly class TaxonomyPageWriter
                 'language' => $siteConfig->defaultLanguage,
                 'metaTags' => MetaTagsBuilder::forPage($siteConfig, $term . ' — ' . $taxonomyLabel, $siteConfig->description, $permalink),
                 'search' => $siteConfig->search !== null,
-                'searchResults' => $searchResults,
+                'searchResults' => $siteConfig->searchResults(),
             ] + $uiViewData->toArray(), $rootPath);
 
             if (!$noWrite) {
