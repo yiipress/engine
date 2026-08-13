@@ -489,6 +489,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('--user "${user_id}"', $workflow);
         self::assertStringContainsString('ghcr.io/yiipress/engine-static:nightly', $workflow);
         self::assertStringContainsString('build --content-dir=docs --output-dir=_site --no-cache', $workflow);
+        self::assertActionIsPinned($workflow, 'actions/deploy-pages');
         self::assertStringNotContainsString('uses: ./.github/actions/build', $workflow);
         self::assertStringNotContainsString('--user=root', $workflow);
     }
@@ -524,6 +525,7 @@ final class ConfigurationPackagingTest extends TestCase
             'make package-macos PACKAGE_MACOS_ARCH=arm64 PACKAGE_MACOS_DIST=dist/macos-arm64',
             $workflow,
         );
+        self::assertStringNotContainsString('uses: actions/cache@', $workflow);
         self::assertStringContainsString(
             "git describe --tags --abbrev=0 --match '[0-9]*.[0-9]*.[0-9]*' --exclude '*[!0-9.]*' \"\${tag}^\"",
             $workflow,
@@ -614,6 +616,7 @@ final class ConfigurationPackagingTest extends TestCase
         $autoFormat = file_get_contents($root . '/.github/workflows/auto-format.yml');
         $zizmor = file_get_contents($root . '/.github/workflows/zizmor.yml');
         $dependabot = file_get_contents($root . '/.github/dependabot.yml');
+        $zizmorConfig = file_get_contents($root . '/.github/zizmor.yml');
         $makefile = file_get_contents($root . '/Makefile');
 
         self::assertIsString($mutation);
@@ -621,6 +624,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertIsString($autoFormat);
         self::assertIsString($zizmor);
         self::assertIsString($dependabot);
+        self::assertIsString($zizmorConfig);
         self::assertIsString($makefile);
         self::assertStringContainsString('make infection', $mutation);
         self::assertStringContainsString('STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}', $mutation);
@@ -632,6 +636,11 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('make cs-fix', $autoFormat);
         self::assertStringContainsString('git push origin "HEAD:${HEAD_REF}"', $autoFormat);
         self::assertActionIsPinned($zizmor, 'zizmorcore/zizmor-action');
+        self::assertStringContainsString('config: .github/zizmor.yml', $zizmor);
+        self::assertStringContainsString('min-severity: high', $zizmor);
+        self::assertStringContainsString("persona: 'pedantic'", $zizmor);
+        self::assertStringContainsString("cache-poisoning:\n", $zizmorConfig);
+        self::assertStringContainsString('- run-tests.yml', $zizmorConfig);
         self::assertStringContainsString('package-ecosystem: composer', $dependabot);
         self::assertStringContainsString('phpstan: ## Run PHPStan', $makefile);
         self::assertStringContainsString('infection: ## Run mutation tests', $makefile);

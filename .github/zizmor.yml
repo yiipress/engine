@@ -1,0 +1,6 @@
+rules:
+  cache-poisoning:
+    # Test jobs consume their caches only to exercise ephemeral binaries. They do
+    # not upload or publish artifacts, so no trusted release crosses this boundary.
+    ignore:
+      - run-tests.yml

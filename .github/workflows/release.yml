@@ -89,19 +89,6 @@ jobs:
         uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756
 
 
-      - name: Cache Windows package dependencies
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
-        with:
-          path: |
-            ~\AppData\Local\Composer\files
-            ~\.cargo\git
-            ~\.cargo\registry
-            runtime\package-windows\app\vendor
-            runtime\package-windows\static-php-cli
-          key: release-windows-package-${{ runner.os }}-${{ hashFiles('composer.lock', 'build/package-windows.ps1') }}
-          restore-keys: |
-            release-windows-package-${{ runner.os }}-
-
       - name: Build Windows artifact
         shell: pwsh
         run: build/package-windows.ps1 -DistDir dist/windows-amd64
@@ -147,19 +134,6 @@ jobs:
         run: |
           brew install autoconf automake bison re2c pkgconf
           echo "$(brew --prefix bison)/bin" >> "$GITHUB_PATH"
-
-      - name: Cache macOS package dependencies
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
-        with:
-          path: |
-            ~/.composer/cache/files
-            ~/.cargo/git
-            ~/.cargo/registry
-            runtime/package-macos/app/vendor
-            runtime/package-macos/static-php-cli
-          key: release-macos-package-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('composer.lock', 'build/package-macos.sh', 'build/static-php/*.php') }}
-          restore-keys: |
-            release-macos-package-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Build macOS artifact
         run: make package-macos PACKAGE_MACOS_ARCH=arm64 PACKAGE_MACOS_DIST=dist/macos-arm64 YIIPRESS_COMMIT=
