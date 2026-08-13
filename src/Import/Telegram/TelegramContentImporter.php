@@ -233,7 +233,11 @@ final class TelegramContentImporter implements ContentImporterInterface
 
         $info = pathinfo($relativePath);
         $extension = $info['extension'] ?? '';
-        $targetPath = $assetsDir . '/' . $info['filename'] . ($extension === '' ? '' : '.' . $extension);
+        $targetFilename = $info['filename'];
+        if ($extension !== '') {
+            $targetFilename .= '.' . $extension;
+        }
+        $targetPath = $assetsDir . '/' . $targetFilename;
 
         FileHelper::copyFile($realSourcePath, $targetPath, ['dirMode' => 0o755]);
 
