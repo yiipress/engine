@@ -13,6 +13,7 @@ use SplFileInfo;
 
 use function PHPUnit\Framework\assertCount;
 use function PHPUnit\Framework\assertFileExists;
+use function PHPUnit\Framework\assertMatchesRegularExpression;
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
 
@@ -280,9 +281,13 @@ final class TelegramContentImporterTest extends TestCase
         );
 
         assertFileExists($this->targetDir . '/blog/assets/photo_1');
+        assertSame(
+            'fake-image-data',
+            file_get_contents($this->targetDir . '/blog/assets/photo_1'),
+        );
         $content = file_get_contents($result->importedFiles()[0]);
         assertStringContainsString('![](/blog/assets/photo_1)', $content);
-        assertStringContainsString('image: /blog/assets/photo_1', $content);
+        assertMatchesRegularExpression('/^image: \/blog\/assets\/photo_1$/m', $content);
     }
 
     public function testRejectsPathTraversalInPhoto(): void
