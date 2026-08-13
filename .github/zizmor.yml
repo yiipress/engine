@@ -4,3 +4,8 @@ rules:
     # not upload or publish artifacts, so no trusted release crosses this boundary.
     ignore:
       - run-tests.yml
+  dangerous-triggers:
+    # Documentation runs only after the trusted packaging workflow succeeds. It
+    # checks out the default branch and never consumes the triggering run's code.
+    ignore:
+      - build-docs.yml

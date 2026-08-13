@@ -490,6 +490,11 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('ghcr.io/yiipress/engine-static:nightly', $workflow);
         self::assertStringContainsString('build --content-dir=docs --output-dir=_site --no-cache', $workflow);
         self::assertActionIsPinned($workflow, 'actions/deploy-pages');
+        self::assertMatchesRegularExpression(
+            '/deploy:.*?permissions:\s+id-token: write\s+pages: write/s',
+            $workflow,
+        );
+        self::assertDoesNotMatchRegularExpression('/^permissions:\n(?: {2}\S[^\n]*\n)* {2}pages: write/m', $workflow);
         self::assertStringNotContainsString('uses: ./.github/actions/build', $workflow);
         self::assertStringNotContainsString('--user=root', $workflow);
     }
@@ -641,6 +646,8 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString("persona: 'pedantic'", $zizmor);
         self::assertStringContainsString("cache-poisoning:\n", $zizmorConfig);
         self::assertStringContainsString('- run-tests.yml', $zizmorConfig);
+        self::assertStringContainsString("dangerous-triggers:\n", $zizmorConfig);
+        self::assertStringContainsString('- build-docs.yml', $zizmorConfig);
         self::assertStringContainsString('package-ecosystem: composer', $dependabot);
         self::assertStringContainsString('phpstan: ## Run PHPStan', $makefile);
         self::assertStringContainsString('infection: ## Run mutation tests', $makefile);
