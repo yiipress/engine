@@ -643,6 +643,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertActionIsPinned($zizmor, 'zizmorcore/zizmor-action');
         self::assertStringContainsString('security-events: write', $zizmor);
         self::assertStringContainsString('advanced-security: true', $zizmor);
+        self::assertStringContainsString('annotations: false', $zizmor);
         self::assertStringContainsString('config: .github/zizmor.yml', $zizmor);
         self::assertStringContainsString('min-severity: high', $zizmor);
         self::assertStringContainsString("persona: 'pedantic'", $zizmor);
