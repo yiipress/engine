@@ -355,7 +355,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('nightly_tag="nightly-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}-${short_sha}"', $workflow);
         self::assertStringContainsString('needs: [linux, windows, macos]', $workflow);
         self::assertMatchesRegularExpression(
-            '/nightly-release:.*?steps:\s+- name: Checkout repository\s+uses: actions\/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5/s',
+            '/nightly-release:.*?steps:\s+- name: Checkout repository\s+uses: actions\/checkout@[a-f0-9]{40}(?:\s|$)/s',
             $workflow,
         );
         self::assertStringContainsString('Pack nightly release assets', $workflow);
@@ -388,15 +388,15 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('name: Run Tests', $workflow);
         self::assertStringContainsString('name: Linux PHPUnit', $workflow);
         self::assertStringContainsString('runs-on: ubuntu-latest', $workflow);
-        self::assertStringContainsString('docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8', $workflow);
+        self::assertActionIsPinned($workflow, 'docker/build-push-action');
         self::assertStringContainsString('./vendor/bin/phpunit', $workflow);
 
         self::assertStringContainsString('name: Windows binary tests', $workflow);
         self::assertStringContainsString('runs-on: windows-2022', $workflow);
-        self::assertStringContainsString('uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240', $workflow);
-        self::assertStringContainsString('uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8', $workflow);
-        self::assertStringContainsString('uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756', $workflow);
-        self::assertStringContainsString('uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830', $workflow);
+        self::assertActionIsPinned($workflow, 'shivammathur/setup-php');
+        self::assertActionIsPinned($workflow, 'dtolnay/rust-toolchain');
+        self::assertActionIsPinned($workflow, 'ilammy/msvc-dev-cmd');
+        self::assertActionIsPinned($workflow, 'actions/cache');
         self::assertStringContainsString('runtime\package-windows\static-php-cli', $workflow);
         self::assertStringContainsString('build/package-windows.ps1 -DistDir dist/windows-amd64', $workflow);
         self::assertStringContainsString('Resolve-Path "dist/windows-amd64/yiipress.exe"', $workflow);
@@ -482,13 +482,19 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('workflow_run:', $workflow);
         self::assertStringContainsString('workflows: ["Package Static Builds"]', $workflow);
         self::assertStringContainsString("github.event.workflow_run.conclusion == 'success'", $workflow);
-        self::assertStringContainsString('uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5', $workflow);
+        self::assertActionIsPinned($workflow, 'actions/checkout');
         self::assertStringContainsString('persist-credentials: false', $workflow);
         self::assertStringContainsString('mkdir -p _site', $workflow);
         self::assertStringContainsString('user_id="$(id -u):$(id -g)"', $workflow);
         self::assertStringContainsString('--user "${user_id}"', $workflow);
         self::assertStringContainsString('ghcr.io/yiipress/engine-static:nightly', $workflow);
         self::assertStringContainsString('build --content-dir=docs --output-dir=_site --no-cache', $workflow);
+        self::assertActionIsPinned($workflow, 'actions/deploy-pages');
+        self::assertMatchesRegularExpression(
+            '/deploy:.*?permissions:\s+id-token: write\s+pages: write/s',
+            $workflow,
+        );
+        self::assertDoesNotMatchRegularExpression('/^permissions:\n(?: {2}\S[^\n]*\n)* {2}pages: write/m', $workflow);
         self::assertStringNotContainsString('uses: ./.github/actions/build', $workflow);
         self::assertStringNotContainsString('--user=root', $workflow);
     }
@@ -524,6 +530,7 @@ final class ConfigurationPackagingTest extends TestCase
             'make package-macos PACKAGE_MACOS_ARCH=arm64 PACKAGE_MACOS_DIST=dist/macos-arm64',
             $workflow,
         );
+        self::assertStringNotContainsString('uses: actions/cache@', $workflow);
         self::assertStringContainsString(
             "git describe --tags --abbrev=0 --match '[0-9]*.[0-9]*.[0-9]*' --exclude '*[!0-9.]*' \"\${tag}^\"",
             $workflow,
@@ -597,7 +604,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertIsString($workflow);
 
         self::assertStringContainsString('name: Static Analysis', $workflow);
-        self::assertStringContainsString('uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5', $workflow);
+        self::assertActionIsPinned($workflow, 'actions/checkout');
         self::assertStringContainsString('persist-credentials: false', $workflow);
         self::assertStringContainsString('make -- composer install --no-progress --no-interaction', $workflow);
         self::assertStringContainsString('make phpstan', $workflow);
@@ -614,6 +621,7 @@ final class ConfigurationPackagingTest extends TestCase
         $autoFormat = file_get_contents($root . '/.github/workflows/auto-format.yml');
         $zizmor = file_get_contents($root . '/.github/workflows/zizmor.yml');
         $dependabot = file_get_contents($root . '/.github/dependabot.yml');
+        $zizmorConfig = file_get_contents($root . '/.github/zizmor.yml');
         $makefile = file_get_contents($root . '/Makefile');
 
         self::assertIsString($mutation);
@@ -621,6 +629,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertIsString($autoFormat);
         self::assertIsString($zizmor);
         self::assertIsString($dependabot);
+        self::assertIsString($zizmorConfig);
         self::assertIsString($makefile);
         self::assertStringContainsString('make infection', $mutation);
         self::assertStringContainsString('STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}', $mutation);
@@ -631,7 +640,17 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('make rector', $autoFormat);
         self::assertStringContainsString('make cs-fix', $autoFormat);
         self::assertStringContainsString('git push origin "HEAD:${HEAD_REF}"', $autoFormat);
-        self::assertStringContainsString('zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054', $zizmor);
+        self::assertActionIsPinned($zizmor, 'zizmorcore/zizmor-action');
+        self::assertStringContainsString('security-events: write', $zizmor);
+        self::assertStringContainsString('advanced-security: true', $zizmor);
+        self::assertStringContainsString('annotations: false', $zizmor);
+        self::assertStringContainsString('config: .github/zizmor.yml', $zizmor);
+        self::assertStringContainsString('min-severity: high', $zizmor);
+        self::assertStringContainsString("persona: 'pedantic'", $zizmor);
+        self::assertStringContainsString("cache-poisoning:\n", $zizmorConfig);
+        self::assertStringContainsString('- run-tests.yml', $zizmorConfig);
+        self::assertStringContainsString("dangerous-triggers:\n", $zizmorConfig);
+        self::assertStringContainsString('- build-docs.yml', $zizmorConfig);
         self::assertStringContainsString('package-ecosystem: composer', $dependabot);
         self::assertStringContainsString('phpstan: ## Run PHPStan', $makefile);
         self::assertStringContainsString('infection: ## Run mutation tests', $makefile);
@@ -640,10 +659,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('--logger-project-root-directory=/app', $makefile);
         self::assertStringNotContainsString('--filter=SiteIconFinderTest', file_get_contents($root . '/infection.json.dist'));
         foreach ([$mutation, $benchmark, $autoFormat, $zizmor] as $workflow) {
-            self::assertStringContainsString(
-                'uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5',
-                $workflow,
-            );
+            self::assertActionIsPinned($workflow, 'actions/checkout');
             self::assertDoesNotMatchRegularExpression('/uses:\s+[^@\s]+@(?![a-f0-9]{40}(?:\s|$))\S+/', $workflow);
         }
     }
@@ -676,7 +692,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertIsString($makefile);
 
         self::assertStringContainsString('name: Coverage', $workflow);
-        self::assertStringContainsString('uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5', $workflow);
+        self::assertActionIsPinned($workflow, 'actions/checkout');
         self::assertStringContainsString('persist-credentials: false', $workflow);
         self::assertStringContainsString('make -- composer install --no-progress --no-interaction', $workflow);
         self::assertStringContainsString('make test-coverage-clover', $workflow);
@@ -684,7 +700,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}', $workflow);
         self::assertStringContainsString("if: env.CODECOV_TOKEN != ''", $workflow);
         self::assertStringContainsString('token: ${{ env.CODECOV_TOKEN }}', $workflow);
-        self::assertStringContainsString('uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f', $workflow);
+        self::assertActionIsPinned($workflow, 'codecov/codecov-action');
         self::assertStringContainsString('fail_ci_if_error: true', $workflow);
         self::assertStringContainsString("if: env.CODECOV_TOKEN == ''", $workflow);
         self::assertStringContainsString('generated coverage but skipped Codecov upload', $workflow);
@@ -1053,6 +1069,14 @@ PHP;
         self::assertStringContainsString('docker-php-ext-enable highlighter mdparser', $dockerfile);
         self::assertStringNotContainsString('md4c \\', $dockerfile);
         self::assertStringNotContainsString('pecl.php.net/get/md4c', $dockerfile);
+    }
+
+    private static function assertActionIsPinned(string $workflow, string $action): void
+    {
+        self::assertMatchesRegularExpression(
+            '/uses:\s+' . preg_quote($action, '/') . '@[a-f0-9]{40}(?:\s|$)/',
+            $workflow,
+        );
     }
 
     /**
