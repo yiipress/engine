@@ -23,7 +23,7 @@ final readonly class EntryParser
     {
         $result = $this->frontMatterParser->parse($filePath);
         $fields = $result['frontMatter'];
-        $title = (string) ($fields['title'] ?? '');
+        $title = ValueNormalizer::string($fields['title'] ?? null);
 
         if ($title === '') {
             return new Entry(
@@ -55,7 +55,7 @@ final readonly class EntryParser
 
         try {
             $date = isset($fields['date'])
-                ? new DateTimeImmutable((string) $fields['date'])
+                ? new DateTimeImmutable(ValueNormalizer::string($fields['date']))
                 : $filenameParsed['date'];
         } catch (DateMalformedStringException) {
             throw new InvalidContentConfigException(
@@ -65,10 +65,10 @@ final readonly class EntryParser
             );
         }
 
-        $slug = (string) ($fields['slug'] ?? $filenameParsed['slug']);
+        $slug = ValueNormalizer::string($fields['slug'] ?? null, $filenameParsed['slug']);
 
         $frontMatterTags = isset($fields['tags']) && is_array($fields['tags'])
-            ? array_values(array_map(strval(...), $fields['tags']))
+            ? ValueNormalizer::stringList($fields['tags'])
             : [];
 
         $inlineTags = $this->extractInlineTags($filePath, $result['bodyOffset'], $result['bodyLength']);
@@ -84,28 +84,26 @@ final readonly class EntryParser
             tags: $tags,
             inlineTags: $inlineTags,
             categories: isset($fields['categories']) && is_array($fields['categories'])
-                ? array_values(array_map(strval(...), $fields['categories']))
+                ? ValueNormalizer::stringList($fields['categories'])
                 : [],
             authors: isset($fields['authors']) && is_array($fields['authors'])
-                ? array_values(array_map(strval(...), $fields['authors']))
+                ? ValueNormalizer::stringList($fields['authors'])
                 : [],
-            summary: (string) ($fields['summary'] ?? ''),
-            permalink: (string) ($fields['permalink'] ?? ''),
-            layout: (string) ($fields['layout'] ?? ''),
-            theme: (string) ($fields['theme'] ?? ''),
-            weight: (int) ($fields['weight'] ?? 0),
-            language: (string) ($fields['language'] ?? $language),
-            redirectTo: (string) ($fields['redirect_to'] ?? ''),
-            extra: isset($fields['extra']) && is_array($fields['extra'])
-                ? $fields['extra']
-                : [],
+            summary: ValueNormalizer::string($fields['summary'] ?? null),
+            permalink: ValueNormalizer::string($fields['permalink'] ?? null),
+            layout: ValueNormalizer::string($fields['layout'] ?? null),
+            theme: ValueNormalizer::string($fields['theme'] ?? null),
+            weight: ValueNormalizer::int($fields['weight'] ?? null),
+            language: ValueNormalizer::string($fields['language'] ?? null, $language),
+            redirectTo: ValueNormalizer::string($fields['redirect_to'] ?? null),
+            extra: ValueNormalizer::map($fields['extra'] ?? null),
             bodyOffset: $result['bodyOffset'],
             bodyLength: $result['bodyLength'],
-            image: (string) ($fields['image'] ?? ''),
-            translationKey: (string) ($fields['translation_key'] ?? ''),
+            image: ValueNormalizer::string($fields['image'] ?? null),
+            translationKey: ValueNormalizer::string($fields['translation_key'] ?? null),
             showTitle: (bool) ($fields['show_title'] ?? $fields['showTitle'] ?? true),
             aliases: isset($fields['aliases']) && is_array($fields['aliases'])
-                ? array_values(array_map(strval(...), $fields['aliases']))
+                ? ValueNormalizer::stringList($fields['aliases'])
                 : [],
             previous: $this->parsePagerOverride($fields, 'previous', $filePath),
             next: $this->parsePagerOverride($fields, 'next', $filePath),

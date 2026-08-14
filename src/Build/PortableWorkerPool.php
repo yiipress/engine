@@ -144,7 +144,9 @@ final readonly class PortableWorkerPool
             return $this->executableCommand;
         }
 
-        $script = $_SERVER['argv'][0] ?? '';
+        $arguments = $_SERVER['argv'] ?? [];
+        $script = is_array($arguments) ? ($arguments[0] ?? '') : '';
+        $script = is_string($script) ? $script : '';
         if ($script !== '' && !str_starts_with($script, '/') && !preg_match('~^[A-Za-z]:[\\\\/]~', $script)) {
             $script = (getcwd() ?: '.') . DIRECTORY_SEPARATOR . $script;
         }

@@ -49,8 +49,12 @@ final class WorkerCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $jobFile = (string) $input->getArgument('job');
-        $resultFile = (string) $input->getArgument('result');
+        $jobFile = $input->getArgument('job');
+        $resultFile = $input->getArgument('result');
+        if (!is_string($jobFile) || !is_string($resultFile)) {
+            $output->writeln('<error>Invalid worker file path.</error>');
+            return self::FAILURE;
+        }
         $contents = file_get_contents($jobFile);
         $job = $contents === false ? false : unserialize($contents, ['allowed_classes' => true]);
         if (!$job instanceof WorkerJobInterface) {

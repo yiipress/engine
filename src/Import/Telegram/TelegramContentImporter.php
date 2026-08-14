@@ -68,7 +68,17 @@ final class TelegramContentImporter implements ContentImporterInterface
             );
         }
 
-        $json = mb_convert_encoding($json, 'UTF-8', mb_detect_encoding($json, ['UTF-16LE', 'UTF-16BE', 'UTF-8', 'Windows-1251'], true));
+        $encoding = mb_detect_encoding($json, ['UTF-16LE', 'UTF-16BE', 'UTF-8', 'Windows-1251'], true);
+        $json = mb_convert_encoding($json, 'UTF-8', $encoding === false ? 'UTF-8' : $encoding);
+        if ($json === false) {
+            return new ImportResult(
+                totalMessages: 0,
+                importedCount: 0,
+                importedFiles: [],
+                skippedFiles: [],
+                warnings: ["Failed to convert $resultFile to UTF-8"],
+            );
+        }
 
         $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
         if (!is_array($data)) {
@@ -101,14 +111,25 @@ final class TelegramContentImporter implements ContentImporterInterface
         $skippedFiles = [];
         $warnings = [];
 
-        $totalMessages = count($data['messages']);
+        $messages = array_values($data['messages']);
+        $totalMessages = count($messages);
 
         $ignoredIds = $this->parseIgnoredIds($options['ignore_message_ids'] ?? '');
 
         $channel = null;
-        foreach ($data['messages'] as $dataMessage) {
+        foreach ($messages as $dataMessage) {
+            if (!is_array($dataMessage)) {
+                $warnings[] = 'Skipped a malformed message entry.';
+                continue;
+            }
+
+            $dataMessage = $this->normalizeMessage($dataMessage);
+            $type = $dataMessage['type'] ?? '';
+            $type = is_string($type) ? $type : '';
+            $id = $dataMessage['id'] ?? '';
+            $id = is_int($id) || is_string($id) ? $id : '';
             if (
-                $dataMessage['type'] === 'service' &&
+                $type === 'service' &&
                 array_key_exists('action', $dataMessage) &&
                 $dataMessage['action'] === 'create_channel'
             ) {
@@ -116,24 +137,24 @@ final class TelegramContentImporter implements ContentImporterInterface
                 continue;
             }
 
-            if ($dataMessage['type'] !== 'message') {
-                $skippedFiles[] = $dataMessage['id'];
+            if ($type !== 'message') {
+                $skippedFiles[] = $id;
                 continue;
             }
 
-            if (isset($dataMessage['id']) && in_array($dataMessage['id'], $ignoredIds, true)) {
-                $skippedFiles[] = $dataMessage['id'];
+            if (in_array($id, $ignoredIds, true)) {
+                $skippedFiles[] = $id;
                 continue;
             }
 
             if (!empty($dataMessage['poll'])) {
-                $skippedFiles[] = $dataMessage['id'];
+                $skippedFiles[] = $id;
                 // TODO: import polls
                 continue;
             }
 
-            if ($dataMessage['text'] === '' && empty($dataMessage['photo']) && empty($dataMessage['file'])) {
-                $skippedFiles[] = $dataMessage['id'];
+            if (($dataMessage['text'] ?? '') === '' && empty($dataMessage['photo']) && empty($dataMessage['file'])) {
+                $skippedFiles[] = $id;
                 continue;
             }
 
@@ -170,6 +191,22 @@ final class TelegramContentImporter implements ContentImporterInterface
     public function name(): string
     {
         return 'telegram';
+    }
+
+    /**
+     * @param array<mixed, mixed> $message
+     * @return array<string, mixed>
+     */
+    private function normalizeMessage(array $message): array
+    {
+        $normalized = [];
+        foreach ($message as $key => $value) {
+            if (is_string($key)) {
+                $normalized[$key] = $value;
+            }
+        }
+
+        return $normalized;
     }
 
     private function buildMarkdownFile(

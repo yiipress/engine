@@ -25,11 +25,13 @@ final class ContentParser
         private readonly ?FrontMatterParser $frontMatterParser = new FrontMatterParser(),
         private readonly ?FilenameParser $filenameParser = new FilenameParser(),
     ) {
+        $frontMatterParser = $this->frontMatterParser ?? new FrontMatterParser();
+        $filenameParser = $this->filenameParser ?? new FilenameParser();
         $this->siteConfigParser = new SiteConfigParser();
         $this->collectionConfigParser = new CollectionConfigParser();
         $this->navigationParser = new NavigationParser();
-        $this->entryParser = new EntryParser($this->frontMatterParser, $this->filenameParser);
-        $this->authorParser = new AuthorParser($this->frontMatterParser);
+        $this->entryParser = new EntryParser($frontMatterParser, $filenameParser);
+        $this->authorParser = new AuthorParser($frontMatterParser);
     }
 
     public function parseSiteConfig(string $contentDir): SiteConfig

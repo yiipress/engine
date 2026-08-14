@@ -62,26 +62,22 @@ final class SiteConfigParser
         $i18n = self::parseI18nConfig($data, $filePath);
 
         return new SiteConfig(
-            title: (string) ($data['title'] ?? ''),
-            description: (string) ($data['description'] ?? ''),
-            baseUrl: (string) ($data['base_url'] ?? ''),
+            title: ValueNormalizer::string($data['title'] ?? null),
+            description: ValueNormalizer::string($data['description'] ?? null),
+            baseUrl: ValueNormalizer::string($data['base_url'] ?? null),
             defaultLanguage: $i18n->defaultLanguage,
-            charset: (string) ($data['charset'] ?? 'UTF-8'),
-            defaultAuthor: (string) ($data['default_author'] ?? ''),
-            dateFormat: (string) ($data['date_format'] ?? 'Y-m-d'),
-            entriesPerPage: (int) ($data['entries_per_page'] ?? 10),
-            permalink: (string) ($data['permalink'] ?? '/:collection/:slug/'),
-            taxonomies: isset($data['taxonomies']) && is_array($data['taxonomies'])
-                ? array_values(array_map(strval(...), $data['taxonomies']))
-                : [],
-            params: isset($data['params']) && is_array($data['params'])
-                ? $data['params']
-                : [],
+            charset: ValueNormalizer::string($data['charset'] ?? null, 'UTF-8'),
+            defaultAuthor: ValueNormalizer::string($data['default_author'] ?? null),
+            dateFormat: ValueNormalizer::string($data['date_format'] ?? null, 'Y-m-d'),
+            entriesPerPage: ValueNormalizer::int($data['entries_per_page'] ?? null, 10),
+            permalink: ValueNormalizer::string($data['permalink'] ?? null, '/:collection/:slug/'),
+            taxonomies: ValueNormalizer::stringList($data['taxonomies'] ?? null),
+            params: ValueNormalizer::map($data['params'] ?? null),
             markdown: self::parseMarkdownConfig($data['markdown'] ?? []),
-            theme: (string) ($data['theme'] ?? ''),
-            highlightTheme: (string) ($data['highlight_theme'] ?? ''),
-            image: (string) ($data['image'] ?? ''),
-            twitterSite: (string) ($data['twitter'] ?? ''),
+            theme: ValueNormalizer::string($data['theme'] ?? null),
+            highlightTheme: ValueNormalizer::string($data['highlight_theme'] ?? null),
+            image: ValueNormalizer::string($data['image'] ?? null),
+            twitterSite: ValueNormalizer::string($data['twitter'] ?? null),
             robotsTxt: self::parseRobotsTxtConfig($data['robots_txt'] ?? null),
             toc: (bool) ($data['toc'] ?? true),
             search: self::parseSearchConfig($data['search'] ?? null),
@@ -250,7 +246,7 @@ final class SiteConfigParser
 
         return new SearchConfig(
             fullText: (bool) ($data['full_text'] ?? false),
-            results: (int) ($data['results'] ?? 10),
+            results: ValueNormalizer::int($data['results'] ?? null, 10),
         );
     }
 
@@ -319,9 +315,9 @@ final class SiteConfigParser
         }
 
         return new RelatedConfig(
-            limit: (int) ($data['limit'] ?? 5),
-            tagWeight: (int) ($data['tag_weight'] ?? 2),
-            categoryWeight: (int) ($data['category_weight'] ?? 3),
+            limit: ValueNormalizer::int($data['limit'] ?? null, 5),
+            tagWeight: ValueNormalizer::int($data['tag_weight'] ?? null, 2),
+            categoryWeight: ValueNormalizer::int($data['category_weight'] ?? null, 3),
             sameCollectionOnly: (bool) ($data['same_collection_only'] ?? true),
         );
     }
@@ -342,21 +338,22 @@ final class SiteConfigParser
         }
 
         $rules = [];
-        foreach ($data['rules'] ?? [] as $ruleData) {
+        $ruleList = $data['rules'] ?? [];
+        foreach (is_array($ruleList) ? $ruleList : [] as $ruleData) {
             if (!is_array($ruleData)) {
                 continue;
             }
             $allow = isset($ruleData['allow']) && is_array($ruleData['allow'])
-                ? array_values(array_map(strval(...), $ruleData['allow']))
+                ? ValueNormalizer::stringList($ruleData['allow'])
                 : [];
             $disallow = isset($ruleData['disallow']) && is_array($ruleData['disallow'])
-                ? array_values(array_map(strval(...), $ruleData['disallow']))
+                ? ValueNormalizer::stringList($ruleData['disallow'])
                 : [];
             $rules[] = new RobotsTxtRule(
-                userAgent: (string) ($ruleData['user_agent'] ?? '*'),
+                userAgent: ValueNormalizer::string($ruleData['user_agent'] ?? null, '*'),
                 allow: $allow,
                 disallow: $disallow,
-                crawlDelay: isset($ruleData['crawl_delay']) ? (int) $ruleData['crawl_delay'] : null,
+                crawlDelay: isset($ruleData['crawl_delay']) ? ValueNormalizer::int($ruleData['crawl_delay']) : null,
             );
         }
 

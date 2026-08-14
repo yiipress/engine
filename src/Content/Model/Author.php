@@ -19,7 +19,7 @@ final readonly class Author
 
     public function body(): string
     {
-        if ($this->bodyLength === 0) {
+        if ($this->bodyLength <= 0) {
             return '';
         }
 

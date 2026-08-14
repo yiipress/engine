@@ -23,7 +23,7 @@ final readonly class OEmbedProcessor implements ContentProcessorInterface
     public function __construct(
         OEmbedInterface ...$providers,
     ) {
-        $this->providers = $providers;
+        $this->providers = array_values($providers);
     }
 
     public function process(string $content, Entry $entry): string

@@ -13,6 +13,21 @@ use function PHPUnit\Framework\assertStringContainsString;
 
 final class MessageTest extends TestCase
 {
+    public function testIgnoresMalformedTextParts(): void
+    {
+        $message = new Message([
+            'id' => 'invalid',
+            'text' => [[], 42, ['type' => 'bold', 'text' => []]],
+            'text_entities' => [42, []],
+        ], null);
+
+        assertSame(0, $message->id);
+        assertSame('Post 0', $message->title);
+        assertSame('', $message->markdown);
+        assertSame([], $message->tags);
+        assertSame('', $message->telegramLink);
+    }
+
     public static function markupDataProvider(): iterable
     {
         yield 'Plaintext' => [

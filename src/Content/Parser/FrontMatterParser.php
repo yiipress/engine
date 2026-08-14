@@ -94,13 +94,15 @@ final class FrontMatterParser
                     );
                 }
 
+                $parsed = ValueNormalizer::map($parsed);
+
                 $result = [
                     'frontMatter' => $parsed,
                     'bodyOffset' => $bodyOffset,
                     'bodyLength' => $fileSize - $bodyOffset,
                 ];
 
-                if (!isset($parsed['title']) || (string) $parsed['title'] === '') {
+                if (ValueNormalizer::string($parsed['title'] ?? null) === '') {
                     return $this->inferTitle($handle, $result, $bodyOffset);
                 }
 

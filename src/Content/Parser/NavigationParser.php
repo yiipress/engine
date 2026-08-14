@@ -82,7 +82,7 @@ final class NavigationParser
                 : [];
             $result[] = new NavigationItem(
                 title: $title,
-                url: (string) ($item['url'] ?? ''),
+                url: is_scalar($item['url'] ?? null) ? (string) $item['url'] : '',
                 children: $children,
                 titles: $titles,
             );
@@ -97,7 +97,7 @@ final class NavigationParser
     private function parseTitle(mixed $value): array
     {
         if (!is_array($value)) {
-            return [(string) $value, []];
+            return [is_scalar($value) ? (string) $value : '', []];
         }
 
         $titles = [];

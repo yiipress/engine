@@ -64,7 +64,7 @@ final class OutputMinifier
     }
 
     /**
-     * @param array<array-key, list<array{0: string, 1: int}>> $matches
+     * @param array{0: list<array{0: string, 1: int}>, tag: list<array{0: string, 1: int}>} $matches
      * @return list<array{html: string, protected: bool}>
      */
     private static function splitProtectedParts(string $html, array $matches): array

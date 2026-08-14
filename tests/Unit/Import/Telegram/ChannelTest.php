@@ -70,4 +70,12 @@ final class ChannelTest extends TestCase
 
         new Channel($message);
     }
+
+    public function testThrowsWhenChannelMetadataIsMissing(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Channel title and date_unixtime must be present and valid.');
+
+        new Channel(['type' => 'service', 'action' => 'create_channel']);
+    }
 }

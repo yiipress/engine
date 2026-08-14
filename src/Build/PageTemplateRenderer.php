@@ -10,7 +10,7 @@ use function ltrim;
 
 final class PageTemplateRenderer
 {
-    /** @var array<string, Closure> */
+    /** @var array<string, Closure(array<string, mixed>): string> */
     private array $templateClosures = [];
 
     /** @var array<string, TemplateContext> */

@@ -205,7 +205,7 @@ final class Entry
             return $this->bodyCache;
         }
 
-        if ($this->bodyLength === 0) {
+        if ($this->bodyLength <= 0) {
             return '';
         }
 

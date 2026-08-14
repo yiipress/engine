@@ -20,10 +20,10 @@ final readonly class AuthorParser
 
         return new Author(
             slug: $slug,
-            title: (string) ($fields['title'] ?? $slug),
-            email: (string) ($fields['email'] ?? ''),
-            url: (string) ($fields['url'] ?? ''),
-            avatar: (string) ($fields['avatar'] ?? ''),
+            title: ValueNormalizer::string($fields['title'] ?? null, $slug),
+            email: ValueNormalizer::string($fields['email'] ?? null),
+            url: ValueNormalizer::string($fields['url'] ?? null),
+            avatar: ValueNormalizer::string($fields['avatar'] ?? null),
             bodyOffset: $result['bodyOffset'],
             bodyLength: $result['bodyLength'],
             filePath: $filePath,

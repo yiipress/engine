@@ -234,7 +234,9 @@ final class UiText
 
         $catalog = [];
         foreach ($data as $key => $value) {
-            $catalog[(string) $key] = (string) $value;
+            if (is_scalar($value)) {
+                $catalog[(string) $key] = (string) $value;
+            }
         }
 
         return self::$catalogCache[$path] = $catalog;

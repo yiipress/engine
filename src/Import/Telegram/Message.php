@@ -24,7 +24,7 @@ final class Message
 
     public int $id {
         get {
-            return $this->message['id'];
+            return $this->intField('id');
         }
     }
 
@@ -58,39 +58,41 @@ final class Message
 
     public DateTimeImmutable $date {
         get {
-            $time = $this->message['date_unixtime'] ?? time();
-            return DateTimeImmutable::createFromTimestamp((int) $time);
+            return DateTimeImmutable::createFromTimestamp($this->intField('date_unixtime', time()));
         }
     }
 
     public DateTimeImmutable $edited {
         get {
-            $time = $this->message['edited_unixtime'] ?? $this->message['date_unixtime'] ?? time();
-            return DateTimeImmutable::createFromTimestamp((int) $time);
+            return DateTimeImmutable::createFromTimestamp(
+                $this->intField('edited_unixtime', $this->intField('date_unixtime', time())),
+            );
         }
     }
 
     public string $telegramLink {
         get {
-            return "https://t.me/{$this->channel->getTitle()}/{$this->message['id']}";
+            return $this->channel === null
+                ? ''
+                : "https://t.me/{$this->channel->getTitle()}/{$this->id}";
         }
     }
 
     public ?string $photo {
         get {
-            return $this->message['photo'] ?? null;
+            return $this->nullableStringField('photo');
         }
     }
 
     public ?string $file {
         get {
-            return $this->message['file'] ?? null;
+            return $this->nullableStringField('file');
         }
     }
 
     public ?string $forwardedFrom {
         get {
-            return $this->message['forwarded_from'] ?? null;
+            return $this->nullableStringField('forwarded_from');
         }
     }
 
@@ -119,7 +121,10 @@ final class Message
             return;
         }
 
-        $markdown = $this->convertToMarkdown($this->message['text'], $this->message['text_entities']);
+        $text = $this->message['text'] ?? '';
+        $text = is_string($text) || is_array($text) ? $text : '';
+        $textEntities = $this->listField('text_entities');
+        $markdown = $this->convertToMarkdown($text, $textEntities);
 
         $title = $this->extractTitle($markdown);
         $slug = $this->getSlugFromTitle($title);
@@ -129,9 +134,9 @@ final class Message
         $this->title = $title;
         $this->slug = $slug;
 
-        $tags = $this->extractHashtagsFromTextEntities($this->message['text_entities']);
-        if (is_array($this->message['text'])) {
-            $tags = $this->mergeHashtags($tags, $this->extractHashtagsFromTextArray($this->message['text']));
+        $tags = $this->extractHashtagsFromTextEntities($textEntities);
+        if (is_array($text)) {
+            $tags = $this->mergeHashtags($tags, $this->extractHashtagsFromTextArray(array_values($text)));
         }
         $this->tags = $tags;
 
@@ -146,10 +151,10 @@ final class Message
     {
         $tags = [];
         foreach ($textEntities as $entity) {
-            if ($entity['type'] !== 'hashtag') {
+            if (!is_array($entity) || ($entity['type'] ?? null) !== 'hashtag') {
                 continue;
             }
-            $text = $entity['text'];
+            $text = $entity['text'] ?? null;
             if (!is_string($text) || $text === '') {
                 continue;
             }
@@ -208,8 +213,8 @@ final class Message
     }
 
     /**
-     * @param string|list<array> $text
-     * @param list<array> $textEntities
+     * @param string|array<array-key, mixed> $text
+     * @param list<mixed> $textEntities
      */
     private function convertToMarkdown(string|array $text, array $textEntities): string
     {
@@ -218,14 +223,14 @@ final class Message
         }
 
         if (is_array($text)) {
-            return $this->convertTextArrayToMarkdown($text);
+            return $this->convertTextArrayToMarkdown(array_values($text));
         }
 
         return $this->convertEntitiesOverText($text, $textEntities);
     }
 
     /**
-     * @param list<array<string, mixed>|string> $textArray
+     * @param list<mixed> $textArray
      */
     private function convertTextArrayToMarkdown(array $textArray): string
     {
@@ -236,13 +241,20 @@ final class Message
                 continue;
             }
 
-            $text = $part['text'];
+            if (!is_array($part)) {
+                continue;
+            }
+
+            $text = $part['text'] ?? '';
+            $text = is_string($text) ? $text : '';
+            $type = $part['type'] ?? '';
+            $type = is_string($type) ? $type : '';
             if (trim($text) === '') {
                 $result .= $text;
                 continue;
             }
 
-            $isInlinePart = in_array($part['type'], ['bold', 'italic', 'strikethrough'], true);
+            $isInlinePart = in_array($type, ['bold', 'italic', 'strikethrough'], true);
             $prefix = '';
             $suffix = '';
             if ($isInlinePart) {
@@ -257,13 +269,15 @@ final class Message
                 }
             }
 
-            $markdown = match ($part['type']) {
+            $language = is_string($part['language'] ?? null) ? $part['language'] : '';
+            $href = is_string($part['href'] ?? null) ? $part['href'] : '';
+            $markdown = match ($type) {
                 'bold' => "**$text**",
                 'italic' => "*$text*",
                 'strikethrough' => "~~$text~~",
                 'code' => "`$text`",
-                'pre' => "\n```{$part['language']}\n$text\n```\n",
-                'text_link' => "[$text]({$part['href']})",
+                'pre' => "\n```$language\n$text\n```\n",
+                'text_link' => "[$text]($href)",
                 'link' => "[$text]({$this->ensureUrl($text)})",
                 'email' => "[$text](mailto:$text)",
                 'blockquote' => $this->blockQuoteToMarkdown($text),
@@ -324,11 +338,14 @@ final class Message
         $annotations = array_fill(0, $length, []);
 
         foreach ($entities as $entity) {
-            $type = $entity['type'];
-            $offset = (int) ($entity['offset'] ?? 0);
-            $entityLength = (int) ($entity['length'] ?? 0);
-            $href = $entity['href'] ?? '';
-            $language = $entity['language'] ?? '';
+            if (!is_array($entity)) {
+                continue;
+            }
+            $type = is_string($entity['type'] ?? null) ? $entity['type'] : '';
+            $offset = is_numeric($entity['offset'] ?? null) ? (int) $entity['offset'] : 0;
+            $entityLength = is_numeric($entity['length'] ?? null) ? (int) $entity['length'] : 0;
+            $href = is_string($entity['href'] ?? null) ? $entity['href'] : '';
+            $language = is_string($entity['language'] ?? null) ? $entity['language'] : '';
 
             if ($type === 'hashtag') {
                 for ($i = $offset; $i < $offset + $entityLength && $i < $length; $i++) {
@@ -445,5 +462,27 @@ final class Message
         }
 
         return $markdown;
+    }
+
+    private function intField(string $name, int $default = 0): int
+    {
+        $value = $this->message[$name] ?? null;
+
+        return is_numeric($value) ? (int) $value : $default;
+    }
+
+    private function nullableStringField(string $name): ?string
+    {
+        $value = $this->message[$name] ?? null;
+
+        return is_string($value) ? $value : null;
+    }
+
+    /** @return list<mixed> */
+    private function listField(string $name): array
+    {
+        $value = $this->message[$name] ?? [];
+
+        return is_array($value) ? array_values($value) : [];
     }
 }

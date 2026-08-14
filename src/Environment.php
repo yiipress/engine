@@ -113,6 +113,8 @@ final class Environment
             return $value;
         }
 
-        return isset($_ENV[$key]) ? (string) $_ENV[$key] : null;
+        $value = $_ENV[$key] ?? null;
+
+        return is_string($value) ? $value : null;
     }
 }
