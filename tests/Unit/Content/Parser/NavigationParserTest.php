@@ -100,6 +100,20 @@ YAML);
         }
     }
 
+    public function testIgnoresNestedUrlValue(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-nav-');
+        file_put_contents($file, "main:\n  - title: Home\n    url: [invalid]\n");
+
+        try {
+            $main = new NavigationParser()->parse($file)->menu('main');
+
+            assertSame('', $main[0]->url);
+        } finally {
+            unlink($file);
+        }
+    }
+
     public function testThrowsFriendlyExceptionWhenConfigIsNotMapping(): void
     {
         $file = tempnam(sys_get_temp_dir(), 'yiipress-nav-');

@@ -21,6 +21,12 @@ final class ValueNormalizerTest extends TestCase
         assertSame(['one', '2'], ValueNormalizer::stringList(['one', ['nested'], 2]));
     }
 
+    public function testUsesDefaultsForNestedIntegerAndBooleanValues(): void
+    {
+        assertSame(10, ValueNormalizer::integer(['nested'], 10));
+        assertSame(true, ValueNormalizer::boolean(['nested'], true));
+    }
+
     public function testKeepsOnlyStringKeysInMaps(): void
     {
         assertSame(['key' => 'value'], ValueNormalizer::map(['key' => 'value', 0 => 'ignored']));

@@ -171,6 +171,23 @@ final class BuildManifestTest extends TestCase
         assertSame([], $manifest->entries());
     }
 
+    public function testNullEntryMetadataLoadsAsEmptyManifest(): void
+    {
+        foreach (['mtime', 'size'] as $metadata) {
+            $manifestPath = $this->tempDir . "/manifest-$metadata.json";
+            file_put_contents($manifestPath, json_encode([
+                'entries' => ['/entry.md' => ['hash' => 'hash', 'outputs' => [], $metadata => null]],
+                'configFiles' => [],
+                'trackedDirectories' => [],
+            ], JSON_THROW_ON_ERROR));
+
+            $manifest = new BuildManifest($manifestPath);
+            $manifest->load();
+
+            assertSame([], $manifest->entries());
+        }
+    }
+
     public function testRecordRejectsMissingSource(): void
     {
         $manifest = new BuildManifest($this->tempDir . '/manifest.json');

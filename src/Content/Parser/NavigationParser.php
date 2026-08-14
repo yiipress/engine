@@ -18,7 +18,7 @@ use function str_replace;
 use function strtolower;
 use function yaml_parse;
 
-/** @phpstan-type NavigationItemData array{title?: mixed, url?: scalar, children?: mixed} */
+/** @phpstan-type NavigationItemData array{title?: mixed, url?: mixed, children?: mixed} */
 final class NavigationParser
 {
     public function parse(string $filePath): Navigation
@@ -83,7 +83,7 @@ final class NavigationParser
                 : [];
             $result[] = new NavigationItem(
                 title: $title,
-                url: (string) ($item['url'] ?? ''),
+                url: ValueNormalizer::string($item['url'] ?? null),
                 children: $children,
                 titles: $titles,
             );

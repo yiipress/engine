@@ -54,6 +54,22 @@ final class SiteConfigParserTest extends TestCase
         unlink($filePath);
     }
 
+    public function testUsesDefaultsForNestedScalarValues(): void
+    {
+        $filePath = sys_get_temp_dir() . '/yiipress-site-config-' . uniqid() . '.yaml';
+        file_put_contents($filePath, "title: [invalid]\nlanguages: [en]\nentries_per_page: [invalid]\nminify: [invalid]\n");
+
+        try {
+            $config = new SiteConfigParser()->parse($filePath);
+
+            assertSame('', $config->title);
+            assertSame(10, $config->entriesPerPage);
+            assertTrue($config->minify);
+        } finally {
+            unlink($filePath);
+        }
+    }
+
     public function testDiscoversIconsNextToSiteConfiguration(): void
     {
         $contentDir = sys_get_temp_dir() . '/yiipress-site-icons-' . uniqid();

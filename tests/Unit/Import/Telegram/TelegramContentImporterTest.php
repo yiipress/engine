@@ -47,6 +47,15 @@ final class TelegramContentImporterTest extends TestCase
         assertStringContainsString('result.json not found', $result->warnings()[0]);
     }
 
+    public function testReturnsWarningWhenEncodingCannotBeDetected(): void
+    {
+        file_put_contents($this->sourceDir . '/result.json', "\x98");
+
+        $result = (new TelegramContentImporter())->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
+
+        assertSame(['Unable to detect result.json encoding.'], $result->warnings());
+    }
+
     public function testSkipsMalformedMessageParts(): void
     {
         $this->writeResultJson([

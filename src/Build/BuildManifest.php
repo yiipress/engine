@@ -102,7 +102,7 @@ final class BuildManifest
             }
             $normalized = ['hash' => $entry['hash'], 'outputs' => $outputs];
             foreach (['mtime', 'size'] as $key) {
-                if (isset($entry[$key])) {
+                if (array_key_exists($key, $entry)) {
                     if (!is_int($entry[$key])) {
                         return null;
                     }

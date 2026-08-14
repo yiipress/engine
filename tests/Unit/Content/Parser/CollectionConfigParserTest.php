@@ -86,6 +86,23 @@ final class CollectionConfigParserTest extends TestCase
         }
     }
 
+    public function testUsesDefaultsForNestedScalarValues(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'yiipress-collection-');
+        self::assertNotFalse($file);
+        file_put_contents($file, "title: [invalid]\nentries_per_page: [invalid]\nfeed: [invalid]\ntags: [valid]\n");
+
+        try {
+            $collection = new CollectionConfigParser()->parse($file, 'blog');
+
+            assertSame('blog', $collection->title);
+            assertSame(10, $collection->entriesPerPage);
+            assertFalse($collection->feed);
+        } finally {
+            unlink($file);
+        }
+    }
+
     public function testThrowsFriendlyExceptionWhenConfigIsNotMapping(): void
     {
         $file = tempnam(sys_get_temp_dir(), 'yiipress-collection-');

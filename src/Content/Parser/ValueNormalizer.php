@@ -14,6 +14,16 @@ final class ValueNormalizer
         return is_scalar($value) ? (string) $value : $default;
     }
 
+    public static function integer(mixed $value, int $default): int
+    {
+        return is_scalar($value) ? (int) $value : $default;
+    }
+
+    public static function boolean(mixed $value, bool $default): bool
+    {
+        return is_scalar($value) ? (bool) $value : $default;
+    }
+
     /** @return list<string> */
     public static function stringList(mixed $value): array
     {
