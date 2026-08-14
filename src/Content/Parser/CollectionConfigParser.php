@@ -47,19 +47,21 @@ final class CollectionConfigParser
             );
         }
 
+        /** @var array{title?: scalar, description?: scalar, permalink?: scalar, sort_by?: scalar, sort_order?: scalar, entries_per_page?: scalar, feed?: mixed, listing?: mixed, order?: list<scalar>, navigation_pager?: mixed, feed_limit?: scalar} $data */
+
         return new Collection(
             name: $collectionName,
-            title: ValueNormalizer::string($data['title'] ?? null, $collectionName),
-            description: ValueNormalizer::string($data['description'] ?? null),
-            permalink: ValueNormalizer::string($data['permalink'] ?? null, '/:collection/:slug/'),
-            sortBy: ValueNormalizer::string($data['sort_by'] ?? null, 'date'),
-            sortOrder: ValueNormalizer::string($data['sort_order'] ?? null, 'desc'),
-            entriesPerPage: ValueNormalizer::int($data['entries_per_page'] ?? null, 10),
+            title: (string) ($data['title'] ?? $collectionName),
+            description: (string) ($data['description'] ?? ''),
+            permalink: (string) ($data['permalink'] ?? '/:collection/:slug/'),
+            sortBy: (string) ($data['sort_by'] ?? 'date'),
+            sortOrder: (string) ($data['sort_order'] ?? 'desc'),
+            entriesPerPage: (int) ($data['entries_per_page'] ?? 10),
             feed: (bool) ($data['feed'] ?? false),
             listing: (bool) ($data['listing'] ?? true),
-            order: ValueNormalizer::stringList($data['order'] ?? null),
+            order: isset($data['order']) ? array_map(strval(...), $data['order']) : [],
             navigationPager: (bool) ($data['navigation_pager'] ?? false),
-            feedLimit: max(0, ValueNormalizer::int($data['feed_limit'] ?? null, 20)),
+            feedLimit: max(0, (int) ($data['feed_limit'] ?? 20)),
         );
     }
 }

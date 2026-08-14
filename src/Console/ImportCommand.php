@@ -114,14 +114,11 @@ final class ImportCommand extends Command
     private function parseRawOptions(): array
     {
         $argv = $_SERVER['argv'] ?? [];
+        /** @var list<string> $argv */
         $options = [];
 
-        if (!is_array($argv)) {
-            return [];
-        }
-
         foreach ($argv as $token) {
-            if (!is_string($token) || !str_starts_with($token, '--')) {
+            if (!str_starts_with($token, '--')) {
                 continue;
             }
 

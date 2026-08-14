@@ -142,7 +142,8 @@ final class BuildDiagnostics
     {
         $body = preg_replace('/````.*?````/s', '', $body);
         $body = preg_replace('/```.*?```/s', '', (string) $body);
-        return preg_replace('/`[^`]+`/', '', (string) $body) ?? (string) $body;
+        /** @var string */
+        return preg_replace('/`[^`]+`/', '', (string) $body);
     }
 
     private function relativeSource(Entry $entry): string

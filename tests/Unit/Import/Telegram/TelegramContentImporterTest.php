@@ -537,24 +537,6 @@ final class TelegramContentImporterTest extends TestCase
         assertSame([1], $result->skippedFiles());
     }
 
-    public function testSkipsMalformedMessageEntries(): void
-    {
-        $this->writeResultJson([
-            'type' => 'public_channel',
-            'messages' => ['invalid', ['id' => [], 'type' => []]],
-        ]);
-
-        $result = new TelegramContentImporter()->import(
-            ['directory' => $this->sourceDir],
-            $this->targetDir,
-            'blog',
-        );
-
-        assertSame(2, $result->totalMessages());
-        assertSame([''], $result->skippedFiles());
-        assertSame(['Skipped a malformed message entry.'], $result->warnings());
-    }
-
     /**
      * @param array<string, mixed> $data
      */

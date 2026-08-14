@@ -113,8 +113,9 @@ final class Environment
             return $value;
         }
 
+        /** @var string|null $value */
         $value = $_ENV[$key] ?? null;
 
-        return is_string($value) ? $value : null;
+        return $value;
     }
 }

@@ -21,16 +21,16 @@ final class TemplateHelpers
         }
 
         if (!isset($variables['url'])) {
+            /** @var string $rootPath */
             $rootPath = $variables['rootPath'] ?? '';
-            $rootPath = is_string($rootPath) ? $rootPath : '';
             $variables['url'] = static fn(string $path): string => UrlResolver::sitePath($path, $rootPath);
         }
 
         if (!isset($variables['themeAsset'])) {
+            /** @var string $themeName */
             $themeName = $variables['themeName'] ?? '';
-            $themeName = is_string($themeName) ? $themeName : '';
+            /** @var string $rootPath */
             $rootPath = $variables['rootPath'] ?? '';
-            $rootPath = is_string($rootPath) ? $rootPath : '';
             $assetManifest = $variables['assetManifest'] ?? null;
             $variables['themeAsset'] = static fn(string $path): string => Asset::themeUrl(
                 $path,

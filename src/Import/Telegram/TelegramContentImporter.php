@@ -13,6 +13,11 @@ use Yiisoft\Files\FileHelper;
 use function count;
 use function is_array;
 
+/**
+ * @phpstan-import-type ChannelData from Channel
+ * @phpstan-import-type MessageData from Message
+ * @phpstan-type ExportMessage array{id: int, type: string, action?: string, poll?: mixed, text?: mixed, photo?: mixed, file?: mixed, ...}
+ */
 final class TelegramContentImporter implements ContentImporterInterface
 {
     public function options(): array
@@ -68,17 +73,10 @@ final class TelegramContentImporter implements ContentImporterInterface
             );
         }
 
+        /** @var string $encoding */
         $encoding = mb_detect_encoding($json, ['UTF-16LE', 'UTF-16BE', 'UTF-8', 'Windows-1251'], true);
-        $json = mb_convert_encoding($json, 'UTF-8', $encoding === false ? 'UTF-8' : $encoding);
-        if ($json === false) {
-            return new ImportResult(
-                totalMessages: 0,
-                importedCount: 0,
-                importedFiles: [],
-                skippedFiles: [],
-                warnings: ["Failed to convert $resultFile to UTF-8"],
-            );
-        }
+        /** @var string $json */
+        $json = mb_convert_encoding($json, 'UTF-8', $encoding);
 
         $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
         if (!is_array($data)) {
@@ -112,49 +110,43 @@ final class TelegramContentImporter implements ContentImporterInterface
         $warnings = [];
 
         $messages = array_values($data['messages']);
+        /** @var list<ExportMessage> $messages */
         $totalMessages = count($messages);
 
         $ignoredIds = $this->parseIgnoredIds($options['ignore_message_ids'] ?? '');
 
         $channel = null;
         foreach ($messages as $dataMessage) {
-            if (!is_array($dataMessage)) {
-                $warnings[] = 'Skipped a malformed message entry.';
-                continue;
-            }
-
-            $dataMessage = $this->normalizeMessage($dataMessage);
-            $type = $dataMessage['type'] ?? '';
-            $type = is_string($type) ? $type : '';
-            $id = $dataMessage['id'] ?? '';
-            $id = is_int($id) || is_string($id) ? $id : '';
             if (
-                $type === 'service' &&
+                $dataMessage['type'] === 'service' &&
                 array_key_exists('action', $dataMessage) &&
                 $dataMessage['action'] === 'create_channel'
             ) {
+                /** @var ChannelData $dataMessage */
                 $channel = new Channel($dataMessage);
                 continue;
             }
 
-            if ($type !== 'message') {
-                $skippedFiles[] = $id;
+            if ($dataMessage['type'] !== 'message') {
+                $skippedFiles[] = $dataMessage['id'];
                 continue;
             }
 
-            if (in_array($id, $ignoredIds, true)) {
-                $skippedFiles[] = $id;
+            /** @var MessageData $dataMessage */
+
+            if (in_array($dataMessage['id'], $ignoredIds, true)) {
+                $skippedFiles[] = $dataMessage['id'];
                 continue;
             }
 
             if (!empty($dataMessage['poll'])) {
-                $skippedFiles[] = $id;
+                $skippedFiles[] = $dataMessage['id'];
                 // TODO: import polls
                 continue;
             }
 
-            if (($dataMessage['text'] ?? '') === '' && empty($dataMessage['photo']) && empty($dataMessage['file'])) {
-                $skippedFiles[] = $id;
+            if ($dataMessage['text'] === '' && empty($dataMessage['photo']) && empty($dataMessage['file'])) {
+                $skippedFiles[] = $dataMessage['id'];
                 continue;
             }
 
@@ -191,22 +183,6 @@ final class TelegramContentImporter implements ContentImporterInterface
     public function name(): string
     {
         return 'telegram';
-    }
-
-    /**
-     * @param array<mixed, mixed> $message
-     * @return array<string, mixed>
-     */
-    private function normalizeMessage(array $message): array
-    {
-        $normalized = [];
-        foreach ($message as $key => $value) {
-            if (is_string($key)) {
-                $normalized[$key] = $value;
-            }
-        }
-
-        return $normalized;
     }
 
     private function buildMarkdownFile(

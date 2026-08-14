@@ -11,7 +11,6 @@ use function in_array;
 use function hash_file;
 use function is_array;
 use function is_file;
-use function is_readable;
 
 final class BuildManifest
 {
@@ -51,13 +50,20 @@ final class BuildManifest
         }
 
         if (isset($data['entries']) && is_array($data['entries'])) {
-            $this->entries = self::normalizeEntries($data['entries']);
-            $this->configFiles = self::normalizeStringList($data['configFiles'] ?? []);
-            $this->trackedDirectories = self::normalizeTrackedDirectories($data['trackedDirectories'] ?? []);
+            /** @var array<string, array{hash: string, outputs: list<string>, mtime?: int, size?: int}> $entries */
+            $entries = $data['entries'];
+            /** @var list<string> $configFiles */
+            $configFiles = isset($data['configFiles']) && is_array($data['configFiles']) ? array_values($data['configFiles']) : [];
+            /** @var array<string, int> $trackedDirectories */
+            $trackedDirectories = isset($data['trackedDirectories']) && is_array($data['trackedDirectories']) ? $data['trackedDirectories'] : [];
+            $this->entries = $entries;
+            $this->configFiles = $configFiles;
+            $this->trackedDirectories = $trackedDirectories;
             return;
         }
 
-        $this->entries = self::normalizeEntries($data);
+        /** @var array<string, array{hash: string, outputs: list<string>, mtime?: int, size?: int}> $data */
+        $this->entries = $data;
         $this->configFiles = [];
         $this->trackedDirectories = [];
     }
@@ -67,62 +73,6 @@ final class BuildManifest
         $this->entries = [];
         $this->configFiles = [];
         $this->trackedDirectories = [];
-    }
-
-    /**
-     * @return array<string, array{hash: string, outputs: list<string>, mtime?: int, size?: int}>
-     */
-    private static function normalizeEntries(mixed $value): array
-    {
-        if (!is_array($value)) {
-            return [];
-        }
-
-        $entries = [];
-        foreach ($value as $source => $entry) {
-            if (!is_string($source) || !is_array($entry) || !is_string($entry['hash'] ?? null)) {
-                continue;
-            }
-
-            $outputs = self::normalizeStringList($entry['outputs'] ?? []);
-            $normalized = ['hash' => $entry['hash'], 'outputs' => $outputs];
-            if (is_int($entry['mtime'] ?? null)) {
-                $normalized['mtime'] = $entry['mtime'];
-            }
-            if (is_int($entry['size'] ?? null)) {
-                $normalized['size'] = $entry['size'];
-            }
-            $entries[$source] = $normalized;
-        }
-
-        return $entries;
-    }
-
-    /** @return list<string> */
-    private static function normalizeStringList(mixed $value): array
-    {
-        if (!is_array($value)) {
-            return [];
-        }
-
-        return array_values(array_filter($value, is_string(...)));
-    }
-
-    /** @return array<string, int> */
-    private static function normalizeTrackedDirectories(mixed $value): array
-    {
-        if (!is_array($value)) {
-            return [];
-        }
-
-        $directories = [];
-        foreach ($value as $directory => $mtime) {
-            if (is_string($directory) && is_int($mtime)) {
-                $directories[$directory] = $mtime;
-            }
-        }
-
-        return $directories;
     }
 
     public function save(): void
@@ -170,23 +120,16 @@ final class BuildManifest
      */
     public function record(string $sourceFile, array $outputs): void
     {
-        if (!is_file($sourceFile) || !is_readable($sourceFile)) {
-            throw new RuntimeException("Unable to hash source file: $sourceFile");
-        }
-
         clearstatcache(true, $sourceFile);
         $mtime = (int) filemtime($sourceFile);
         $size = (int) filesize($sourceFile);
         $stored = $this->entries[$sourceFile] ?? null;
+        /** @var string $hash */
         $hash = $stored !== null
             && ($stored['mtime'] ?? null) === $mtime
             && ($stored['size'] ?? null) === $size
             ? $stored['hash']
             : hash_file('xxh128', $sourceFile);
-
-        if ($hash === false) {
-            throw new RuntimeException("Unable to hash source file: $sourceFile");
-        }
 
         $this->entries[$sourceFile] = [
             'hash' => $hash,

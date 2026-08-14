@@ -70,8 +70,7 @@ final readonly class PackageLocator
             return '';
         }
 
-        $path = call_user_func(micro_get_self_filename(...));
-
-        return is_string($path) ? $path : '';
+        /** @var string */
+        return call_user_func(micro_get_self_filename(...));
     }
 }

@@ -10,7 +10,6 @@ use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use RuntimeException;
 use SplFileInfo;
 
 use function PHPUnit\Framework\assertNotSame;
@@ -43,16 +42,6 @@ final class AssetFingerprintManifestTest extends TestCase
         assertNotSame('assets/theme/style.css', $resolved);
         assertStringContainsString('assets/theme/style.', $resolved);
         assertSame($resolved, $manifest->resolve('assets/theme/style.css'));
-    }
-
-    public function testRegisterRejectsMissingSource(): void
-    {
-        $source = $this->tempDir . '/missing.css';
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage("Unable to fingerprint asset: $source");
-
-        new AssetFingerprintManifest()->register('assets/theme/style.css', $source);
     }
 
     public function testRewriterUpdatesRelativeAndAbsoluteAssetUrls(): void

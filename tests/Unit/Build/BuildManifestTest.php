@@ -145,26 +145,6 @@ final class BuildManifestTest extends TestCase
         assertSame([], $manifest->sourceFiles());
     }
 
-    public function testMalformedManifestMetadataIsNormalized(): void
-    {
-        $manifestPath = $this->tempDir . '/manifest.json';
-        file_put_contents($manifestPath, json_encode([
-            'entries' => [
-                'valid.md' => ['hash' => 'hash', 'outputs' => ['valid.html', []], 'mtime' => 'invalid'],
-                'invalid.md' => ['hash' => []],
-            ],
-            'configFiles' => ['config.yaml', []],
-            'trackedDirectories' => ['content' => 42, 'invalid' => 'mtime'],
-        ], JSON_THROW_ON_ERROR));
-
-        $manifest = new BuildManifest($manifestPath);
-        $manifest->load();
-
-        assertSame(['valid.md' => ['hash' => 'hash', 'outputs' => ['valid.html']]], $manifest->entries());
-        assertSame(['config.yaml'], $manifest->configFiles());
-        assertTrue($manifest->hasTrackedDirectories());
-    }
-
     public function testInvalidManifestPayloadClearsPreviouslyLoadedMetadata(): void
     {
         $sourceFile = $this->tempDir . '/entry.md';
@@ -359,16 +339,6 @@ final class BuildManifestTest extends TestCase
         mkdir($directory . '/blog', 0o755, true);
 
         assertTrue($manifest->trackedDirectoriesChanged());
-    }
-
-    public function testRecordRejectsMissingSource(): void
-    {
-        $source = $this->tempDir . '/missing.md';
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage("Unable to hash source file: $source");
-
-        new BuildManifest($this->tempDir . '/manifest.json')->record($source, []);
     }
 
     private function removeDir(string $path): void

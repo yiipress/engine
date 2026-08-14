@@ -17,13 +17,14 @@ final readonly class AuthorParser
         $slug = basename($filePath, '.md');
         $result = $this->frontMatterParser->parse($filePath);
         $fields = $result['frontMatter'];
+        /** @var array{title?: scalar, email?: scalar, url?: scalar, avatar?: scalar} $fields */
 
         return new Author(
             slug: $slug,
-            title: ValueNormalizer::string($fields['title'] ?? null, $slug),
-            email: ValueNormalizer::string($fields['email'] ?? null),
-            url: ValueNormalizer::string($fields['url'] ?? null),
-            avatar: ValueNormalizer::string($fields['avatar'] ?? null),
+            title: (string) ($fields['title'] ?? $slug),
+            email: (string) ($fields['email'] ?? ''),
+            url: (string) ($fields['url'] ?? ''),
+            avatar: (string) ($fields['avatar'] ?? ''),
             bodyOffset: $result['bodyOffset'],
             bodyLength: $result['bodyLength'],
             filePath: $filePath,

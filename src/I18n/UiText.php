@@ -232,11 +232,10 @@ final class UiText
             throw new RuntimeException("Invalid YAML in UI translation file: $path");
         }
 
+        /** @var array<string, string> $data */
         $catalog = [];
         foreach ($data as $key => $value) {
-            if (is_scalar($value)) {
-                $catalog[(string) $key] = (string) $value;
-            }
+            $catalog[$key] = $value;
         }
 
         return self::$catalogCache[$path] = $catalog;

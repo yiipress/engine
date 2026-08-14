@@ -17,13 +17,13 @@ final readonly class OEmbedProcessor implements ContentProcessorInterface
 {
     private const string URL_LINE_PATTERN = '/^(?<indent>[ \t]*)(?<url>https?:\/\/[^\s<>()]+)[ \t]*$/mi';
 
-    /** @var list<OEmbedInterface> */
+    /** @var array<array-key, OEmbedInterface> */
     private array $providers;
 
     public function __construct(
         OEmbedInterface ...$providers,
     ) {
-        $this->providers = array_values($providers);
+        $this->providers = $providers;
     }
 
     public function process(string $content, Entry $entry): string

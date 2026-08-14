@@ -145,8 +145,8 @@ final readonly class PortableWorkerPool
         }
 
         $arguments = $_SERVER['argv'] ?? [];
-        $script = is_array($arguments) ? ($arguments[0] ?? '') : '';
-        $script = is_string($script) ? $script : '';
+        /** @var list<string> $arguments */
+        $script = $arguments[0] ?? '';
         if ($script !== '' && !str_starts_with($script, '/') && !preg_match('~^[A-Za-z]:[\\\\/]~', $script)) {
             $script = (getcwd() ?: '.') . DIRECTORY_SEPARATOR . $script;
         }

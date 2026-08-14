@@ -13,12 +13,12 @@ use function explode;
 use function file_get_contents;
 use function implode;
 use function is_array;
-use function is_scalar;
 use function reset;
 use function str_replace;
 use function strtolower;
 use function yaml_parse;
 
+/** @phpstan-type NavigationItemData array{title?: scalar|array<array-key, scalar>, url?: scalar, children?: list<array<string, mixed>>} */
 final class NavigationParser
 {
     public function parse(string $filePath): Navigation
@@ -76,13 +76,14 @@ final class NavigationParser
             if (!is_array($item)) {
                 continue;
             }
+            /** @var NavigationItemData $item */
             [$title, $titles] = $this->parseTitle($item['title'] ?? '');
-            $children = isset($item['children']) && is_array($item['children'])
+            $children = isset($item['children'])
                 ? $this->parseItems($item['children'])
                 : [];
             $result[] = new NavigationItem(
                 title: $title,
-                url: is_scalar($item['url'] ?? null) ? (string) $item['url'] : '',
+                url: (string) ($item['url'] ?? ''),
                 children: $children,
                 titles: $titles,
             );
@@ -91,21 +92,17 @@ final class NavigationParser
     }
 
     /**
-     * @param mixed $value
+     * @param scalar|array<array-key, scalar> $value
      * @return array{0: string, 1: array<string, string>}
      */
     private function parseTitle(mixed $value): array
     {
         if (!is_array($value)) {
-            return [is_scalar($value) ? (string) $value : '', []];
+            return [(string) $value, []];
         }
 
         $titles = [];
         foreach ($value as $language => $title) {
-            if (!is_scalar($title)) {
-                continue;
-            }
-
             $titles[$this->normalizeLanguage((string) $language)] = (string) $title;
         }
 

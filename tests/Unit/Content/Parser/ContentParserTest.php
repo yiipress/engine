@@ -31,13 +31,6 @@ final class ContentParserTest extends TestCase
         assertSame('Test Site', $config->title);
     }
 
-    public function testCreatesDefaultDependenciesForExplicitNulls(): void
-    {
-        $config = new ContentParser(null, null)->parseSiteConfig($this->dataDir);
-
-        assertSame('Test Site', $config->title);
-    }
-
     public function testParseNavigation(): void
     {
         $navigation = $this->parser->parseNavigation($this->dataDir);

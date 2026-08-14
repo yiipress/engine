@@ -22,16 +22,14 @@ final class ContentParser
     private AuthorParser $authorParser;
 
     public function __construct(
-        private readonly ?FrontMatterParser $frontMatterParser = new FrontMatterParser(),
-        private readonly ?FilenameParser $filenameParser = new FilenameParser(),
+        private readonly FrontMatterParser $frontMatterParser = new FrontMatterParser(),
+        private readonly FilenameParser $filenameParser = new FilenameParser(),
     ) {
-        $frontMatterParser = $this->frontMatterParser ?? new FrontMatterParser();
-        $filenameParser = $this->filenameParser ?? new FilenameParser();
         $this->siteConfigParser = new SiteConfigParser();
         $this->collectionConfigParser = new CollectionConfigParser();
         $this->navigationParser = new NavigationParser();
-        $this->entryParser = new EntryParser($frontMatterParser, $filenameParser);
-        $this->authorParser = new AuthorParser($frontMatterParser);
+        $this->entryParser = new EntryParser($this->frontMatterParser, $this->filenameParser);
+        $this->authorParser = new AuthorParser($this->frontMatterParser);
     }
 
     public function parseSiteConfig(string $contentDir): SiteConfig

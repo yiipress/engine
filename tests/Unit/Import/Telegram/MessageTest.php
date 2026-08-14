@@ -13,19 +13,19 @@ use function PHPUnit\Framework\assertStringContainsString;
 
 final class MessageTest extends TestCase
 {
-    public function testIgnoresMalformedTextParts(): void
+    public function testTelegramLinkRequiresChannel(): void
     {
         $message = new Message([
-            'id' => 'invalid',
-            'text' => [[], 42, ['type' => 'bold', 'text' => []]],
-            'text_entities' => [42, []],
+            'id' => 1,
+            'type' => 'message',
+            'text' => '',
+            'text_entities' => [],
         ], null);
 
-        assertSame(0, $message->id);
-        assertSame('Post 0', $message->title);
-        assertSame('', $message->markdown);
-        assertSame([], $message->tags);
-        assertSame('', $message->telegramLink);
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('A channel is required to generate a Telegram link.');
+
+        $message->telegramLink;
     }
 
     public static function markupDataProvider(): iterable

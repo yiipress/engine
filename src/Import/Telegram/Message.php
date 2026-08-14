@@ -5,16 +5,21 @@ declare(strict_types=1);
 namespace YiiPress\Import\Telegram;
 
 use DateTimeImmutable;
+use LogicException;
 
 /**
  * Telegram message.
+ *
+ * @phpstan-type TextPart array{type: string, text: string, language?: string, href?: string}
+ * @phpstan-type TextEntity array{type: string, text?: string, offset?: int, length?: int, href?: string, language?: string}
+ * @phpstan-type MessageData array{id: int, type: string, date_unixtime?: numeric-string, edited_unixtime?: numeric-string, text: string|list<string|TextPart>, text_entities: list<TextEntity>, photo?: string, file?: string, forwarded_from?: string, ...}
  */
 final class Message
 {
     private bool $processed = false;
 
     /**
-     * @param array<string, mixed> $message Exported message data.
+     * @param MessageData $message Exported message data.
      * @param Channel|null $channel Channel.
      */
     public function __construct(
@@ -24,7 +29,7 @@ final class Message
 
     public int $id {
         get {
-            return $this->intField('id');
+            return $this->message['id'];
         }
     }
 
@@ -58,41 +63,43 @@ final class Message
 
     public DateTimeImmutable $date {
         get {
-            return DateTimeImmutable::createFromTimestamp($this->intField('date_unixtime', time()));
+            $time = $this->message['date_unixtime'] ?? time();
+            return DateTimeImmutable::createFromTimestamp((int) $time);
         }
     }
 
     public DateTimeImmutable $edited {
         get {
-            return DateTimeImmutable::createFromTimestamp(
-                $this->intField('edited_unixtime', $this->intField('date_unixtime', time())),
-            );
+            $time = $this->message['edited_unixtime'] ?? $this->message['date_unixtime'] ?? time();
+            return DateTimeImmutable::createFromTimestamp((int) $time);
         }
     }
 
     public string $telegramLink {
         get {
-            return $this->channel === null
-                ? ''
-                : "https://t.me/{$this->channel->getTitle()}/{$this->id}";
+            if ($this->channel === null) {
+                throw new LogicException('A channel is required to generate a Telegram link.');
+            }
+
+            return "https://t.me/{$this->channel->getTitle()}/{$this->message['id']}";
         }
     }
 
     public ?string $photo {
         get {
-            return $this->nullableStringField('photo');
+            return $this->message['photo'] ?? null;
         }
     }
 
     public ?string $file {
         get {
-            return $this->nullableStringField('file');
+            return $this->message['file'] ?? null;
         }
     }
 
     public ?string $forwardedFrom {
         get {
-            return $this->nullableStringField('forwarded_from');
+            return $this->message['forwarded_from'] ?? null;
         }
     }
 
@@ -121,10 +128,7 @@ final class Message
             return;
         }
 
-        $text = $this->message['text'] ?? '';
-        $text = is_string($text) || is_array($text) ? $text : '';
-        $textEntities = $this->listField('text_entities');
-        $markdown = $this->convertToMarkdown($text, $textEntities);
+        $markdown = $this->convertToMarkdown($this->message['text'], $this->message['text_entities']);
 
         $title = $this->extractTitle($markdown);
         $slug = $this->getSlugFromTitle($title);
@@ -134,9 +138,9 @@ final class Message
         $this->title = $title;
         $this->slug = $slug;
 
-        $tags = $this->extractHashtagsFromTextEntities($textEntities);
-        if (is_array($text)) {
-            $tags = $this->mergeHashtags($tags, $this->extractHashtagsFromTextArray(array_values($text)));
+        $tags = $this->extractHashtagsFromTextEntities($this->message['text_entities']);
+        if (is_array($this->message['text'])) {
+            $tags = $this->mergeHashtags($tags, $this->extractHashtagsFromTextArray($this->message['text']));
         }
         $this->tags = $tags;
 
@@ -144,18 +148,18 @@ final class Message
     }
 
     /**
-     * @param list<mixed> $textEntities
+     * @param list<TextEntity> $textEntities
      * @return list<string>
      */
     private function extractHashtagsFromTextEntities(array $textEntities): array
     {
         $tags = [];
         foreach ($textEntities as $entity) {
-            if (!is_array($entity) || ($entity['type'] ?? null) !== 'hashtag') {
+            if ($entity['type'] !== 'hashtag') {
                 continue;
             }
-            $text = $entity['text'] ?? null;
-            if (!is_string($text) || $text === '') {
+            $text = $entity['text'] ?? '';
+            if ($text === '') {
                 continue;
             }
             $tag = ltrim($text, '#');
@@ -169,7 +173,7 @@ final class Message
     }
 
     /**
-     * @param list<mixed> $textArray
+     * @param list<string|TextPart> $textArray
      * @return list<string>
      */
     private function extractHashtagsFromTextArray(array $textArray): array
@@ -179,11 +183,11 @@ final class Message
             if (!is_array($part)) {
                 continue;
             }
-            if (($part['type'] ?? '') !== 'hashtag') {
+            if ($part['type'] !== 'hashtag') {
                 continue;
             }
-            $text = $part['text'] ?? '';
-            if (!is_string($text) || $text === '') {
+            $text = $part['text'];
+            if ($text === '') {
                 continue;
             }
             $tag = ltrim($text, '#');
@@ -213,8 +217,8 @@ final class Message
     }
 
     /**
-     * @param string|array<array-key, mixed> $text
-     * @param list<mixed> $textEntities
+     * @param string|list<string|TextPart> $text
+     * @param list<TextEntity> $textEntities
      */
     private function convertToMarkdown(string|array $text, array $textEntities): string
     {
@@ -223,14 +227,14 @@ final class Message
         }
 
         if (is_array($text)) {
-            return $this->convertTextArrayToMarkdown(array_values($text));
+            return $this->convertTextArrayToMarkdown($text);
         }
 
         return $this->convertEntitiesOverText($text, $textEntities);
     }
 
     /**
-     * @param list<mixed> $textArray
+     * @param list<string|TextPart> $textArray
      */
     private function convertTextArrayToMarkdown(array $textArray): string
     {
@@ -241,14 +245,8 @@ final class Message
                 continue;
             }
 
-            if (!is_array($part)) {
-                continue;
-            }
-
-            $text = $part['text'] ?? '';
-            $text = is_string($text) ? $text : '';
-            $type = $part['type'] ?? '';
-            $type = is_string($type) ? $type : '';
+            $text = $part['text'];
+            $type = $part['type'];
             if (trim($text) === '') {
                 $result .= $text;
                 continue;
@@ -269,8 +267,8 @@ final class Message
                 }
             }
 
-            $language = is_string($part['language'] ?? null) ? $part['language'] : '';
-            $href = is_string($part['href'] ?? null) ? $part['href'] : '';
+            $language = $part['language'] ?? '';
+            $href = $part['href'] ?? '';
             $markdown = match ($type) {
                 'bold' => "**$text**",
                 'italic' => "*$text*",
@@ -324,7 +322,7 @@ final class Message
     /**
      * String text with entities (offset, length, formatting to apply).
      *
-     * @param list<mixed> $entities
+     * @param list<TextEntity> $entities
      */
     private function convertEntitiesOverText(string $text, array $entities): string
     {
@@ -338,14 +336,11 @@ final class Message
         $annotations = array_fill(0, $length, []);
 
         foreach ($entities as $entity) {
-            if (!is_array($entity)) {
-                continue;
-            }
-            $type = is_string($entity['type'] ?? null) ? $entity['type'] : '';
-            $offset = is_numeric($entity['offset'] ?? null) ? (int) $entity['offset'] : 0;
-            $entityLength = is_numeric($entity['length'] ?? null) ? (int) $entity['length'] : 0;
-            $href = is_string($entity['href'] ?? null) ? $entity['href'] : '';
-            $language = is_string($entity['language'] ?? null) ? $entity['language'] : '';
+            $type = $entity['type'];
+            $offset = $entity['offset'] ?? 0;
+            $entityLength = $entity['length'] ?? 0;
+            $href = $entity['href'] ?? '';
+            $language = $entity['language'] ?? '';
 
             if ($type === 'hashtag') {
                 for ($i = $offset; $i < $offset + $entityLength && $i < $length; $i++) {
@@ -464,25 +459,4 @@ final class Message
         return $markdown;
     }
 
-    private function intField(string $name, int $default = 0): int
-    {
-        $value = $this->message[$name] ?? null;
-
-        return is_numeric($value) ? (int) $value : $default;
-    }
-
-    private function nullableStringField(string $name): ?string
-    {
-        $value = $this->message[$name] ?? null;
-
-        return is_string($value) ? $value : null;
-    }
-
-    /** @return list<mixed> */
-    private function listField(string $name): array
-    {
-        $value = $this->message[$name] ?? [];
-
-        return is_array($value) ? array_values($value) : [];
-    }
 }

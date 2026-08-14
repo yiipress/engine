@@ -186,8 +186,9 @@ final class ServeCommand extends Command
             $address .= ':' . $port;
         }
 
+        /** @var int|string $workersOption */
         $workersOption = $input->getOption('workers');
-        $workers = is_numeric($workersOption) ? (int) $workersOption : 1;
+        $workers = (int) $workersOption;
         if ($workers < 1) {
             $workers = 1;
         }
@@ -254,19 +255,14 @@ final class ServeCommand extends Command
 
             $children = array_values(array_filter($children, static fn(int $child): bool => $child !== $pid));
 
-            if (!is_int($status)) {
-                continue;
-            }
-
+            /** @var int $status */
             if ($stopping || pcntl_wifsignaled($status)) {
                 continue;
             }
 
             if (pcntl_wifexited($status)) {
                 $childExitCode = pcntl_wexitstatus($status);
-                if (!is_int($childExitCode)) {
-                    $childExitCode = ExitCode::UNSPECIFIED_ERROR;
-                }
+                /** @var int $childExitCode */
                 if ($childExitCode !== ExitCode::OK) {
                     $exitCode = $childExitCode;
                     $stopping = true;
@@ -570,8 +566,8 @@ final class ServeCommand extends Command
     {
         $root = $this->workingDirectory();
         $arguments = $_SERVER['argv'] ?? [];
-        $yiiBinary = is_array($arguments) ? ($arguments[0] ?? PHP_BINARY) : PHP_BINARY;
-        $yiiBinary = is_string($yiiBinary) ? $yiiBinary : PHP_BINARY;
+        /** @var list<string> $arguments */
+        $yiiBinary = $arguments[0] ?? PHP_BINARY;
         if (!str_starts_with($yiiBinary, '/')) {
             $yiiBinary = $root . '/' . $yiiBinary;
         }
