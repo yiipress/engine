@@ -59,7 +59,7 @@ final class TelegramContentImporterTest extends TestCase
             ]],
         ]);
 
-        $result = (new TelegramContentImporter())->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
+        $result = new TelegramContentImporter()->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
 
         assertSame(0, $result->importedCount());
         assertSame(['Skipped malformed Telegram record at index 0.'], $result->warnings());
@@ -77,7 +77,7 @@ final class TelegramContentImporterTest extends TestCase
             ]],
         ]);
 
-        $result = (new TelegramContentImporter())->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
+        $result = new TelegramContentImporter()->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
 
         assertSame(0, $result->importedCount());
         assertSame(['Skipped malformed Telegram record at index 0.'], $result->warnings());
