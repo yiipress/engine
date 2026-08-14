@@ -45,7 +45,7 @@ final class AssetFingerprintManifestTest extends TestCase
         assertSame($resolved, $manifest->resolve('assets/theme/style.css'));
     }
 
-    public function testRegisterRejectsUnreadableSource(): void
+    public function testRegisterRejectsMissingSource(): void
     {
         $source = $this->tempDir . '/missing.css';
 

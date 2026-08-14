@@ -341,7 +341,7 @@ final class BuildManifestTest extends TestCase
         assertTrue($manifest->trackedDirectoriesChanged());
     }
 
-    public function testRecordRejectsUnreadableSource(): void
+    public function testRecordRejectsMissingSource(): void
     {
         $source = $this->tempDir . '/missing.md';
 
