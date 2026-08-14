@@ -10,6 +10,8 @@ use function dirname;
 use function in_array;
 use function hash_file;
 use function is_array;
+use function is_file;
+use function is_readable;
 
 final class BuildManifest
 {
@@ -112,6 +114,10 @@ final class BuildManifest
      */
     public function record(string $sourceFile, array $outputs): void
     {
+        if (!is_file($sourceFile) || !is_readable($sourceFile)) {
+            throw new RuntimeException("Unable to hash source file: $sourceFile");
+        }
+
         clearstatcache(true, $sourceFile);
         $mtime = (int) filemtime($sourceFile);
         $size = (int) filesize($sourceFile);
@@ -121,6 +127,10 @@ final class BuildManifest
             && ($stored['size'] ?? null) === $size
             ? $stored['hash']
             : hash_file('xxh128', $sourceFile);
+
+        if ($hash === false) {
+            throw new RuntimeException("Unable to hash source file: $sourceFile");
+        }
 
         $this->entries[$sourceFile] = [
             'hash' => $hash,

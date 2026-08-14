@@ -341,6 +341,16 @@ final class BuildManifestTest extends TestCase
         assertTrue($manifest->trackedDirectoriesChanged());
     }
 
+    public function testRecordRejectsUnreadableSource(): void
+    {
+        $source = $this->tempDir . '/missing.md';
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage("Unable to hash source file: $source");
+
+        new BuildManifest($this->tempDir . '/manifest.json')->record($source, []);
+    }
+
     private function removeDir(string $path): void
     {
         if (!is_dir($path)) {

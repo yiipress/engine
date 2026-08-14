@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace YiiPress\Build;
 
+use RuntimeException;
+
 use function hash_file;
 use function hash;
+use function is_file;
+use function is_readable;
 use function ltrim;
 use function pathinfo;
 use function substr;
@@ -66,11 +70,19 @@ final class AssetFingerprintManifest
 
     public static function fingerprintPath(string $logicalPath, string $sourceFilePath): string
     {
+        if (!is_file($sourceFilePath) || !is_readable($sourceFilePath)) {
+            throw new RuntimeException("Unable to fingerprint asset: $sourceFilePath");
+        }
+
         $logicalPath = self::normalizePath($logicalPath);
         $extension = pathinfo($logicalPath, PATHINFO_EXTENSION);
         $directory = pathinfo($logicalPath, PATHINFO_DIRNAME);
         $filename = pathinfo($logicalPath, PATHINFO_FILENAME);
-        $hash = substr(hash_file('xxh128', $sourceFilePath), 0, 12);
+        $hash = hash_file('xxh128', $sourceFilePath);
+        if ($hash === false) {
+            throw new RuntimeException("Unable to fingerprint asset: $sourceFilePath");
+        }
+        $hash = substr($hash, 0, 12);
 
         $fingerprintedName = $filename . '.' . $hash;
         if ($extension !== '') {
