@@ -73,8 +73,8 @@ final class SiteConfigParser
             dateFormat: (string) ($data['date_format'] ?? 'Y-m-d'),
             entriesPerPage: (int) ($data['entries_per_page'] ?? 10),
             permalink: (string) ($data['permalink'] ?? '/:collection/:slug/'),
-            taxonomies: isset($data['taxonomies']) ? array_map(strval(...), $data['taxonomies']) : [],
-            params: $data['params'] ?? [],
+            taxonomies: ValueNormalizer::stringList($data['taxonomies'] ?? null),
+            params: ValueNormalizer::map($data['params'] ?? null),
             markdown: self::parseMarkdownConfig($data['markdown'] ?? []),
             theme: (string) ($data['theme'] ?? ''),
             highlightTheme: (string) ($data['highlight_theme'] ?? ''),
@@ -343,20 +343,23 @@ final class SiteConfigParser
             return new RobotsTxtConfig(generate: false);
         }
 
-        /** @var array{generate?: mixed, rules?: list<array{allow?: list<scalar>, disallow?: list<scalar>, user_agent?: scalar, crawl_delay?: scalar}>} $data */
+        /** @var array{generate?: mixed, rules?: mixed} $data */
         $rules = [];
-        foreach ($data['rules'] ?? [] as $ruleData) {
-            $allow = isset($ruleData['allow'])
-                ? array_map(strval(...), $ruleData['allow'])
-                : [];
-            $disallow = isset($ruleData['disallow'])
-                ? array_map(strval(...), $ruleData['disallow'])
-                : [];
+        $rulesData = $data['rules'] ?? [];
+        $rulesData = is_array($rulesData) ? $rulesData : [];
+        foreach ($rulesData as $ruleData) {
+            if (!is_array($ruleData)) {
+                continue;
+            }
+            $allow = ValueNormalizer::stringList($ruleData['allow'] ?? null);
+            $disallow = ValueNormalizer::stringList($ruleData['disallow'] ?? null);
+            $userAgent = ValueNormalizer::string($ruleData['user_agent'] ?? '*', '*');
+            $crawlDelay = $ruleData['crawl_delay'] ?? null;
             $rules[] = new RobotsTxtRule(
-                userAgent: (string) ($ruleData['user_agent'] ?? '*'),
+                userAgent: $userAgent,
                 allow: $allow,
                 disallow: $disallow,
-                crawlDelay: isset($ruleData['crawl_delay']) ? (int) $ruleData['crawl_delay'] : null,
+                crawlDelay: is_scalar($crawlDelay) ? (int) $crawlDelay : null,
             );
         }
 

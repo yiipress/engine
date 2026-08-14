@@ -12,7 +12,7 @@ use LogicException;
  *
  * @phpstan-type TextPart array{type: string, text: string, language?: string, href?: string}
  * @phpstan-type TextEntity array{type: string, text?: string, offset?: int, length?: int, href?: string, language?: string}
- * @phpstan-type MessageData array{id: int, type: string, date_unixtime?: numeric-string, edited_unixtime?: numeric-string, text: string|list<string|TextPart>, text_entities: list<TextEntity>, photo?: string, file?: string, forwarded_from?: string, ...}
+ * @phpstan-type MessageData array{id: int, type: string, date_unixtime?: int|numeric-string, edited_unixtime?: int|numeric-string, text: string|list<string|TextPart>, text_entities: list<TextEntity>, photo?: string, file?: string, forwarded_from?: string, ...}
  */
 final class Message
 {

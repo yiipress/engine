@@ -32,8 +32,8 @@ final class TemplateContext
             $variables['assetManifest'] = $this->assetManifest;
         }
         if (!isset($variables['themeAsset'])) {
-            /** @var string $rootPath */
             $rootPath = $variables['rootPath'] ?? '';
+            $rootPath = is_string($rootPath) ? $rootPath : '';
             $variables['themeAsset'] = fn(string $path): string => $this->themeAssetUrl($path, $rootPath);
         }
         $variables = TemplateHelpers::inject($variables);
@@ -44,8 +44,7 @@ final class TemplateContext
                 extract($__vars, EXTR_SKIP);
                 ob_start();
                 require $path;
-                /** @var string */
-                return ob_get_clean();
+                return (string) ob_get_clean();
             };
         }
 

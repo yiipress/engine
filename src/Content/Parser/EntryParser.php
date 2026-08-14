@@ -92,9 +92,7 @@ final readonly class EntryParser
 
         $slug = (string) ($fields['slug'] ?? $filenameParsed['slug']);
 
-        $frontMatterTags = isset($fields['tags'])
-            ? array_map(strval(...), $fields['tags'])
-            : [];
+        $frontMatterTags = ValueNormalizer::stringList($fields['tags'] ?? null);
 
         $inlineTags = $this->extractInlineTags($filePath, $result['bodyOffset'], $result['bodyLength']);
         $tags = $this->mergeTags($frontMatterTags, $inlineTags);
@@ -108,12 +106,8 @@ final readonly class EntryParser
             draft: (bool) ($fields['draft'] ?? false),
             tags: $tags,
             inlineTags: $inlineTags,
-            categories: isset($fields['categories'])
-                ? array_map(strval(...), $fields['categories'])
-                : [],
-            authors: isset($fields['authors'])
-                ? array_map(strval(...), $fields['authors'])
-                : [],
+            categories: ValueNormalizer::stringList($fields['categories'] ?? null),
+            authors: ValueNormalizer::stringList($fields['authors'] ?? null),
             summary: (string) ($fields['summary'] ?? ''),
             permalink: (string) ($fields['permalink'] ?? ''),
             layout: (string) ($fields['layout'] ?? ''),
@@ -121,15 +115,13 @@ final readonly class EntryParser
             weight: (int) ($fields['weight'] ?? 0),
             language: (string) ($fields['language'] ?? $language),
             redirectTo: (string) ($fields['redirect_to'] ?? ''),
-            extra: $fields['extra'] ?? [],
+            extra: ValueNormalizer::map($fields['extra'] ?? null),
             bodyOffset: $result['bodyOffset'],
             bodyLength: $result['bodyLength'],
             image: (string) ($fields['image'] ?? ''),
             translationKey: (string) ($fields['translation_key'] ?? ''),
             showTitle: (bool) ($fields['show_title'] ?? $fields['showTitle'] ?? true),
-            aliases: isset($fields['aliases'])
-                ? array_map(strval(...), $fields['aliases'])
-                : [],
+            aliases: ValueNormalizer::stringList($fields['aliases'] ?? null),
             previous: $this->parsePagerOverride($fields, 'previous', $filePath),
             next: $this->parsePagerOverride($fields, 'next', $filePath),
             editLink: $this->parseEditLink($fields, $filePath),

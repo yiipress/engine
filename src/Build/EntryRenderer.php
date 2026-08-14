@@ -198,8 +198,7 @@ final class EntryRenderer
                 extract($__vars, EXTR_SKIP);
                 ob_start();
                 require $templatePath;
-                /** @var string */
-                return ob_get_clean();
+                return (string) ob_get_clean();
             };
         }
 

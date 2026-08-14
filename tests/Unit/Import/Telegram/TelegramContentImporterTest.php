@@ -47,6 +47,42 @@ final class TelegramContentImporterTest extends TestCase
         assertStringContainsString('result.json not found', $result->warnings()[0]);
     }
 
+    public function testSkipsMalformedMessageParts(): void
+    {
+        $this->writeResultJson([
+            'type' => 'public_channel',
+            'messages' => [[
+                'id' => 1,
+                'type' => 'message',
+                'text' => [['type' => 'bold', 'text' => ['invalid']]],
+                'text_entities' => [],
+            ]],
+        ]);
+
+        $result = (new TelegramContentImporter())->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
+
+        assertSame(0, $result->importedCount());
+        assertSame(['Skipped malformed Telegram record at index 0.'], $result->warnings());
+    }
+
+    public function testSkipsMalformedTextEntities(): void
+    {
+        $this->writeResultJson([
+            'type' => 'public_channel',
+            'messages' => [[
+                'id' => 1,
+                'type' => 'message',
+                'text' => 'text',
+                'text_entities' => [['type' => 'plain', 'offset' => 'invalid']],
+            ]],
+        ]);
+
+        $result = (new TelegramContentImporter())->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
+
+        assertSame(0, $result->importedCount());
+        assertSame(['Skipped malformed Telegram record at index 0.'], $result->warnings());
+    }
+
     public function testImportsSimpleTextMessage(): void
     {
         $this->writeResultJson([

@@ -12,6 +12,8 @@ use Yiisoft\Files\FileHelper;
 
 use function count;
 use function is_array;
+use function is_int;
+use function is_string;
 
 /**
  * @phpstan-import-type ChannelData from Channel
@@ -73,10 +75,14 @@ final class TelegramContentImporter implements ContentImporterInterface
             );
         }
 
-        /** @var string $encoding */
         $encoding = mb_detect_encoding($json, ['UTF-16LE', 'UTF-16BE', 'UTF-8', 'Windows-1251'], true);
-        /** @var string $json */
+        if ($encoding === false) {
+            return new ImportResult(0, 0, [], [], ['Unable to detect result.json encoding.']);
+        }
         $json = mb_convert_encoding($json, 'UTF-8', $encoding);
+        if ($json === false) {
+            return new ImportResult(0, 0, [], [], ['Unable to convert result.json to UTF-8.']);
+        }
 
         $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
         if (!is_array($data)) {
@@ -110,13 +116,17 @@ final class TelegramContentImporter implements ContentImporterInterface
         $warnings = [];
 
         $messages = array_values($data['messages']);
-        /** @var list<ExportMessage> $messages */
         $totalMessages = count($messages);
 
         $ignoredIds = $this->parseIgnoredIds($options['ignore_message_ids'] ?? '');
 
         $channel = null;
-        foreach ($messages as $dataMessage) {
+        foreach ($messages as $index => $dataMessage) {
+            $dataMessage = self::normalizeExportMessage($dataMessage);
+            if ($dataMessage === null) {
+                $warnings[] = "Skipped malformed Telegram record at index $index.";
+                continue;
+            }
             if (
                 $dataMessage['type'] === 'service' &&
                 array_key_exists('action', $dataMessage) &&
@@ -178,6 +188,100 @@ final class TelegramContentImporter implements ContentImporterInterface
             skippedFiles: $skippedFiles,
             warnings: $warnings,
         );
+    }
+
+    /** @return ExportMessage|null */
+    private static function normalizeExportMessage(mixed $value): ?array
+    {
+        if (!is_array($value) || !is_int($value['id'] ?? null) || !is_string($value['type'] ?? null)) {
+            return null;
+        }
+
+        if ($value['type'] === 'service' && ($value['action'] ?? null) === 'create_channel') {
+            if (!is_string($value['title'] ?? null) || !self::isTimestamp($value['date_unixtime'] ?? null)) {
+                return null;
+            }
+            /** @var ExportMessage $value */
+            return $value;
+        }
+
+        if ($value['type'] !== 'message') {
+            /** @var ExportMessage $value */
+            return $value;
+        }
+
+        $text = $value['text'] ?? '';
+        if (!is_string($text) && !self::isTextParts($text)) {
+            return null;
+        }
+        $entities = $value['text_entities'] ?? [];
+        if (!self::isTextEntities($entities)) {
+            return null;
+        }
+        foreach (['photo', 'file', 'forwarded_from'] as $key) {
+            if (isset($value[$key]) && !is_string($value[$key])) {
+                return null;
+            }
+        }
+        foreach (['date_unixtime', 'edited_unixtime'] as $key) {
+            if (isset($value[$key]) && !self::isTimestamp($value[$key])) {
+                return null;
+            }
+        }
+
+        $value['text'] = $text;
+        $value['text_entities'] = $entities;
+        /** @var ExportMessage $value */
+        return $value;
+    }
+
+    private static function isTimestamp(mixed $value): bool
+    {
+        return is_int($value) || is_string($value) && is_numeric($value);
+    }
+
+    /** @phpstan-assert-if-true list<string|array{type: string, text: string, language?: string, href?: string}> $value */
+    private static function isTextParts(mixed $value): bool
+    {
+        if (!is_array($value)) {
+            return false;
+        }
+        foreach ($value as $part) {
+            if (is_string($part)) {
+                continue;
+            }
+            if (!is_array($part) || !is_string($part['type'] ?? null) || !is_string($part['text'] ?? null)) {
+                return false;
+            }
+            if (isset($part['language']) && !is_string($part['language']) || isset($part['href']) && !is_string($part['href'])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** @phpstan-assert-if-true list<array{type: string, text?: string, offset?: int, length?: int, href?: string, language?: string}> $value */
+    private static function isTextEntities(mixed $value): bool
+    {
+        if (!is_array($value)) {
+            return false;
+        }
+        foreach ($value as $entity) {
+            if (!is_array($entity) || !is_string($entity['type'] ?? null)) {
+                return false;
+            }
+            foreach (['text', 'href', 'language'] as $key) {
+                if (isset($entity[$key]) && !is_string($entity[$key])) {
+                    return false;
+                }
+            }
+            foreach (['offset', 'length'] as $key) {
+                if (isset($entity[$key]) && !is_int($entity[$key])) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     public function name(): string

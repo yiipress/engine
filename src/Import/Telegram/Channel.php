@@ -7,7 +7,7 @@ namespace YiiPress\Import\Telegram;
 use DateTimeImmutable;
 use InvalidArgumentException;
 
-/** @phpstan-type ChannelData array{type: string, action: string, title: string, date_unixtime: numeric-string, ...} */
+/** @phpstan-type ChannelData array{type: string, action: string, title: string, date_unixtime: int|numeric-string, ...} */
 final readonly class Channel
 {
     /** @param ChannelData $message */

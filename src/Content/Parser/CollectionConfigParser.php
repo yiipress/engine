@@ -59,7 +59,7 @@ final class CollectionConfigParser
             entriesPerPage: (int) ($data['entries_per_page'] ?? 10),
             feed: (bool) ($data['feed'] ?? false),
             listing: (bool) ($data['listing'] ?? true),
-            order: isset($data['order']) ? array_map(strval(...), $data['order']) : [],
+            order: ValueNormalizer::stringList($data['order'] ?? null),
             navigationPager: (bool) ($data['navigation_pager'] ?? false),
             feedLimit: max(0, (int) ($data['feed_limit'] ?? 20)),
         );

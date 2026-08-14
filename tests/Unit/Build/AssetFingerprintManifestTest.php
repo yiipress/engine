@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
+use RuntimeException;
 
 use function PHPUnit\Framework\assertNotSame;
 use function PHPUnit\Framework\assertSame;
@@ -42,6 +43,16 @@ final class AssetFingerprintManifestTest extends TestCase
         assertNotSame('assets/theme/style.css', $resolved);
         assertStringContainsString('assets/theme/style.', $resolved);
         assertSame($resolved, $manifest->resolve('assets/theme/style.css'));
+    }
+
+    public function testRegisterRejectsMissingSource(): void
+    {
+        $manifest = new AssetFingerprintManifest();
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Unable to hash asset source file:');
+
+        $manifest->register('assets/theme/missing.css', $this->tempDir . '/missing.css');
     }
 
     public function testRewriterUpdatesRelativeAndAbsoluteAssetUrls(): void

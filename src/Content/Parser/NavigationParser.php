@@ -18,7 +18,7 @@ use function str_replace;
 use function strtolower;
 use function yaml_parse;
 
-/** @phpstan-type NavigationItemData array{title?: scalar|array<array-key, scalar>, url?: scalar, children?: list<array<string, mixed>>} */
+/** @phpstan-type NavigationItemData array{title?: mixed, url?: scalar, children?: mixed} */
 final class NavigationParser
 {
     public function parse(string $filePath): Navigation
@@ -78,7 +78,7 @@ final class NavigationParser
             }
             /** @var NavigationItemData $item */
             [$title, $titles] = $this->parseTitle($item['title'] ?? '');
-            $children = isset($item['children'])
+            $children = isset($item['children']) && is_array($item['children'])
                 ? $this->parseItems($item['children'])
                 : [];
             $result[] = new NavigationItem(
@@ -92,17 +92,20 @@ final class NavigationParser
     }
 
     /**
-     * @param scalar|array<array-key, scalar> $value
+     * @param mixed $value
      * @return array{0: string, 1: array<string, string>}
      */
     private function parseTitle(mixed $value): array
     {
         if (!is_array($value)) {
-            return [(string) $value, []];
+            return [is_scalar($value) ? (string) $value : '', []];
         }
 
         $titles = [];
         foreach ($value as $language => $title) {
+            if (!is_scalar($title)) {
+                continue;
+            }
             $titles[$this->normalizeLanguage((string) $language)] = (string) $title;
         }
 

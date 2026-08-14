@@ -145,6 +145,42 @@ final class BuildManifestTest extends TestCase
         assertSame([], $manifest->sourceFiles());
     }
 
+    public function testInvalidCurrentManifestSchemaLoadsAsEmptyManifest(): void
+    {
+        $manifestPath = $this->tempDir . '/manifest.json';
+        file_put_contents($manifestPath, json_encode([
+            'entries' => ['/entry.md' => ['hash' => 'hash', 'outputs' => [42]]],
+            'configFiles' => ['config.yaml'],
+            'trackedDirectories' => [],
+        ], JSON_THROW_ON_ERROR));
+
+        $manifest = new BuildManifest($manifestPath);
+        $manifest->load();
+
+        assertSame([], $manifest->entries());
+    }
+
+    public function testInvalidLegacyManifestSchemaLoadsAsEmptyManifest(): void
+    {
+        $manifestPath = $this->tempDir . '/manifest.json';
+        file_put_contents($manifestPath, json_encode(['/entry.md' => ['hash' => [], 'outputs' => []]], JSON_THROW_ON_ERROR));
+
+        $manifest = new BuildManifest($manifestPath);
+        $manifest->load();
+
+        assertSame([], $manifest->entries());
+    }
+
+    public function testRecordRejectsMissingSource(): void
+    {
+        $manifest = new BuildManifest($this->tempDir . '/manifest.json');
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Unable to hash source file:');
+
+        $manifest->record($this->tempDir . '/missing.md', []);
+    }
+
     public function testInvalidManifestPayloadClearsPreviouslyLoadedMetadata(): void
     {
         $sourceFile = $this->tempDir . '/entry.md';
