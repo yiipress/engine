@@ -6,6 +6,10 @@ namespace YiiPress\Content\Model;
 
 final readonly class Author
 {
+    /**
+     * @param int<0, max> $bodyOffset
+     * @param int<0, max> $bodyLength
+     */
     public function __construct(
         public string $slug,
         public string $title,

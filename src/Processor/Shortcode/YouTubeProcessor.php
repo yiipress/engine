@@ -129,7 +129,7 @@ final readonly class YouTubeProcessor implements ContentProcessorInterface, OEmb
     }
 
     /**
-     * @param array<string, mixed> $params
+     * @param array<array-key, mixed> $params
      */
     private function extractStart(array $params): int
     {

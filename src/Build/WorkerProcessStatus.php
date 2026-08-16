@@ -32,6 +32,7 @@ final class WorkerProcessStatus
             throw new RuntimeException(sprintf('Unexpected wait result for worker process %d: %d.', $pid, $waitedPid));
         }
 
+        /** @var int $status */
         self::assertSucceeded($pid, $status);
     }
 

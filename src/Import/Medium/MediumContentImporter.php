@@ -314,7 +314,7 @@ final class MediumContentImporter implements ContentImporterInterface
 
     private function stringField(mixed $value, string $default = ''): string
     {
-        if ($value === null) {
+        if (!is_scalar($value)) {
             return $default;
         }
 
@@ -327,7 +327,14 @@ final class MediumContentImporter implements ContentImporterInterface
     private function listField(mixed $value): array
     {
         if (is_array($value)) {
-            return array_values(array_filter(array_map(static fn(mixed $item): string => trim((string) $item), $value)));
+            return array_values(array_filter(array_map(
+                static fn(mixed $item): string => is_scalar($item) ? trim((string) $item) : '',
+                $value,
+            )));
+        }
+
+        if (!is_scalar($value)) {
+            return [];
         }
 
         $value = trim((string) $value);

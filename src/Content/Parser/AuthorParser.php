@@ -17,6 +17,7 @@ final readonly class AuthorParser
         $slug = basename($filePath, '.md');
         $result = $this->frontMatterParser->parse($filePath);
         $fields = $result['frontMatter'];
+        /** @var array{title?: scalar, email?: scalar, url?: scalar, avatar?: scalar} $fields */
 
         return new Author(
             slug: $slug,

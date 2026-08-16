@@ -21,13 +21,16 @@ final class TemplateHelpers
         }
 
         if (!isset($variables['url'])) {
-            $rootPath = (string) ($variables['rootPath'] ?? '');
+            $rootPath = $variables['rootPath'] ?? '';
+            $rootPath = is_string($rootPath) ? $rootPath : '';
             $variables['url'] = static fn(string $path): string => UrlResolver::sitePath($path, $rootPath);
         }
 
         if (!isset($variables['themeAsset'])) {
-            $themeName = (string) ($variables['themeName'] ?? '');
-            $rootPath = (string) ($variables['rootPath'] ?? '');
+            $themeName = $variables['themeName'] ?? '';
+            $themeName = is_string($themeName) ? $themeName : '';
+            $rootPath = $variables['rootPath'] ?? '';
+            $rootPath = is_string($rootPath) ? $rootPath : '';
             $assetManifest = $variables['assetManifest'] ?? null;
             $variables['themeAsset'] = static fn(string $path): string => Asset::themeUrl(
                 $path,
@@ -39,7 +42,11 @@ final class TemplateHelpers
 
         $ui = $variables['ui'] ?? null;
         if ($ui instanceof UiText && !isset($variables['t'])) {
-            $variables['t'] = static fn(string $key, array $params = []): string => $ui->get($key, $params);
+            $translate = static function (string $key, array $params = []) use ($ui): string {
+                /** @var array<string, float|int|string> $params */
+                return $ui->get($key, $params);
+            };
+            $variables['t'] = $translate;
         }
 
         if ($ui instanceof UiText && !isset($variables['languageName'])) {

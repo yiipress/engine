@@ -234,6 +234,9 @@ final class UiText
 
         $catalog = [];
         foreach ($data as $key => $value) {
+            if (!is_scalar($value)) {
+                throw new RuntimeException("Invalid translation value for key \"$key\" in UI translation file: $path");
+            }
             $catalog[(string) $key] = (string) $value;
         }
 

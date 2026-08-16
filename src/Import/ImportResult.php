@@ -8,7 +8,7 @@ final readonly class ImportResult
 {
     /**
      * @param list<string> $importedFiles
-     * @param list<string> $skippedFiles
+     * @param list<int|string> $skippedFiles
      * @param list<string> $warnings
      */
     public function __construct(
@@ -38,7 +38,7 @@ final readonly class ImportResult
     }
 
     /**
-     * @return list<string>
+     * @return list<int|string>
      */
     public function skippedFiles(): array
     {

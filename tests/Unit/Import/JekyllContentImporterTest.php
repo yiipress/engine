@@ -87,6 +87,23 @@ final class JekyllContentImporterTest extends TestCase
         assertStringContainsString("tags:\n  - php\n  - yii\n", $content);
     }
 
+    public function testFiltersNestedFrontMatterValues(): void
+    {
+        file_put_contents(
+            $this->sourceDir . '/_posts/2024-04-02-malformed.md',
+            "---\ntitle: [invalid]\ntags: [php, [invalid]]\ncategories: [docs, [invalid]]\n---\n\n# Safe title\n",
+        );
+
+        $result = new JekyllContentImporter()->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
+
+        assertSame(1, $result->importedCount());
+        $content = file_get_contents($this->targetDir . '/blog/2024-04-02-malformed.md');
+        $this->assertNotFalse($content);
+        assertStringContainsString('title: Safe title', $content);
+        assertStringContainsString("tags:\n  - php\n", $content);
+        assertStringContainsString("categories:\n  - docs\n", $content);
+    }
+
     public function testSkipsUnsupportedPostFilenames(): void
     {
         file_put_contents($this->sourceDir . '/_posts/not-dated.md', "---\ntitle: Bad\n---\n\nBody.\n");

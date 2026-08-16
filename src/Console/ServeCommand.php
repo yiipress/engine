@@ -186,7 +186,9 @@ final class ServeCommand extends Command
             $address .= ':' . $port;
         }
 
-        $workers = (int) $input->getOption('workers');
+        /** @var int|string $workersOption */
+        $workersOption = $input->getOption('workers');
+        $workers = (int) $workersOption;
         if ($workers < 1) {
             $workers = 1;
         }
@@ -253,12 +255,14 @@ final class ServeCommand extends Command
 
             $children = array_values(array_filter($children, static fn(int $child): bool => $child !== $pid));
 
+            /** @var int $status */
             if ($stopping || pcntl_wifsignaled($status)) {
                 continue;
             }
 
             if (pcntl_wifexited($status)) {
                 $childExitCode = pcntl_wexitstatus($status);
+                /** @var int $childExitCode */
                 if ($childExitCode !== ExitCode::OK) {
                     $exitCode = $childExitCode;
                     $stopping = true;
@@ -561,7 +565,9 @@ final class ServeCommand extends Command
     private function createLiveReloadBuildRunner(): SiteBuildRunner
     {
         $root = $this->workingDirectory();
-        $yiiBinary = $_SERVER['argv'][0] ?? PHP_BINARY;
+        $arguments = $_SERVER['argv'] ?? [];
+        /** @var list<string> $arguments */
+        $yiiBinary = $arguments[0] ?? PHP_BINARY;
         if (!str_starts_with($yiiBinary, '/')) {
             $yiiBinary = $root . '/' . $yiiBinary;
         }

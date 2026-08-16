@@ -22,7 +22,7 @@ final class FrontMatterParser
      * Returns the parsed front matter as an associative array, plus the byte offset
      * and length of the body for deferred reading.
      *
-     * @return array{frontMatter: array<string, mixed>, bodyOffset: int, bodyLength: int}
+     * @return array{frontMatter: array<string, mixed>, bodyOffset: int<0, max>, bodyLength: int<0, max>}
      */
     public function parse(string $filePath): array
     {
@@ -30,6 +30,7 @@ final class FrontMatterParser
         if ($fileSize === false) {
             throw new RuntimeException("Cannot read file: $filePath");
         }
+        /** @var int<0, max> $fileSize */
 
         $handle = fopen($filePath, 'rb');
         if ($handle === false) {
@@ -45,16 +46,21 @@ final class FrontMatterParser
 
     /**
      * @param resource $handle
-     * @return array{frontMatter: array<string, mixed>, bodyOffset: int, bodyLength: int}
+     * @param int<0, max> $fileSize
+     * @return array{frontMatter: array<string, mixed>, bodyOffset: int<0, max>, bodyLength: int<0, max>}
      */
     private function extract($handle, int $fileSize, string $filePath): array
     {
         $firstLine = fgets($handle);
         if ($firstLine === false || !str_starts_with(trim($firstLine), '---')) {
+            /** @var array<string, mixed> $frontMatter */
+            $frontMatter = [];
+            /** @var int<0, max> $bodyLength */
+            $bodyLength = $fileSize;
             $result = [
-                'frontMatter' => [],
+                'frontMatter' => $frontMatter,
                 'bodyOffset' => 0,
-                'bodyLength' => $fileSize,
+                'bodyLength' => $bodyLength,
             ];
 
             return $this->inferTitle($handle, $result, 0);
@@ -67,6 +73,7 @@ final class FrontMatterParser
                 if ($bodyOffset === false) {
                     $bodyOffset = $fileSize;
                 }
+                /** @var int<0, max> $bodyOffset */
 
                 $yaml = implode('', $yamlLines);
                 $parsed = trim($yaml) === '' ? null : @yaml_parse($yaml);
@@ -94,13 +101,19 @@ final class FrontMatterParser
                     );
                 }
 
+                /** @var array<string, mixed> $parsed */
+
+                /** @var int<0, max> $bodyLength */
+                $bodyLength = $fileSize - $bodyOffset;
                 $result = [
                     'frontMatter' => $parsed,
                     'bodyOffset' => $bodyOffset,
-                    'bodyLength' => $fileSize - $bodyOffset,
+                    'bodyLength' => $bodyLength,
                 ];
 
-                if (!isset($parsed['title']) || (string) $parsed['title'] === '') {
+                /** @var scalar|null $title */
+                $title = $parsed['title'] ?? null;
+                if ((string) $title === '') {
                     return $this->inferTitle($handle, $result, $bodyOffset);
                 }
 
@@ -109,17 +122,23 @@ final class FrontMatterParser
             $yamlLines[] = $line;
         }
 
-        return [
-            'frontMatter' => [],
+        /** @var array<string, mixed> $frontMatter */
+        $frontMatter = [];
+        /** @var int<0, max> $bodyLength */
+        $bodyLength = $fileSize;
+        $result = [
+            'frontMatter' => $frontMatter,
             'bodyOffset' => 0,
-            'bodyLength' => $fileSize,
+            'bodyLength' => $bodyLength,
         ];
+
+        return $result;
     }
 
     /**
      * @param resource $handle
-     * @param array{frontMatter: array<string, mixed>, bodyOffset: int, bodyLength: int} $result
-     * @return array{frontMatter: array<string, mixed>, bodyOffset: int, bodyLength: int}
+     * @param array{frontMatter: array<string, mixed>, bodyOffset: int<0, max>, bodyLength: int<0, max>} $result
+     * @return array{frontMatter: array<string, mixed>, bodyOffset: int<0, max>, bodyLength: int<0, max>}
      */
     private function inferTitle($handle, array $result, int $seekTo): array
     {
@@ -136,8 +155,10 @@ final class FrontMatterParser
                 $result['frontMatter']['title'] = substr($trimmed, 2);
                 $newOffset = ftell($handle);
                 if ($newOffset !== false) {
+                    /** @var int<0, max> $newOffset */
                     $result['bodyLength'] -= ($newOffset - $result['bodyOffset']);
                     $result['bodyOffset'] = $newOffset;
+                    /** @var array{frontMatter: array<string, mixed>, bodyOffset: int<0, max>, bodyLength: int<0, max>} $result */
                 }
                 return $result;
             }

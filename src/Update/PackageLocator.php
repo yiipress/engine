@@ -66,6 +66,11 @@ final readonly class PackageLocator
 
     private function detectStaticBinaryPath(): string
     {
-        return function_exists('micro_get_self_filename') ? (string) call_user_func(micro_get_self_filename(...)) : '';
+        if (!function_exists('micro_get_self_filename')) {
+            return '';
+        }
+
+        /** @var string */
+        return call_user_func(micro_get_self_filename(...));
     }
 }

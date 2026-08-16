@@ -65,6 +65,23 @@ final class UiTextTest extends TestCase
         assertSame('Теги', $ui->taxonomyLabel('tags'));
     }
 
+    public function testCastsNumericTranslationValueToString(): void
+    {
+        $themePath = sys_get_temp_dir() . '/yiipress-ui-text-numeric-' . uniqid();
+        mkdir($themePath . '/translation', 0o755, true);
+        file_put_contents($themePath . '/translation/en.yaml', "result_count: 42\n");
+
+        try {
+            $registry = new ThemeRegistry();
+            $registry->register(new Theme('numeric', $themePath));
+            $ui = UiText::forTheme('en', new TemplateResolver($registry), 'numeric');
+
+            assertSame('42', $ui->get('result_count'));
+        } finally {
+            $this->removeDir($themePath);
+        }
+    }
+
     public function testCanExportCatalogsForMultipleUiLanguages(): void
     {
         $catalogs = UiText::catalogsForTheme(['en', 'ru'], $this->createTemplateResolver(), 'minimal', 'en');

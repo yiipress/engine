@@ -17,7 +17,7 @@ final readonly class OEmbedProcessor implements ContentProcessorInterface
 {
     private const string URL_LINE_PATTERN = '/^(?<indent>[ \t]*)(?<url>https?:\/\/[^\s<>()]+)[ \t]*$/mi';
 
-    /** @var list<OEmbedInterface> */
+    /** @var array<array-key, OEmbedInterface> */
     private array $providers;
 
     public function __construct(

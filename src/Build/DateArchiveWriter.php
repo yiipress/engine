@@ -86,7 +86,7 @@ final readonly class DateArchiveWriter
                     $renderer,
                     $siteConfig,
                     $collection,
-                    $task['years'],
+                    array_map(strval(...), $task['years']),
                     $outputDir,
                     $navigation,
                     $noWrite,

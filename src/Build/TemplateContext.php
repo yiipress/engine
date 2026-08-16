@@ -10,7 +10,7 @@ use function ltrim;
 
 final class TemplateContext
 {
-    /** @var array<string, Closure> */
+    /** @var array<string, Closure(array<string, mixed>): string> */
     private array $closureCache = [];
 
     public function __construct(
@@ -32,7 +32,8 @@ final class TemplateContext
             $variables['assetManifest'] = $this->assetManifest;
         }
         if (!isset($variables['themeAsset'])) {
-            $rootPath = (string) ($variables['rootPath'] ?? '');
+            $rootPath = $variables['rootPath'] ?? '';
+            $rootPath = is_string($rootPath) ? $rootPath : '';
             $variables['themeAsset'] = fn(string $path): string => $this->themeAssetUrl($path, $rootPath);
         }
         $variables = TemplateHelpers::inject($variables);
@@ -43,7 +44,7 @@ final class TemplateContext
                 extract($__vars, EXTR_SKIP);
                 ob_start();
                 require $path;
-                return ob_get_clean();
+                return (string) ob_get_clean();
             };
         }
 

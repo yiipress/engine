@@ -31,7 +31,9 @@ trait ParsesShortcodeAttributesTrait
         )) {
             foreach ($matches as $match) {
                 $key = $match[1];
-                $value = $match[2] !== '' ? $match[2] : ($match[3] !== '' ? $match[3] : $match[4]);
+                $doubleQuoted = $match[2] ?? '';
+                $singleQuoted = $match[3] ?? '';
+                $value = $doubleQuoted !== '' ? $doubleQuoted : ($singleQuoted !== '' ? $singleQuoted : ($match[4] ?? ''));
                 $attributes[$key] = $value;
             }
         }

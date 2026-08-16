@@ -18,6 +18,8 @@ final class Entry
      * @param array{text: string, link: string}|false|null $previous
      * @param array{text: string, link: string}|false|null $next
      * @param array{0: int, 1: int}|false|null $toc
+     * @param int<0, max> $bodyOffset
+     * @param int<0, max> $bodyLength
      */
     public function __construct(
         public string $filePath,

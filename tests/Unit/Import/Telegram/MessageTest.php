@@ -13,6 +13,21 @@ use function PHPUnit\Framework\assertStringContainsString;
 
 final class MessageTest extends TestCase
 {
+    public function testTelegramLinkRequiresChannel(): void
+    {
+        $message = new Message([
+            'id' => 1,
+            'type' => 'message',
+            'text' => '',
+            'text_entities' => [],
+        ], null);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('A channel is required to generate a Telegram link.');
+
+        $message->telegramLink;
+    }
+
     public static function markupDataProvider(): iterable
     {
         yield 'Plaintext' => [

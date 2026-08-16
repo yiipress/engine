@@ -49,19 +49,17 @@ final class CollectionConfigParser
 
         return new Collection(
             name: $collectionName,
-            title: (string) ($data['title'] ?? $collectionName),
-            description: (string) ($data['description'] ?? ''),
-            permalink: (string) ($data['permalink'] ?? '/:collection/:slug/'),
-            sortBy: (string) ($data['sort_by'] ?? 'date'),
-            sortOrder: (string) ($data['sort_order'] ?? 'desc'),
-            entriesPerPage: (int) ($data['entries_per_page'] ?? 10),
-            feed: (bool) ($data['feed'] ?? false),
-            listing: (bool) ($data['listing'] ?? true),
-            order: isset($data['order']) && is_array($data['order'])
-                ? array_values(array_map(strval(...), $data['order']))
-                : [],
-            navigationPager: (bool) ($data['navigation_pager'] ?? false),
-            feedLimit: max(0, (int) ($data['feed_limit'] ?? 20)),
+            title: ValueNormalizer::string($data['title'] ?? null, $collectionName),
+            description: ValueNormalizer::string($data['description'] ?? null),
+            permalink: ValueNormalizer::string($data['permalink'] ?? null, '/:collection/:slug/'),
+            sortBy: ValueNormalizer::string($data['sort_by'] ?? null, 'date'),
+            sortOrder: ValueNormalizer::string($data['sort_order'] ?? null, 'desc'),
+            entriesPerPage: ValueNormalizer::integer($data['entries_per_page'] ?? null, 10),
+            feed: ValueNormalizer::boolean($data['feed'] ?? null, false),
+            listing: ValueNormalizer::boolean($data['listing'] ?? null, true),
+            order: ValueNormalizer::stringList($data['order'] ?? null),
+            navigationPager: ValueNormalizer::boolean($data['navigation_pager'] ?? null, false),
+            feedLimit: max(0, ValueNormalizer::integer($data['feed_limit'] ?? null, 20)),
         );
     }
 }

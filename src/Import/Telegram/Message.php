@@ -5,16 +5,21 @@ declare(strict_types=1);
 namespace YiiPress\Import\Telegram;
 
 use DateTimeImmutable;
+use LogicException;
 
 /**
  * Telegram message.
+ *
+ * @phpstan-type TextPart array{type: string, text: string, language?: string, href?: string}
+ * @phpstan-type TextEntity array{type: string, text?: string, offset?: int, length?: int, href?: string, language?: string}
+ * @phpstan-type MessageData array{id: int, type: string, date_unixtime?: int|numeric-string, edited_unixtime?: int|numeric-string, text: string|list<string|TextPart>, text_entities: list<TextEntity>, photo?: string, file?: string, forwarded_from?: string, ...}
  */
 final class Message
 {
     private bool $processed = false;
 
     /**
-     * @param array<string, mixed> $message Exported message data.
+     * @param MessageData $message Exported message data.
      * @param Channel|null $channel Channel.
      */
     public function __construct(
@@ -72,6 +77,10 @@ final class Message
 
     public string $telegramLink {
         get {
+            if ($this->channel === null) {
+                throw new LogicException('A channel is required to generate a Telegram link.');
+            }
+
             return "https://t.me/{$this->channel->getTitle()}/{$this->message['id']}";
         }
     }
@@ -139,7 +148,7 @@ final class Message
     }
 
     /**
-     * @param list<mixed> $textEntities
+     * @param list<TextEntity> $textEntities
      * @return list<string>
      */
     private function extractHashtagsFromTextEntities(array $textEntities): array
@@ -149,8 +158,8 @@ final class Message
             if ($entity['type'] !== 'hashtag') {
                 continue;
             }
-            $text = $entity['text'];
-            if (!is_string($text) || $text === '') {
+            $text = $entity['text'] ?? '';
+            if ($text === '') {
                 continue;
             }
             $tag = ltrim($text, '#');
@@ -164,7 +173,7 @@ final class Message
     }
 
     /**
-     * @param list<mixed> $textArray
+     * @param list<string|TextPart> $textArray
      * @return list<string>
      */
     private function extractHashtagsFromTextArray(array $textArray): array
@@ -174,11 +183,11 @@ final class Message
             if (!is_array($part)) {
                 continue;
             }
-            if (($part['type'] ?? '') !== 'hashtag') {
+            if ($part['type'] !== 'hashtag') {
                 continue;
             }
-            $text = $part['text'] ?? '';
-            if (!is_string($text) || $text === '') {
+            $text = $part['text'];
+            if ($text === '') {
                 continue;
             }
             $tag = ltrim($text, '#');
@@ -208,8 +217,8 @@ final class Message
     }
 
     /**
-     * @param string|list<array> $text
-     * @param list<array> $textEntities
+     * @param string|list<string|TextPart> $text
+     * @param list<TextEntity> $textEntities
      */
     private function convertToMarkdown(string|array $text, array $textEntities): string
     {
@@ -225,7 +234,7 @@ final class Message
     }
 
     /**
-     * @param list<array<string, mixed>|string> $textArray
+     * @param list<string|TextPart> $textArray
      */
     private function convertTextArrayToMarkdown(array $textArray): string
     {
@@ -237,12 +246,13 @@ final class Message
             }
 
             $text = $part['text'];
+            $type = $part['type'];
             if (trim($text) === '') {
                 $result .= $text;
                 continue;
             }
 
-            $isInlinePart = in_array($part['type'], ['bold', 'italic', 'strikethrough'], true);
+            $isInlinePart = in_array($type, ['bold', 'italic', 'strikethrough'], true);
             $prefix = '';
             $suffix = '';
             if ($isInlinePart) {
@@ -257,13 +267,15 @@ final class Message
                 }
             }
 
-            $markdown = match ($part['type']) {
+            $language = $part['language'] ?? '';
+            $href = $part['href'] ?? '';
+            $markdown = match ($type) {
                 'bold' => "**$text**",
                 'italic' => "*$text*",
                 'strikethrough' => "~~$text~~",
                 'code' => "`$text`",
-                'pre' => "\n```{$part['language']}\n$text\n```\n",
-                'text_link' => "[$text]({$part['href']})",
+                'pre' => "\n```$language\n$text\n```\n",
+                'text_link' => "[$text]($href)",
                 'link' => "[$text]({$this->ensureUrl($text)})",
                 'email' => "[$text](mailto:$text)",
                 'blockquote' => $this->blockQuoteToMarkdown($text),
@@ -310,7 +322,7 @@ final class Message
     /**
      * String text with entities (offset, length, formatting to apply).
      *
-     * @param list<mixed> $entities
+     * @param list<TextEntity> $entities
      */
     private function convertEntitiesOverText(string $text, array $entities): string
     {
@@ -325,8 +337,8 @@ final class Message
 
         foreach ($entities as $entity) {
             $type = $entity['type'];
-            $offset = (int) ($entity['offset'] ?? 0);
-            $entityLength = (int) ($entity['length'] ?? 0);
+            $offset = $entity['offset'] ?? 0;
+            $entityLength = $entity['length'] ?? 0;
             $href = $entity['href'] ?? '';
             $language = $entity['language'] ?? '';
 
@@ -446,4 +458,5 @@ final class Message
 
         return $markdown;
     }
+
 }

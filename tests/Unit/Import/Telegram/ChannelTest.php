@@ -70,4 +70,5 @@ final class ChannelTest extends TestCase
 
         new Channel($message);
     }
+
 }

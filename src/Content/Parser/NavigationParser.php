@@ -13,12 +13,12 @@ use function explode;
 use function file_get_contents;
 use function implode;
 use function is_array;
-use function is_scalar;
 use function reset;
 use function str_replace;
 use function strtolower;
 use function yaml_parse;
 
+/** @phpstan-type NavigationItemData array{title?: mixed, url?: mixed, children?: mixed} */
 final class NavigationParser
 {
     public function parse(string $filePath): Navigation
@@ -76,13 +76,14 @@ final class NavigationParser
             if (!is_array($item)) {
                 continue;
             }
+            /** @var NavigationItemData $item */
             [$title, $titles] = $this->parseTitle($item['title'] ?? '');
             $children = isset($item['children']) && is_array($item['children'])
                 ? $this->parseItems($item['children'])
                 : [];
             $result[] = new NavigationItem(
                 title: $title,
-                url: (string) ($item['url'] ?? ''),
+                url: ValueNormalizer::string($item['url'] ?? null),
                 children: $children,
                 titles: $titles,
             );
@@ -97,7 +98,7 @@ final class NavigationParser
     private function parseTitle(mixed $value): array
     {
         if (!is_array($value)) {
-            return [(string) $value, []];
+            return [is_scalar($value) ? (string) $value : '', []];
         }
 
         $titles = [];
@@ -105,7 +106,6 @@ final class NavigationParser
             if (!is_scalar($title)) {
                 continue;
             }
-
             $titles[$this->normalizeLanguage((string) $language)] = (string) $title;
         }
 

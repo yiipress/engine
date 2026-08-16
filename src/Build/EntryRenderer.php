@@ -29,7 +29,7 @@ use function strlen;
 
 final class EntryRenderer
 {
-    /** @var array<string, Closure> */
+    /** @var array<string, Closure(array<string, mixed>): string> */
     private array $templateClosures = [];
 
     /** @var array<string, TemplateContext> */
@@ -198,7 +198,7 @@ final class EntryRenderer
                 extract($__vars, EXTR_SKIP);
                 ob_start();
                 require $templatePath;
-                return ob_get_clean();
+                return (string) ob_get_clean();
             };
         }
 

@@ -12,6 +12,30 @@ use function is_array;
 use function is_bool;
 use function is_string;
 
+/**
+ * @phpstan-type EntryFields array{
+ *     title?: scalar,
+ *     date?: scalar,
+ *     slug?: scalar,
+ *     tags?: list<scalar>,
+ *     categories?: list<scalar>,
+ *     authors?: list<scalar>,
+ *     summary?: scalar,
+ *     permalink?: scalar,
+ *     layout?: scalar,
+ *     theme?: scalar,
+ *     weight?: scalar,
+ *     language?: scalar,
+ *     redirect_to?: scalar,
+ *     extra?: array<string, mixed>,
+ *     image?: scalar,
+ *     translation_key?: scalar,
+ *     show_title?: mixed,
+ *     showTitle?: mixed,
+ *     aliases?: list<scalar>,
+ *     ...
+ * }
+ */
 final readonly class EntryParser
 {
     public function __construct(
@@ -23,6 +47,7 @@ final readonly class EntryParser
     {
         $result = $this->frontMatterParser->parse($filePath);
         $fields = $result['frontMatter'];
+        /** @var EntryFields $fields */
         $title = (string) ($fields['title'] ?? '');
 
         if ($title === '') {
@@ -67,9 +92,7 @@ final readonly class EntryParser
 
         $slug = (string) ($fields['slug'] ?? $filenameParsed['slug']);
 
-        $frontMatterTags = isset($fields['tags']) && is_array($fields['tags'])
-            ? array_values(array_map(strval(...), $fields['tags']))
-            : [];
+        $frontMatterTags = ValueNormalizer::stringList($fields['tags'] ?? null);
 
         $inlineTags = $this->extractInlineTags($filePath, $result['bodyOffset'], $result['bodyLength']);
         $tags = $this->mergeTags($frontMatterTags, $inlineTags);
@@ -83,12 +106,8 @@ final readonly class EntryParser
             draft: (bool) ($fields['draft'] ?? false),
             tags: $tags,
             inlineTags: $inlineTags,
-            categories: isset($fields['categories']) && is_array($fields['categories'])
-                ? array_values(array_map(strval(...), $fields['categories']))
-                : [],
-            authors: isset($fields['authors']) && is_array($fields['authors'])
-                ? array_values(array_map(strval(...), $fields['authors']))
-                : [],
+            categories: ValueNormalizer::stringList($fields['categories'] ?? null),
+            authors: ValueNormalizer::stringList($fields['authors'] ?? null),
             summary: (string) ($fields['summary'] ?? ''),
             permalink: (string) ($fields['permalink'] ?? ''),
             layout: (string) ($fields['layout'] ?? ''),
@@ -96,17 +115,13 @@ final readonly class EntryParser
             weight: (int) ($fields['weight'] ?? 0),
             language: (string) ($fields['language'] ?? $language),
             redirectTo: (string) ($fields['redirect_to'] ?? ''),
-            extra: isset($fields['extra']) && is_array($fields['extra'])
-                ? $fields['extra']
-                : [],
+            extra: ValueNormalizer::map($fields['extra'] ?? null),
             bodyOffset: $result['bodyOffset'],
             bodyLength: $result['bodyLength'],
             image: (string) ($fields['image'] ?? ''),
             translationKey: (string) ($fields['translation_key'] ?? ''),
             showTitle: (bool) ($fields['show_title'] ?? $fields['showTitle'] ?? true),
-            aliases: isset($fields['aliases']) && is_array($fields['aliases'])
-                ? array_values(array_map(strval(...), $fields['aliases']))
-                : [],
+            aliases: ValueNormalizer::stringList($fields['aliases'] ?? null),
             previous: $this->parsePagerOverride($fields, 'previous', $filePath),
             next: $this->parsePagerOverride($fields, 'next', $filePath),
             editLink: $this->parseEditLink($fields, $filePath),

@@ -84,6 +84,23 @@ final class MediumContentImporterTest extends TestCase
         assertStringContainsString('date: 2024-04-01', $content);
     }
 
+    public function testFiltersNestedFrontMatterValues(): void
+    {
+        file_put_contents(
+            $this->sourceDir . '/posts/2024-04-02-malformed.md',
+            "---\ntitle: [invalid]\ntags: [php, [invalid]]\ncategories: [docs, [invalid]]\n---\n\n# Safe title\n",
+        );
+
+        $result = new MediumContentImporter()->import(['directory' => $this->sourceDir], $this->targetDir, 'blog');
+
+        assertSame(1, $result->importedCount());
+        $content = file_get_contents($this->targetDir . '/blog/2024-04-02-malformed.md');
+        $this->assertNotFalse($content);
+        assertStringContainsString('title: Safe title', $content);
+        assertStringContainsString("tags:\n  - php\n", $content);
+        assertStringContainsString("categories:\n  - docs\n", $content);
+    }
+
     public function testDoesNotOverwriteDuplicateSlugs(): void
     {
         file_put_contents($this->sourceDir . '/posts/2024-05-01-duplicate.md', "# First\n");
