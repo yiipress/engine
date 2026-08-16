@@ -248,6 +248,10 @@ SH);
 
         self::assertStringContainsString('yiipress-windows-amd64.zip', $script);
         self::assertStringContainsString('OSPlatform]::Windows', $script);
+        self::assertStringContainsString('if (-not $OSArchitecture)', $script);
+        self::assertStringContainsString('$env:PROCESSOR_ARCHITEW6432', $script);
+        self::assertStringContainsString('$env:PROCESSOR_ARCHITECTURE', $script);
+        self::assertStringContainsString('$IsX64 = $WindowsArchitecture -eq "AMD64"', $script);
         self::assertStringContainsString('releases/latest/download', $script);
         self::assertStringContainsString('Get-FileHash -Algorithm SHA256', $script);
         self::assertStringContainsString('[IO.File]::Replace($TemporaryTarget, $Target, $null)', $script);

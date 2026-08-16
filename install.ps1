@@ -11,7 +11,19 @@ $Version = if ($env:YIIPRESS_VERSION) { $env:YIIPRESS_VERSION } else { "latest" 
 if (-not [Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([Runtime.InteropServices.OSPlatform]::Windows)) {
     throw "This installer supports Windows only. Use install.sh on Linux or macOS."
 }
-if ([Runtime.InteropServices.RuntimeInformation]::OSArchitecture -ne [Runtime.InteropServices.Architecture]::X64) {
+$OSArchitecture = [Runtime.InteropServices.RuntimeInformation]::OSArchitecture
+$IsX64 = $OSArchitecture -eq [Runtime.InteropServices.Architecture]::X64
+if (-not $OSArchitecture) {
+    # Windows PowerShell 5.1 can expose RuntimeInformation without returning OSArchitecture.
+    # PROCESSOR_ARCHITEW6432 preserves the native architecture for a 32-bit process on 64-bit Windows.
+    $WindowsArchitecture = if ($env:PROCESSOR_ARCHITEW6432) {
+        $env:PROCESSOR_ARCHITEW6432
+    } else {
+        $env:PROCESSOR_ARCHITECTURE
+    }
+    $IsX64 = $WindowsArchitecture -eq "AMD64"
+}
+if (-not $IsX64) {
     throw "The YiiPress Windows installer currently supports x64 Windows only."
 }
 

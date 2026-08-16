@@ -15,6 +15,8 @@ irm https://raw.githubusercontent.com/yiipress/engine/master/install.ps1 | iex
 ```
 
 The installers download the latest release archive and `SHA256SUMS`, verify the archive, and atomically install the executable.
+The Windows installer supports both Windows PowerShell 5.1 and modern PowerShell on x86-64 Windows. When the older .NET runtime
+does not expose the operating-system architecture, the installer uses Windows' native processor environment variables instead.
 The shell installer prints the exact resolved release version before downloading its archive.
 The installed binary reports that same release tag with `yiipress --version`.
 Development and nightly artifacts report the full commit SHA from which they were built, even when cached Composer metadata contains an older stable version.
