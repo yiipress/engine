@@ -103,6 +103,7 @@ YAML);
     public function testIgnoresNestedUrlValue(): void
     {
         $file = tempnam(sys_get_temp_dir(), 'yiipress-nav-');
+        self::assertNotFalse($file);
         file_put_contents($file, "main:\n  - title: Home\n    url: [invalid]\n");
 
         try {
