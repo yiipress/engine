@@ -56,7 +56,7 @@
         "react/socket": "^1.17",
         "react/stream": "^1.4",
         "samdark/sitemap": "^3.0.1",
-        "symfony/console": "^7.4.8",
+        "symfony/console": "^8.1.4",
         "yiisoft/config": "^1.6.2",
         "yiisoft/definitions": "^3.4.1",
         "yiisoft/di": "^1.4.1",
