@@ -163,10 +163,10 @@ Current benchmark highlights:
 
 | Scenario | Mode | Time |
 |---|---:|---:|
-| 10 000 entries across 3 collections | 4 workers | ~2.8 s |
-| 10 000 entries across 3 collections | incremental | ~358 ms |
-| 1 000 realistic entries | 4 workers | ~1.1 s |
-| 1 000 realistic entries | incremental | ~108 ms |
+| 10 000 entries across 3 collections | 4 workers | ~4.18 s |
+| 10 000 entries across 3 collections | incremental | ~248 ms |
+| 1 000 realistic entries | 4 workers | ~868 ms |
+| 1 000 realistic entries | incremental | ~94 ms |
 
 See [`docs/benchmarking.md`](docs/benchmarking.md) for benchmark workflow details.
 

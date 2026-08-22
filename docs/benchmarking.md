@@ -77,24 +77,24 @@ Use `--no-write` to separate render/template/processor cost from output director
 
 | Benchmark                               | Time   |
 |-----------------------------------------|--------|
-| Full rebuild, sequential                | ~3.438s |
-| Full rebuild, 4 workers                 | ~2.830s |
-| Incremental rebuild, no changes         | ~357.636ms |
-| Incremental rebuild, 1 changed entry    | ~357.465ms |
+| Full rebuild, sequential                | ~9.281s |
+| Full rebuild, 4 workers                 | ~4.176s |
+| Incremental rebuild, no changes         | ~248.290ms |
+| Incremental rebuild, 1 changed entry    | ~248.754ms |
 
 ### 1k realistic entries (~27KB each)
 
 | Benchmark                               | Time    |
 |-----------------------------------------|---------|
-| Full rebuild, sequential                | ~2.016s |
-| Full rebuild, 4 workers                 | ~1.068s |
-| Incremental rebuild, no changes         | ~107.945ms |
-| Incremental rebuild, 1 changed entry    | ~108.596ms |
+| Full rebuild, sequential                | ~2.213s |
+| Full rebuild, 4 workers                 | ~868.285ms |
+| Incremental rebuild, no changes         | ~94.132ms |
+| Incremental rebuild, 1 changed entry    | ~88.954ms |
 
 These end-to-end benchmarks intentionally go through the public CLI entry point instead of internal renderer/parser classes,
 so they track real rebuild timing rather than component-only throughput.
 
-Measured on PHP 8.5 with `ext-mdparser`, `ext-yaml`, and `ext-pcntl`, xdebug off, OPCache disabled.
+Measured on PHP 8.5.8 with `ext-mdparser`, `ext-yaml`, and `ext-pcntl`, xdebug off, and OPCache enabled.
 
 `PortableWorkerPoolBench` tracks the startup and job-transport overhead of two portable worker processes used by Windows builds.
 
