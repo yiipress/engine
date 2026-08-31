@@ -78,7 +78,7 @@
         "ext-posix": "*",
         "evenement/evenement": "^3.0.2",
         "friendsofphp/php-cs-fixer": "^3.95.1",
-        "infection/infection": "^0.34",
+        "infection/infection": "^0.35",
         "phpbench/phpbench": "^1.6.1",
         "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^13.2.6",
