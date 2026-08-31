@@ -80,6 +80,7 @@ TEXT;
     #[Warmup(1)]
     public function benchProcessStandaloneEmbeds(): void
     {
-        $this->processor->process($this->content, $this->entry);
+        $preserved = $this->processor->process($this->content, $this->entry);
+        $this->processor->process($preserved, $this->entry);
     }
 }

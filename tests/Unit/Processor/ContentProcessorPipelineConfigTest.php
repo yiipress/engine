@@ -9,6 +9,7 @@ use ReflectionProperty;
 use YiiPress\Processor\ContentProcessorPipeline;
 use YiiPress\Processor\LatexMath\LatexMathProcessor;
 use YiiPress\Processor\MarkdownProcessor;
+use YiiPress\Processor\OEmbed\OEmbedProcessor;
 use YiiPress\Processor\Question\QuestionProcessor;
 use YiiPress\Processor\Shortcode\CodeGroupProcessor;
 use YiiPress\Processor\SyntaxHighlightProcessor;
@@ -18,7 +19,7 @@ use function dirname;
 
 final class ContentProcessorPipelineConfigTest extends TestCase
 {
-    public function testContentPipelineIncludesAssetsAndTwoPassCodeGroupProcessors(): void
+    public function testContentPipelineIncludesAssetsAndTwoPassProcessors(): void
     {
         $definitions = require dirname(__DIR__, 3) . '/config/common/di/content-pipeline.php';
         $referenceId = new ReflectionProperty(Reference::class, 'id');
@@ -42,6 +43,12 @@ final class ContentProcessorPipelineConfigTest extends TestCase
                 static fn(string $processorId): bool => $processorId === QuestionProcessor::class,
             ),
         );
+        $oEmbedPositions = array_keys(
+            array_filter(
+                $registeredProcessorIds,
+                static fn(string $processorId): bool => $processorId === OEmbedProcessor::class,
+            ),
+        );
         $markdownPosition = array_search(MarkdownProcessor::class, $registeredProcessorIds, true);
         $syntaxHighlightPosition = array_search(SyntaxHighlightProcessor::class, $registeredProcessorIds, true);
         self::assertNotFalse($markdownPosition);
@@ -59,6 +66,13 @@ final class ContentProcessorPipelineConfigTest extends TestCase
                 $syntaxHighlightPosition + 2,
             ],
             $questionPositions,
+        );
+        self::assertSame(
+            [
+                $markdownPosition - 3,
+                $markdownPosition + 1,
+            ],
+            $oEmbedPositions,
         );
 
         $pipeline = new ContentProcessorPipeline(new LatexMathProcessor());

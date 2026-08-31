@@ -345,7 +345,9 @@ Generated HTML includes:
 
 ### OEmbedProcessor
 
-Expands standalone provider URLs into embed HTML before markdown processing.
+Expands standalone provider URLs into embed HTML. The processor runs twice: before Markdown it preserves embeds in
+HTML-comment placeholders, and immediately after Markdown it restores the final provider HTML. This prevents Markdown
+rendering from escaping iframe-based embeds.
 
 Providers are pluggable. Each provider implements `YiiPress\Processor\OEmbed\OEmbedInterface` and owns both:
 - URL matching logic
