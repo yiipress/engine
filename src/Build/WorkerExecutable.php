@@ -6,8 +6,9 @@ namespace YiiPress\Build;
 
 use Phar;
 
+use function constant;
 use function dirname;
-use function realpath;
+use function is_executable;
 
 /**
  * Resolves the command used to re-invoke the currently running application (self-contained
@@ -26,18 +27,21 @@ final class WorkerExecutable
             return [\PHP_BINARY, dirname(__DIR__, 2) . '/yii'];
         }
 
-        // A self-contained static binary combines the PHP runtime and the phar into one
-        // executable, so PHP_BINARY *is* that file and already re-invokes the whole app;
-        // a plain .phar is instead run through a separate PHP interpreter and needs its
-        // path passed explicitly. realpath() on both sides tells them apart reliably,
-        // regardless of how this process was invoked (PATH lookup, relative path, symlink).
-        $realPharPath = realpath($pharPath);
-        $realPhpBinary = realpath(\PHP_BINARY);
-
-        if ($realPharPath !== false && $realPharPath === $realPhpBinary) {
-            return [\PHP_BINARY];
+        // This process is already running as $pharPath, so it must be directly executable
+        // on its own (a self-contained static binary, or a .phar with a shebang and the
+        // executable bit set) -- prefer that over PHP_BINARY, which some SAPIs (e.g.
+        // static-php-cli's micro "fake CLI") leave empty or otherwise unusable at runtime,
+        // even though PHP's own stubs declare it non-empty. Read it dynamically so that
+        // possibility is actually checked instead of assumed away. Only a plain .phar
+        // without the executable bit needs a separate interpreter in front of it, and only
+        // if PHP_BINARY is actually usable for that -- an empty one would otherwise produce
+        // a command with no program name at all.
+        /** @var string $phpBinary */
+        $phpBinary = constant('PHP_BINARY');
+        if (is_executable($pharPath) || $phpBinary === '') {
+            return [$pharPath];
         }
 
-        return [\PHP_BINARY, $pharPath];
+        return [$phpBinary, $pharPath];
     }
 }
