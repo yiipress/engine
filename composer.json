@@ -75,6 +75,7 @@
         "yiisoft/yii-runner-http": "^3.2.1"
     },
     "require-dev": {
+        "ext-posix": "*",
         "evenement/evenement": "^3.0.2",
         "friendsofphp/php-cs-fixer": "^3.95.1",
         "infection/infection": "^0.34",
