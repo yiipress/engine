@@ -19,12 +19,9 @@ use React\EventLoop\Loop;
 use React\EventLoop\TimerInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\SocketServer;
-use React\Socket\TcpServer;
 use React\Stream\ReadableResourceStream;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use ReflectionException;
-use ReflectionProperty;
 use RuntimeException;
 use SplFileInfo;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -38,7 +35,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Yiisoft\Yii\Console\ExitCode;
 use Yiisoft\Yii\Runner\Http\HttpApplicationRunner;
 
-use function class_exists;
 use function fclose;
 use function file_exists;
 use function file_get_contents;
@@ -67,6 +63,9 @@ use function proc_open;
 use function realpath;
 use function sprintf;
 use function strlen;
+use function stream_context_create;
+use function stream_set_blocking;
+use function stream_socket_server;
 use function str_starts_with;
 use function strtolower;
 use function substr;
@@ -205,15 +204,15 @@ final class ServeCommand extends Command
             return ExitCode::OK;
         }
 
+        if ($workers > 1 && $this->runtimeCapabilities->supportsWorkerPool()) {
+            return $this->runWorkerPool($address, $workers, $output);
+        }
+
         try {
             $server = new SocketServer($address);
         } catch (InvalidArgumentException | RuntimeException $e) {
             $output->writeln(sprintf('<error>Unable to listen on http://%s: %s</error>', $address, $e->getMessage()));
             return ExitCode::UNSPECIFIED_ERROR;
-        }
-
-        if ($workers > 1 && $this->runtimeCapabilities->supportsWorkerPool()) {
-            return $this->runWorkerPool($server, $address, $workers);
         }
 
         return $this->runServer($server, $address);
@@ -227,24 +226,59 @@ final class ServeCommand extends Command
      * file's bytes). Independent processes each get their own file descriptor, so there's
      * nothing to race on; the listening socket is passed through as an inherited fd.
      */
-    private function runWorkerPool(SocketServer $server, string $address, int $workers): int
+    private function runWorkerPool(string $address, int $workers, OutputInterface $output): int
     {
-        $children = $this->spawnWorkerProcesses($server, $address, $workers);
-        if ($children === null) {
-            $server->close();
+        $listenSocket = $this->createListenSocket($address, $errorMessage);
+        if ($listenSocket === null) {
+            $output->writeln(sprintf('<error>Unable to listen on http://%s: %s</error>', $address, $errorMessage));
 
             return ExitCode::UNSPECIFIED_ERROR;
         }
 
-        return $this->waitForWorkers($children, $server);
+        $children = $this->spawnWorkerProcesses($listenSocket, $address, $workers);
+        if ($children === null) {
+            fclose($listenSocket);
+            $output->writeln('<error>Failed to start worker processes.</error>');
+
+            return ExitCode::UNSPECIFIED_ERROR;
+        }
+
+        return $this->waitForWorkers($children, $listenSocket);
+    }
+
+    /**
+     * @return resource|null
+     */
+    private function createListenSocket(string $address, ?string &$errorMessage)
+    {
+        $errno = 0;
+        $errstr = '';
+        $socket = @stream_socket_server(
+            'tcp://' . $address,
+            $errno,
+            $errstr,
+            \STREAM_SERVER_BIND | \STREAM_SERVER_LISTEN,
+            stream_context_create(['socket' => ['backlog' => 511]]),
+        );
+
+        if ($socket === false) {
+            $errorMessage = $errstr;
+
+            return null;
+        }
+
+        stream_set_blocking($socket, false);
+
+        return $socket;
     }
 
     /**
      * @param list<int> $children
+     * @param resource $listenSocket
      */
-    private function waitForWorkers(array $children, SocketServer $server): int
+    private function waitForWorkers(array $children, $listenSocket): int
     {
-        $server->close();
+        fclose($listenSocket);
         Loop::get()->stop();
 
         $stopping = false;
@@ -286,17 +320,12 @@ final class ServeCommand extends Command
     }
 
     /**
-     * @return list<int>|null worker pids, or null if the listening socket couldn't be
-     *     extracted or a worker process failed to start
+     * @param resource $listenSocket
+     * @return list<int>|null worker pids, or null if a worker process failed to start
      */
-    private function spawnWorkerProcesses(SocketServer $server, string $address, int $workers): ?array
+    private function spawnWorkerProcesses($listenSocket, string $address, int $workers): ?array
     {
         if ($this->contentDir === null || $this->outputDir === null) {
-            return null;
-        }
-
-        $listenSocket = $this->extractListenSocket($server);
-        if ($listenSocket === null) {
             return null;
         }
 
@@ -318,29 +347,6 @@ final class ServeCommand extends Command
         }
 
         return $pids;
-    }
-
-    /**
-     * @return resource|null
-     */
-    private function extractListenSocket(SocketServer $server)
-    {
-        if (!class_exists(TcpServer::class)) {
-            return null;
-        }
-
-        try {
-            $inner = new ReflectionProperty(SocketServer::class, 'server')->getValue($server);
-            if (!$inner instanceof TcpServer) {
-                return null;
-            }
-
-            $resource = new ReflectionProperty(TcpServer::class, 'master')->getValue($inner);
-        } catch (ReflectionException) {
-            return null;
-        }
-
-        return is_resource($resource) ? $resource : null;
     }
 
     public function runFromInheritedSocket(int $fd, string $address, string $contentDir, string $outputDir): int

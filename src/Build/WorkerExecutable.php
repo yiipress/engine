@@ -4,33 +4,40 @@ declare(strict_types=1);
 
 namespace YiiPress\Build;
 
-use function basename;
-use function getcwd;
-use function preg_match;
-use function str_ends_with;
-use function str_starts_with;
-use function strtolower;
+use Phar;
+
+use function dirname;
+use function realpath;
 
 /**
- * Resolves the command used to re-invoke the currently running application (phar, dev `yii`
- * script, or a plain PHP script) as an independent worker process.
+ * Resolves the command used to re-invoke the currently running application (self-contained
+ * static binary, plain phar run through a system PHP, or the dev `yii` script) as an
+ * independent worker process.
  */
 final class WorkerExecutable
 {
     /** @return list<string> */
     public static function resolve(): array
     {
-        $arguments = $_SERVER['argv'] ?? [];
-        /** @var list<string> $arguments */
-        $script = $arguments[0] ?? '';
-        if ($script !== '' && !str_starts_with($script, '/') && !preg_match('~^[A-Za-z]:[\\\\/]~', $script)) {
-            $script = (getcwd() ?: '.') . \DIRECTORY_SEPARATOR . $script;
+        $pharPath = Phar::running(false);
+
+        if ($pharPath === '') {
+            // Running from source (dev): php <package-root>/yii ...
+            return [\PHP_BINARY, dirname(__DIR__, 2) . '/yii'];
         }
 
-        if ($script !== '' && (str_ends_with(strtolower($script), '.phar') || basename($script) === 'yii')) {
-            return [\PHP_BINARY, $script];
+        // A self-contained static binary combines the PHP runtime and the phar into one
+        // executable, so PHP_BINARY *is* that file and already re-invokes the whole app;
+        // a plain .phar is instead run through a separate PHP interpreter and needs its
+        // path passed explicitly. realpath() on both sides tells them apart reliably,
+        // regardless of how this process was invoked (PATH lookup, relative path, symlink).
+        $realPharPath = realpath($pharPath);
+        $realPhpBinary = realpath(\PHP_BINARY);
+
+        if ($realPharPath !== false && $realPharPath === $realPhpBinary) {
+            return [\PHP_BINARY];
         }
 
-        return [$script !== '' ? $script : \PHP_BINARY];
+        return [\PHP_BINARY, $pharPath];
     }
 }
