@@ -592,16 +592,58 @@ final class ServeCommand extends Command
         $root = $this->workingDirectory();
         $arguments = $_SERVER['argv'] ?? [];
         /** @var list<string> $arguments */
-        $yiiBinary = $arguments[0] ?? PHP_BINARY;
-        if (!str_starts_with($yiiBinary, '/')) {
-            $yiiBinary = $root . '/' . $yiiBinary;
-        }
+        $yiiBinary = $this->resolveYiiBinary($arguments[0] ?? null, $root);
 
         return new SiteBuildRunner(
             yiiBinary: $yiiBinary,
             contentDir: $this->contentDir(),
             outputDir: $this->outputDir(),
         );
+    }
+
+    private function resolveYiiBinary(?string $argv0, string $root): string
+    {
+        if ($argv0 === null || $argv0 === '') {
+            return PHP_BINARY;
+        }
+
+        if (str_starts_with($argv0, '/') || str_starts_with($argv0, '\\') || preg_match('/^[A-Za-z]:[\\\\\/]/', $argv0) === 1) {
+            return $argv0;
+        }
+
+        if (str_contains($argv0, '/') || str_contains($argv0, '\\')) {
+            return $root . DIRECTORY_SEPARATOR . $argv0;
+        }
+
+        // A bare command name means it was resolved via $PATH by the shell
+        // (e.g. a globally installed binary); look it up the same way instead
+        // of naively joining it with the current working directory.
+        return $this->findExecutableInPath($argv0) ?? $root . DIRECTORY_SEPARATOR . $argv0;
+    }
+
+    private function findExecutableInPath(string $command): ?string
+    {
+        $path = getenv('PATH');
+        if ($path === false || $path === '') {
+            return null;
+        }
+
+        $names = PHP_OS_FAMILY === 'Windows' ? [$command . '.exe', $command . '.bat', $command] : [$command];
+
+        foreach (explode(PATH_SEPARATOR, $path) as $directory) {
+            if ($directory === '') {
+                continue;
+            }
+
+            foreach ($names as $name) {
+                $candidate = rtrim($directory, '/\\') . DIRECTORY_SEPARATOR . $name;
+                if (is_file($candidate) && is_executable($candidate)) {
+                    return $candidate;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
