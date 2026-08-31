@@ -56,10 +56,10 @@ use function pcntl_wifexited;
 use function pcntl_wifsignaled;
 use function parse_url;
 use function pathinfo;
-use function posix_kill;
 use function preg_split;
 use function proc_get_status;
 use function proc_open;
+use function proc_terminate;
 use function realpath;
 use function sprintf;
 use function strlen;
@@ -273,32 +273,32 @@ final class ServeCommand extends Command
     }
 
     /**
-     * @param list<int> $children
+     * @param array<int, resource> $workers pid => the proc_open() handle for that worker
      * @param resource $listenSocket
      */
-    private function waitForWorkers(array $children, $listenSocket): int
+    private function waitForWorkers(array $workers, $listenSocket): int
     {
         fclose($listenSocket);
         Loop::get()->stop();
 
         $stopping = false;
         pcntl_async_signals(true);
-        $stop = function () use (&$children, &$stopping): void {
+        $stop = function () use (&$workers, &$stopping): void {
             $stopping = true;
-            $this->terminateWorkers($children);
+            $this->terminateWorkers($workers);
         };
         pcntl_signal(\SIGINT, $stop);
         pcntl_signal(\SIGTERM, $stop);
 
         $exitCode = ExitCode::OK;
-        while ($children !== []) {
+        while ($workers !== []) {
             $status = 0;
             $pid = pcntl_wait($status);
             if ($pid <= 0) {
                 break;
             }
 
-            $children = array_values(array_filter($children, static fn(int $child): bool => $child !== $pid));
+            unset($workers[$pid]);
 
             /** @var int $status */
             if ($stopping || pcntl_wifsignaled($status)) {
@@ -311,7 +311,7 @@ final class ServeCommand extends Command
                 if ($childExitCode !== ExitCode::OK) {
                     $exitCode = $childExitCode;
                     $stopping = true;
-                    $this->terminateWorkers($children);
+                    $this->terminateWorkers($workers);
                 }
             }
         }
@@ -321,7 +321,8 @@ final class ServeCommand extends Command
 
     /**
      * @param resource $listenSocket
-     * @return list<int>|null worker pids, or null if a worker process failed to start
+     * @return array<int, resource>|null pid => the proc_open() handle for that worker, or
+     *     null if a worker process failed to start
      */
     private function spawnWorkerProcesses($listenSocket, string $address, int $workers): ?array
     {
@@ -332,21 +333,21 @@ final class ServeCommand extends Command
         $command = [...WorkerExecutable::resolve(), 'serve-worker', '3', $address, $this->contentDir, $this->outputDir];
         $descriptorSpec = [0 => \STDIN, 1 => \STDOUT, 2 => \STDERR, 3 => $listenSocket];
 
-        $pids = [];
+        $processes = [];
         for ($worker = 0; $worker < $workers; $worker++) {
             $pipes = [];
             $process = @proc_open($command, $descriptorSpec, $pipes);
             if (!is_resource($process)) {
-                $this->terminateWorkers($pids);
+                $this->terminateWorkers($processes);
 
                 return null;
             }
 
             $status = proc_get_status($process);
-            $pids[] = $status['pid'];
+            $processes[$status['pid']] = $process;
         }
 
-        return $pids;
+        return $processes;
     }
 
     public function runFromInheritedSocket(int $fd, string $address, string $contentDir, string $outputDir): int
@@ -360,12 +361,12 @@ final class ServeCommand extends Command
     }
 
     /**
-     * @param list<int> $children
+     * @param array<int, resource> $workers
      */
-    private function terminateWorkers(array $children): void
+    private function terminateWorkers(array $workers): void
     {
-        foreach ($children as $pid) {
-            posix_kill($pid, \SIGTERM);
+        foreach ($workers as $process) {
+            proc_terminate($process, \SIGTERM);
         }
     }
 

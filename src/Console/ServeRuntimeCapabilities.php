@@ -18,7 +18,6 @@ final readonly class ServeRuntimeCapabilities
     private bool $pcntlSignalAvailable;
     private bool $pcntlWaitAvailable;
     private bool $pcntlWaitStatusAvailable;
-    private bool $posixKillAvailable;
 
     public function __construct(
         ?string $directorySeparator = null,
@@ -30,7 +29,6 @@ final readonly class ServeRuntimeCapabilities
         ?bool $pcntlSignalAvailable = null,
         ?bool $pcntlWaitAvailable = null,
         ?bool $pcntlWaitStatusAvailable = null,
-        ?bool $posixKillAvailable = null,
     ) {
         $this->directorySeparator = $directorySeparator ?? \DIRECTORY_SEPARATOR;
         $this->sigintDefined = $sigintDefined ?? defined('SIGINT');
@@ -47,7 +45,6 @@ final readonly class ServeRuntimeCapabilities
                 && function_exists('pcntl_wifexited')
                 && function_exists('pcntl_wifsignaled')
             );
-        $this->posixKillAvailable = $posixKillAvailable ?? function_exists('posix_kill');
     }
 
     public function supportsEventLoopSignals(): bool
@@ -66,7 +63,6 @@ final readonly class ServeRuntimeCapabilities
             && $this->procOpenAvailable
             && $this->pcntlSignalAvailable
             && $this->pcntlWaitAvailable
-            && $this->pcntlWaitStatusAvailable
-            && $this->posixKillAvailable;
+            && $this->pcntlWaitStatusAvailable;
     }
 }

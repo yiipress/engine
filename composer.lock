@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4c16bd3f4d3bf9acd2c1ea70cd5b6520",
+    "content-hash": "d17446e83ecf612362d26d37992da2a3",
     "packages": [
         {
             "name": "alexkart/curl-builder",
@@ -8805,7 +8805,6 @@
         "ext-mdparser": "*",
         "ext-mbstring": "*",
         "ext-pcntl": "*",
-        "ext-posix": "*",
         "ext-xmlwriter": "*",
         "ext-yaml": "*"
     },

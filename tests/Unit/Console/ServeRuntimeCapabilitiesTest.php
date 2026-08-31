@@ -23,7 +23,6 @@ final class ServeRuntimeCapabilitiesTest extends TestCase
             pcntlSignalAvailable: true,
             pcntlWaitAvailable: true,
             pcntlWaitStatusAvailable: true,
-            posixKillAvailable: true,
         );
 
         self::assertFalse($capabilities->supportsWorkerPool());
@@ -43,7 +42,6 @@ final class ServeRuntimeCapabilitiesTest extends TestCase
             pcntlSignalAvailable: true,
             pcntlWaitAvailable: true,
             pcntlWaitStatusAvailable: true,
-            posixKillAvailable: true,
         );
 
         self::assertFalse($capabilities->supportsWorkerPool());
@@ -63,7 +61,6 @@ final class ServeRuntimeCapabilitiesTest extends TestCase
             pcntlSignalAvailable: true,
             pcntlWaitAvailable: true,
             pcntlWaitStatusAvailable: true,
-            posixKillAvailable: true,
         );
 
         self::assertTrue($capabilities->supportsWorkerPool());
@@ -83,7 +80,6 @@ final class ServeRuntimeCapabilitiesTest extends TestCase
             pcntlSignalAvailable: true,
             pcntlWaitAvailable: true,
             pcntlWaitStatusAvailable: true,
-            posixKillAvailable: true,
         );
 
         self::assertFalse($capabilities->supportsWorkerPool());
@@ -103,7 +99,6 @@ final class ServeRuntimeCapabilitiesTest extends TestCase
             pcntlSignalAvailable: true,
             pcntlWaitAvailable: true,
             pcntlWaitStatusAvailable: true,
-            posixKillAvailable: true,
         );
 
         self::assertFalse($capabilities->supportsWorkerPool());
