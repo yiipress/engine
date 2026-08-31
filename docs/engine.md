@@ -158,13 +158,13 @@ Performance is handled by doing less work, keeping expensive work native, and le
 - Markdown uses `ext-mdparser` from `iliaal/mdparser`, backed by bundled MD4C sources.
 - Syntax highlighting uses `ext-highlighter`, backed by syntect and Rust.
 - Incremental builds reuse the build manifest and content hashes.
-- `--workers=auto` detects CPU capacity and caps user-facing defaults to avoid over-forking small builds.
+- `--workers=auto` detects CPU capacity and caps user-facing defaults to avoid spawning too many workers for small builds.
 - OPCache can reuse compiled PHP templates when the runtime enables it.
 - JIT and preloading remain available to source installs where the PHP runtime is managed directly.
 
-Parallel builds use `pcntl_fork()` where it is available. On Windows, YiiPress starts portable child processes through the packaged executable and passes each one an isolated typed rendering job. The internal `worker` command used for these child processes remains executable but is hidden from the user-facing command list. Each worker receives the indexed site, renders its assigned pages, and writes independent files. Secondary outputs stay sequential or are parallelized only when the page count is high enough to justify worker overhead.
+Parallel builds spawn independent worker processes (`proc_open()`) rather than forking. Forked workers would inherit the running PHAR's file descriptor and its shared read offset, so two workers autoloading a class for the first time at once could race on that offset and corrupt the decompression (a phar crc32 mismatch, or a class body full of another file's bytes); independent processes each get their own file descriptor, so there is nothing to race on. This holds on every platform, not just Windows. The internal `worker` command used for these child processes remains executable but is hidden from the user-facing command list. Each worker receives an isolated typed rendering job — the indexed site, its assigned pages, and enough context to reconstruct its own processor pipeline and theme registry — renders them, and writes independent files. Secondary outputs stay sequential or are parallelized only when the task count is high enough to justify worker overhead.
 
-This approach avoids shared memory and synchronization. Feed generation can split work per collection when workers are enabled because feeds may render every entry body again. Sitemap and robots output remain serial.
+This approach avoids shared memory and synchronization, at the cost of each worker re-bootstrapping its own pipeline rather than inheriting one already built in the parent. Feed generation can split work per collection when workers are enabled because feeds may render every entry body again. Sitemap and robots output remain serial.
 
 ## Quality Tooling
 

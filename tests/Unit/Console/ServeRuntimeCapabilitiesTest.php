@@ -18,12 +18,11 @@ final class ServeRuntimeCapabilitiesTest extends TestCase
             sigintDefined: false,
             sigtermDefined: false,
             pcntlAsyncSignalsAvailable: true,
-            pcntlForkAvailable: true,
+            procOpenAvailable: true,
             pcntlSignalDispatchAvailable: true,
             pcntlSignalAvailable: true,
             pcntlWaitAvailable: true,
             pcntlWaitStatusAvailable: true,
-            posixKillAvailable: true,
         );
 
         self::assertFalse($capabilities->supportsWorkerPool());
@@ -38,12 +37,11 @@ final class ServeRuntimeCapabilitiesTest extends TestCase
             sigintDefined: false,
             sigtermDefined: true,
             pcntlAsyncSignalsAvailable: true,
-            pcntlForkAvailable: true,
+            procOpenAvailable: true,
             pcntlSignalDispatchAvailable: true,
             pcntlSignalAvailable: true,
             pcntlWaitAvailable: true,
             pcntlWaitStatusAvailable: true,
-            posixKillAvailable: true,
         );
 
         self::assertFalse($capabilities->supportsWorkerPool());
@@ -58,12 +56,11 @@ final class ServeRuntimeCapabilitiesTest extends TestCase
             sigintDefined: true,
             sigtermDefined: true,
             pcntlAsyncSignalsAvailable: true,
-            pcntlForkAvailable: true,
+            procOpenAvailable: true,
             pcntlSignalDispatchAvailable: true,
             pcntlSignalAvailable: true,
             pcntlWaitAvailable: true,
             pcntlWaitStatusAvailable: true,
-            posixKillAvailable: true,
         );
 
         self::assertTrue($capabilities->supportsWorkerPool());
@@ -78,12 +75,11 @@ final class ServeRuntimeCapabilitiesTest extends TestCase
             sigintDefined: true,
             sigtermDefined: true,
             pcntlAsyncSignalsAvailable: false,
-            pcntlForkAvailable: true,
+            procOpenAvailable: true,
             pcntlSignalDispatchAvailable: true,
             pcntlSignalAvailable: true,
             pcntlWaitAvailable: true,
             pcntlWaitStatusAvailable: true,
-            posixKillAvailable: true,
         );
 
         self::assertFalse($capabilities->supportsWorkerPool());
@@ -98,12 +94,11 @@ final class ServeRuntimeCapabilitiesTest extends TestCase
             sigintDefined: true,
             sigtermDefined: true,
             pcntlAsyncSignalsAvailable: true,
-            pcntlForkAvailable: true,
+            procOpenAvailable: true,
             pcntlSignalDispatchAvailable: false,
             pcntlSignalAvailable: true,
             pcntlWaitAvailable: true,
             pcntlWaitStatusAvailable: true,
-            posixKillAvailable: true,
         );
 
         self::assertFalse($capabilities->supportsWorkerPool());

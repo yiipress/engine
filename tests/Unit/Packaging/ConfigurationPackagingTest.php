@@ -243,7 +243,6 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringNotContainsString('"dev-master"', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-inotify', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-pcntl', $script);
-        self::assertStringContainsString('--ignore-platform-req=ext-posix', $script);
         self::assertStringContainsString('--ignore-platform-req=ext-mdparser', $script);
         self::assertStringContainsString('function Write-LogTail', $script);
         self::assertStringContainsString('log/spc.output.log', $script);

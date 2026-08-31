@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace YiiPress\Tests\Unit\Processor;
 
 use YiiPress\Content\Model\Entry;
+use YiiPress\Processor\ContentProcessorPipeline;
+use YiiPress\Processor\MarkdownProcessor;
 use YiiPress\Processor\OEmbed\OEmbedInterface;
 use YiiPress\Processor\OEmbed\OEmbedProcessor;
 use YiiPress\Processor\Shortcode\TweetProcessor;
 use YiiPress\Processor\Shortcode\VimeoProcessor;
 use YiiPress\Processor\Shortcode\YouTubeProcessor;
+use YiiPress\Render\MarkdownRenderer;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 
@@ -36,29 +39,46 @@ final class OEmbedProcessorTest extends TestCase
 
     public function testConvertsStandaloneYouTubeWatchUrlToEmbed(): void
     {
-        $result = $this->processor->process("https://www.youtube.com/watch?v=dQw4w9WgXcQ", $this->createEntry());
+        $result = $this->render("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
 
         assertStringContainsString('youtube.com/embed/dQw4w9WgXcQ', $result);
         assertStringContainsString('class="shortcode shortcode-youtube"', $result);
     }
 
+    public function testKeepsYouTubeIframeUnescapedAfterMarkdownProcessing(): void
+    {
+        $pipeline = new ContentProcessorPipeline(
+            $this->processor,
+            new MarkdownProcessor(new MarkdownRenderer()),
+            $this->processor,
+        );
+
+        $result = $pipeline->process(
+            'https://www.youtube.com/watch?v=_kOlTvH8zGQ',
+            $this->createEntry(),
+        );
+
+        assertStringContainsString('<iframe ', $result);
+        assertStringNotContainsString('&lt;iframe', $result);
+    }
+
     public function testConvertsShortYouTubeUrlToEmbed(): void
     {
-        $result = $this->processor->process("https://youtu.be/dQw4w9WgXcQ", $this->createEntry());
+        $result = $this->render("https://youtu.be/dQw4w9WgXcQ");
 
         assertStringContainsString('youtube.com/embed/dQw4w9WgXcQ', $result);
     }
 
     public function testConvertsYouTubeStartTimeToEmbedParam(): void
     {
-        $result = $this->processor->process("https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=1m30s", $this->createEntry());
+        $result = $this->render("https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=1m30s");
 
         assertStringContainsString('?start=90', $result);
     }
 
     public function testConvertsStandaloneVimeoUrlToEmbed(): void
     {
-        $result = $this->processor->process("https://vimeo.com/123456789", $this->createEntry());
+        $result = $this->render("https://vimeo.com/123456789");
 
         assertStringContainsString('player.vimeo.com/video/123456789', $result);
         assertStringContainsString('class="shortcode shortcode-vimeo"', $result);
@@ -66,7 +86,7 @@ final class OEmbedProcessorTest extends TestCase
 
     public function testConvertsStandaloneTwitterUrlToEmbed(): void
     {
-        $result = $this->processor->process("https://twitter.com/samdark/status/1234567890", $this->createEntry());
+        $result = $this->render("https://twitter.com/samdark/status/1234567890");
 
         assertStringContainsString('twitter.com/i/web/status/1234567890', $result);
         assertStringContainsString('class="shortcode shortcode-tweet"', $result);
@@ -74,7 +94,7 @@ final class OEmbedProcessorTest extends TestCase
 
     public function testConvertsStandaloneXUrlToEmbed(): void
     {
-        $result = $this->processor->process("https://x.com/samdark/status/1234567890", $this->createEntry());
+        $result = $this->render("https://x.com/samdark/status/1234567890");
 
         assertStringContainsString('twitter.com/i/web/status/1234567890', $result);
     }
@@ -83,7 +103,7 @@ final class OEmbedProcessorTest extends TestCase
     {
         $input = 'Watch https://youtu.be/dQw4w9WgXcQ later.';
 
-        $result = $this->processor->process($input, $this->createEntry());
+        $result = $this->render($input);
 
         assertSame($input, $result);
     }
@@ -99,7 +119,7 @@ final class OEmbedProcessorTest extends TestCase
     {
         $input = 'https://example.com/video/123';
 
-        $result = $this->processor->process($input, $this->createEntry());
+        $result = $this->render($input);
 
         assertSame($input, $result);
     }
@@ -108,7 +128,7 @@ final class OEmbedProcessorTest extends TestCase
     {
         $input = "https://youtu.be/dQw4w9WgXcQ\n\nhttps://vimeo.com/123456789";
 
-        $result = $this->processor->process($input, $this->createEntry());
+        $result = $this->render($input);
 
         assertStringContainsString('youtube.com/embed/dQw4w9WgXcQ', $result);
         assertStringContainsString('player.vimeo.com/video/123456789', $result);
@@ -118,7 +138,7 @@ final class OEmbedProcessorTest extends TestCase
     {
         $input = "  https://youtu.be/dQw4w9WgXcQ";
 
-        $result = $this->processor->process($input, $this->createEntry());
+        $result = $this->render($input);
 
         assertStringNotContainsString("\n", $result);
         assertStringContainsString('  <div class="shortcode shortcode-youtube">', $result);
@@ -140,9 +160,18 @@ final class OEmbedProcessorTest extends TestCase
             },
         );
 
-        $result = $processor->process("https://example.com/custom", $this->createEntry());
+        $entry = $this->createEntry();
+        $result = $processor->process("https://example.com/custom", $entry);
+        $result = $processor->process($result, $entry);
 
         assertSame('<div class="custom-embed">custom</div>', $result);
+    }
+
+    private function render(string $content): string
+    {
+        $entry = $this->createEntry();
+
+        return $this->processor->process($this->processor->process($content, $entry), $entry);
     }
 
     private function createEntry(): Entry

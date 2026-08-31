@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiPress\Tests\Unit\Build;
 
 use YiiPress\Build\ParallelEntryWriter;
+use YiiPress\Build\PortableWorkerPool;
 use YiiPress\Build\TemplateResolver;
 use YiiPress\Build\Theme;
 use YiiPress\Build\ThemeRegistry;
@@ -21,12 +22,14 @@ use RuntimeException;
 use SplFileInfo;
 
 use function defined;
+use function dirname;
 use function function_exists;
 use function PHPUnit\Framework\assertFileExists;
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsString;
 use function getmypid;
 use function posix_kill;
+use function putenv;
 use function sprintf;
 use function sys_get_temp_dir;
 
@@ -81,7 +84,7 @@ final class ParallelEntryWriterTest extends TestCase
             ];
         }
 
-        $writer = new ParallelEntryWriter($this->createPipeline(), $this->createTemplateResolver());
+        $writer = new ParallelEntryWriter($this->createPipeline(), $this->createTemplateResolver(), workerPool: $this->createTestWorkerPool());
         $written = $writer->write($this->createSiteConfig(), $tasks, $this->contentDir, 2);
 
         assertSame(128, $written);
@@ -123,22 +126,22 @@ final class ParallelEntryWriterTest extends TestCase
             ];
         }
 
-        $writer = new ParallelEntryWriter($this->createPipeline(killOnTitle: 'Kill Worker'), $this->createTemplateResolver());
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('One or more worker processes failed.');
+        putenv('YIIPRESS_TEST_KILL_ON_TITLE=Kill Worker');
+        $writer = new ParallelEntryWriter($this->createPipeline(), $this->createTemplateResolver(), workerPool: $this->createTestWorkerPool());
 
         try {
+            $this->expectException(RuntimeException::class);
+            $this->expectExceptionMessage('Worker process failed');
+
             $writer->write($this->createSiteConfig(), $tasks, $this->contentDir, 2);
-        } catch (RuntimeException $e) {
-            assertStringContainsString('terminated by signal', (string) $e->getPrevious()?->getMessage());
-            throw $e;
+        } finally {
+            putenv('YIIPRESS_TEST_KILL_ON_TITLE');
         }
     }
 
     private function skipWhenSignalWorkerTestIsUnsupported(): void
     {
-        foreach (['pcntl_fork', 'pcntl_waitpid', 'pcntl_wifsignaled', 'pcntl_wtermsig', 'posix_kill'] as $function) {
+        foreach (['proc_open', 'posix_kill'] as $function) {
             if (!function_exists($function)) {
                 self::markTestSkipped(sprintf('%s() is required to test signaled worker failures.', $function));
             }
@@ -147,6 +150,11 @@ final class ParallelEntryWriterTest extends TestCase
         if (!defined('SIGKILL')) {
             self::markTestSkipped('SIGKILL is required to test signaled worker failures.');
         }
+    }
+
+    private function createTestWorkerPool(): PortableWorkerPool
+    {
+        return new PortableWorkerPool([PHP_BINARY, dirname(__DIR__, 2) . '/Support/entry-write-worker.php']);
     }
 
     private function createPipeline(string $killOnTitle = ''): ContentProcessorPipeline

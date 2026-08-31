@@ -4,31 +4,35 @@ declare(strict_types=1);
 
 namespace YiiPress\Build;
 
-use RuntimeException;
-
+use function array_map;
 use function array_slice;
 use function ceil;
 use function count;
-use function file_get_contents;
 use function function_exists;
-use function is_dir;
-use function mkdir;
+use function intdiv;
+use function max;
 use function min;
-use function pcntl_fork;
-use function rmdir;
-use function sys_get_temp_dir;
-use function unlink;
 
 final class ParallelTaskRunner
 {
     private const int MIN_TASKS_PER_WORKER = 32;
 
+    public function __construct(private ?PortableWorkerPool $workerPool = null) {}
+
     /**
+     * Runs tasks sequentially, or in parallel across independent worker processes.
+     * pcntl_fork() would duplicate the running PHAR's file descriptor, so forked workers
+     * would share its read offset and race on it when autoloading a class for the first
+     * time at once, corrupting the decompression. Spawning independent processes instead
+     * gives each one its own file descriptor, so there's nothing to race on.
+     *
      * @template T
      * @param list<T> $tasks
-     * @param callable(T): int $taskRunner
+     * @param callable(T): int $taskRunner used to process a single task sequentially
+     * @param callable(list<T>): WorkerJobInterface $jobFactory builds a serializable job
+     *     for a chunk of tasks, run by an independent worker process
      */
-    public function run(array $tasks, int $workerCount, callable $taskRunner, int $minTasksPerWorker = self::MIN_TASKS_PER_WORKER): int
+    public function run(array $tasks, int $workerCount, callable $taskRunner, callable $jobFactory, int $minTasksPerWorker = self::MIN_TASKS_PER_WORKER): int
     {
         if ($tasks === []) {
             return 0;
@@ -40,71 +44,14 @@ final class ParallelTaskRunner
         }
 
         $chunks = $this->partitionTasks($tasks, $effectiveWorkerCount);
-        $tempDir = sys_get_temp_dir() . '/yiipress_parallel_task_runner_' . uniqid();
-        if (!mkdir($tempDir, 0o755, true) && !is_dir($tempDir)) {
-            throw new RuntimeException(sprintf('Directory "%s" was not created', $tempDir));
-        }
+        $jobs = array_map($jobFactory, $chunks);
 
-        $files = [];
-        $pids = [];
-
-        try {
-            foreach ($chunks as $index => $chunk) {
-                $resultFile = $tempDir . '/' . $index . '.count';
-                $pid = pcntl_fork();
-
-                if ($pid === -1) {
-                    throw new RuntimeException('Failed to fork worker process');
-                }
-
-                if ($pid === 0) {
-                    $count = $this->runSequential($chunk, $taskRunner);
-                    FileWriter::write($resultFile, (string) $count);
-                    exit(0);
-                }
-
-                $files[] = $resultFile;
-                $pids[] = $pid;
-            }
-
-            $failure = null;
-            foreach ($pids as $pid) {
-                try {
-                    WorkerProcessStatus::waitFor($pid);
-                } catch (RuntimeException $e) {
-                    $failure ??= $e;
-                }
-            }
-
-            if ($failure !== null) {
-                throw $failure;
-            }
-
-            $count = 0;
-            foreach ($files as $file) {
-                $contents = file_get_contents($file);
-                if ($contents === false) {
-                    throw new RuntimeException(sprintf('Unable to read worker result file "%s".', $file));
-                }
-                $count += (int) $contents;
-            }
-
-            return $count;
-        } finally {
-            foreach ($files as $file) {
-                if (is_file($file)) {
-                    unlink($file);
-                }
-            }
-            if (is_dir($tempDir)) {
-                rmdir($tempDir);
-            }
-        }
+        return ($this->workerPool ?? new PortableWorkerPool())->run($jobs);
     }
 
     private function effectiveWorkerCount(int $taskCount, int $requestedWorkerCount, int $minTasksPerWorker): int
     {
-        if (!function_exists('pcntl_fork') || $requestedWorkerCount <= 1) {
+        if (!function_exists('proc_open') || $requestedWorkerCount <= 1) {
             return 1;
         }
 

@@ -6,7 +6,6 @@ namespace YiiPress\Build;
 
 use RuntimeException;
 
-use function basename;
 use function bin2hex;
 use function compact;
 use function fclose;
@@ -17,7 +16,6 @@ use function is_dir;
 use function is_file;
 use function is_resource;
 use function mkdir;
-use function preg_match;
 use function proc_close;
 use function proc_open;
 use function random_bytes;
@@ -29,9 +27,6 @@ use function proc_get_status;
 use function proc_terminate;
 use function time;
 use function usleep;
-use function str_ends_with;
-use function str_starts_with;
-use function strtolower;
 use function sys_get_temp_dir;
 use function trim;
 use function unlink;
@@ -140,21 +135,6 @@ final readonly class PortableWorkerPool
     /** @return list<string> */
     private function executableCommand(): array
     {
-        if ($this->executableCommand !== null) {
-            return $this->executableCommand;
-        }
-
-        $arguments = $_SERVER['argv'] ?? [];
-        /** @var list<string> $arguments */
-        $script = $arguments[0] ?? '';
-        if ($script !== '' && !str_starts_with($script, '/') && !preg_match('~^[A-Za-z]:[\\\\/]~', $script)) {
-            $script = (getcwd() ?: '.') . DIRECTORY_SEPARATOR . $script;
-        }
-
-        if ($script !== '' && (str_ends_with(strtolower($script), '.phar') || basename($script) === 'yii')) {
-            return [PHP_BINARY, $script];
-        }
-
-        return [$script !== '' ? $script : PHP_BINARY];
+        return $this->executableCommand ?? WorkerExecutable::resolve();
     }
 }

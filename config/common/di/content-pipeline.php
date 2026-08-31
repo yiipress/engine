@@ -51,6 +51,8 @@ return [
             // Preserve question shortcode metadata before Markdown.
             Reference::to(QuestionProcessor::class),
             Reference::to(MarkdownProcessor::class),
+            // Render preserved oEmbed HTML after Markdown.
+            Reference::to(OEmbedProcessor::class),
             Reference::to(LatexMathProcessor::class),
             Reference::to(TagLinkProcessor::class),
             Reference::to(MermaidProcessor::class),

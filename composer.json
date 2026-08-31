@@ -41,7 +41,6 @@
         "ext-mdparser": "*",
         "ext-mbstring": "*",
         "ext-pcntl": "*",
-        "ext-posix": "*",
         "ext-xmlwriter": "*",
         "ext-yaml": "*",
         "httpsoft/http-message": "^1.1.6",
@@ -56,7 +55,7 @@
         "react/socket": "^1.17",
         "react/stream": "^1.4",
         "samdark/sitemap": "^3.0.1",
-        "symfony/console": "^7.4.8",
+        "symfony/console": "^8.1.5",
         "yiisoft/config": "^1.6.2",
         "yiisoft/definitions": "^3.4.1",
         "yiisoft/di": "^1.4.1",
@@ -76,6 +75,7 @@
         "yiisoft/yii-runner-http": "^3.2.1"
     },
     "require-dev": {
+        "ext-posix": "*",
         "evenement/evenement": "^3.0.2",
         "friendsofphp/php-cs-fixer": "^3.95.1",
         "infection/infection": "^0.34",

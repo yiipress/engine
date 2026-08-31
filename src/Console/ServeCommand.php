@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiPress\Console;
 
+use YiiPress\Build\WorkerExecutable;
 use YiiPress\Environment;
 use YiiPress\RuntimePaths;
 use YiiPress\Web\DevServer\DevHtmlInjector;
@@ -48,7 +49,6 @@ use function is_writable;
 use function mkdir;
 use function microtime;
 use function pcntl_async_signals;
-use function pcntl_fork;
 use function pcntl_signal;
 use function pcntl_wait;
 use function pcntl_wexitstatus;
@@ -56,11 +56,16 @@ use function pcntl_wifexited;
 use function pcntl_wifsignaled;
 use function parse_url;
 use function pathinfo;
-use function posix_kill;
 use function preg_split;
+use function proc_get_status;
+use function proc_open;
+use function proc_terminate;
 use function realpath;
 use function sprintf;
 use function strlen;
+use function stream_context_create;
+use function stream_set_blocking;
+use function stream_socket_server;
 use function str_starts_with;
 use function strtolower;
 use function substr;
@@ -199,6 +204,10 @@ final class ServeCommand extends Command
             return ExitCode::OK;
         }
 
+        if ($workers > 1 && $this->runtimeCapabilities->supportsWorkerPool()) {
+            return $this->runWorkerPool($address, $workers, $output);
+        }
+
         try {
             $server = new SocketServer($address);
         } catch (InvalidArgumentException | RuntimeException $e) {
@@ -206,54 +215,90 @@ final class ServeCommand extends Command
             return ExitCode::UNSPECIFIED_ERROR;
         }
 
-        if ($workers > 1 && $this->runtimeCapabilities->supportsWorkerPool()) {
-            return $this->runWorkerPool($server, $address, $workers);
-        }
-
         return $this->runServer($server, $address);
     }
 
-    private function runWorkerPool(SocketServer $server, string $address, int $workers): int
+    /**
+     * Spawns each worker as an independent process rather than forking. pcntl_fork() would
+     * share the running PHAR's file descriptor (and its read offset) across forked workers:
+     * two workers autoloading a class for the first time at once would race on that offset
+     * and corrupt the decompression (phar crc32 mismatch, or a class body full of another
+     * file's bytes). Independent processes each get their own file descriptor, so there's
+     * nothing to race on; the listening socket is passed through as an inherited fd.
+     */
+    private function runWorkerPool(string $address, int $workers, OutputInterface $output): int
     {
-        $children = [];
+        $listenSocket = $this->createListenSocket($address, $errorMessage);
+        if ($listenSocket === null) {
+            $output->writeln(sprintf('<error>Unable to listen on http://%s: %s</error>', $address, $errorMessage));
 
-        for ($worker = 0; $worker < $workers; $worker++) {
-            $pid = pcntl_fork();
-            if ($pid === -1) {
-                $this->terminateWorkers($children);
-                $server->close();
-
-                return ExitCode::UNSPECIFIED_ERROR;
-            }
-
-            if ($pid === 0) {
-                return $this->runServer($server, $address);
-            }
-
-            $children[] = $pid;
+            return ExitCode::UNSPECIFIED_ERROR;
         }
 
-        $server->close();
+        $children = $this->spawnWorkerProcesses($listenSocket, $address, $workers);
+        if ($children === null) {
+            fclose($listenSocket);
+            $output->writeln('<error>Failed to start worker processes.</error>');
+
+            return ExitCode::UNSPECIFIED_ERROR;
+        }
+
+        return $this->waitForWorkers($children, $listenSocket);
+    }
+
+    /**
+     * @return resource|null
+     */
+    private function createListenSocket(string $address, ?string &$errorMessage)
+    {
+        $errno = 0;
+        $errstr = '';
+        $socket = @stream_socket_server(
+            'tcp://' . $address,
+            $errno,
+            $errstr,
+            \STREAM_SERVER_BIND | \STREAM_SERVER_LISTEN,
+            stream_context_create(['socket' => ['backlog' => 511]]),
+        );
+
+        if ($socket === false) {
+            $errorMessage = $errstr;
+
+            return null;
+        }
+
+        stream_set_blocking($socket, false);
+
+        return $socket;
+    }
+
+    /**
+     * @param array<int, resource> $workers pid => the proc_open() handle for that worker
+     * @param resource $listenSocket
+     */
+    private function waitForWorkers(array $workers, $listenSocket): int
+    {
+        fclose($listenSocket);
         Loop::get()->stop();
 
         $stopping = false;
         pcntl_async_signals(true);
-        $stop = function () use (&$children, &$stopping): void {
+        $stop = function () use (&$workers, &$stopping): void {
             $stopping = true;
-            $this->terminateWorkers($children);
+            $this->terminateWorkers($workers);
         };
         pcntl_signal(\SIGINT, $stop);
         pcntl_signal(\SIGTERM, $stop);
 
         $exitCode = ExitCode::OK;
-        while ($children !== []) {
+        while ($workers !== []) {
             $status = 0;
             $pid = pcntl_wait($status);
             if ($pid <= 0) {
                 break;
             }
 
-            $children = array_values(array_filter($children, static fn(int $child): bool => $child !== $pid));
+            unset($workers[$pid]);
 
             /** @var int $status */
             if ($stopping || pcntl_wifsignaled($status)) {
@@ -266,7 +311,7 @@ final class ServeCommand extends Command
                 if ($childExitCode !== ExitCode::OK) {
                     $exitCode = $childExitCode;
                     $stopping = true;
-                    $this->terminateWorkers($children);
+                    $this->terminateWorkers($workers);
                 }
             }
         }
@@ -275,12 +320,53 @@ final class ServeCommand extends Command
     }
 
     /**
-     * @param list<int> $children
+     * @param resource $listenSocket
+     * @return array<int, resource>|null pid => the proc_open() handle for that worker, or
+     *     null if a worker process failed to start
      */
-    private function terminateWorkers(array $children): void
+    private function spawnWorkerProcesses($listenSocket, string $address, int $workers): ?array
     {
-        foreach ($children as $pid) {
-            posix_kill($pid, \SIGTERM);
+        if ($this->contentDir === null || $this->outputDir === null) {
+            return null;
+        }
+
+        $command = [...WorkerExecutable::resolve(), 'serve-worker', '3', $address, $this->contentDir, $this->outputDir];
+        $descriptorSpec = [0 => \STDIN, 1 => \STDOUT, 2 => \STDERR, 3 => $listenSocket];
+
+        $processes = [];
+        for ($worker = 0; $worker < $workers; $worker++) {
+            $pipes = [];
+            $process = @proc_open($command, $descriptorSpec, $pipes);
+            if (!is_resource($process)) {
+                $this->terminateWorkers($processes);
+
+                return null;
+            }
+
+            $status = proc_get_status($process);
+            $processes[$status['pid']] = $process;
+        }
+
+        return $processes;
+    }
+
+    public function runFromInheritedSocket(int $fd, string $address, string $contentDir, string $outputDir): int
+    {
+        $this->contentDir = $contentDir;
+        $this->outputDir = $outputDir;
+
+        $server = new SocketServer('php://fd/' . $fd);
+
+        return $this->runServer($server, $address);
+    }
+
+    /**
+     * @param array<int, resource> $workers
+     */
+    private function terminateWorkers(array $workers): void
+    {
+        foreach ($workers as $process) {
+            proc_terminate($process, \SIGTERM);
         }
     }
 
@@ -567,16 +653,58 @@ final class ServeCommand extends Command
         $root = $this->workingDirectory();
         $arguments = $_SERVER['argv'] ?? [];
         /** @var list<string> $arguments */
-        $yiiBinary = $arguments[0] ?? PHP_BINARY;
-        if (!str_starts_with($yiiBinary, '/')) {
-            $yiiBinary = $root . '/' . $yiiBinary;
-        }
+        $yiiBinary = $this->resolveYiiBinary($arguments[0] ?? null, $root);
 
         return new SiteBuildRunner(
             yiiBinary: $yiiBinary,
             contentDir: $this->contentDir(),
             outputDir: $this->outputDir(),
         );
+    }
+
+    private function resolveYiiBinary(?string $argv0, string $root): string
+    {
+        if ($argv0 === null || $argv0 === '') {
+            return PHP_BINARY;
+        }
+
+        if (str_starts_with($argv0, '/') || str_starts_with($argv0, '\\') || preg_match('/^[A-Za-z]:[\\\\\/]/', $argv0) === 1) {
+            return $argv0;
+        }
+
+        if (str_contains($argv0, '/') || str_contains($argv0, '\\')) {
+            return $root . DIRECTORY_SEPARATOR . $argv0;
+        }
+
+        // A bare command name means it was resolved via $PATH by the shell
+        // (e.g. a globally installed binary); look it up the same way instead
+        // of naively joining it with the current working directory.
+        return $this->findExecutableInPath($argv0) ?? $root . DIRECTORY_SEPARATOR . $argv0;
+    }
+
+    private function findExecutableInPath(string $command): ?string
+    {
+        $path = getenv('PATH');
+        if ($path === false || $path === '') {
+            return null;
+        }
+
+        $names = PHP_OS_FAMILY === 'Windows' ? [$command . '.exe', $command . '.bat', $command] : [$command];
+
+        foreach (explode(PATH_SEPARATOR, $path) as $directory) {
+            if ($directory === '') {
+                continue;
+            }
+
+            foreach ($names as $name) {
+                $candidate = rtrim($directory, '/\\') . DIRECTORY_SEPARATOR . $name;
+                if (is_file($candidate) && is_executable($candidate)) {
+                    return $candidate;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -137,7 +137,6 @@ try {
         "--classmap-authoritative",
         "--ignore-platform-req=ext-inotify",
         "--ignore-platform-req=ext-pcntl",
-        "--ignore-platform-req=ext-posix",
         "--ignore-platform-req=ext-mdparser",
         "--ignore-platform-req=ext-yaml",
         "--ignore-platform-req=ext-highlighter"
