@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace YiiPress\Build;
 
+use Phar;
 use RuntimeException;
 
 use function array_slice;
 use function ceil;
+use function class_exists;
 use function count;
 use function file_get_contents;
 use function function_exists;
@@ -104,13 +106,23 @@ final class ParallelTaskRunner
 
     private function effectiveWorkerCount(int $taskCount, int $requestedWorkerCount, int $minTasksPerWorker): int
     {
-        if (!function_exists('pcntl_fork') || $requestedWorkerCount <= 1) {
+        if (!function_exists('pcntl_fork') || $requestedWorkerCount <= 1 || $this->isRunningAsPhar()) {
+            // Unlike ParallelEntryWriter, tasks here are closures, which can't be serialized
+            // and handed to an independent worker process. Forking a PHAR-packaged process
+            // shares its file descriptor across workers and can corrupt phar decompression
+            // when they autoload a class for the first time concurrently, so fall back to
+            // running sequentially instead when packaged.
             return 1;
         }
 
         $maxWorkersByTaskVolume = max(1, intdiv($taskCount, max(1, $minTasksPerWorker)));
 
         return min($requestedWorkerCount, $maxWorkersByTaskVolume);
+    }
+
+    private function isRunningAsPhar(): bool
+    {
+        return class_exists(Phar::class, false) && Phar::running(false) !== '';
     }
 
     /**

@@ -12,11 +12,13 @@ use YiiPress\Content\Model\Navigation;
 use YiiPress\Content\Model\SiteConfig;
 use YiiPress\Content\Related\RelatedIndex;
 use YiiPress\Processor\ContentProcessorPipeline;
+use Phar;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use RuntimeException;
 
 use function array_slice;
 use function ceil;
+use function class_exists;
 use function count;
 use function dirname;
 use function function_exists;
@@ -102,7 +104,13 @@ final readonly class ParallelEntryWriter
     private function writeParallel(SiteConfig $siteConfig, array $tasks, string $contentDir, int $workerCount, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors, bool $noWrite): void
     {
         $taskChunks = $this->partitionTasks($tasks, $workerCount);
-        if (!function_exists('pcntl_fork')) {
+        if (!function_exists('pcntl_fork') || $this->isRunningAsPhar()) {
+            // pcntl_fork() duplicates the running PHAR's file descriptor, so forked workers
+            // share its read offset: two workers autoloading a class for the first time at
+            // once race on that offset and corrupt the decompression (phar crc32 mismatch,
+            // or a class body full of another file's bytes). Spawning independent worker
+            // processes instead gives each one its own file descriptor, so there's nothing
+            // to race on.
             $jobs = [];
             foreach ($taskChunks as $chunk) {
                 $jobs[] = new EntryWriteWorkerJob($siteConfig, $chunk, $contentDir, $navigation, $crossRefResolver, $authors, $noWrite, $this->cache, $this->assetManifest, $this->relatedIndex, $this->translationIndex);
@@ -163,6 +171,11 @@ final readonly class ParallelEntryWriter
     private function supportsParallelExecution(): bool
     {
         return array_any(['pcntl_fork', 'proc_open'], fn($function) => function_exists($function));
+    }
+
+    private function isRunningAsPhar(): bool
+    {
+        return class_exists(Phar::class, false) && Phar::running(false) !== '';
     }
 
     /**
