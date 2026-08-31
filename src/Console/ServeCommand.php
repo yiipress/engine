@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiPress\Console;
 
+use YiiPress\Build\WorkerExecutable;
 use YiiPress\Environment;
 use YiiPress\RuntimePaths;
 use YiiPress\Web\DevServer\DevHtmlInjector;
@@ -13,15 +14,17 @@ use FilesystemIterator;
 use HttpSoft\Message\ServerRequest;
 use HttpSoft\Message\Stream;
 use InvalidArgumentException;
-use Phar;
 use Psr\Http\Message\ResponseInterface;
 use React\EventLoop\Loop;
 use React\EventLoop\TimerInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\SocketServer;
+use React\Socket\TcpServer;
 use React\Stream\ReadableResourceStream;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use ReflectionException;
+use ReflectionProperty;
 use RuntimeException;
 use SplFileInfo;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -35,6 +38,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Yiisoft\Yii\Console\ExitCode;
 use Yiisoft\Yii\Runner\Http\HttpApplicationRunner;
 
+use function class_exists;
 use function fclose;
 use function file_exists;
 use function file_get_contents;
@@ -49,7 +53,6 @@ use function is_writable;
 use function mkdir;
 use function microtime;
 use function pcntl_async_signals;
-use function pcntl_fork;
 use function pcntl_signal;
 use function pcntl_wait;
 use function pcntl_wexitstatus;
@@ -59,6 +62,8 @@ use function parse_url;
 use function pathinfo;
 use function posix_kill;
 use function preg_split;
+use function proc_get_status;
+use function proc_open;
 use function realpath;
 use function sprintf;
 use function strlen;
@@ -214,28 +219,31 @@ final class ServeCommand extends Command
         return $this->runServer($server, $address);
     }
 
+    /**
+     * Spawns each worker as an independent process rather than forking. pcntl_fork() would
+     * share the running PHAR's file descriptor (and its read offset) across forked workers:
+     * two workers autoloading a class for the first time at once would race on that offset
+     * and corrupt the decompression (phar crc32 mismatch, or a class body full of another
+     * file's bytes). Independent processes each get their own file descriptor, so there's
+     * nothing to race on; the listening socket is passed through as an inherited fd.
+     */
     private function runWorkerPool(SocketServer $server, string $address, int $workers): int
     {
-        $this->warmPharEntries();
+        $children = $this->spawnWorkerProcesses($server, $address, $workers);
+        if ($children === null) {
+            $server->close();
 
-        $children = [];
-
-        for ($worker = 0; $worker < $workers; $worker++) {
-            $pid = pcntl_fork();
-            if ($pid === -1) {
-                $this->terminateWorkers($children);
-                $server->close();
-
-                return ExitCode::UNSPECIFIED_ERROR;
-            }
-
-            if ($pid === 0) {
-                return $this->runServer($server, $address);
-            }
-
-            $children[] = $pid;
+            return ExitCode::UNSPECIFIED_ERROR;
         }
 
+        return $this->waitForWorkers($children, $server);
+    }
+
+    /**
+     * @param list<int> $children
+     */
+    private function waitForWorkers(array $children, SocketServer $server): int
+    {
         $server->close();
         Loop::get()->stop();
 
@@ -278,25 +286,71 @@ final class ServeCommand extends Command
     }
 
     /**
-     * pcntl_fork() duplicates the running PHAR's file descriptor, so forked workers share its
-     * read offset. A class autoloaded for the first time by two workers at once (typically
-     * during shutdown) races on that shared offset and corrupts the decompression, surfacing as
-     * a phar crc32 mismatch. Reading every entry here decompresses and caches it in the parent
-     * before forking, so workers reuse the cached copy instead of touching the shared file.
+     * @return list<int>|null worker pids, or null if the listening socket couldn't be
+     *     extracted or a worker process failed to start
      */
-    private function warmPharEntries(): void
+    private function spawnWorkerProcesses(SocketServer $server, string $address, int $workers): ?array
     {
-        $pharPath = Phar::running(false);
-        if ($pharPath === '') {
-            return;
+        if ($this->contentDir === null || $this->outputDir === null) {
+            return null;
         }
 
-        foreach (new RecursiveIteratorIterator(new Phar($pharPath)) as $file) {
-            /** @var SplFileInfo $file */
-            if ($file->isFile()) {
-                @file_get_contents($file->getPathname());
-            }
+        $listenSocket = $this->extractListenSocket($server);
+        if ($listenSocket === null) {
+            return null;
         }
+
+        $command = [...WorkerExecutable::resolve(), 'serve-worker', '3', $address, $this->contentDir, $this->outputDir];
+        $descriptorSpec = [0 => \STDIN, 1 => \STDOUT, 2 => \STDERR, 3 => $listenSocket];
+
+        $pids = [];
+        for ($worker = 0; $worker < $workers; $worker++) {
+            $pipes = [];
+            $process = @proc_open($command, $descriptorSpec, $pipes);
+            if (!is_resource($process)) {
+                $this->terminateWorkers($pids);
+
+                return null;
+            }
+
+            $status = proc_get_status($process);
+            $pids[] = $status['pid'];
+        }
+
+        return $pids;
+    }
+
+    /**
+     * @return resource|null
+     */
+    private function extractListenSocket(SocketServer $server)
+    {
+        if (!class_exists(TcpServer::class)) {
+            return null;
+        }
+
+        try {
+            $inner = new ReflectionProperty(SocketServer::class, 'server')->getValue($server);
+            if (!$inner instanceof TcpServer) {
+                return null;
+            }
+
+            $resource = new ReflectionProperty(TcpServer::class, 'master')->getValue($inner);
+        } catch (ReflectionException) {
+            return null;
+        }
+
+        return is_resource($resource) ? $resource : null;
+    }
+
+    public function runFromInheritedSocket(int $fd, string $address, string $contentDir, string $outputDir): int
+    {
+        $this->contentDir = $contentDir;
+        $this->outputDir = $outputDir;
+
+        $server = new SocketServer('php://fd/' . $fd);
+
+        return $this->runServer($server, $address);
     }
 
     /**

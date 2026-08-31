@@ -11,6 +11,9 @@ use YiiPress\Content\Model\SiteConfig;
 use YiiPress\Content\PermalinkResolver;
 use RuntimeException;
 
+/**
+ * @phpstan-type DateArchiveTask array{type: 'index', years: list<int|string>}|array{type: 'year', year: string, entries: list<Entry>, months: list<string>}|array{type: 'month', year: string, month: string, entries: list<Entry>}
+ */
 final readonly class DateArchiveWriter
 {
     public function __construct(
@@ -26,6 +29,7 @@ final readonly class DateArchiveWriter
         Collection $collection,
         array $entries,
         string $outputDir,
+        string $contentDir,
         ?Navigation $navigation = null,
         int $workerCount = 1,
         bool $noWrite = false,
@@ -80,51 +84,62 @@ final readonly class DateArchiveWriter
 
         $taskRunner = new ParallelTaskRunner();
 
-        return $taskRunner->run($tasks, $workerCount, function (array $task) use ($renderer, $siteConfig, $collection, $outputDir, $navigation, $noWrite): int {
-            if ($task['type'] === 'index') {
-                $this->writeArchiveIndexPage(
-                    $renderer,
-                    $siteConfig,
-                    $collection,
-                    array_map(strval(...), $task['years']),
-                    $outputDir,
-                    $navigation,
-                    $noWrite,
-                );
+        return $taskRunner->run(
+            $tasks,
+            $workerCount,
+            fn(array $task): int => $this->writeTask($task, $renderer, $siteConfig, $collection, $outputDir, $navigation, $noWrite),
+            fn(array $chunk): WorkerJobInterface => new DateArchiveWorkerJob($chunk, $siteConfig, $collection, $outputDir, $contentDir, $navigation, $noWrite, $this->assetManifest),
+        );
+    }
 
-                return 1;
-            }
-
-            if ($task['type'] === 'year') {
-                $this->writeYearlyPage(
-                    $renderer,
-                    $siteConfig,
-                    $collection,
-                    $task['year'],
-                    $task['entries'],
-                    $task['months'],
-                    $outputDir,
-                    $navigation,
-                    $noWrite,
-                );
-
-                return 1;
-            }
-
-            $this->writeMonthlyPage(
+    /**
+     * @param DateArchiveTask $task
+     */
+    public function writeTask(array $task, PageTemplateRenderer $renderer, SiteConfig $siteConfig, Collection $collection, string $outputDir, ?Navigation $navigation, bool $noWrite): int
+    {
+        if ($task['type'] === 'index') {
+            $this->writeArchiveIndexPage(
                 $renderer,
                 $siteConfig,
                 $collection,
-                $task['year'],
-                $task['month'],
-                $task['entries'],
+                array_map(strval(...), $task['years']),
                 $outputDir,
                 $navigation,
                 $noWrite,
             );
 
             return 1;
-        });
+        }
+
+        if ($task['type'] === 'year') {
+            $this->writeYearlyPage(
+                $renderer,
+                $siteConfig,
+                $collection,
+                $task['year'],
+                $task['entries'],
+                $task['months'],
+                $outputDir,
+                $navigation,
+                $noWrite,
+            );
+
+            return 1;
+        }
+
+        $this->writeMonthlyPage(
+            $renderer,
+            $siteConfig,
+            $collection,
+            $task['year'],
+            $task['month'],
+            $task['entries'],
+            $outputDir,
+            $navigation,
+            $noWrite,
+        );
+
+        return 1;
     }
 
     /**

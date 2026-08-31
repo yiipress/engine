@@ -6,6 +6,7 @@ use YiiPress\Console;
 
 return [
     '|worker' => Console\WorkerCommand::class,
+    '|serve-worker' => Console\ServeWorkerCommand::class,
     'build' => Console\BuildCommand::class,
     'check:links' => Console\CheckCommand::class,
     'clean|clear' => Console\CleanCommand::class,

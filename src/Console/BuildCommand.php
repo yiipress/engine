@@ -22,6 +22,8 @@ use YiiPress\Build\RobotsTxtGenerator;
 use YiiPress\Build\SearchIndexGenerator;
 use YiiPress\Build\ThemeAssetCopier;
 use YiiPress\Build\FeedGenerator;
+use YiiPress\Build\FeedWorkerJob;
+use YiiPress\Build\FeedWriter;
 use YiiPress\Build\FileWriter;
 use YiiPress\Build\ParallelEntryWriter;
 use YiiPress\Build\ParallelTaskRunner;
@@ -30,6 +32,7 @@ use YiiPress\Build\TemplateResolver;
 use YiiPress\Build\TaxonomyPageWriter;
 use YiiPress\Build\Theme;
 use YiiPress\Build\ThemeRegistry;
+use YiiPress\Build\WorkerJobInterface;
 use YiiPress\Content\CrossReferenceResolver;
 use YiiPress\Content\EntrySorter;
 use YiiPress\Content\Model\Author;
@@ -882,49 +885,12 @@ final class BuildCommand extends Command
                 array_push($siteFeedEntries, ...$collectionEntries);
             }
 
+            $feedWriter = new FeedWriter($this->feedPipeline, $authors);
             $feedCount = new ParallelTaskRunner()->run(
                 $feedTasks,
                 $workerCount,
-                function (array $feedTask) use ($siteConfig, $outputDir, $authors, $noWrite): int {
-                    /** @var Collection $collection */
-                    $collection = $feedTask['collection'];
-                    /** @var list<Entry> $entries */
-                    $entries = $feedTask['entries'];
-                    $collectionName = $feedTask['collectionName'];
-
-                    $feedGenerator = new FeedGenerator($this->feedPipeline, $authors);
-
-                    if ($noWrite) {
-                        $feedGenerator->generateAtom($siteConfig, $collection, $entries);
-                        $feedGenerator->generateRss($siteConfig, $collection, $entries);
-                        $feedGenerator->generateJson($siteConfig, $collection, $entries);
-                    } else {
-                        $feedDir = $outputDir . '/' . $collectionName;
-                        if (!is_dir($feedDir) && !mkdir($feedDir, 0o755, true) && !is_dir($feedDir)) {
-                            throw new RuntimeException(sprintf('Directory "%s" was not created', $feedDir));
-                        }
-
-                        $feedGenerator->writeAtomFile(
-                            $feedDir . '/feed.xml',
-                            $siteConfig,
-                            $collection,
-                            $entries,
-                        );
-                        $feedGenerator->writeRssFile(
-                            $feedDir . '/rss.xml',
-                            $siteConfig,
-                            $collection,
-                            $entries,
-                        );
-                        $feedGenerator->writeJsonFile(
-                            $feedDir . '/feed.json',
-                            $siteConfig,
-                            $collection,
-                            $entries,
-                        );
-                    }
-                    return 1;
-                },
+                fn(array $feedTask): int => $feedWriter->writeTask($feedTask, $siteConfig, $outputDir, $noWrite),
+                fn(array $chunk): WorkerJobInterface => new FeedWorkerJob($chunk, $siteConfig, $outputDir, $contentDir, $authors, $noWrite),
                 minTasksPerWorker: 1,
             );
 
@@ -964,6 +930,7 @@ final class BuildCommand extends Command
                     $collection,
                     $entriesByCollection[$collectionName] ?? [],
                     $outputDir,
+                    $contentDir,
                     $navigation,
                     $workerCount,
                     $noWrite,
@@ -985,6 +952,7 @@ final class BuildCommand extends Command
                     $collection,
                     $entriesByCollection[$collectionName] ?? [],
                     $outputDir,
+                    $contentDir,
                     $navigation,
                     $workerCount,
                     $noWrite,

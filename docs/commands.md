@@ -58,7 +58,7 @@ The command:
 9. Generates `sitemap.xml` containing all entry URLs, standalone page URLs, collection listing URLs, and the home page.
 10. Generates taxonomy pages for each taxonomy defined in `config.yaml` (e.g., `/tags/`, `/tags/php/`, `/tags/php/page/2/`, `/categories/`).
 
-With `--workers=N` (N > 1), entry rendering and writing is parallelized across N worker processes. YiiPress uses lightweight forks when PCNTL is available and portable child processes on Windows. With `--workers=auto`, YiiPress uses up to the detected worker count and lets page writers clamp back to sequential mode for smaller workloads. Feeds are generated after entry writing and can be split per collection across workers. Sitemap generation remains serial.
+With `--workers=N` (N > 1), entry rendering and writing is parallelized across N independent worker processes, spawned the same way on every platform. With `--workers=auto`, YiiPress uses up to the detected worker count and lets page writers clamp back to sequential mode for smaller workloads. Feeds are generated after entry writing and can be split per collection across workers. Sitemap generation remains serial.
 
 ## `check:links`
 
@@ -88,7 +88,7 @@ yiipress serve [address] [--content-dir=content] [--output-dir=output] [--port=1
 - `--content-dir`, `-c` — path to the content directory (default: `content`). Absolute or relative to project root.
 - `--output-dir`, `-o` — path to the output directory served by the preview server (default: `output`). Absolute or relative to project root.
 - `--port`, `-p` — port to serve at when the address argument does not include a port (default: `19777`).
-- `--workers`, `-w` — number of preforked server workers on POSIX platforms with PCNTL support (default: `2`). Windows and other runtimes without signal support run a single server process.
+- `--workers`, `-w` — number of independent server worker processes on POSIX platforms with PCNTL support (default: `2`). Windows and other runtimes without signal support run a single server process.
 
 On startup, `serve` prints the URL it is listening on. Build progress is printed by rebuilds triggered after file changes. Content and output paths resolve from the current working directory, so run the binary from the site directory or pass explicit `--content-dir` and `--output-dir` paths.
 

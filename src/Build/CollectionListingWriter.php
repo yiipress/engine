@@ -28,6 +28,7 @@ final readonly class CollectionListingWriter
         Collection $collection,
         array $entries,
         string $outputDir,
+        string $contentDir,
         ?Navigation $navigation = null,
         int $workerCount = 1,
         bool $noWrite = false,
@@ -72,28 +73,39 @@ final readonly class CollectionListingWriter
 
         $taskRunner = new ParallelTaskRunner();
 
-        return $taskRunner->run($tasks, $workerCount, function (array $task) use ($renderer, $siteConfig, $collection, $navigation, $noWrite): int {
-            $html = $this->renderPage(
-                $renderer,
-                $siteConfig,
-                $collection,
-                $task['entries'],
-                $task['pagination'],
-                $navigation,
-                $task['rootPath'],
-                $task['permalink'],
-            );
+        return $taskRunner->run(
+            $tasks,
+            $workerCount,
+            fn(array $task): int => $this->writeTask($task, $renderer, $siteConfig, $collection, $navigation, $noWrite),
+            fn(array $chunk): WorkerJobInterface => new CollectionListingWorkerJob($chunk, $siteConfig, $collection, $contentDir, $navigation, $noWrite, $this->assetManifest),
+        );
+    }
 
-            if (!$noWrite) {
-                if (!is_dir($task['dir']) && !mkdir($task['dir'], 0o755, true) && !is_dir($task['dir'])) {
-                    throw new RuntimeException(sprintf('Directory "%s" was not created', $task['dir']));
-                }
+    /**
+     * @param array{entries: list<Entry>, pagination: array{currentPage: int, totalPages: int, previousUrl: string, nextUrl: string}, rootPath: string, permalink: string, dir: string} $task
+     */
+    public function writeTask(array $task, PageTemplateRenderer $renderer, SiteConfig $siteConfig, Collection $collection, ?Navigation $navigation, bool $noWrite): int
+    {
+        $html = $this->renderPage(
+            $renderer,
+            $siteConfig,
+            $collection,
+            $task['entries'],
+            $task['pagination'],
+            $navigation,
+            $task['rootPath'],
+            $task['permalink'],
+        );
 
-                FileWriter::write($task['dir'] . '/index.html', $html);
+        if (!$noWrite) {
+            if (!is_dir($task['dir']) && !mkdir($task['dir'], 0o755, true) && !is_dir($task['dir'])) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $task['dir']));
             }
 
-            return 1;
-        });
+            FileWriter::write($task['dir'] . '/index.html', $html);
+        }
+
+        return 1;
     }
 
     /**

@@ -13,7 +13,7 @@ final readonly class ServeRuntimeCapabilities
     private bool $sigintDefined;
     private bool $sigtermDefined;
     private bool $pcntlAsyncSignalsAvailable;
-    private bool $pcntlForkAvailable;
+    private bool $procOpenAvailable;
     private bool $pcntlSignalDispatchAvailable;
     private bool $pcntlSignalAvailable;
     private bool $pcntlWaitAvailable;
@@ -25,7 +25,7 @@ final readonly class ServeRuntimeCapabilities
         ?bool $sigintDefined = null,
         ?bool $sigtermDefined = null,
         ?bool $pcntlAsyncSignalsAvailable = null,
-        ?bool $pcntlForkAvailable = null,
+        ?bool $procOpenAvailable = null,
         ?bool $pcntlSignalDispatchAvailable = null,
         ?bool $pcntlSignalAvailable = null,
         ?bool $pcntlWaitAvailable = null,
@@ -36,7 +36,7 @@ final readonly class ServeRuntimeCapabilities
         $this->sigintDefined = $sigintDefined ?? defined('SIGINT');
         $this->sigtermDefined = $sigtermDefined ?? defined('SIGTERM');
         $this->pcntlAsyncSignalsAvailable = $pcntlAsyncSignalsAvailable ?? function_exists('pcntl_async_signals');
-        $this->pcntlForkAvailable = $pcntlForkAvailable ?? function_exists('pcntl_fork');
+        $this->procOpenAvailable = $procOpenAvailable ?? function_exists('proc_open');
         $this->pcntlSignalDispatchAvailable = $pcntlSignalDispatchAvailable
             ?? function_exists('pcntl_signal_dispatch');
         $this->pcntlSignalAvailable = $pcntlSignalAvailable ?? function_exists('pcntl_signal');
@@ -63,7 +63,7 @@ final readonly class ServeRuntimeCapabilities
         return $this->directorySeparator !== '\\'
             && $this->supportsEventLoopSignals()
             && $this->pcntlAsyncSignalsAvailable
-            && $this->pcntlForkAvailable
+            && $this->procOpenAvailable
             && $this->pcntlSignalAvailable
             && $this->pcntlWaitAvailable
             && $this->pcntlWaitStatusAvailable

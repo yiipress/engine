@@ -562,6 +562,6 @@ Then include that file in `config/configuration.php`:
 
 `BuildFinishedEvent` is a successful-build event. If the build throws before completion, YiiPress does not dispatch it.
 
-Render events are dispatched in the process that renders the entry. With multiple workers, this is a forked worker process. `RenderFinishedEvent::setHtml()` works in parallel builds because the worker writes the returned HTML, but listener-owned in-memory aggregation such as counters, collected permalinks, or object mutations is not visible in the parent process. Use build-level events, external storage, or a single worker for aggregation that must survive the whole build.
+Render events are dispatched in the process that renders the entry. With multiple workers, this is an independent worker process. `RenderFinishedEvent::setHtml()` works in parallel builds because the worker writes the returned HTML, but listener-owned in-memory aggregation such as counters, collected permalinks, or object mutations is not visible in the parent process. Use build-level events, external storage, or a single worker for aggregation that must survive the whole build.
 
 When no event dispatcher is injected, hooks use a fast null path and do not allocate per-render event objects. In the default YiiPress app configuration, `yiisoft/yii-event` provides the dispatcher and empty listener collection.

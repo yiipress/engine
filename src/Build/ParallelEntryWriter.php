@@ -12,18 +12,15 @@ use YiiPress\Content\Model\Navigation;
 use YiiPress\Content\Model\SiteConfig;
 use YiiPress\Content\Related\RelatedIndex;
 use YiiPress\Processor\ContentProcessorPipeline;
-use Phar;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use RuntimeException;
 
 use function array_slice;
 use function ceil;
-use function class_exists;
 use function count;
 use function dirname;
 use function function_exists;
 use function min;
-use function pcntl_fork;
 
 final readonly class ParallelEntryWriter
 {
@@ -37,6 +34,7 @@ final readonly class ParallelEntryWriter
         private ?RelatedIndex $relatedIndex = null,
         private ?TranslationIndex $translationIndex = null,
         private ?EventDispatcherInterface $eventDispatcher = null,
+        private ?PortableWorkerPool $workerPool = null,
     ) {}
 
     /**
@@ -98,65 +96,24 @@ final readonly class ParallelEntryWriter
     }
 
     /**
+     * Renders and writes entries across independent worker processes. pcntl_fork() would
+     * duplicate the running PHAR's file descriptor, so forked workers would share its read
+     * offset: two workers autoloading a class for the first time at once would race on that
+     * offset and corrupt the decompression (phar crc32 mismatch, or a class body full of
+     * another file's bytes). Spawning independent processes instead gives each one its own
+     * file descriptor, so there's nothing to race on.
+     *
      * @param list<array{entry: Entry, filePath: string, permalink: string, navigationPager?: array{previous: array{title: string, url: string}|null, next: array{title: string, url: string}|null}|null}> $tasks
      * @param array<string, Author> $authors
      */
     private function writeParallel(SiteConfig $siteConfig, array $tasks, string $contentDir, int $workerCount, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors, bool $noWrite): void
     {
         $taskChunks = $this->partitionTasks($tasks, $workerCount);
-        if (!function_exists('pcntl_fork') || $this->isRunningAsPhar()) {
-            // pcntl_fork() duplicates the running PHAR's file descriptor, so forked workers
-            // share its read offset: two workers autoloading a class for the first time at
-            // once race on that offset and corrupt the decompression (phar crc32 mismatch,
-            // or a class body full of another file's bytes). Spawning independent worker
-            // processes instead gives each one its own file descriptor, so there's nothing
-            // to race on.
-            $jobs = [];
-            foreach ($taskChunks as $chunk) {
-                $jobs[] = new EntryWriteWorkerJob($siteConfig, $chunk, $contentDir, $navigation, $crossRefResolver, $authors, $noWrite, $this->cache, $this->assetManifest, $this->relatedIndex, $this->translationIndex);
-            }
-            new PortableWorkerPool()->run($jobs);
-            return;
-        }
-        $pids = [];
-
+        $jobs = [];
         foreach ($taskChunks as $chunk) {
-            $pid = pcntl_fork();
-
-            if ($pid === -1) {
-                throw new RuntimeException('Failed to fork worker process');
-            }
-
-            if ($pid === 0) {
-                $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors, $this->assetManifest, $this->relatedIndex, $this->translationIndex, $this->eventDispatcher);
-
-                foreach ($chunk as $task) {
-                    $html = $renderer->render($siteConfig, $task['entry'], $task['permalink'], $navigation, $crossRefResolver, $task['navigationPager'] ?? null);
-                    if (!$noWrite) {
-                        FileWriter::write($task['filePath'], $html);
-                    }
-                }
-
-                exit(0);
-            }
-
-            $pids[] = $pid;
+            $jobs[] = new EntryWriteWorkerJob($siteConfig, $chunk, $contentDir, $navigation, $crossRefResolver, $authors, $noWrite, $this->cache, $this->assetManifest, $this->relatedIndex, $this->translationIndex);
         }
-
-        $failed = false;
-        $failure = null;
-        foreach ($pids as $pid) {
-            try {
-                WorkerProcessStatus::waitFor($pid);
-            } catch (RuntimeException $e) {
-                $failed = true;
-                $failure ??= $e;
-            }
-        }
-
-        if ($failed) {
-            throw new RuntimeException('One or more worker processes failed.', previous: $failure);
-        }
+        ($this->workerPool ?? new PortableWorkerPool())->run($jobs);
     }
 
     public function workerCountFor(int $taskCount, int $requestedWorkerCount): int
@@ -170,12 +127,7 @@ final readonly class ParallelEntryWriter
 
     private function supportsParallelExecution(): bool
     {
-        return array_any(['pcntl_fork', 'proc_open'], fn($function) => function_exists($function));
-    }
-
-    private function isRunningAsPhar(): bool
-    {
-        return class_exists(Phar::class, false) && Phar::running(false) !== '';
+        return function_exists('proc_open');
     }
 
     /**
