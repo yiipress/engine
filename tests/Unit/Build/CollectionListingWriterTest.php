@@ -27,6 +27,7 @@ final class CollectionListingWriterTest extends TestCase
 {
     private SiteConfig $siteConfig;
     private string $outputDir;
+    private string $contentDir;
     private string $tempFile;
 
     protected function setUp(): void
@@ -48,6 +49,9 @@ final class CollectionListingWriterTest extends TestCase
         $this->outputDir = sys_get_temp_dir() . '/yiipress-listing-test-' . uniqid();
         mkdir($this->outputDir, 0o755, true);
 
+        $this->contentDir = sys_get_temp_dir() . '/yiipress-listing-content-' . uniqid();
+        mkdir($this->contentDir, 0o755, true);
+
         $this->tempFile = sys_get_temp_dir() . '/yiipress-listing-body-' . uniqid() . '.md';
         file_put_contents($this->tempFile, "Body.\n");
     }
@@ -58,9 +62,13 @@ final class CollectionListingWriterTest extends TestCase
             unlink($this->tempFile);
         }
 
-        if (is_dir($this->outputDir)) {
+        foreach ([$this->outputDir, $this->contentDir] as $dir) {
+            if (!is_dir($dir)) {
+                continue;
+            }
+
             $iterator = new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($this->outputDir, FilesystemIterator::SKIP_DOTS),
+                new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS),
                 RecursiveIteratorIterator::CHILD_FIRST,
             );
             foreach ($iterator as $item) {
@@ -71,7 +79,7 @@ final class CollectionListingWriterTest extends TestCase
                     unlink($item->getPathname());
                 }
             }
-            rmdir($this->outputDir);
+            rmdir($dir);
         }
     }
 
@@ -84,7 +92,7 @@ final class CollectionListingWriterTest extends TestCase
         ];
 
         $writer = new CollectionListingWriter($this->createTemplateResolver());
-        $pageCount = $writer->write($this->siteConfig, $collection, $entries, $this->outputDir);
+        $pageCount = $writer->write($this->siteConfig, $collection, $entries, $this->outputDir, $this->contentDir);
 
         assertSame(1, $pageCount);
         assertFileExists($this->outputDir . '/blog/index.html');
@@ -106,7 +114,7 @@ final class CollectionListingWriterTest extends TestCase
         ];
 
         $writer = new CollectionListingWriter($this->createTemplateResolver());
-        $pageCount = $writer->write($this->siteConfig, $collection, $entries, $this->outputDir);
+        $pageCount = $writer->write($this->siteConfig, $collection, $entries, $this->outputDir, $this->contentDir);
 
         assertSame(2, $pageCount);
         assertFileExists($this->outputDir . '/blog/index.html');
@@ -132,7 +140,7 @@ final class CollectionListingWriterTest extends TestCase
         $collection = $this->createCollection(entriesPerPage: 10);
 
         $writer = new CollectionListingWriter($this->createTemplateResolver());
-        $pageCount = $writer->write($this->siteConfig, $collection, [], $this->outputDir);
+        $pageCount = $writer->write($this->siteConfig, $collection, [], $this->outputDir, $this->contentDir);
 
         assertSame(1, $pageCount);
         assertFileExists($this->outputDir . '/blog/index.html');
@@ -150,7 +158,7 @@ final class CollectionListingWriterTest extends TestCase
         ];
 
         $writer = new CollectionListingWriter($this->createTemplateResolver());
-        $writer->write($this->siteConfig, $collection, $entries, $this->outputDir);
+        $writer->write($this->siteConfig, $collection, $entries, $this->outputDir, $this->contentDir);
 
         $page1 = file_get_contents($this->outputDir . '/blog/index.html');
         assertStringContainsString('<title>Blog — Test Site</title>', $page1);
@@ -182,7 +190,7 @@ final class CollectionListingWriterTest extends TestCase
         ];
 
         $writer = new CollectionListingWriter($this->createTemplateResolver());
-        $writer->write($siteConfig, $collection, $entries, $this->outputDir);
+        $writer->write($siteConfig, $collection, $entries, $this->outputDir, $this->contentDir);
 
         $page1 = file_get_contents($this->outputDir . '/blog/index.html');
         assertStringContainsString('<html lang="ru">', $page1);
