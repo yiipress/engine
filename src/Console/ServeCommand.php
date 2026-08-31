@@ -13,6 +13,7 @@ use FilesystemIterator;
 use HttpSoft\Message\ServerRequest;
 use HttpSoft\Message\Stream;
 use InvalidArgumentException;
+use Phar;
 use Psr\Http\Message\ResponseInterface;
 use React\EventLoop\Loop;
 use React\EventLoop\TimerInterface;
@@ -215,6 +216,8 @@ final class ServeCommand extends Command
 
     private function runWorkerPool(SocketServer $server, string $address, int $workers): int
     {
+        $this->warmPharEntries();
+
         $children = [];
 
         for ($worker = 0; $worker < $workers; $worker++) {
@@ -272,6 +275,28 @@ final class ServeCommand extends Command
         }
 
         return $exitCode;
+    }
+
+    /**
+     * pcntl_fork() duplicates the running PHAR's file descriptor, so forked workers share its
+     * read offset. A class autoloaded for the first time by two workers at once (typically
+     * during shutdown) races on that shared offset and corrupts the decompression, surfacing as
+     * a phar crc32 mismatch. Reading every entry here decompresses and caches it in the parent
+     * before forking, so workers reuse the cached copy instead of touching the shared file.
+     */
+    private function warmPharEntries(): void
+    {
+        $pharPath = Phar::running(false);
+        if ($pharPath === '') {
+            return;
+        }
+
+        foreach (new RecursiveIteratorIterator(new Phar($pharPath)) as $file) {
+            /** @var SplFileInfo $file */
+            if ($file->isFile()) {
+                @file_get_contents($file->getPathname());
+            }
+        }
     }
 
     /**
