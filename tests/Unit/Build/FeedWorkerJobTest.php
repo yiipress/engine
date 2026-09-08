@@ -28,10 +28,25 @@ final class FeedWorkerJobTest extends TestCase
         $entries = [];
         foreach (['third', 'first', 'second'] as $slug) {
             $entries[] = new Entry(
-                filePath: $slug . '.md', collection: 'blog', slug: $slug, title: $slug,
-                date: null, draft: false, tags: [], categories: [], authors: [], summary: '',
-                permalink: '', layout: '', theme: '', weight: 0, language: '', redirectTo: '',
-                extra: [], bodyOffset: 0, bodyLength: 0,
+                filePath: $slug . '.md',
+                collection: 'blog',
+                slug: $slug,
+                title: $slug,
+                date: null,
+                draft: false,
+                tags: [],
+                categories: [],
+                authors: [],
+                summary: '',
+                permalink: '',
+                layout: '',
+                theme: '',
+                weight: 0,
+                language: '',
+                redirectTo: '',
+                extra: [],
+                bodyOffset: 0,
+                bodyLength: 0,
             );
         }
         $collection = new Collection('blog', 'Blog', '', '/blog/:slug/', 'date', 'desc', 10, true, true, feedLimit: $limit);

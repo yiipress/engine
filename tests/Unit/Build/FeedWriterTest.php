@@ -32,9 +32,25 @@ final class FeedWriterTest extends TestCase
     public function testSelectsWorkersFromFeedEntryVolume(array $workloads, int $requested, int $expected): void
     {
         $entry = new Entry(
-            filePath: '', collection: 'blog', slug: 'post', title: 'Post', date: null, draft: false,
-            tags: [], categories: [], authors: [], summary: '', permalink: '', layout: '', theme: '',
-            weight: 0, language: '', redirectTo: '', extra: [], bodyOffset: 0, bodyLength: 0,
+            filePath: '',
+            collection: 'blog',
+            slug: 'post',
+            title: 'Post',
+            date: null,
+            draft: false,
+            tags: [],
+            categories: [],
+            authors: [],
+            summary: '',
+            permalink: '',
+            layout: '',
+            theme: '',
+            weight: 0,
+            language: '',
+            redirectTo: '',
+            extra: [],
+            bodyOffset: 0,
+            bodyLength: 0,
         );
         $tasks = [];
         foreach ($workloads as [$count, $limit]) {

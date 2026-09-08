@@ -14,8 +14,7 @@ final readonly class AssetUrlRewriter
 {
     public function __construct(
         private AssetFingerprintManifest $manifest,
-    ) {
-    }
+    ) {}
 
     public function rewrite(string $html, string $rootPath = ''): string
     {

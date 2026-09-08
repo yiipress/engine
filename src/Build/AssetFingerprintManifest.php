@@ -78,14 +78,7 @@ final class AssetFingerprintManifest
             }
             $this->logicalPathPattern = false;
         }
-
-        foreach ($this->entries as $path => $_) {
-            if (str_contains($text, $path)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($this->entries, fn($_, $path) => str_contains($text, $path));
     }
 
     public function signature(): string
