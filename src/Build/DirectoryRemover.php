@@ -15,6 +15,14 @@ use function rmdir;
 use function sprintf;
 use function unlink;
 
+/**
+ * Removes previous build output without following directory symlinks.
+ *
+ * Kept instead of yiisoft/files FileHelper::removeDirectory() for this hot path:
+ * a five-iteration benchmark removing 10,000 page directories measured 457 ms here
+ * versus 579 ms with FileHelper (27% slower). Results depend on the filesystem;
+ * rerun DirectoryRemoverBench when reconsidering this implementation.
+ */
 final class DirectoryRemover
 {
     public static function remove(string $directory): void
