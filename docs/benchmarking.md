@@ -504,3 +504,52 @@ Both are gitignored. Use the Xdebug-off results above for overall speed.
 All 10,901 small-site files and 1,130 realistic-site files match the previous verified output byte for byte.
 
 Validation: `make test` passed 1,064 tests and 3,969 assertions; `make phpstan` reported no errors.
+
+### Caching the asset-path search pattern
+
+Xdebug identified repeated full-page searches in `AssetUrlRewriter`: each page was searched separately
+for every logical path in the fingerprint manifest. Pages whose templates already emitted fingerprinted
+URLs paid for all these unsuccessful searches. In one worker rendering 2,500 entries, the path check
+accounted for 74.9 ms of instrumented time.
+
+The manifest now lazily builds a literal, case-sensitive regex alternation and reuses it across pages,
+including pages that construct a new rewriter. Registration invalidates the pattern. If PCRE cannot
+compile or execute it, matching falls back to individual substring checks, and subsequent calls reuse
+that fallback until the manifest changes. URL resolution and query/fragment handling are unchanged.
+
+The focused benchmark uses a roughly 26 KB page with an already fingerprinted stylesheet and 400 text
+paragraphs containing ordinary links. Setup and manifest registration are outside the timed method.
+Five-iteration, Xdebug-off PHPBench modal estimates:
+
+| Manifest size | Previous rewriter | Cached matcher |
+|---|---:|---:|
+| 12 assets | 37.996 µs (±0.65%) | 0.801 µs (±0.99%) |
+| 100 assets | 282.787 µs (±2.30%) | 1.010 µs (±0.89%) |
+| 1,000 assets | 2.431 ms (±0.29%) | 4.450 µs (±1.87%) |
+
+```bash
+make bench CLI_ARGS='--filter=AssetUrlRewriterBench --report=aggregate'
+```
+
+The final Xdebug worker spends 5.3 ms in the path check, including 3.4 ms in `preg_match()`.
+Profiles are retained locally as `runtime/xdebug/asset-matcher.*.cachegrind`, compared with
+`runtime/xdebug/cleanup-native.*.cachegrind` (both gitignored).
+
+Full rebuilds use the normal 12-asset fixture. Two five-iteration runs of each implementation give:
+
+| Full rebuild, 4 workers | Baseline runs | Cached matcher runs |
+|---|---:|---:|
+| 10,000 small entries | 2.269 s (±0.87%), 2.247 s (±1.12%) | 2.238 s (±0.86%), 2.205 s (±0.67%) |
+| 1,000 realistic entries | 781.071 ms (±1.10%), 770.630 ms (±0.66%) | 764.495 ms (±0.94%), 756.068 ms (±0.79%) |
+
+Run order was baseline, candidate, candidate, baseline. The improvement is modest (roughly 1–2% overall),
+with variation between runs; the much larger focused speedup must not be read as a full-build speedup.
+PHPBench retried the final small-entry baseline after a noisier iteration.
+
+All 10,901 small-site files and 1,130 realistic-site files match the previous verified output byte for byte.
+PHPUnit covers literal metacharacters, case sensitivity, empty manifests, cache invalidation after an
+initial rewrite, and oversized-pattern fallback including URL rewriting. `make test` passed 1,067 tests
+and 3,982 assertions; `make phpstan` reported no errors.
+
+The existing three-tag snippet benchmark, where URLs actually need rewriting, is effectively unchanged:
+1.672 µs (±2.10%) before versus 1.686 µs (±3.70%) after, using its default three iterations.
