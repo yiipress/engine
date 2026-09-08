@@ -125,7 +125,7 @@ final class SmallSiteBuildBench
 
     #[Revs(1)]
     #[Iterations(3)]
-    #[Warmup(1)]
+    // Setup already builds the site. A warmup would consume the pending edit.
     #[BeforeMethods('prepareIncrementalSingleChangedEntry')]
     public function benchIncrementalSingleChangedEntrySequential(): void
     {

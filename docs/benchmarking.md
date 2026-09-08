@@ -81,6 +81,7 @@ Use `--no-write` to separate render/template/processor cost from output director
 | Full rebuild, 4 workers | 2.166 s | ±0.80% |
 | Full rebuild, 8 workers | 1.919 s | ±0.12% |
 | Incremental rebuild, no changes, sequential | 249.242 ms | ±0.82% |
+| Incremental rebuild, 1 changed entry, sequential | 960.030 ms | ±0.60% |
 
 ### 1k realistic entries (~27 KB each)
 
@@ -89,11 +90,14 @@ Use `--no-write` to separate render/template/processor cost from output director
 | Full rebuild, sequential | 1.647 s | ±0.63% |
 | Full rebuild, 4 workers | 755.291 ms | ±0.48% |
 | Incremental rebuild, no changes, sequential | 88.846 ms | ±0.98% |
+| Incremental rebuild, 1 changed entry, sequential | 216.188 ms | ±1.14% |
 
 These end-to-end benchmarks intentionally go through the public CLI entry point instead of internal renderer/parser classes,
 so they track real rebuild timing rather than component-only throughput.
 
-Measured at commit `ca919be` on the `performance` branch in Docker on an AMD Ryzen 9 7950X
+Full-build and unchanged incremental results were measured at commit `ca919be`; single-entry edit
+results were measured after correcting benchmark warmup, with the same production code. All results
+were measured on the `performance` branch in Docker on an AMD Ryzen 9 7950X
 (16 cores, 32 threads), using PHP 8.5.10, PHPBench 1.7.0, `ext-mdparser`, `ext-yaml`, and `ext-pcntl`,
 with Xdebug off and CLI OPCache enabled. Tables report modal estimates and relative standard deviation
 from five iterations, with one measured build per iteration. Timings depend on hardware and filesystem.
@@ -102,13 +106,19 @@ Full rebuilds use `--no-cache` and one warmup, so measured builds include replac
 Unchanged incremental builds also use one warmup. Fixture setup and teardown are outside the measured
 invocation.
 
-Single-entry edit timings are omitted: the current benchmark edits the entry during setup, then consumes
-that edit during warmup, so its timed invocation measures an unchanged rebuild. PHPBench 1.7.0 rejects
-`--warmup=0`; that benchmark needs its warmup configuration corrected before publishing changed-entry
-results.
+Single-entry edit benchmarks build the site and append a newline to one entry during setup, outside
+the timer. They intentionally have no `Warmup` attribute (PHPBench defaults to zero warmup calls) and
+use exactly one timed revision, which consumes the pending edit. Additional warmups or revisions would
+measure unchanged rebuilds. Do not override `--warmup` or `--revs` for these subjects. PHPBench 1.7.0
+rejects the CLI override `--warmup=0`, so use the benchmark's default configuration instead.
+
+The corrected five-iteration run reports `warmup="0"` and `revs="1"` for both subjects in its XML output.
+PHPUnit regression coverage checks PHPBench's effective metadata, including setup ordering, to prevent
+warmups or multiple revisions from consuming the edit before the intended measurement.
 
 ```bash
 make bench CLI_ARGS="'--filter=benchFullRebuild|benchIncrementalNoChanges' --iterations=5 --report=aggregate"
+make bench CLI_ARGS='--filter=benchIncrementalSingleChangedEntry --iterations=5 --report=aggregate'
 ```
 
 `PortableWorkerPoolBench` tracks the startup and job-transport overhead of two portable worker processes used by parallel builds.
