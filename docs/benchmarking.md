@@ -141,10 +141,71 @@ Across 10,901 generated files, 7,901 were byte-identical. The remaining 3,000 HT
 minification: applying the fixed minifier to each original page reproduced its new output exactly.
 The full PHPUnit suite passed (1,030 tests, 3,743 assertions), as did PHPStan.
 
-A tradeoff remains in the existing synthetic benchmark with 100 repeated article/pre/script blocks and no divs:
+The first change alone had a tradeoff in the existing synthetic benchmark with 100 repeated article/pre/script blocks and no divs:
 a longer confirmation run (1,000 revolutions, five iterations) increased from 1.298 ms to 1.577 ms (21.5%).
 The full rebuild improvements above include the complete pipeline and outweigh that regression on both tested datasets.
 The optimization is therefore workload-dependent, not a universal minifier speedup.
 
 Local investigation artifacts are retained in `runtime/xdebug/regeneration-before.cachegrind` and
 `runtime/xdebug/regeneration-after.cachegrind` (gitignored).
+
+### Follow-up experiments
+
+The post-fix Xdebug profile still attributed 0.456 seconds to `preg_replace()` directly inside
+`OutputMinifier::html()`, and 1.177 seconds to `TemplateContext::themeAssetUrl()` across 65,196 calls.
+Three approaches were measured separately:
+
+1. **Protected-block whitespace:** the old regex searched the entire accumulated page before every protected block.
+   Replacing it with a tail check helped, but trimming the accumulated string still copied growing prefixes.
+   The final implementation trims each unprotected fragment before appending it. Its whitespace mask excludes NUL,
+   and spaces adjoining ordinary text remain intact. `benchManyProtectedBlocks` tests scaling with 1,000 repeated blocks.
+2. **Theme-asset URL cache (rejected):** caching by owner, root path, and path, with manifest invalidation,
+   halved the focused helper benchmark (4.886 → 2.432 µs). Full-build changes were small and inconsistent,
+   so the production cache was removed. The focused benchmark remains for future investigations.
+3. **Native array whitespace replacement (rejected):** replacing the PHP token loop with `preg_replace()` on an array
+   changed the 100-block benchmark from 215.814 to 210.018 µs and the 1,000-block benchmark from 3.875 to 3.762 ms,
+   but ordinary divs worsened from 32.986 to 34.575 µs. This small, mixed component result did not justify the change.
+
+A fresh baseline at `fd38cc3` and the initial tail-trimming experiment were measured separately with five PHPBench
+iterations, Xdebug off, using the same two datasets and full public CLI builds:
+
+| Full rebuild | `fd38cc3` | Initial tail trimming | Tail trimming + experimental asset cache |
+|---|---:|---:|---:|
+| 10,000 small entries, sequential | 4.757 s (±1.14%) | 4.269 s (±0.98%) | 4.199 s (±1.11%) |
+| 10,000 small entries, 4 workers | 3.829 s (±3.62%) | 3.464 s (±1.67%) | 3.559 s (±2.47%) |
+| 1,000 realistic entries, sequential | 2.007 s (±1.36%) | 1.901 s (±0.82%) | 1.892 s (±0.51%) |
+| 1,000 realistic entries, 4 workers | 1.056 s (±0.49%) | 1.058 s (±0.36%) | 1.054 s (±0.39%) |
+
+The realistic four-worker results are unchanged within noise. Do not infer a speedup for that scenario.
+
+The final fragment-based implementation also removes the earlier synthetic regression. With the same benchmark
+fixtures, the committed `fd38cc3` implementation versus the final candidate measured:
+
+| Minifier input | `fd38cc3` | Final fragment trimming |
+|---|---:|---:|
+| 100 repeated article/pre/script blocks | 1.581 ms | 196.828 µs |
+| 1,000 repeated article/pre/script blocks | 138.739 ms | 2.061 ms |
+| 100 ordinary divs | 32.853 µs | 32.758 µs |
+
+The larger case exposes the repeated whole-page scans: increasing the input tenfold previously increased time
+about 88-fold, versus about tenfold with fragment trimming. Ordinary-div performance remains unchanged.
+
+Final full-build measurements, with only fragment trimming retained:
+
+| Full rebuild | `fd38cc3` | Final | Time reduction |
+|---|---:|---:|---:|
+| 10,000 small entries, sequential | 4.757 s | 4.231 s (±0.47%) | 11.1% |
+| 10,000 small entries, 4 workers | 3.829 s | 3.428 s (±2.28%) | 10.5% |
+| 1,000 realistic entries, sequential | 2.007 s | 1.893 s (±0.51%) | 5.7% |
+| 1,000 realistic entries, 4 workers | 1.056 s | 1.052 s (±0.49%) | Within noise |
+
+The final Xdebug profile reduced time in `preg_replace()` called directly by `OutputMinifier::html()` from
+0.456 seconds to 0.009 seconds. The new `rtrim()` and final-character checks together took 0.011 seconds.
+Total instrumented build time was essentially unchanged (13.67 → 13.64 seconds); use the Xdebug-off PHPBench
+results above for overall speed, not profiler wall time.
+
+Byte-for-byte comparisons against `fd38cc3` output found no differences in all 10,901 small-site files and
+all 1,130 realistic-site files. The final profile is retained locally as
+`runtime/xdebug/regeneration-fragments.cachegrind` (gitignored).
+
+Final validation: `make test` passed 1,031 tests and 3,747 assertions; `make phpstan` reported no errors.

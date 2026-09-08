@@ -83,6 +83,26 @@ final class OutputMinifierTest extends TestCase
         );
     }
 
+    public function testRemovesOnlyInterTagWhitespaceBeforeProtectedBlocks(): void
+    {
+        assertSame(
+            '<p>Before</p><pre>  code  </pre>',
+            OutputMinifier::html("<p>Before</p> \t\r\n\f\v<pre>  code  </pre>"),
+        );
+        assertSame(
+            'Before <pre>  code  </pre> after',
+            OutputMinifier::html('Before   <pre>  code  </pre>   after'),
+        );
+        assertSame(
+            "<p>Before</p>\0 <pre>  code  </pre>",
+            OutputMinifier::html("<p>Before</p>\0 <pre>  code  </pre>"),
+        );
+        assertSame(
+            '<p>Before</p><pre>  code  </pre> between <textarea>  text  </textarea><p>After</p>',
+            OutputMinifier::html("<p>Before</p>\n<pre>  code  </pre>\n  between  \n<textarea>  text  </textarea>\n<p>After</p>"),
+        );
+    }
+
     public function testPreservesMermaidDiagramWhitespace(): void
     {
         $html = <<<'HTML'

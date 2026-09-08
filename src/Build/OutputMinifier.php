@@ -7,6 +7,8 @@ namespace YiiPress\Build;
 use function preg_replace;
 use function preg_split;
 use function preg_match_all;
+use function rtrim;
+use function str_ends_with;
 use function strlen;
 use function stripos;
 use function str_starts_with;
@@ -46,13 +48,17 @@ final class OutputMinifier
             }
 
             if ($part['protected']) {
-                $minified = preg_replace('~(?<=>)\s+$~', '', $minified) ?? $minified;
                 $minified .= $part['html'];
                 $previousPartProtected = true;
                 continue;
             }
 
             $fragment = self::minifyHtmlFragment($part['html']);
+            // Trim only this fragment so protected blocks never rescan or copy the accumulated page.
+            $trimmed = rtrim($fragment, " \t\r\n\f\v");
+            if (str_ends_with($trimmed, '>')) {
+                $fragment = $trimmed;
+            }
             if ($previousPartProtected) {
                 $fragment = preg_replace('~^\s+(?=<)~', '', $fragment) ?? $fragment;
             }
