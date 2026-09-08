@@ -91,6 +91,14 @@ final class SmallSiteBuildBench
     }
 
     #[Revs(1)]
+    #[Iterations(5)]
+    #[Warmup(1)]
+    public function benchFullRebuild8Workers(): void
+    {
+        $this->runBuild('--workers=8 --no-cache');
+    }
+
+    #[Revs(1)]
     #[Iterations(3)]
     #[Warmup(1)]
     public function benchFullRenderNoWriteSequential(): void

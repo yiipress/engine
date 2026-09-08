@@ -146,7 +146,7 @@ Writers turn page objects and indexed aggregate data into files:
 - `sitemap.xml`, `robots.txt`, redirects, and `404.html`;
 - copied content and theme assets.
 
-Entry pages and standalone pages can be rendered and written in parallel because each page writes to its own destination path.
+Entry pages and standalone pages can be rendered and written in parallel because each page writes to its own destination path. Each entry worker prepares the directories needed by its own task chunk before rendering, so directory creation overlaps across workers instead of delaying every worker behind a parent-process setup pass. Shared output directories tolerate concurrent creation; failures still abort the build. No-write builds do not create these directories.
 
 Scaffolding commands, cleanup commands, and importer media copying use `yiisoft/files` helpers for consistent filesystem errors and cross-platform directory removal. Build-path directory setup, page writes, output preparation, and bulk asset writer loops keep direct filesystem operations on their hot paths unless benchmarks show a helper abstraction is neutral or faster.
 

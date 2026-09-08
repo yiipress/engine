@@ -432,3 +432,34 @@ make bench CLI_ARGS='--filter=benchFullRebuild4Workers --iterations=5 --report=a
 All 10,901 small-site files and 1,130 realistic-site files match the preceding verified outputs byte for byte.
 PHPUnit covers empty batches, selected-entry limits, unlimited feeds, the 999/1,000 boundary, single-collection
 batches, and worker caps. `make test` passed 1,054 tests and 3,823 assertions; `make phpstan` reported no errors.
+
+### Preparing entry directories inside workers
+
+The `5a51369` Xdebug profile shows `ParallelEntryWriter::write()` spending 0.198 seconds in `mkdir()` and
+0.059 seconds in `is_dir()` before starting any entry workers. The final implementation moves the same
+per-chunk directory preparation into `writeChunk()`, allowing directory work to overlap across workers.
+Sequential builds perform the same preparation immediately before rendering. No-write builds skip it.
+Concurrent creation of shared directories is tolerated; real failures still raise an exception.
+
+Five-iteration, Xdebug-off PHPBench modal estimates against a fresh `5a51369` baseline:
+
+| Full rebuild | Before | After | Time reduction |
+|---|---:|---:|---:|
+| 10,000 small entries, 4 workers | 2.454 s (±0.37%) | 2.292 s (±0.76%) | 6.6% |
+| 10,000 small entries, 8 workers | 2.215 s (±0.80%) | 2.001 s (±0.67%) | 9.7% |
+| 1,000 realistic entries, 4 workers | 784.328 ms (±0.87%) | 778.113 ms (±1.00%) | Within noise |
+
+The new eight-worker benchmark checks scaling beyond the existing four-worker case:
+
+```bash
+make bench CLI_ARGS='--filter=benchFullRebuild[48]Workers --iterations=5 --report=aggregate'
+```
+
+The final Xdebug parent profile has no entry-directory `mkdir()`/`is_dir()` calls. One of the four workers
+spends 0.063 seconds creating its directories and 0.024 seconds checking them. The profiled entry-writing
+phase falls from 2.18 to 2.01 seconds; complete instrumented build time falls from 5.11 to 4.94 seconds.
+Profiles are retained locally as `runtime/xdebug/directory-workers.*.cachegrind` (gitignored).
+
+All 10,901 small-site files and 1,130 realistic-site files match the previous outputs byte for byte.
+New PHPUnit cases cover nested directories, workers sharing a directory, directory creation failures,
+and no-write behavior. `make test` passed 1,058 tests and 3,956 assertions; `make phpstan` reported no errors.
