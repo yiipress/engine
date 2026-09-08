@@ -62,6 +62,10 @@ Profiler timings include instrumentation overhead; use Xdebug-disabled benchmark
 To profile a changed-entry build, first build an isolated fixture/output directory normally, edit one entry,
 then run `make profile-build` with the same content and output paths, without `--no-cache`.
 
+CI compares against `master` with a 10% regression threshold. Both checkouts use the current public-CLI
+build benchmark definitions so fixture setup, warmup, and timed workloads are identical. The baseline
+still uses its own engine implementation.
+
 ## Benchmark classes
 
 - **`ContentParserBench`** — measures parsing speed for site config, navigation, collections, authors, and entries (with and without body loading)
@@ -84,8 +88,8 @@ then run `make profile-build` with the same content and output paths, without `-
 | Full rebuild, sequential | 3.577 s | ±0.40% |
 | Full rebuild, 4 workers | 2.157 s | ±1.11% |
 | Full rebuild, 8 workers | 1.895 s | ±1.53% |
-| Incremental rebuild, no changes, sequential | 261.031 ms | ±1.99% |
-| Incremental rebuild, 1 changed entry, sequential | 829.506 ms | ±1.41% |
+| Incremental rebuild, no changes, sequential | 253.700 ms | ±0.34% |
+| Incremental rebuild, 1 changed entry, sequential | 910.126 ms | ±0.73% |
 
 ### 1k realistic entries (~27 KB each)
 
@@ -93,8 +97,8 @@ then run `make profile-build` with the same content and output paths, without `-
 |---|---:|---:|
 | Full rebuild, sequential | 1.655 s | ±1.30% |
 | Full rebuild, 4 workers | 767.456 ms | ±0.82% |
-| Incremental rebuild, no changes, sequential | 95.578 ms | ±1.00% |
-| Incremental rebuild, 1 changed entry, sequential | 195.331 ms | ±1.38% |
+| Incremental rebuild, no changes, sequential | 93.011 ms | ±2.81% |
+| Incremental rebuild, 1 changed entry, sequential | 199.485 ms | ±1.48% |
 
 These end-to-end benchmarks intentionally go through the public CLI entry point instead of internal renderer/parser classes,
 so they track real rebuild timing rather than component-only throughput.

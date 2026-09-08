@@ -76,6 +76,25 @@ final class BuildManifestTest extends TestCase
         assertSame(hash_file('xxh128', $source), $manifest->entries()[$source]['hash']);
     }
 
+    public function testSameSizeSameTimestampEditsAreRehashedWhenRecorded(): void
+    {
+        $source = $this->tempDir . '/entry.md';
+        file_put_contents($source, 'first');
+        touch($source, 100);
+        $manifest = new BuildManifest($this->tempDir . '/manifest.json');
+        $manifest->record($source, []);
+        file_put_contents($source, 'other');
+        touch($source, 100);
+        assertTrue($manifest->isChanged($source));
+        file_put_contents($source, 'third');
+        touch($source, 100);
+        $manifest->record($source, []);
+        assertSame(hash_file('xxh128', $source), $manifest->entries()[$source]['hash']);
+        file_put_contents($source, 'other');
+        touch($source, 100);
+        assertTrue($manifest->isChanged($source), 'Restoring the first edit must invalidate the second edit output.');
+    }
+
     public function testRecordedFileIsNotChanged(): void
     {
         $sourceFile = $this->tempDir . '/entry.md';

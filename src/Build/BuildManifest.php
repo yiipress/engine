@@ -24,8 +24,6 @@ final class BuildManifest
     private array $trackedDirectories = [];
     /** @var array<string, string> */
     private array $directoryEntries = [];
-    /** @var array<string, string> Content verified during this build, never loaded from disk. */
-    private array $checkedHashes = [];
 
     public function __construct(
         private readonly string $manifestPath,
@@ -33,7 +31,6 @@ final class BuildManifest
 
     public function load(): void
     {
-        $this->checkedHashes = [];
         if (!is_file($this->manifestPath)) {
             $this->clear();
             return;
@@ -92,12 +89,10 @@ final class BuildManifest
         $this->configFiles = [];
         $this->trackedDirectories = [];
         $this->directoryEntries = [];
-        $this->checkedHashes = [];
     }
 
     private function clear(): void
     {
-        $this->checkedHashes = [];
         $this->entries = [];
         $this->configFiles = [];
         $this->trackedDirectories = [];
@@ -196,11 +191,6 @@ final class BuildManifest
 
         // Reading the content also detects deletion and avoids trusting cached stat metadata.
         $hash = @hash_file('xxh128', $sourceFile);
-        if ($hash !== false) {
-            $this->checkedHashes[$sourceFile] = $hash;
-        } else {
-            unset($this->checkedHashes[$sourceFile]);
-        }
         return $hash === false || $this->entries[$sourceFile]['hash'] !== $hash;
     }
 
@@ -215,12 +205,7 @@ final class BuildManifest
         }
         $mtime = (int) filemtime($sourceFile);
         $size = (int) filesize($sourceFile);
-        $stored = $this->entries[$sourceFile] ?? null;
-        // Revalidate changed metadata: another write may follow the initial change check.
-        $hash = ($stored['mtime'] ?? null) === $mtime && ($stored['size'] ?? null) === $size
-            ? ($this->checkedHashes[$sourceFile] ?? hash_file('xxh128', $sourceFile))
-            : hash_file('xxh128', $sourceFile);
-        unset($this->checkedHashes[$sourceFile]);
+        $hash = hash_file('xxh128', $sourceFile);
         if ($hash === false) {
             throw new RuntimeException("Unable to hash source file: $sourceFile");
         }

@@ -166,11 +166,11 @@ and Xdebug disabled (five-iteration PHPBench modal estimates):
 |---|---|---:|
 | 10 000 entries across 3 collections | Full rebuild, 4 workers | ~2.16 s |
 | 10 000 entries across 3 collections | Full rebuild, 8 workers | ~1.90 s |
-| 10 000 entries across 3 collections | Incremental, no changes | ~261 ms |
-| 10 000 entries across 3 collections | Incremental, 1 changed entry | ~830 ms |
+| 10 000 entries across 3 collections | Incremental, no changes | ~254 ms |
+| 10 000 entries across 3 collections | Incremental, 1 changed entry | ~910 ms |
 | 1 000 realistic entries (~27 KB each) | Full rebuild, 4 workers | ~767 ms |
-| 1 000 realistic entries (~27 KB each) | Incremental, no changes | ~96 ms |
-| 1 000 realistic entries (~27 KB each) | Incremental, 1 changed entry | ~195 ms |
+| 1 000 realistic entries (~27 KB each) | Incremental, no changes | ~93 ms |
+| 1 000 realistic entries (~27 KB each) | Incremental, 1 changed entry | ~199 ms |
 
 See [`docs/benchmarking.md`](docs/benchmarking.md#current-results-8-september-2026) for detailed results,
 measurement conditions, and reproduction commands. Timings vary by hardware and filesystem.
