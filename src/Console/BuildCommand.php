@@ -888,7 +888,7 @@ final class BuildCommand extends Command
             $feedWriter = new FeedWriter($this->feedPipeline, $authors);
             $feedCount = new ParallelTaskRunner()->run(
                 $feedTasks,
-                $workerCount,
+                $feedWriter->workerCountFor($feedTasks, $workerCount),
                 fn(array $feedTask): int => $feedWriter->writeTask($feedTask, $siteConfig, $outputDir, $noWrite),
                 fn(array $chunk): WorkerJobInterface => new FeedWorkerJob($chunk, $siteConfig, $outputDir, $contentDir, $authors, $noWrite),
                 minTasksPerWorker: 1,

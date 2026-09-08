@@ -386,3 +386,49 @@ The reverted candidate is retained locally as `runtime/EntrySorterCandidate.php`
 
 Validation after reverting the candidate: `make test` passed 1,045 tests and 3,814 assertions;
 `make phpstan` reported no errors. Production code is unchanged from `4fa6036`.
+
+### Avoiding worker startup for small feed batches
+
+The next retained optimization schedules collection feeds by the number of entries actually included,
+respecting positive feed limits and counting all entries for zero/negative limits. Batches below 1,000
+selected entries run sequentially. Larger batches retain parallel execution, capped by collection count
+and requested workers. This threshold is a conservative heuristic from the measurements below, not a
+universal crossover for every content processor or machine. Entry-page scheduling is unchanged.
+
+`FeedBatchBench` parses the 1,000-entry realistic fixture outside the timed section and generates the
+three collection feeds (Atom, RSS, JSON) without writing output. It uses the default feed processors;
+parent and children both omit authors in this focused benchmark. Five-iteration, Xdebug-off modal estimates:
+
+| Feed workload | Sequential | Forced parallel | Final selector |
+|---|---:|---:|---:|
+| 20 entries per collection | 5.702 ms (±1.57%) | 76.649 ms (±1.12%) | 5.980 ms (±1.12%) |
+| 100 entries per collection | 31.195 ms (±1.87%) | 91.227 ms (±1.67%) | 30.904 ms (±1.90%) |
+| Unlimited, 1,000 entries total | 148.094 ms (±2.94%) | 138.696 ms (±1.94%) | 139.152 ms (±1.35%) |
+
+This establishes a substantial startup penalty for small default-pipeline feeds, while retaining parallel
+execution for the larger measured batch. It does not establish that 1,000 is the exact optimal threshold.
+
+Five-iteration full-build measurements with four requested workers:
+
+| Full rebuild | Initial baseline | Forced sequential feeds experiment | Final selector | Baseline repeated afterward |
+|---|---:|---:|---:|---:|
+| 10,000 small entries | 2.529 s (±0.55%) | 2.478 s (±0.74%) | 2.505 s (±1.80%) | 2.556 s (±0.11%) |
+| 1,000 realistic entries | 857.366 ms (±0.31%) | 787.580 ms (±0.46%) | 813.760 ms (±1.34%) | 861.080 ms (±0.64%) |
+
+The final realistic rebuild is 5.1–5.5% faster than the bracketing baselines. The small-entry fixture shows
+only a modest change (about 1–2%), with higher candidate variance, so that gain is less conclusive.
+The repeated baseline restored the original feed worker count temporarily; the final tree uses the selector.
+
+The follow-up Xdebug build starts four entry workers, eliminating the three feed workers. The profiled feed
+phase falls from 314 to 233 ms; total instrumented build time changes from 5.16 to 5.11 seconds. These
+instrumented timings are diagnostic; use the Xdebug-off results above for overall performance. Profiles
+are retained locally as `runtime/xdebug/feed-volume.*.cachegrind` (gitignored).
+
+```bash
+make bench CLI_ARGS='--filter=FeedBatchBench --report=aggregate'
+make bench CLI_ARGS='--filter=benchFullRebuild4Workers --iterations=5 --report=aggregate'
+```
+
+All 10,901 small-site files and 1,130 realistic-site files match the preceding verified outputs byte for byte.
+PHPUnit covers empty batches, selected-entry limits, unlimited feeds, the 999/1,000 boundary, single-collection
+batches, and worker caps. `make test` passed 1,054 tests and 3,823 assertions; `make phpstan` reported no errors.
