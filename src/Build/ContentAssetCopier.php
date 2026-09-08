@@ -72,12 +72,8 @@ final class ContentAssetCopier
 
         foreach ($iterator as $item) {
             /** @var SplFileInfo $item */
-            if (!$item->isFile()) {
-                continue;
-            }
-
             $extension = strtolower($item->getExtension());
-            if (in_array($extension, self::EXCLUDED_EXTENSIONS, true)) {
+            if (in_array($extension, self::EXCLUDED_EXTENSIONS, true) || !$item->isFile()) {
                 continue;
             }
 

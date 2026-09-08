@@ -38,6 +38,21 @@ final class ContentAssetCopierTest extends TestCase
         $this->removeDir($this->outputDir);
     }
 
+    public function testMappingsExcludeContentFilesButTraverseDirectoriesWithContentExtensions(): void
+    {
+        mkdir($this->contentDir . '/nested.md');
+        file_put_contents($this->contentDir . '/nested.md/logo.svg', '<svg/>');
+        file_put_contents($this->contentDir . '/blog/entry.MD', '# Entry');
+        file_put_contents($this->contentDir . '/blog/config.YAML', 'title: Blog');
+        file_put_contents($this->contentDir . '/blog/config.YML', 'title: Blog');
+        file_put_contents($this->contentDir . '/authors/photo.jpg', 'author');
+
+        assertSame(
+            [$this->contentDir . '/nested.md/logo.svg' => 'nested.md/logo.svg'],
+            new ContentAssetCopier()->mappings($this->contentDir),
+        );
+    }
+
     public function testCopiesAssetFilesToOutput(): void
     {
         file_put_contents($this->contentDir . '/blog/assets/banner.svg', '<svg/>');

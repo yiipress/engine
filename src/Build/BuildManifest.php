@@ -171,11 +171,11 @@ final class BuildManifest
             return true;
         }
 
+        clearstatcache(true, $sourceFile);
         if (!is_file($sourceFile)) {
             return true;
         }
 
-        clearstatcache(true, $sourceFile);
         $mtime = filemtime($sourceFile);
         $size = filesize($sourceFile);
         $storedMtime = $this->entries[$sourceFile]['mtime'] ?? null;
@@ -193,10 +193,10 @@ final class BuildManifest
      */
     public function record(string $sourceFile, array $outputs): void
     {
+        clearstatcache(true, $sourceFile);
         if (!is_file($sourceFile)) {
             throw new RuntimeException("Unable to hash source file: $sourceFile");
         }
-        clearstatcache(true, $sourceFile);
         $mtime = (int) filemtime($sourceFile);
         $size = (int) filesize($sourceFile);
         $stored = $this->entries[$sourceFile] ?? null;

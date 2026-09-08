@@ -1288,6 +1288,31 @@ PHP,
         }
     }
 
+    public function testNewAssetDirectoryIsDetectedAfterUnchangedBuild(): void
+    {
+        $contentDir = $this->copyContentFixture();
+        $this->runBuild($contentDir);
+        $unchanged = $this->runBuildResult($contentDir);
+        assertSame(0, $unchanged['exitCode'], $unchanged['output']);
+        assertStringContainsString('No changes detected', $unchanged['output']);
+
+        mkdir($contentDir . '/new-assets');
+        file_put_contents($contentDir . '/new-assets/example.txt', 'new asset');
+        // Directory mtimes have second precision; make the inventory change deterministic.
+        touch($contentDir, time() + 2);
+        $result = $this->runBuildResult($contentDir);
+        assertSame(0, $result['exitCode'], $result['output']);
+        assertStringNotContainsString('No changes detected', $result['output']);
+        $assets = glob($this->outputDir . '/new-assets/example*.txt');
+        assertNotFalse($assets);
+        self::assertCount(1, $assets);
+        assertSame('new asset', file_get_contents($assets[0]));
+
+        $unchangedAgain = $this->runBuildResult($contentDir);
+        assertSame(0, $unchangedAgain['exitCode'], $unchangedAgain['output']);
+        assertStringContainsString('No changes detected', $unchangedAgain['output']);
+    }
+
     public function testIncrementalBuildRecreatesMissingOutputFiles(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';

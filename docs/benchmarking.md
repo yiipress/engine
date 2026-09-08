@@ -80,8 +80,8 @@ Use `--no-write` to separate render/template/processor cost from output director
 | Full rebuild, sequential | 3.622 s | ±0.40% |
 | Full rebuild, 4 workers | 2.166 s | ±0.80% |
 | Full rebuild, 8 workers | 1.919 s | ±0.12% |
-| Incremental rebuild, no changes, sequential | 249.242 ms | ±0.82% |
-| Incremental rebuild, 1 changed entry, sequential | 960.030 ms | ±0.60% |
+| Incremental rebuild, no changes, sequential | 165.300 ms | ±1.56% |
+| Incremental rebuild, 1 changed entry, sequential | 861.918 ms | ±2.60% |
 
 ### 1k realistic entries (~27 KB each)
 
@@ -89,14 +89,14 @@ Use `--no-write` to separate render/template/processor cost from output director
 |---|---:|---:|
 | Full rebuild, sequential | 1.647 s | ±0.63% |
 | Full rebuild, 4 workers | 755.291 ms | ±0.48% |
-| Incremental rebuild, no changes, sequential | 88.846 ms | ±0.98% |
-| Incremental rebuild, 1 changed entry, sequential | 216.188 ms | ±1.14% |
+| Incremental rebuild, no changes, sequential | 82.163 ms | ±1.04% |
+| Incremental rebuild, 1 changed entry, sequential | 204.210 ms | ±0.34% |
 
 These end-to-end benchmarks intentionally go through the public CLI entry point instead of internal renderer/parser classes,
 so they track real rebuild timing rather than component-only throughput.
 
-Full-build and unchanged incremental results were measured at commit `ca919be`; single-entry edit
-results were measured after correcting benchmark warmup, with the same production code. All results
+Full-build results were measured at commit `ca919be`; incremental results include the filesystem-scan
+optimizations described in the incremental build investigation below. All results
 were measured on the `performance` branch in Docker on an AMD Ryzen 9 7950X
 (16 cores, 32 threads), using PHP 8.5.10, PHPBench 1.7.0, `ext-mdparser`, `ext-yaml`, and `ext-pcntl`,
 with Xdebug off and CLI OPCache enabled. Tables report modal estimates and relative standard deviation
@@ -581,3 +581,57 @@ and 3,982 assertions; `make phpstan` reported no errors.
 
 The existing three-tag snippet benchmark, where URLs actually need rewriting, is effectively unchanged:
 1.672 µs (±2.10%) before versus 1.686 µs (±3.70%) after, using its default three iterations.
+
+## Incremental build investigation (September 2026)
+
+Xdebug profiles of an unchanged 10,000-entry build and a build after editing one entry identified
+filesystem scans in preparation. The unchanged build spent 47.3 ms discovering content assets,
+37.9 ms collecting directory inventory, and 64.1 ms checking source changes. In the source check,
+`is_file()` took 25.7 ms and `filemtime()` another 21.6 ms because the stat cache was cleared between them.
+The profiled single-entry build wrote exactly one entry (5.5 ms), but still performed the shared parsing,
+feed, listing, archive, and sitemap work. Instrumented total time was 2.96 seconds.
+
+The retained changes reduce repeated filesystem work:
+
+- Asset discovery excludes Markdown and YAML extensions before requesting file type metadata. Recursive
+  traversal still visits directories with those extensions and discovers assets inside them.
+- Source change detection and manifest recording clear the stat cache before `is_file()`, allowing
+  `filemtime()` and `filesize()` to reuse the fresh metadata.
+- Directory inventory collection happens after the unchanged-build early return. Existing tracked
+  directory checks, source checks, and missing-output checks still run before that return.
+
+Reproduce end-to-end measurements and the focused asset-discovery benchmark with:
+
+```bash
+make bench CLI_ARGS='--filter=benchIncremental --iterations=5 --report=aggregate'
+make bench CLI_ARGS='--filter=ContentAssetCopierBench --report=aggregate'
+```
+
+Five-iteration Xdebug-off PHPBench modal estimates against a fresh baseline:
+
+| Workload | Before | After | Time reduction |
+|---|---:|---:|---:|
+| 10,000 small entries, unchanged | 253.111 ms (±1.16%) | 165.300 ms (±1.56%) | 34.7% |
+| 10,000 small entries, one edit | 971.700 ms (±0.61%) | 861.918 ms (±2.60%) | 11.3% |
+| 1,000 realistic entries, unchanged | 91.044 ms (±2.60%) | 82.163 ms (±1.04%) | 9.8% |
+| 1,000 realistic entries, one edit | 216.650 ms (±2.89%) | 204.210 ms (±0.34%) | 5.7% |
+
+All cases use one worker. Changed-entry benchmarks retain zero warmup calls and one timed revision.
+The five-iteration runs used PHPBench's default retry handling for noisy iterations.
+
+The follow-up unchanged-build Xdebug profile reduces asset discovery from 47.3 to 16.8 ms, eliminates
+`collectTrackedDirectories()` calls on this path, and reduces `filemtime()` inside source change checks
+from 21.6 to 0.45 ms. Instrumented preparation falls from 246 to 148 ms. The single-edit profiled build
+still writes exactly one entry; instrumented total time falls from 2.96 to 2.82 seconds. Its remaining
+cost is primarily shared parsing and dependent output generation, rather than rendering the edited page.
+Profiles are retained locally as `runtime/xdebug/incremental-unchanged.8.cachegrind`,
+`incremental-edited.8.cachegrind`, `incremental-after-unchanged.8.cachegrind`, and
+`incremental-after-edited.9.cachegrind` (gitignored, all in the same directory).
+
+All 10,901 small-fixture output files match the pre-change incremental output byte for byte after the
+benchmark-style newline edit. Regression tests cover fresh metadata after writes, assets in directories
+with excluded extensions, and detection of a new asset directory following an unchanged build.
+`make test` passes 1,072 tests and 4,004 assertions; `make phpstan` reports no errors.
+
+The focused asset-discovery benchmark falls from 28.221 ms (±3.03%) to 3.722 ms (±2.41%),
+using the same 10,000-entry content fixture and excluding setup from measurement.

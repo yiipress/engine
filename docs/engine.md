@@ -157,7 +157,7 @@ Performance is handled by doing less work, keeping expensive work native, and le
 - YAML front matter uses `yaml_parse()`.
 - Markdown uses `ext-mdparser` from `iliaal/mdparser`, backed by bundled MD4C sources.
 - Syntax highlighting uses `ext-highlighter`, backed by syntect and Rust.
-- Incremental builds reuse the build manifest and content hashes.
+- Incremental builds reuse the build manifest and content hashes. Unchanged builds validate tracked directories, sources, and output existence before returning; they skip collecting a replacement directory inventory. Source checks refresh filesystem metadata once per file, and asset discovery filters content extensions before file type checks.
 - `--workers=auto` detects CPU capacity and caps user-facing defaults to avoid spawning too many workers for small builds.
 - OPCache can reuse compiled PHP templates when the runtime enables it.
 - JIT and preloading remain available to source installs where the PHP runtime is managed directly.

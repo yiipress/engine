@@ -257,11 +257,6 @@ final class BuildCommand extends Command
         $allSourceFiles = [];
 
         if (!$dryRun && !$noWrite && !$noCache) {
-            $trackedDirectories = $this->collectTrackedDirectories($contentDir);
-            foreach ($this->themeRegistry->all() as $theme) {
-                $trackedDirectories += $this->collectTrackedDirectories($theme->path);
-            }
-
             $manifestPath = RuntimePaths::cachePath($rootPath) . '/build-manifest-' . hash('xxh128', $outputDir) . '.json';
             $manifest = new BuildManifest($manifestPath);
             $manifest->load();
@@ -315,6 +310,11 @@ final class BuildCommand extends Command
                 }
                 $this->writeProfile($output, $profile);
                 return ExitCode::OK;
+            }
+
+            $trackedDirectories = $this->collectTrackedDirectories($contentDir);
+            foreach ($this->themeRegistry->all() as $theme) {
+                $trackedDirectories += $this->collectTrackedDirectories($theme->path);
             }
 
             if ($changedSourceFiles !== null) {

@@ -58,6 +58,24 @@ final class BuildManifestTest extends TestCase
         assertFalse($manifest2->isChanged($sourceFile));
     }
 
+    public function testChangeDetectionAndRecordingRefreshCachedFileMetadata(): void
+    {
+        $sourceFile = $this->tempDir . '/entry.md';
+        file_put_contents($sourceFile, 'old');
+        $manifest = new BuildManifest($this->tempDir . '/manifest.json');
+        $manifest->record($sourceFile, []);
+        assertFalse($manifest->isChanged($sourceFile));
+
+        $handle = fopen($sourceFile, 'ab');
+        self::assertNotFalse($handle);
+        fwrite($handle, ' appended');
+        fclose($handle);
+        assertTrue($manifest->isChanged($sourceFile));
+        $manifest->record($sourceFile, []);
+        assertFalse($manifest->isChanged($sourceFile));
+        assertSame(12, $manifest->entries()[$sourceFile]['size']);
+    }
+
     public function testModifiedFileIsDetectedAsChanged(): void
     {
         $sourceFile = $this->tempDir . '/entry.md';
