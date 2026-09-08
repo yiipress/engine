@@ -13,9 +13,9 @@ use samdark\sitemap\Sitemap;
 
 use function sys_get_temp_dir;
 
-final class SitemapGenerator
+final readonly class SitemapGenerator
 {
-    public function __construct(private readonly ?SharedOutputCache $sharedOutputs = null) {}
+    public function __construct(private ?SharedOutputCache $sharedOutputs = null) {}
     /**
      * @param array<string, Collection> $collections
      * @param array<string, list<Entry>> $entriesByCollection

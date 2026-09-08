@@ -104,12 +104,7 @@ final class SharedOutputCache
         if (!$this->valid || ($this->nextTransition !== null && $this->nextTransition <= time())) {
             return false;
         }
-        foreach ($this->previous as $relative => $_) {
-            if (!is_file($this->outputDir . '/' . $relative)) {
-                return false;
-            }
-        }
-        return true;
+        return array_all($this->previous, fn($_, $relative) => is_file($this->outputDir . '/' . $relative));
     }
 
     public function begin(string $outputDir, mixed $scope, mixed $context, bool $reuse): void
