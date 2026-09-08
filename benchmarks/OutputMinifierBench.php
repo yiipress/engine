@@ -13,6 +13,8 @@ final class OutputMinifierBench
 {
     private string $html;
 
+    private string $ordinaryDivs;
+
     public function __construct()
     {
         $block = <<<'HTML'
@@ -28,6 +30,7 @@ final class OutputMinifierBench
             HTML;
 
         $this->html = str_repeat($block, 100);
+        $this->ordinaryDivs = str_repeat('<div aria-hidden="true" class="decoration">  Ordinary   content  </div>', 100);
     }
 
     #[Revs(100)]
@@ -36,5 +39,13 @@ final class OutputMinifierBench
     public function benchHtmlMinification(): void
     {
         OutputMinifier::html($this->html);
+    }
+
+    #[Revs(10)]
+    #[Iterations(5)]
+    #[Warmup(1)]
+    public function benchOrdinaryDivs(): void
+    {
+        OutputMinifier::html($this->ordinaryDivs);
     }
 }

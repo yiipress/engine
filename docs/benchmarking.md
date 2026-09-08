@@ -99,3 +99,52 @@ Measured on PHP 8.5.8 with `ext-mdparser`, `ext-yaml`, and `ext-pcntl`, xdebug o
 `PortableWorkerPoolBench` tracks the startup and job-transport overhead of two portable worker processes used by Windows builds.
 
 Benchmarks are run with xdebug disabled automatically (`make bench` sets `XDEBUG_MODE=off`).
+
+## Full regeneration investigation (September 2026)
+
+Measure full regeneration with `--no-cache`, using the public build command. Run timing comparisons with
+Xdebug disabled; profiler timings include instrumentation overhead and are only used to locate expensive calls.
+The benchmark setup and teardown are outside the measured build invocation.
+
+```bash
+make bench CLI_ARGS='--filter=benchFullRebuild --iterations=5 --report=aggregate'
+make bench CLI_ARGS='--filter=OutputMinifierBench --report=aggregate'
+make profile-build CLI_ARGS='build --content-dir=benchmarks/data/content --output-dir=runtime/profile-output --workers=1 --no-cache --profile'
+```
+
+The initial Xdebug profile attributed 5.19 seconds to `preg_match_all()` called by `OutputMinifier::html()`
+in an 18.02-second profiled build of 10,000 entries. The Mermaid div lookahead repeated a group containing
+another variable-length repetition of unquoted attribute characters. Ordinary divs without a Mermaid class
+caused excessive backtracking. Long attributes could also exhaust PCRE's backtracking limit, causing the
+minifier to return the original HTML.
+
+Consume one unquoted character per lookahead iteration to remove the ambiguous nested repetition while
+preserving quoted attributes and Mermaid class matching. `OutputMinifierBench::benchOrdinaryDivs` exercises
+this failure path; PHPUnit covers long ordinary attributes and Mermaid whitespace after a long unquoted attribute.
+
+On this development machine (Docker, PHP 8.5.10, PHPBench 1.7.0, OPCache enabled), five iterations with
+Xdebug disabled produced these PHPBench modal estimates. These are before/after measurements on the same machine;
+the older baseline tables above were measured separately.
+
+| Full rebuild | Before | After | Time reduction | Relative standard deviation, before / after |
+|---|---:|---:|---:|---:|
+| 10,000 small entries, sequential | 9.746 s | 4.653 s | 52.3% | 0.92% / 0.09% |
+| 10,000 small entries, 4 workers | 4.984 s | 3.647 s | 26.8% | 1.74% / 1.63% |
+| 1,000 realistic entries, sequential | 2.347 s | 1.971 s | 16.0% | 0.83% / 1.25% |
+| 1,000 realistic entries, 4 workers | 1.156 s | 1.059 s | 8.4% | 0.18% / 0.50% |
+
+The ordinary-div microbenchmark fell from 2.172 ms to 33.127 µs per 100 divs. Gains depend on page markup;
+these measurements do not establish the same improvement for every theme or content set.
+
+The follow-up Xdebug profile reduced the same `preg_match_all()` call from 5.19 seconds to 0.050 seconds.
+Across 10,901 generated files, 7,901 were byte-identical. The remaining 3,000 HTML pages previously skipped
+minification: applying the fixed minifier to each original page reproduced its new output exactly.
+The full PHPUnit suite passed (1,030 tests, 3,743 assertions), as did PHPStan.
+
+A tradeoff remains in the existing synthetic benchmark with 100 repeated article/pre/script blocks and no divs:
+a longer confirmation run (1,000 revolutions, five iterations) increased from 1.298 ms to 1.577 ms (21.5%).
+The full rebuild improvements above include the complete pipeline and outweigh that regression on both tested datasets.
+The optimization is therefore workload-dependent, not a universal minifier speedup.
+
+Local investigation artifacts are retained in `runtime/xdebug/regeneration-before.cachegrind` and
+`runtime/xdebug/regeneration-after.cachegrind` (gitignored).

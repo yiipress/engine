@@ -141,6 +141,23 @@ final class OutputMinifierTest extends TestCase
         assertSame('<div><a title="1 > 0" data-test=\'x > y\'> Link </a></div>', OutputMinifier::html($html));
     }
 
+    public function testLongOrdinaryDivAttributesDoNotExhaustBacktrackingLimit(): void
+    {
+        $attributes = 'data-' . str_repeat('x', 100) . '="value" class="ordinary"';
+
+        assertSame(
+            '<div ' . $attributes . '> Ordinary content </div>',
+            OutputMinifier::html('<div ' . $attributes . ">\n  Ordinary   content\n</div>"),
+        );
+    }
+
+    public function testPreservesMermaidAfterLongUnquotedAttribute(): void
+    {
+        $html = '<div data-value=' . str_repeat('x', 100) . " class='diagram mermaid'>flowchart LR\n    A --> B\n</div>";
+
+        assertSame('<article>' . $html . '</article>', OutputMinifier::html("<article>\n  " . $html . "\n</article>"));
+    }
+
     public function testUnclosedProtectedElementDoesNotCauseBacktracking(): void
     {
         $html = '<div><pre>' . str_repeat("Line 1\n    Line 2\n", 5000) . '<span>Done</span></div>';
