@@ -28,7 +28,7 @@ RUN install-php-extensions \
 FROM base AS mdparser-extension-builder
 COPY --from=composer /composer /usr/bin/composer
 RUN --mount=type=cache,target=/tmp/composer-cache \
-    COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project --no-dev --no-progress --no-interaction iliaal/mdparser /build/mdparser-extension
+    COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project --no-dev --no-progress --no-interaction iliaal/mdparser /build/mdparser-extension "^0.6.1"
 RUN cd /build/mdparser-extension \
     && phpize \
     && ./configure --enable-mdparser \
@@ -178,7 +178,7 @@ RUN --mount=type=cache,target=/tmp/composer-cache \
     | tar -xz --strip-components=1 -C /static-php \
     && COMPOSER_CACHE_DIR=/tmp/composer-cache composer install --no-dev --no-progress --no-interaction --classmap-authoritative
 RUN --mount=type=cache,target=/tmp/composer-cache \
-    COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project --no-dev --no-progress --no-interaction iliaal/mdparser /opt/mdparser
+    COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project --no-dev --no-progress --no-interaction iliaal/mdparser /opt/mdparser "^0.6.1"
 RUN --mount=type=cache,target=/tmp/composer-cache \
     COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project --no-dev --no-progress --no-interaction yiipress/highlighter /opt/yiipress-highlighter
 RUN cd /opt/yiipress-highlighter && rustup target add x86_64-unknown-linux-musl

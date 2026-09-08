@@ -1065,6 +1065,8 @@ PHP;
         self::assertIsString($dockerfile);
 
         self::assertStringContainsString('composer create-project --no-dev --no-progress --no-interaction iliaal/mdparser', $dockerfile);
+        self::assertStringContainsString('iliaal/mdparser /build/mdparser-extension "^0.6.1"', $dockerfile);
+        self::assertStringContainsString('iliaal/mdparser /opt/mdparser "^0.6.1"', $dockerfile);
         self::assertStringContainsString('docker-php-ext-enable highlighter mdparser', $dockerfile);
         self::assertStringNotContainsString('md4c \\', $dockerfile);
         self::assertStringNotContainsString('pecl.php.net/get/md4c', $dockerfile);

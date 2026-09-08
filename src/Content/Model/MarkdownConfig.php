@@ -23,6 +23,7 @@ final readonly class MarkdownConfig
      * @param bool $permissiveAtxHeaders Do not require space in ATX headers ( ###header ).
      * @param bool $noIndentedCodeBlocks Disable indented code blocks (Only fenced code works).
      * @param bool $hardSoftBreaks Force all soft breaks to act as hard breaks.
+     * @param bool $insert Enable insertion markup (++text++).
      */
     public function __construct(
         public bool $tables = true,
@@ -41,5 +42,6 @@ final readonly class MarkdownConfig
         public bool $permissiveAtxHeaders = false,
         public bool $noIndentedCodeBlocks = false,
         public bool $hardSoftBreaks = true,
+        public bool $insert = true,
     ) {}
 }

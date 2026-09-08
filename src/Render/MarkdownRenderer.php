@@ -15,20 +15,21 @@ final class MarkdownRenderer
     public function __construct(MarkdownConfig $config = new MarkdownConfig())
     {
         $this->renderer = new Parser(new Options(
+            hardbreaks: $config->hardSoftBreaks,
+            unsafe: !$config->noHtmlBlocks || !$config->noHtmlSpans,
+            footnotes: false,
             tables: $config->tables,
             strikethrough: $config->strikethrough,
             tasklist: $config->tasklists,
             autolink: $config->urlAutolinks || $config->emailAutolinks || $config->wwwAutolinks,
+            noIndentedCodeBlocks: $config->noIndentedCodeBlocks,
+            permissiveAtxHeadings: $config->permissiveAtxHeaders,
             collapseWhitespace: $config->collapseWhitespace,
+            underline: $config->underline,
             latexMath: $config->latexMath,
             wikiLinks: $config->wikilinks,
-            underline: $config->underline,
             admonitions: $config->admonitions,
-            unsafe: !$config->noHtmlBlocks || !$config->noHtmlSpans,
-            permissiveAtxHeadings: $config->permissiveAtxHeaders,
-            noIndentedCodeBlocks: $config->noIndentedCodeBlocks,
-            hardbreaks: $config->hardSoftBreaks,
-            footnotes: false,
+            insert: $config->insert,
         ));
     }
 

@@ -41,61 +41,40 @@ final readonly class Options
         public bool $latexMath = false,
         public bool $wikiLinks = false,
         public bool $admonitions = false,
-    ) {
-    }
+        public bool $insert = false,
+        public bool $preserveBlankLines = false,
+    ) {}
 
-    public static function strict(): Options
-    {
-    }
+    public static function strict(): Options {}
 
-    public static function github(): Options
-    {
-    }
+    public static function github(): Options {}
 
-    public static function permissive(): Options
-    {
-    }
+    public static function permissive(): Options {}
 }
 
 final class Parser
 {
     public readonly Options $options;
 
-    public function __construct(?Options $options = null)
-    {
-    }
+    public function __construct(?Options $options = null) {}
 
-    public function toHtml(string $source): string
-    {
-    }
+    public function toHtml(string $source): string {}
 
-    public function toXml(string $source): string
-    {
-    }
+    public function toXml(string $source): string {}
 
     /**
      * @return array<array-key, mixed>
      */
-    public function toAst(string $source): array
-    {
-    }
+    public function toAst(string $source): array {}
 
-    public function toInlineHtml(string $source): string
-    {
-    }
+    public function toInlineHtml(string $source): string {}
 
-    public static function html(string $source): string
-    {
-    }
+    public static function html(string $source): string {}
 
-    public static function xml(string $source): string
-    {
-    }
+    public static function xml(string $source): string {}
 
     /**
      * @return array<array-key, mixed>
      */
-    public static function ast(string $source): array
-    {
-    }
+    public static function ast(string $source): array {}
 }

@@ -90,6 +90,28 @@ EXPECTED
             , $html);
     }
 
+    public function testInsertionMarkupIsEnabledByDefault(): void
+    {
+        assertSame("<p><ins>added</ins></p>\n", $this->renderer->render('++added++'));
+    }
+
+    public function testInsertionMarkupCanBeExplicitlyDisabled(): void
+    {
+        $renderer = new MarkdownRenderer(new MarkdownConfig(insert: false));
+
+        assertSame("<p>++added++</p>\n", $renderer->render('++added++'));
+    }
+
+    public function testRendersInsertionMarkupWhenEnabled(): void
+    {
+        $renderer = new MarkdownRenderer(new MarkdownConfig(insert: true));
+
+        assertSame(
+            "<p><del>old</del> <ins><strong>new</strong></ins> <code>++literal++</code></p>\n",
+            $renderer->render('~~old~~ ++**new**++ `++literal++`'),
+        );
+    }
+
     public function testAllowsRawHtmlByDefault(): void
     {
         $html = $this->renderer->render("<section>block</section>\n\nA <span>span</span>.");

@@ -8,10 +8,12 @@ use YiiPress\Content\Model\MarkdownConfig;
 use YiiPress\Content\Model\SiteConfig;
 use YiiPress\Content\Parser\SiteConfigParser;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 use function PHPUnit\Framework\assertFalse;
 use function PHPUnit\Framework\assertInstanceOf;
 use function PHPUnit\Framework\assertTrue;
+use function PHPUnit\Framework\assertSame;
 
 final class MarkdownConfigTest extends TestCase
 {
@@ -35,6 +37,7 @@ final class MarkdownConfigTest extends TestCase
         assertFalse($config->permissiveAtxHeaders);
         assertFalse($config->noIndentedCodeBlocks);
         assertTrue($config->hardSoftBreaks);
+        assertTrue($config->insert);
     }
 
     public function testSiteConfigHasDefaultMarkdownConfig(): void
@@ -57,7 +60,16 @@ final class MarkdownConfigTest extends TestCase
         assertTrue($siteConfig->markdown->tables);
     }
 
-    public function testParserReadsMarkdownSection(): void
+    /**
+     * @return array<string, array{string, bool}>
+     */
+    public static function insertSettings(): array
+    {
+        return ['enabled' => ['true', true], 'disabled' => ['false', false]];
+    }
+
+    #[DataProvider('insertSettings')]
+    public function testParserReadsMarkdownSection(string $insertYaml, bool $expectedInsert): void
     {
         $tmpFile = tempnam(sys_get_temp_dir(), 'yiipress_test_');
         file_put_contents($tmpFile, <<<YAML
@@ -69,6 +81,7 @@ markdown:
   latex_math: true
   underline: true
   admonitions: true
+  insert: $insertYaml
   no_html_blocks: false
 YAML);
 
@@ -86,6 +99,7 @@ YAML);
             assertTrue($config->markdown->latexMath, 'latexMath should be true (set in config)');
             assertTrue($config->markdown->underline, 'underline should be true (set in config)');
             assertTrue($config->markdown->admonitions, 'admonitions should be true (set in config)');
+            assertSame($expectedInsert, $config->markdown->insert);
             assertFalse($config->markdown->noHtmlBlocks, 'noHtmlBlocks should be false (no_html_blocks: false)');
             assertFalse($config->markdown->noHtmlSpans, 'noHtmlSpans should be false (default)');
             assertFalse($config->markdown->permissiveAtxHeaders, 'permissiveAtxHeaders should be false (default)');
@@ -110,6 +124,7 @@ YAML);
 
             assertTrue($config->markdown->tables);
             assertTrue($config->markdown->strikethrough);
+            assertTrue($config->markdown->insert);
         } finally {
             unlink($tmpFile);
         }

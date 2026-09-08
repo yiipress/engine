@@ -328,6 +328,7 @@ markdown:
   wikilinks: false
   underline: false
   admonitions: true
+  insert: true
   no_html_blocks: false
   no_html_spans: false
   permissive_atx_headers: false
@@ -346,6 +347,7 @@ markdown:
 - **wikilinks** — enable wiki-style links `[[link]]` (default: `false`)
 - **underline** — underscore `_` denotes underline instead of emphasis (default: `false`)
 - **admonitions** — enable GitHub-style alert blockquotes such as `> [!NOTE]` (default: `true`)
+- **insert** — render `++added text++` as `<ins>added text</ins>` (default: `true`)
 - **no_html_blocks** — disable raw HTML blocks (default: `false`)
 - **no_html_spans** — disable inline raw HTML (default: `false`)
 - **permissive_atx_headers** — do not require space in ATX headers ( `###header` ) (default: `false`)

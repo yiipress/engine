@@ -227,6 +227,10 @@ final class SiteConfigParser
             $constructorArgs['hardSoftBreaks'] = (bool) $data['hard_soft_breaks'];
         }
 
+        if (array_key_exists('insert', $data)) {
+            $constructorArgs['insert'] = (bool) $data['insert'];
+        }
+
         return new MarkdownConfig(...$constructorArgs);
     }
 
