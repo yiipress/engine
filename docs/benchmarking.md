@@ -71,36 +71,54 @@ Use `--no-write` to separate render/template/processor cost from output director
 - **`SmallSiteBuildBench`** — measures the public `yii build` command end to end on 10k small entries, including full rebuilds, no-write renders, and incremental rebuilds
 - **`LargeContentBuildBench`** — measures the public `yii build` command end to end on 1k realistic entries (~27KB each), including full rebuilds, no-write renders, and incremental rebuilds
 
-## Baseline results
+## Current results (8 September 2026)
 
-### 10k small entries (~1KB each)
+### 10k small entries (~1 KB each)
 
-| Benchmark                               | Time   |
-|-----------------------------------------|--------|
-| Full rebuild, sequential                | ~9.281s |
-| Full rebuild, 4 workers                 | ~4.176s |
-| Incremental rebuild, no changes         | ~248.290ms |
-| Incremental rebuild, 1 changed entry    | ~248.754ms |
+| Benchmark | Time | Relative standard deviation |
+|---|---:|---:|
+| Full rebuild, sequential | 3.622 s | ±0.40% |
+| Full rebuild, 4 workers | 2.166 s | ±0.80% |
+| Full rebuild, 8 workers | 1.919 s | ±0.12% |
+| Incremental rebuild, no changes, sequential | 249.242 ms | ±0.82% |
 
-### 1k realistic entries (~27KB each)
+### 1k realistic entries (~27 KB each)
 
-| Benchmark                               | Time    |
-|-----------------------------------------|---------|
-| Full rebuild, sequential                | ~2.213s |
-| Full rebuild, 4 workers                 | ~868.285ms |
-| Incremental rebuild, no changes         | ~94.132ms |
-| Incremental rebuild, 1 changed entry    | ~88.954ms |
+| Benchmark | Time | Relative standard deviation |
+|---|---:|---:|
+| Full rebuild, sequential | 1.647 s | ±0.63% |
+| Full rebuild, 4 workers | 755.291 ms | ±0.48% |
+| Incremental rebuild, no changes, sequential | 88.846 ms | ±0.98% |
 
 These end-to-end benchmarks intentionally go through the public CLI entry point instead of internal renderer/parser classes,
 so they track real rebuild timing rather than component-only throughput.
 
-Measured on PHP 8.5.8 with `ext-mdparser`, `ext-yaml`, and `ext-pcntl`, xdebug off, and OPCache enabled.
+Measured at commit `ca919be` on the `performance` branch in Docker on an AMD Ryzen 9 7950X
+(16 cores, 32 threads), using PHP 8.5.10, PHPBench 1.7.0, `ext-mdparser`, `ext-yaml`, and `ext-pcntl`,
+with Xdebug off and CLI OPCache enabled. Tables report modal estimates and relative standard deviation
+from five iterations, with one measured build per iteration. Timings depend on hardware and filesystem.
 
-`PortableWorkerPoolBench` tracks the startup and job-transport overhead of two portable worker processes used by Windows builds.
+Full rebuilds use `--no-cache` and one warmup, so measured builds include replacing existing output.
+Unchanged incremental builds also use one warmup. Fixture setup and teardown are outside the measured
+invocation.
+
+Single-entry edit timings are omitted: the current benchmark edits the entry during setup, then consumes
+that edit during warmup, so its timed invocation measures an unchanged rebuild. PHPBench 1.7.0 rejects
+`--warmup=0`; that benchmark needs its warmup configuration corrected before publishing changed-entry
+results.
+
+```bash
+make bench CLI_ARGS="'--filter=benchFullRebuild|benchIncrementalNoChanges' --iterations=5 --report=aggregate"
+```
+
+`PortableWorkerPoolBench` tracks the startup and job-transport overhead of two portable worker processes used by parallel builds.
 
 Benchmarks are run with xdebug disabled automatically (`make bench` sets `XDEBUG_MODE=off`).
 
 ## Full regeneration investigation (September 2026)
+
+The following sections retain historical before/after measurements from individual optimization experiments.
+Use the current-results tables above for the latest complete benchmark snapshot.
 
 Measure full regeneration with `--no-cache`, using the public build command. Run timing comparisons with
 Xdebug disabled; profiler timings include instrumentation overhead and are only used to locate expensive calls.

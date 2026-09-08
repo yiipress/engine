@@ -159,16 +159,19 @@ editor configured in `content/config.yaml`.
 
 ## Performance
 
-Current benchmark highlights:
+Benchmark highlights measured on 8 September 2026 in Docker on an AMD Ryzen 9 7950X, with PHP 8.5.10
+and Xdebug disabled (five-iteration PHPBench modal estimates):
 
 | Scenario | Mode | Time |
-|---|---:|---:|
-| 10 000 entries across 3 collections | 4 workers | ~4.18 s |
-| 10 000 entries across 3 collections | incremental | ~248 ms |
-| 1 000 realistic entries | 4 workers | ~868 ms |
-| 1 000 realistic entries | incremental | ~94 ms |
+|---|---|---:|
+| 10 000 entries across 3 collections | Full rebuild, 4 workers | ~2.17 s |
+| 10 000 entries across 3 collections | Full rebuild, 8 workers | ~1.92 s |
+| 10 000 entries across 3 collections | Incremental, no changes | ~249 ms |
+| 1 000 realistic entries (~27 KB each) | Full rebuild, 4 workers | ~755 ms |
+| 1 000 realistic entries (~27 KB each) | Incremental, no changes | ~89 ms |
 
-See [`docs/benchmarking.md`](docs/benchmarking.md) for benchmark workflow details.
+See [`docs/benchmarking.md`](docs/benchmarking.md#current-results-8-september-2026) for detailed results,
+measurement conditions, and reproduction commands. Timings vary by hardware and filesystem.
 
 ## Documentation
 
