@@ -22,6 +22,13 @@ use function unlink;
 #[Warmup(1)]
 final class PortableWorkerPoolBench
 {
+    public function benchThreeSmallBatches(): void
+    {
+        for ($i = 0; $i < 3; ++$i) {
+            $this->benchStartTwoWorkers();
+        }
+    }
+
     public function benchStartTwoWorkers(): void
     {
         $pidFile = sys_get_temp_dir() . '/yiipress-portable-worker-bench-' . bin2hex(random_bytes(8));

@@ -209,3 +209,51 @@ all 1,130 realistic-site files. The final profile is retained locally as
 `runtime/xdebug/regeneration-fragments.cachegrind` (gitignored).
 
 Final validation: `make test` passed 1,031 tests and 3,747 assertions; `make phpstan` reported no errors.
+
+### Parallel worker completion polling
+
+Profiling the parent and all children of a four-worker 10,000-entry build showed 28 worker processes across
+8 consecutive pools: entries, feeds, three listing batches, and three archive batches. The parent spent
+3.903 seconds in `usleep()` in a 6.44-second instrumented build. This includes legitimate waiting for workers;
+it is not all recoverable overhead. Serialization inside the pools took another 0.174 seconds.
+
+The pool checked completion every 100 ms. The focused two-worker benchmark took 101.017 ms, and three
+consecutive small batches took 302.856 ms. With a 10 ms interval these fell to 41.114 ms and 123.194 ms.
+An added PHPUnit case checks that a slower first worker and faster second worker both finish before their
+results are aggregated; it makes no wall-clock assertions.
+
+Five-iteration, Xdebug-off full-build comparison against `b686ed6`:
+
+| Full rebuild, 4 workers | 100 ms polling | 10 ms polling | 1 ms polling (retained) |
+|---|---:|---:|---:|
+| 10,000 small entries | 3.373 s (±2.52%) | 3.207 s (±0.58%) | 3.101 s (±0.35%) |
+| 1,000 realistic entries | 1.051 s (±0.12%) | 954.156 ms (±0.61%) | 934.494 ms (±1.01%) |
+
+Reproduce the timing checks with:
+
+```bash
+make bench CLI_ARGS='--filter=PortableWorkerPoolBench --report=aggregate'
+make bench CLI_ARGS='--filter=benchFullRebuild4Workers --iterations=5 --report=aggregate'
+```
+
+The multi-process profile used an additional inherited PHP INI scan directory, setting
+`xdebug.start_with_request=yes`, `xdebug.output_dir=/app/runtime/xdebug`, and
+`xdebug.profiler_output_name=parallel.%p.cachegrind`, with `XDEBUG_MODE=profile` inherited by every worker.
+The original profiles are retained locally under `runtime/xdebug/parallel-before/` (gitignored).
+
+The retained 1 ms interval reduced full-build time by 8.1% and 11.1%, respectively. Sequential builds do not
+use the pool. The focused two-worker benchmark measured 36.446 ms at 1 ms polling, and three batches took
+109.057 ms.
+
+An alternating, Xdebug-off CPU check of 20 small batches measured 10.6–12.0 ms of parent CPU time at 10 ms
+polling versus 12.5–12.8 ms at 1 ms. Elapsed time fell from 820–841 ms to 708–723 ms. These CPU measurements
+cover short batches on this Linux development machine; they do not establish a cross-platform CPU bound.
+
+The follow-up profile contains the same 28 workers plus the parent. Parent sleep time fell from 3.903 to
+3.354 seconds, while status checks took 0.005 seconds. The complete profiled build fell from 6.44 to 5.84 seconds.
+Profiles are retained locally under `runtime/xdebug/parallel-after/` (gitignored).
+
+The final small parallel build's 10,901 files matched its original parallel output byte for byte. The realistic
+parallel build's 1,130 files also matched the previously verified sequential output byte for byte.
+
+Validation: `make test` passed 1,032 tests and 3,750 assertions; `make phpstan` reported no errors.
