@@ -1705,6 +1705,34 @@ PHP,
         assertStringContainsString('keep', (string) file_get_contents($this->outputDir . '/existing.txt'));
     }
 
+    public function testNoCacheReplacementPreservesSymlinkedOutputTarget(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'index.md' => "---\ntitle: Home\npermalink: /\n---\n\nNew output.\n",
+        ]);
+        $previous = sys_get_temp_dir() . '/yiipress-previous-output-' . uniqid();
+        mkdir($previous);
+        $this->tempContentDirs[] = $previous;
+        file_put_contents($previous . '/.yiipress-build', "YiiPress build output\n");
+        file_put_contents($previous . '/keep.txt', 'keep');
+        if (!function_exists('symlink') || !@symlink($previous, $this->outputDir)) {
+            self::markTestSkipped('Creating symlinks is not supported.');
+        }
+
+        try {
+            $result = $this->runBuildResult($contentDir, '--no-cache');
+            assertSame(0, $result['exitCode'], $result['output']);
+            assertFalse(is_link($this->outputDir));
+            assertFileExists($this->outputDir . '/index.html');
+            assertSame('keep', file_get_contents($previous . '/keep.txt'));
+            assertSame([], glob(dirname($this->outputDir) . '/.' . basename($this->outputDir) . '.old-*') ?: []);
+        } finally {
+            if (is_link($this->outputDir)) {
+                unlink($this->outputDir);
+            }
+        }
+    }
+
     public function testNoCacheBuildRefusesToReplaceUnmarkedOutputDirectory(): void
     {
         $contentDir = $this->createMinimalContent([

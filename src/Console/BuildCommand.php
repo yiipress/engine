@@ -24,6 +24,7 @@ use YiiPress\Build\ThemeAssetCopier;
 use YiiPress\Build\FeedGenerator;
 use YiiPress\Build\FeedWorkerJob;
 use YiiPress\Build\FeedWriter;
+use YiiPress\Build\DirectoryRemover;
 use YiiPress\Build\FileWriter;
 use YiiPress\Build\ParallelEntryWriter;
 use YiiPress\Build\ParallelTaskRunner;
@@ -1060,7 +1061,7 @@ final class BuildCommand extends Command
             return ExitCode::OK;
         } finally {
             if ($atomicOutputDir !== null) {
-                $this->removeDirectory($atomicOutputDir);
+                DirectoryRemover::remove($atomicOutputDir);
             }
         }
     }
@@ -1538,7 +1539,7 @@ final class BuildCommand extends Command
             throw new RuntimeException(sprintf('Unable to move "%s" to "%s".', $sourceDir, $targetDir));
         }
 
-        $this->removeDirectory($backupDir);
+        DirectoryRemover::remove($backupDir);
     }
 
     private function writeOutputMarker(string $outputDir): void
@@ -1555,30 +1556,6 @@ final class BuildCommand extends Command
         }
 
         return !$iterator->valid();
-    }
-
-    private function removeDirectory(string $directory): void
-    {
-        if (!is_dir($directory)) {
-            return;
-        }
-
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
-            RecursiveIteratorIterator::CHILD_FIRST,
-        );
-
-        foreach ($iterator as $item) {
-            /** @var SplFileInfo $item */
-            if ($item->isDir() && !$item->isLink()) {
-                rmdir($item->getPathname());
-                continue;
-            }
-
-            unlink($item->getPathname());
-        }
-
-        rmdir($directory);
     }
 
     /**

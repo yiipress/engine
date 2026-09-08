@@ -463,3 +463,44 @@ Profiles are retained locally as `runtime/xdebug/directory-workers.*.cachegrind`
 All 10,901 small-site files and 1,130 realistic-site files match the previous outputs byte for byte.
 New PHPUnit cases cover nested directories, workers sharing a directory, directory creation failures,
 and no-write behavior. `make test` passed 1,058 tests and 3,956 assertions; `make phpstan` reported no errors.
+
+### Traversing previous output with native directory functions
+
+Profiling a rebuild over an existing output directory revealed a cost absent from fresh-output profiles:
+removing the previous 10,000-entry build. The `95cdcf3` Xdebug profile spends about 0.599 seconds in the
+final stage containing output replacement. The old removal method uses `RecursiveIteratorIterator` and
+`RecursiveDirectoryIterator`; its calls include 0.174 seconds in `unlink()`, 0.143 seconds in `rmdir()`,
+0.077 seconds constructing child iterators, and 0.055 seconds checking file types.
+
+`DirectoryRemover` now traverses the tree with `opendir()`/`readdir()`, closes each handle in `finally`,
+and uses the same native deletion operations. Build replacement and failed-build temporary-output cleanup
+both use it. Nested symlinks are removed without traversal, and a symlink passed as the root is also removed
+without deleting its target. The root-link case has an end-to-end replacement regression test in addition
+to helper tests for directory, file, dangling, and cyclic child links.
+
+Five-iteration, Xdebug-off PHPBench modal estimates:
+
+| Workload | Before | After |
+|---|---:|---:|
+| Remove 10,000 page directories | 486.234 ms (±0.38%) | 449.732 ms (±0.25%) |
+| Full rebuild, 10,000 small entries, 4 workers | 2.253 s (±0.75%) | 2.189 s (±0.71%) |
+| Full rebuild, 1,000 realistic entries, 4 workers | 774.076 ms (±0.50%) | 764.656 ms (±0.66%) |
+
+Cleanup alone improves by 7.5%, and the 10,000-entry full rebuild improves by 2.8%. The realistic fixture's
+change is small and less conclusive. The focused benchmark creates its tree outside the measured method,
+uses one destructive revision per iteration, and has no warmup that could remove the tree before measurement.
+
+```bash
+make bench CLI_ARGS='--filter=DirectoryRemoverBench --report=aggregate'
+make bench CLI_ARGS='--filter=benchFullRebuild4Workers --iterations=5 --report=aggregate'
+```
+
+The final instrumented replacement stage takes 0.569 seconds versus 0.599 seconds previously. Total
+instrumented build time is nearly unchanged (5.57 → 5.54 seconds). Profiles are retained locally as
+`runtime/xdebug/cleanup-native.*.cachegrind`; the comparison profile is
+`runtime/xdebug/directory-workers.8.cachegrind`, regenerated over existing output for this investigation.
+Both are gitignored. Use the Xdebug-off results above for overall speed.
+
+All 10,901 small-site files and 1,130 realistic-site files match the previous verified output byte for byte.
+
+Validation: `make test` passed 1,064 tests and 3,969 assertions; `make phpstan` reported no errors.
