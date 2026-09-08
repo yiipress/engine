@@ -257,3 +257,45 @@ The final small parallel build's 10,901 files matched its original parallel outp
 parallel build's 1,130 files also matched the previously verified sequential output byte for byte.
 
 Validation: `make test` passed 1,032 tests and 3,750 assertions; `make phpstan` reported no errors.
+
+### Secondary worker startup and feed payloads
+
+A further comparison against `4c78743` tested two changes: limiting feed-job entries before serialization,
+and increasing the default listing/archive threshold from 32 to 128 tasks per worker. With the new threshold,
+batches below 256 tasks run in the parent; larger batches can still use multiple independent workers.
+Feed jobs retain their explicit one-collection-per-worker threshold, and entry-page scheduling is unchanged.
+The threshold is a measured heuristic for the bundled templates, not a universal crossover for custom templates.
+
+Five-iteration PHPBench modal estimates, with Xdebug disabled:
+
+| Full rebuild, 4 workers | Baseline | Feed payload only | Both changes | Both, repeat |
+|---|---:|---:|---:|---:|
+| 10,000 small entries | 3.084 s (±0.24%) | 3.044 s (±1.09%) | 2.671 s (±0.68%) | 2.646 s (±0.88%) |
+| 1,000 realistic entries | 917.672 ms (±0.43%) | 903.419 ms (±0.95%) | 928.222 ms (±1.98%) | 908.337 ms (±1.32%) |
+
+The larger fixture improves by 13.4–14.2%. The realistic fixture already keeps its small listing/archive
+batches sequential; its results do not establish a consistent full-build improvement. Feed-payload limiting
+alone produces only a small full-build change, near measurement noise.
+
+The new `FeedWorkerJobBench` isolates construction and serialization of a default limited feed job with
+10,000 distinct entries. The original job took 14.266 ms (±1.93%); limiting it to the first 20 entries before
+serialization took 12.393 µs (±2.21%). Zero and negative limits still retain all entries, and the caller's
+complete entry list is unchanged. PHPUnit covers these cases, ordering, empty tasks, serialization round trips,
+and scheduling boundaries at 255, 256, and 512 tasks. An existing parallel aggregation test now explicitly
+sets its small test workload's threshold so it actually exercises workers.
+
+```bash
+make bench CLI_ARGS='--filter=FeedWorkerJobBench --report=aggregate'
+make bench CLI_ARGS='--filter=benchFullRebuild4Workers --iterations=5 --report=aggregate'
+```
+
+The follow-up multi-process Xdebug profile has 7 workers plus the parent, down from 28 workers: entry and
+feed pools remain, while the three listing and three archive pools disappear. Time in serialization called
+by the pool drops from 0.182 to 0.055 seconds, and parent sleeping drops from 3.354 to 2.434 seconds.
+Instrumented total time increases from 5.84 to 6.11 seconds because listing/archive rendering is now serial
+under Xdebug's instrumentation overhead. The Xdebug-off measurements above establish the production-speed
+gain; profiler wall time is not a substitute. New profiles are retained locally as
+`runtime/xdebug/secondary.*.cachegrind` (gitignored).
+
+All 10,901 small-site files and 1,130 realistic-site files match the previous outputs byte for byte.
+Validation: `make test` passed 1,039 tests and 3,797 assertions; `make phpstan` reported no errors.
