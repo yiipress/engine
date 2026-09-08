@@ -17,6 +17,8 @@ final class OutputMinifierBench
 
     private string $manyProtectedBlocks;
 
+    private string $incompleteMarkup;
+
     public function __construct()
     {
         $block = <<<'HTML'
@@ -33,7 +35,16 @@ final class OutputMinifierBench
 
         $this->html = str_repeat($block, 100);
         $this->manyProtectedBlocks = str_repeat($block, 1000);
+        $this->incompleteMarkup = str_repeat('<p title="  attribute spacing  ">  Some   text  </p>', 100) . '<unfinished  attribute="  value';
         $this->ordinaryDivs = str_repeat('<div aria-hidden="true" class="decoration">  Ordinary   content  </div>', 100);
+    }
+
+    #[Revs(10)]
+    #[Iterations(5)]
+    #[Warmup(1)]
+    public function benchIncompleteMarkup(): void
+    {
+        OutputMinifier::html($this->incompleteMarkup);
     }
 
     #[Revs(100)]

@@ -299,3 +299,57 @@ gain; profiler wall time is not a substitute. New profiles are retained locally 
 
 All 10,901 small-site files and 1,130 realistic-site files match the previous outputs byte for byte.
 Validation: `make test` passed 1,039 tests and 3,797 assertions; `make phpstan` reported no errors.
+
+### Collapsing text whitespace without a PHP token loop
+
+The `dcc49cd` multi-process Xdebug profile still identifies HTML minification as a rendering hotspot.
+In one entry worker, `OutputMinifier::html()` takes 0.664 seconds, including 0.440 seconds in
+`minifyHtmlFragment()`. The latter splits each fragment into tags and text and invokes `preg_replace()`
+separately for each text token.
+
+The replacement skips complete tags with PCRE's `(*SKIP)(*F)` and collapses text whitespace in one native
+replacement pass. A preliminary scan detects unmatched markup and sends it through the existing token
+implementation, preserving its behavior for incomplete tags. Regex failures also use that fallback.
+Protected element bodies and whitespace inside attributes remain intact.
+
+Xdebug-off focused PHPBench modal estimates:
+
+| Subject | Before | After |
+|---|---:|---:|
+| 100 article/pre/script blocks | 191.264 µs (±0.86%) | 126.738 µs (±1.07%) |
+| 100 ordinary divs | 31.760 µs (±2.16%) | 19.577 µs (±2.05%) |
+| 1,000 article/pre/script blocks | 1.968 ms (±1.87%) | 1.372 ms (±2.29%) |
+
+These represent 30–38% reductions in minifier time. A deterministic comparison of 10,000 mixed-markup
+inputs, including incomplete tags, quotes, protected blocks, and control characters, matches the original
+implementation. PHPUnit adds explicit attribute-whitespace and incomplete-tag regression cases.
+
+Reproduce with:
+
+```bash
+make bench CLI_ARGS='--filter=OutputMinifierBench --report=aggregate'
+make bench CLI_ARGS='--filter=benchFullRebuild --iterations=5 --report=aggregate'
+```
+
+The added `benchIncompleteMarkup` subject caught excessive backtracking in the first candidate's tag scan
+(1.637 ms versus the original 24.098 µs). Making the disjoint tag alternatives possessive fixes that
+regression: the final fallback benchmark takes 26.513 µs (±1.16%). This retains about 2.4 µs of scanning
+overhead for that malformed fragment, in exchange for the measured normal-output reductions.
+
+Final five-iteration full-build modal estimates against the fresh `dcc49cd` baseline:
+
+| Full rebuild | Before | Final | Time reduction |
+|---|---:|---:|---:|
+| 10,000 small entries, sequential | 4.024 s (±0.42%) | 3.798 s (±0.70%) | 5.6% |
+| 10,000 small entries, 4 workers | 2.598 s (±0.71%) | 2.519 s (±0.80%) | 3.0% |
+| 1,000 realistic entries, sequential | 1.794 s (±0.69%) | 1.681 s (±0.28%) | 6.3% |
+| 1,000 realistic entries, 4 workers | 884.632 ms (±0.35%) | 858.675 ms (±0.66%) | 2.9% |
+
+The final Xdebug profile reduces `minifyHtmlFragment()` time in the corresponding entry worker from
+0.440 to 0.062 seconds and total `OutputMinifier::html()` time from 0.664 to 0.168 seconds. The complete
+instrumented build drops from 6.11 to 5.16 seconds. Instrumentation magnifies the cost of the eliminated
+PHP calls; the Xdebug-off full-build results above are the relevant speedup measurements. Final profiles
+are retained locally as `runtime/xdebug/minifier-final.*.cachegrind` (gitignored).
+
+All 10,901 small-site files and 1,130 realistic-site files match the `dcc49cd` outputs byte for byte.
+Validation: `make test` passed 1,041 tests and 3,801 assertions; `make phpstan` reported no errors.

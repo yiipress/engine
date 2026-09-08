@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiPress\Build;
 
 use function preg_replace;
+use function preg_match;
 use function preg_split;
 use function preg_match_all;
 use function rtrim;
@@ -20,7 +21,11 @@ final class OutputMinifier
 {
     // Consume unquoted characters individually: nested repetition makes non-Mermaid divs backtrack exponentially.
     private const string PROTECTED_START_TAG_PATTERN = '~<(?<tag>pre|textarea|script|style|div(?=(?:[^>"\']|"[^"]*"|\'[^\']*\')*\sclass\s*=\s*(?:"[^"]*(?<![^\s"])mermaid(?![^\s"])[^"]*"|\'[^\']*(?<![^\s\'])mermaid(?![^\s\'])[^\']*\')))\b(?:[^>"\']+|"[^"]*"|\'[^\']*\')*>~i';
-    private const string TAG_PATTERN = '~(<(?:[^>"\']+|"[^"]*"|\'[^\']*\')*>)~';
+    // Tag alternatives are disjoint; possessive repetition also keeps incomplete tags linear.
+    private const string TAG = '<(?:[^>"\']++|"[^"]*"|\'[^\']*\')*+>';
+    private const string TAG_PATTERN = '~(' . self::TAG . ')~';
+    private const string UNMATCHED_TAG_PATTERN = '~' . self::TAG . '(*SKIP)(*F)|<~';
+    private const string TEXT_WHITESPACE_PATTERN = '~' . self::TAG . '(*SKIP)(*F)|[ \t\r\n\f]+~';
 
     /**
      * Minifies generated HTML while preserving whitespace-sensitive element bodies.
@@ -124,6 +129,25 @@ final class OutputMinifier
     }
 
     private static function minifyHtmlFragment(string $html): string
+    {
+        if (trim($html) === '') {
+            return '';
+        }
+
+        // Preserve the existing token behavior for incomplete markup or regex failures.
+        if (preg_match(self::UNMATCHED_TAG_PATTERN, $html) !== 0) {
+            return self::minifyHtmlFragmentFallback($html);
+        }
+
+        $minified = preg_replace(self::TEXT_WHITESPACE_PATTERN, ' ', $html);
+        if ($minified === null) {
+            return self::minifyHtmlFragmentFallback($html);
+        }
+
+        return preg_replace('~>\s+<~', '><', $minified) ?? $minified;
+    }
+
+    private static function minifyHtmlFragmentFallback(string $html): string
     {
         if (trim($html) === '') {
             return '';

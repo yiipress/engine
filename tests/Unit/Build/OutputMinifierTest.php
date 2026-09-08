@@ -161,6 +161,21 @@ final class OutputMinifierTest extends TestCase
         assertSame('<div><a title="1 > 0" data-test=\'x > y\'> Link </a></div>', OutputMinifier::html($html));
     }
 
+    public function testPreservesWhitespaceInsideTagAttributes(): void
+    {
+        assertSame(
+            '<p title="  spaced   value  " data-value=\'one   two\'> A B </p>',
+            OutputMinifier::html('<p title="  spaced   value  " data-value=\'one   two\'>  A   B  </p>'),
+        );
+    }
+
+    public function testPreservesIncompleteTagTokenBehavior(): void
+    {
+        assertSame('<p> A B </p><unfinished  attribute="  value', OutputMinifier::html('<p>  A   B  </p><unfinished  attribute="  value'));
+        assertSame('Text < unfinished text', OutputMinifier::html('Text  <  unfinished   text'));
+        assertSame('<unfinished  attribute="<p> A B </p>', OutputMinifier::html('<unfinished  attribute="<p>  A   B  </p>'));
+    }
+
     public function testLongOrdinaryDivAttributesDoNotExhaustBacktrackingLimit(): void
     {
         $attributes = 'data-' . str_repeat('x', 100) . '="value" class="ordinary"';
