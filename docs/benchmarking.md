@@ -353,3 +353,36 @@ are retained locally as `runtime/xdebug/minifier-final.*.cachegrind` (gitignored
 
 All 10,901 small-site files and 1,130 realistic-site files match the `dcc49cd` outputs byte for byte.
 Validation: `make test` passed 1,041 tests and 3,801 assertions; `make phpstan` reported no errors.
+
+### Native collection sorting experiment (not retained)
+
+A follow-up to `4fa6036` examined the PHP comparator calls in collection sorting and site-wide feed sorting.
+The previous Xdebug profile attributes about 0.160 seconds to collection sorting, but instrumentation
+amplifies the cost of calling the comparator repeatedly. The tested candidate computed collection keys once,
+used native stable `asort()`/`arsort()`, and rebuilt the entry list from the sorted indices. Site-wide feed
+sorting was left unchanged in this experiment.
+
+The added `EntrySorterBench::benchSortDates` uses 10,000 entries with mixed, repeated dates. Five-iteration,
+Xdebug-off modal estimates fall from 10.992 ms (±1.75%) to 1.961 ms (±0.93%): an 82.2% local reduction.
+However, the full four-worker rebuilds do not establish a benefit:
+
+| Full rebuild, 4 workers | `4fa6036` baseline | Native collection sorting candidate |
+|---|---:|---:|
+| 10,000 small entries | 2.529 s (±0.55%) | 2.551 s (±0.63%) |
+| 1,000 realistic entries | 857.366 ms (±0.31%) | 859.260 ms (±0.37%) |
+
+The candidate was reverted because it did not demonstrate a full-regeneration improvement. The benchmark
+and ordering regression tests are retained for future work. Tests cover stable ties in both directions,
+null dates, dates before the Unix epoch, microseconds, equivalent time zones, numeric-looking titles,
+unknown sort fields, and duplicate explicit-order entries. All passed against both implementations.
+
+```bash
+make bench CLI_ARGS='--filter=EntrySorterBench --report=aggregate'
+make bench CLI_ARGS='--filter=benchFullRebuild4Workers --iterations=5 --report=aggregate'
+make test CLI_ARGS='--filter=EntrySorterTest'
+```
+
+The reverted candidate is retained locally as `runtime/EntrySorterCandidate.php` (gitignored).
+
+Validation after reverting the candidate: `make test` passed 1,045 tests and 3,814 assertions;
+`make phpstan` reported no errors. Production code is unchanged from `4fa6036`.
