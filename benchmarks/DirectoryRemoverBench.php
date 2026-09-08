@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiPress\Benchmarks;
 
 use YiiPress\Build\DirectoryRemover;
+use Yiisoft\Files\FileHelper;
 use PhpBench\Attributes\AfterMethods;
 use PhpBench\Attributes\BeforeMethods;
 use PhpBench\Attributes\Iterations;
@@ -31,6 +32,11 @@ final class DirectoryRemoverBench
     public function tearDown(): void
     {
         DirectoryRemover::remove($this->directory);
+    }
+
+    public function benchRemovePreviousBuildWithFileHelper(): void
+    {
+        FileHelper::removeDirectory($this->directory);
     }
 
     public function benchRemovePreviousBuild(): void

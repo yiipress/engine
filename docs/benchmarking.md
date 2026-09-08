@@ -69,6 +69,7 @@ then run `make profile-build` with the same content and output paths, without `-
 - **`SyntaxHighlighterBench`** — measures the reusable highlighter package path for plain HTML, raw code, a single highlighted block, and a page with many highlighted blocks
 - **`QuestionProcessorBench`** — measures pages with 100 Markdown question blocks in inline and heading-grouped modes
 - **`AssetFingerprintingBench`** — measures fingerprint lookup and HTML asset URL rewriting
+- **`DirectoryRemoverBench`** — compares build-output cleanup with `yiisoft/files` on 10,000 page directories; setup is outside timing, with one revision and no warmup because removal is destructive
 - **`BuildProfileBench`** — measures overhead of disabled and enabled build phase timers
 - **`OEmbedProcessorBench`** — measures standalone URL-to-embed expansion across pluggable oEmbed providers
 - **`SmallSiteBuildBench`** — measures the public `yii build` command end to end on 10k small entries, including full rebuilds, no-write renders, and incremental rebuilds
