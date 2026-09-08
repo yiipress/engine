@@ -157,7 +157,7 @@ Performance is handled by doing less work, keeping expensive work native, and le
 - YAML front matter uses `yaml_parse()`.
 - Markdown uses `ext-mdparser` from `iliaal/mdparser`, backed by bundled MD4C sources.
 - Syntax highlighting uses `ext-highlighter`, backed by syntect and Rust.
-- Incremental builds reuse the build manifest and content hashes. Unchanged builds validate tracked directories, sources, and output existence before returning; they skip collecting a replacement directory inventory. Source checks refresh filesystem metadata once per file, and asset discovery filters content extensions before file type checks.
+- Incremental builds reuse the build manifest and content hashes. Unchanged builds validate tracked directories, sources, and output existence before returning; they skip collecting a replacement directory inventory. Source checks hash file contents, so same-size edits with unchanged timestamps are detected. Directory checks include entry names, so rapid additions are detected even when directory timestamps match. Asset discovery filters content extensions before file type checks.
 - `--workers=auto` detects CPU capacity and caps user-facing defaults to avoid spawning too many workers for small builds.
 - OPCache can reuse compiled PHP templates when the runtime enables it.
 - JIT and preloading remain available to source installs where the PHP runtime is managed directly.
@@ -182,11 +182,19 @@ Source installs use `runtime/cache/`. PHAR and static binary runs use a project-
 
 The cache stores:
 
-- parsed front matter keyed by file path and modification time;
-- rendered Markdown HTML keyed by content hash;
-- incremental build manifests keyed by source and output paths.
+- rendered entry HTML keyed by source content, templates, and rendering context;
+- incremental build manifests keyed by source and output paths;
+- shared-output dependency fingerprints and the output paths they own.
 
 Build manifests are treated as disposable cache metadata: missing, unreadable, corrupt, or structurally invalid manifests reset incremental state and trigger normal rebuild work instead of failing the build. Manifest saves write a uniquely named temporary file in the target directory and replace the manifest atomically after the full JSON payload is written.
+
+Shared outputs use per-output dependency fingerprints: listing and taxonomy pages track their selected entries and pagination; date archives track their groups; author pages track profiles and entries; feeds track only entries within their configured limit. Sitemap dependencies track URLs and dates, so a body-only edit can leave it untouched. Global dependencies include configuration, navigation, authors, asset fingerprints, and the cross-reference map. Filtering happens before worker dispatch.
+
+The output inventory removes obsolete listing, archive, taxonomy, author, feed, and sitemap files, while preserving paths newly owned by entries or assets. Missing output files trigger regeneration. Changed build flags and configuration inventories invalidate reuse. Future publication deadlines use the same time as content filtering and prevent the next build from returning early after a deadline passes. Author profiles are tracked as configuration dependencies.
+
+Custom templates and project processors can read arbitrary other content, so builds with them conservatively regenerate entries and shared outputs whenever a rebuild is needed. Entry dependencies involving related posts, multiple languages, navigation pagers, or changed cross-reference targets also force entry regeneration. This preserves the same build pipeline for production and live preview.
+
+Shared-output metadata is invalidated before writing and saved atomically only after a successful build. Missing or corrupt metadata for an existing managed output triggers a full replacement, which also removes outputs whose ownership can no longer be recovered. `--no-cache` invalidates this metadata without building a replacement inventory; the next normal build reconstructs it. Source hashes verified during the build are reused for manifest recording and shared-output keys. These checks cost more than timestamp-only unchanged-build detection; see [the measurements](benchmarking.md#selective-shared-output-regeneration-september-2026).
 
 `yiipress clean` removes both configured output and the relevant build cache.
 

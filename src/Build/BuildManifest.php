@@ -22,6 +22,10 @@ final class BuildManifest
     private array $configFiles = [];
     /** @var array<string, int> */
     private array $trackedDirectories = [];
+    /** @var array<string, string> */
+    private array $directoryEntries = [];
+    /** @var array<string, string> Content verified during this build, never loaded from disk. */
+    private array $checkedHashes = [];
 
     public function __construct(
         private readonly string $manifestPath,
@@ -29,6 +33,7 @@ final class BuildManifest
 
     public function load(): void
     {
+        $this->checkedHashes = [];
         if (!is_file($this->manifestPath)) {
             $this->clear();
             return;
@@ -61,6 +66,19 @@ final class BuildManifest
             }
             $this->entries = $entries;
             $this->configFiles = $configFiles;
+            $directoryEntries = $data['directoryEntries'] ?? [];
+            if (!is_array($directoryEntries) || array_any($directoryEntries, static fn($hash): bool => !is_string($hash))) {
+                $this->clear();
+                return;
+            }
+            foreach ($directoryEntries as $directory => $_) {
+                if (!is_string($directory)) {
+                    $this->clear();
+                    return;
+                }
+            }
+            /** @var array<string, string> $directoryEntries */
+            $this->directoryEntries = $directoryEntries;
             $this->trackedDirectories = $trackedDirectories;
             return;
         }
@@ -73,13 +91,17 @@ final class BuildManifest
         $this->entries = $entries;
         $this->configFiles = [];
         $this->trackedDirectories = [];
+        $this->directoryEntries = [];
+        $this->checkedHashes = [];
     }
 
     private function clear(): void
     {
+        $this->checkedHashes = [];
         $this->entries = [];
         $this->configFiles = [];
         $this->trackedDirectories = [];
+        $this->directoryEntries = [];
     }
 
     /**
@@ -161,6 +183,7 @@ final class BuildManifest
                 'entries' => $this->entries,
                 'configFiles' => $this->configFiles,
                 'trackedDirectories' => $this->trackedDirectories,
+                'directoryEntries' => $this->directoryEntries,
             ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
         );
     }
@@ -171,21 +194,14 @@ final class BuildManifest
             return true;
         }
 
-        clearstatcache(true, $sourceFile);
-        if (!is_file($sourceFile)) {
-            return true;
+        // Reading the content also detects deletion and avoids trusting cached stat metadata.
+        $hash = @hash_file('xxh128', $sourceFile);
+        if ($hash !== false) {
+            $this->checkedHashes[$sourceFile] = $hash;
+        } else {
+            unset($this->checkedHashes[$sourceFile]);
         }
-
-        $mtime = filemtime($sourceFile);
-        $size = filesize($sourceFile);
-        $storedMtime = $this->entries[$sourceFile]['mtime'] ?? null;
-        $storedSize = $this->entries[$sourceFile]['size'] ?? null;
-
-        if ($storedMtime !== null && $storedSize !== null && $storedMtime === $mtime && $storedSize === $size) {
-            return false;
-        }
-
-        return $this->entries[$sourceFile]['hash'] !== hash_file('xxh128', $sourceFile);
+        return $hash === false || $this->entries[$sourceFile]['hash'] !== $hash;
     }
 
     /**
@@ -200,11 +216,10 @@ final class BuildManifest
         $mtime = (int) filemtime($sourceFile);
         $size = (int) filesize($sourceFile);
         $stored = $this->entries[$sourceFile] ?? null;
-        $hash = $stored !== null
-            && ($stored['mtime'] ?? null) === $mtime
-            && ($stored['size'] ?? null) === $size
-            ? $stored['hash']
+        $hash = ($stored['mtime'] ?? null) === $mtime && ($stored['size'] ?? null) === $size
+            ? ($this->checkedHashes[$sourceFile] ?? hash_file('xxh128', $sourceFile))
             : hash_file('xxh128', $sourceFile);
+        unset($this->checkedHashes[$sourceFile]);
         if ($hash === false) {
             throw new RuntimeException("Unable to hash source file: $sourceFile");
         }
@@ -276,6 +291,13 @@ final class BuildManifest
     public function setTrackedDirectories(array $trackedDirectories): void
     {
         $this->trackedDirectories = $trackedDirectories;
+        $this->directoryEntries = [];
+        foreach ($trackedDirectories as $directory => $_) {
+            $entries = scandir($directory);
+            if ($entries !== false) {
+                $this->directoryEntries[$directory] = hash('xxh128', implode("\0", $entries));
+            }
+        }
     }
 
     public function hasTrackedDirectories(): bool
@@ -292,7 +314,9 @@ final class BuildManifest
             }
 
             $mtime = filemtime($directory);
-            if ($mtime === false || (int) $mtime !== $storedMtime) {
+            $entries = scandir($directory);
+            if ($mtime === false || (int) $mtime !== $storedMtime || $entries === false
+                || ($this->directoryEntries[$directory] ?? null) !== hash('xxh128', implode("\0", $entries))) {
                 return true;
             }
         }

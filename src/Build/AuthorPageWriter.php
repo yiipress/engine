@@ -20,6 +20,7 @@ final class AuthorPageWriter
     public function __construct(
         private readonly TemplateResolver $templateResolver,
         private readonly ?AssetFingerprintManifest $assetManifest = null,
+        private readonly ?SharedOutputCache $sharedOutputs = null,
     ) {}
 
     /**
@@ -42,11 +43,20 @@ final class AuthorPageWriter
 
         $renderer = $this->createPageTemplateRenderer($siteConfig);
 
-        $this->writeIndex($siteConfig, $authors, $outputDir, $navigation, $noWrite);
-        $pageCount = 1;
+        $pageCount = 0;
+        if ($noWrite || ($this->sharedOutputs?->needsWrite(['authors/index.html'], $authors) ?? true)) {
+            $this->writeIndex($siteConfig, $authors, $outputDir, $navigation, $noWrite);
+            $pageCount++;
+        }
 
         foreach ($authors as $slug => $author) {
             $entries = $entriesByAuthor[$slug] ?? [];
+            if (!$noWrite && $this->sharedOutputs !== null && !$this->sharedOutputs->needsWrite(
+                ['authors/' . $slug . '/index.html'],
+                [$author, $collections, $this->sharedOutputs->entryKeys($entries)],
+            )) {
+                continue;
+            }
             $this->writeAuthor($siteConfig, $author, $entries, $collections, $outputDir, $navigation, $renderer, $noWrite);
             $pageCount++;
         }

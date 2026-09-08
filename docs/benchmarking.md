@@ -77,26 +77,25 @@ Use `--no-write` to separate render/template/processor cost from output director
 
 | Benchmark | Time | Relative standard deviation |
 |---|---:|---:|
-| Full rebuild, sequential | 3.622 s | ±0.40% |
-| Full rebuild, 4 workers | 2.166 s | ±0.80% |
-| Full rebuild, 8 workers | 1.919 s | ±0.12% |
-| Incremental rebuild, no changes, sequential | 165.300 ms | ±1.56% |
-| Incremental rebuild, 1 changed entry, sequential | 861.918 ms | ±2.60% |
+| Full rebuild, sequential | 3.577 s | ±0.40% |
+| Full rebuild, 4 workers | 2.157 s | ±1.11% |
+| Full rebuild, 8 workers | 1.895 s | ±1.53% |
+| Incremental rebuild, no changes, sequential | 261.031 ms | ±1.99% |
+| Incremental rebuild, 1 changed entry, sequential | 829.506 ms | ±1.41% |
 
 ### 1k realistic entries (~27 KB each)
 
 | Benchmark | Time | Relative standard deviation |
 |---|---:|---:|
-| Full rebuild, sequential | 1.647 s | ±0.63% |
-| Full rebuild, 4 workers | 755.291 ms | ±0.48% |
-| Incremental rebuild, no changes, sequential | 82.163 ms | ±1.04% |
-| Incremental rebuild, 1 changed entry, sequential | 204.210 ms | ±0.34% |
+| Full rebuild, sequential | 1.655 s | ±1.30% |
+| Full rebuild, 4 workers | 767.456 ms | ±0.82% |
+| Incremental rebuild, no changes, sequential | 95.578 ms | ±1.00% |
+| Incremental rebuild, 1 changed entry, sequential | 195.331 ms | ±1.38% |
 
 These end-to-end benchmarks intentionally go through the public CLI entry point instead of internal renderer/parser classes,
 so they track real rebuild timing rather than component-only throughput.
 
-Full-build results were measured at commit `ca919be`; incremental results include the filesystem-scan
-optimizations described in the incremental build investigation below. All results
+Results include the selective shared-output implementation described below. All results
 were measured on the `performance` branch in Docker on an AMD Ryzen 9 7950X
 (16 cores, 32 threads), using PHP 8.5.10, PHPBench 1.7.0, `ext-mdparser`, `ext-yaml`, and `ext-pcntl`,
 with Xdebug off and CLI OPCache enabled. Tables report modal estimates and relative standard deviation
@@ -591,7 +590,7 @@ filesystem scans in preparation. The unchanged build spent 47.3 ms discovering c
 The profiled single-entry build wrote exactly one entry (5.5 ms), but still performed the shared parsing,
 feed, listing, archive, and sitemap work. Instrumented total time was 2.96 seconds.
 
-The retained changes reduce repeated filesystem work:
+The changes at `50a5cba` reduced repeated filesystem work:
 
 - Asset discovery excludes Markdown and YAML extensions before requesting file type metadata. Recursive
   traversal still visits directories with those extensions and discovers assets inside them.
@@ -635,3 +634,70 @@ with excluded extensions, and detection of a new asset directory following an un
 
 The focused asset-discovery benchmark falls from 28.221 ms (±3.03%) to 3.722 ms (±2.41%),
 using the same 10,000-entry content fixture and excluding setup from measurement.
+
+## Selective shared-output regeneration (September 2026)
+
+A single changed entry previously regenerated every listing, archive, feed, and sitemap. Shared outputs
+now carry dependency fingerprints, filtered before worker dispatch. A body-only edit in the small fixture
+writes one entry, one listing page, and two archive pages, instead of 501 listings and 364 archive pages.
+The edited entry is outside the feed limits, so feeds are reused; its URL and date are unchanged, so the
+sitemap is also reused. Taxonomy, author, search, robots, and 404 outputs use the same inventory when enabled.
+
+Five-iteration, one-worker PHPBench modal estimates with Xdebug disabled:
+
+| Workload | Previous published result (`50a5cba`) | Selective outputs and stricter validation |
+|---|---:|---:|
+| 10,000 small entries, unchanged | 165.300 ms (±1.56%) | 261.031 ms (±1.99%) |
+| 10,000 small entries, one edit | 861.918 ms (±2.60%) | 829.506 ms (±1.41%) |
+| 1,000 realistic entries, unchanged | 82.163 ms (±1.04%) | 95.578 ms (±1.00%) |
+| 1,000 realistic entries, one edit | 204.210 ms (±0.34%) | 195.331 ms (±1.38%) |
+
+The end-to-end changed-entry reductions are modest: 3.8% and 4.3%. Unchanged builds regress by 95.7 ms
+and 13.4 ms. This is a deliberate correctness tradeoff: source checks now read content instead of trusting
+matching modification times and sizes, and directory checks also compare entry names. Tests demonstrate
+that same-size edits with preserved timestamps and rapid additions with preserved directory timestamps
+are detected. Hashes verified during a build are reused for manifest recording and shared-output keys.
+Parsing and indexing still run across the site when any entry changes.
+
+The final Xdebug single-edit profile takes 1.89 seconds versus the previous 2.82 seconds. These are
+instrumented diagnostic timings, not the Xdebug-off benchmark results above:
+
+| Stage | Previous profile | Selective profile |
+|---|---:|---:|
+| Preparation | 148 ms | 258 ms |
+| Parse content | 812 ms | 826 ms |
+| Write edited entry | 5.4 ms | 5.4 ms |
+| Feed preparation and writing | 245 ms | 239 ms |
+| Listings | 487 ms | 79 ms |
+| Archives | 449 ms | 36 ms |
+| Sitemap | 230 ms | 20 ms |
+
+The profile contains no feed-generator or sitemap-write calls. Feed selection still sorts the complete
+site feed before deciding whether its limited output changed. Source detection spends 96.5 ms in
+`hash_file()`; manifest recording spends only 0.019 ms there, and shared-output entry keys do not hash
+sources again. The profile is retained locally as
+`runtime/xdebug/incremental-selective-final.8.cachegrind` (gitignored).
+
+Reproduce end-to-end measurements with:
+
+```bash
+make bench CLI_ARGS='--filter=benchIncremental --iterations=5 --report=aggregate'
+make bench CLI_ARGS='--filter=benchFullRebuild --iterations=5 --report=aggregate'
+```
+
+Do not add warmup or extra revisions to the changed-entry subjects. For Xdebug, first run a normal build
+of an isolated fixture/output directory, edit one entry, then use `make profile-build` with those same
+build arguments. Profiling fixture setup or warmup would hide the changed-entry case.
+
+Custom templates and project processors use conservative invalidation. Changed reference targets,
+related posts, multilingual content, and navigation pagers force dependent entry regeneration. Removed
+outputs are deleted, missing outputs are repaired, and future publication deadlines invalidate the next
+unchanged-build check. Interrupted builds and missing/corrupt shared inventories cause a clean replacement.
+`--no-cache` invalidates incremental state and avoids computing an unused shared-output inventory; a later
+normal build reconstructs state instead of trusting an older source manifest.
+
+`make test` passes 1,109 tests and 4,162 assertions; `make phpstan` reports no errors. Incremental-versus-clean
+comparisons cover body/title/date/permalink edits, deletion, drafts, future publication, tags, authors,
+configuration removal, custom templates/processors, missing outputs, and normal/no-cache transitions.
+All 10,901 small-fixture files and 1,130 realistic-fixture files also match clean builds byte for byte
+following the benchmark-style newline edit.

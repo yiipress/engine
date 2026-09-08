@@ -76,6 +76,28 @@ final class BuildManifestTest extends TestCase
         assertSame(12, $manifest->entries()[$sourceFile]['size']);
     }
 
+    public function testSameSizeEditWithPreservedTimestampIsDetected(): void
+    {
+        $sourceFile = $this->tempDir . '/entry.md';
+        file_put_contents($sourceFile, 'first');
+        $manifest = new BuildManifest($this->tempDir . '/manifest.json');
+        $manifest->record($sourceFile, []);
+        $mtime = filemtime($sourceFile);
+        file_put_contents($sourceFile, 'other');
+        touch($sourceFile, $mtime);
+        assertTrue($manifest->isChanged($sourceFile));
+    }
+
+    public function testDirectoryInventoryDetectsAdditionWithPreservedTimestamp(): void
+    {
+        $manifest = new BuildManifest($this->tempDir . '/manifest.json');
+        $mtime = filemtime($this->tempDir);
+        $manifest->setTrackedDirectories([$this->tempDir => $mtime]);
+        file_put_contents($this->tempDir . '/new.md', 'new');
+        touch($this->tempDir, $mtime);
+        assertTrue($manifest->trackedDirectoriesChanged());
+    }
+
     public function testModifiedFileIsDetectedAsChanged(): void
     {
         $sourceFile = $this->tempDir . '/entry.md';
@@ -332,7 +354,7 @@ final class BuildManifestTest extends TestCase
         assertSame(['/out/style.old.css'], $staleOutputs);
     }
 
-    public function testRecordReusesStoredHashWhenMtimeAndSizeMatch(): void
+    public function testRecordRevalidatesStoredHashWhenMtimeAndSizeMatch(): void
     {
         $sourceFile = $this->tempDir . '/entry.md';
         file_put_contents($sourceFile, '# Hello');
@@ -356,7 +378,7 @@ final class BuildManifestTest extends TestCase
         $manifest->record($sourceFile, ['/out/new.html']);
 
         $entry = $manifest->entries()[$sourceFile];
-        assertSame('stored-hash', $entry['hash']);
+        assertSame(hash_file('xxh128', $sourceFile), $entry['hash']);
         assertSame(['/out/new.html'], $entry['outputs']);
     }
 

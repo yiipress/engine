@@ -18,6 +18,7 @@ final readonly class CollectionListingWriter
     public function __construct(
         private TemplateResolver $templateResolver,
         private ?AssetFingerprintManifest $assetManifest = null,
+        private ?SharedOutputCache $sharedOutputs = null,
     ) {}
 
     /**
@@ -69,6 +70,13 @@ final readonly class CollectionListingWriter
                 'permalink' => $currentPermalink,
                 'dir' => $dir,
             ];
+        }
+
+        if (!$noWrite && $this->sharedOutputs !== null) {
+            $tasks = array_values(array_filter($tasks, fn(array $task): bool => $this->sharedOutputs->needsWrite(
+                [substr($task['dir'], strlen($outputDir) + 1) . '/index.html'],
+                [$collection, $this->sharedOutputs->entryKeys($task['entries']), $task['pagination']],
+            )));
         }
 
         $taskRunner = new ParallelTaskRunner();

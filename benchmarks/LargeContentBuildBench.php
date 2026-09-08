@@ -63,6 +63,11 @@ final class LargeContentBuildBench
             unlink($manifestPath);
         }
 
+        $sharedOutputPath = $cachePath . '/shared-output-' . hash('xxh128', $this->outputDir) . '.json';
+        if (is_file($sharedOutputPath)) {
+            unlink($sharedOutputPath);
+        }
+
         $buildCacheDir = $cachePath . '/build';
         if (is_dir($buildCacheDir)) {
             $this->removeDir($buildCacheDir);

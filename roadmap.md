@@ -62,6 +62,7 @@
 - [x] `yiipress init:content` command — scaffold initial content structure
 - [x] [Namespaced content, theme, and plugin scaffolding commands](https://github.com/yiipress/engine/issues/125)
 - [x] Incremental builds (only rebuild changed files)
+- [x] Selective shared-output regeneration with dependency fingerprints, obsolete-page cleanup, and conservative custom-template invalidation
 - [x] Smaller static package by removing unused runtime extension dependencies
 - [x] Build diagnostics (warn on broken internal links, missing images, invalid front matter)
 - [x] `yiipress clean` command — clear build output and caches

@@ -6,6 +6,7 @@ namespace YiiPress\Content\Model;
 
 final readonly class Collection
 {
+    public const int DEFAULT_FEED_LIMIT = 20;
     /**
      * @param list<string> $order
      */
@@ -21,6 +22,6 @@ final readonly class Collection
         public bool $listing,
         public array $order = [],
         public bool $navigationPager = false,
-        public int $feedLimit = 20,
+        public int $feedLimit = self::DEFAULT_FEED_LIMIT,
     ) {}
 }
