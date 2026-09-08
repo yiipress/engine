@@ -216,6 +216,7 @@ final class BuildManifest
         $mtime = (int) filemtime($sourceFile);
         $size = (int) filesize($sourceFile);
         $stored = $this->entries[$sourceFile] ?? null;
+        // Revalidate changed metadata: another write may follow the initial change check.
         $hash = ($stored['mtime'] ?? null) === $mtime && ($stored['size'] ?? null) === $size
             ? ($this->checkedHashes[$sourceFile] ?? hash_file('xxh128', $sourceFile))
             : hash_file('xxh128', $sourceFile);
@@ -230,6 +231,18 @@ final class BuildManifest
             'size' => $size,
             'outputs' => $outputs,
         ];
+    }
+
+    /** Relocates recorded output paths without rereading already verified sources. */
+    public function remapOutputDirectory(string $from, string $to): void
+    {
+        foreach ($this->entries as &$entry) {
+            $entry['outputs'] = array_map(
+                static fn(string $path): string => str_starts_with($path, $from . '/')
+                    ? $to . substr($path, strlen($from)) : $path,
+                $entry['outputs'],
+            );
+        }
     }
 
     /**

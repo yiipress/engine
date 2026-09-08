@@ -1146,13 +1146,7 @@ final class BuildCommand extends Command
 
             if ($manifest !== null) {
                 if ($builtOutputDir !== $outputDir) {
-                    foreach ($manifest->entries() as $sourcePath => $entryData) {
-                        $manifest->record($sourcePath, array_map(
-                            static fn(string $path): string => str_starts_with($path, $builtOutputDir . '/')
-                                ? $outputDir . substr($path, strlen($builtOutputDir)) : $path,
-                            $entryData['outputs'],
-                        ));
-                    }
+                    $manifest->remapOutputDirectory($builtOutputDir, $outputDir);
                 }
                 $manifest->save();
             }

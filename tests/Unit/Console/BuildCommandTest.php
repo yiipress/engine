@@ -73,6 +73,11 @@ final class BuildCommandTest extends TestCase
         if (is_file($manifestPath)) {
             unlink($manifestPath);
         }
+        $sharedOutputPath = RuntimePaths::cachePath(dirname(__DIR__, 3))
+            . '/shared-output-' . hash('xxh128', $this->outputDir) . '.json';
+        if (is_file($sharedOutputPath)) {
+            unlink($sharedOutputPath);
+        }
     }
 
     public function testBuildGeneratesOutputFiles(): void

@@ -172,9 +172,6 @@ and Xdebug disabled (five-iteration PHPBench modal estimates):
 | 1 000 realistic entries (~27 KB each) | Incremental, no changes | ~96 ms |
 | 1 000 realistic entries (~27 KB each) | Incremental, 1 changed entry | ~195 ms |
 
-Incremental builds selectively regenerate dependent shared pages. Source-content checks also detect edits
-with unchanged timestamps; this makes unchanged builds slower than the previous timestamp-only check.
-
 See [`docs/benchmarking.md`](docs/benchmarking.md#current-results-8-september-2026) for detailed results,
 measurement conditions, and reproduction commands. Timings vary by hardware and filesystem.
 

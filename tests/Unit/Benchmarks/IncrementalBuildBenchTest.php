@@ -15,9 +15,6 @@ use ReflectionClass;
 use YiiPress\Benchmarks\LargeContentBuildBench;
 use YiiPress\Benchmarks\SmallSiteBuildBench;
 
-require_once dirname(__DIR__, 3) . '/benchmarks/SmallSiteBuildBench.php';
-require_once dirname(__DIR__, 3) . '/benchmarks/LargeContentBuildBench.php';
-
 final class IncrementalBuildBenchTest extends TestCase
 {
     /** @return iterable<string, array{class-string}> */

@@ -6,6 +6,8 @@ namespace YiiPress\Tests\Unit\Build;
 
 use YiiPress\Build\DirectoryRemover;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
+use RuntimeException;
 
 final class DirectoryRemoverTest extends TestCase
 {
@@ -78,6 +80,47 @@ final class DirectoryRemoverTest extends TestCase
         $this->link($this->tempDir . '/missing', $link);
         DirectoryRemover::remove($link);
         self::assertFalse(is_link($link));
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function deletionFailures(): iterable
+    {
+        yield 'file unlink' => ['file'];
+        yield 'directory removal' => ['directory'];
+        yield 'root symlink unlink' => ['symlink'];
+    }
+
+    #[DataProvider('deletionFailures')]
+    public function testDeletionFailuresThrow(string $kind): void
+    {
+        $parent = $this->tempDir . '/parent';
+        $root = $parent . '/output';
+        mkdir($parent);
+        if ($kind === 'symlink') {
+            $target = $this->tempDir . '/preserved';
+            mkdir($target);
+            $this->link($target, $root);
+        } else {
+            mkdir($root);
+        }
+        $failedPath = $root;
+        if ($kind === 'file') {
+            $failedPath .= '/index.html';
+            file_put_contents($failedPath, 'page');
+        }
+        $blocked = $kind === 'file' ? $root : $parent;
+        chmod($blocked, 0o555);
+        try {
+            clearstatcache(true, $blocked);
+            if (is_writable($blocked)) {
+                self::markTestSkipped('The current user bypasses filesystem write permissions.');
+            }
+            $this->expectException(RuntimeException::class);
+            $this->expectExceptionMessage('"' . $failedPath . '"');
+            DirectoryRemover::remove($root);
+        } finally {
+            chmod($blocked, 0o755);
+        }
     }
 
     private function link(string $target, string $link): void

@@ -109,6 +109,7 @@
         ],
         "psr-4": {
             "YiiPress\\Benchmark\\": "benchmarks/src",
+            "YiiPress\\Benchmarks\\": "benchmarks/",
             "YiiPress\\Tests\\": "tests"
         }
     },

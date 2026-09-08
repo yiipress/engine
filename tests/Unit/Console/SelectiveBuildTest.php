@@ -239,7 +239,7 @@ final class SelectiveBuildTest extends TestCase
 
     public function testFutureEntriesAndStandalonePagesPublishWithoutSourceEdits(): void
     {
-        $publishAt = time() + 3;
+        $publishAt = time() + 15;
         $date = date('c', $publishAt);
         file_put_contents($this->entry(1), str_replace('2024-01-01', $date, (string) file_get_contents($this->entry(1))));
         file_put_contents($this->content . '/about.md', "---\ntitle: About\ndate: $date\n---\nFuture page.\n");
