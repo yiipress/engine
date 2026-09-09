@@ -172,10 +172,6 @@ and Xdebug disabled (five-iteration PHPBench modal estimates):
 | 1 000 realistic entries (~27 KB each) | Incremental, no changes | ~93 ms |
 | 1 000 realistic entries (~27 KB each) | Incremental, 1 changed entry | ~199 ms |
 
-Cached UI translation lookup takes ~0.491 µs for one language and ~0.414 µs for two languages
-(measured on 9 September 2026 in the same environment, with 100 000 revisions and seven iterations).
-These timings exclude translation-file loading.
-
 See [`docs/benchmarking.md`](docs/benchmarking.md#current-results-8-september-2026) for detailed results,
 measurement conditions, and reproduction commands. Timings vary by hardware and filesystem.
 
