@@ -90,7 +90,8 @@ final readonly class PortableWorkerPool
                         $failure ??= new RuntimeException('Worker process timed out after 300 seconds.');
                         break;
                     }
-                    usleep(100_000);
+                    // Keep completion latency low for short feed, listing, and archive batches.
+                    usleep(1_000);
                 }
                 $stdout = stream_get_contents($worker['pipes'][1]);
                 if ($stdout === false) {

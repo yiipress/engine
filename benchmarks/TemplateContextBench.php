@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiPress\Benchmarks;
 
 use YiiPress\Build\TemplateContext;
+use YiiPress\Build\AssetFingerprintManifest;
 use YiiPress\Build\TemplateResolver;
 use YiiPress\Build\Theme;
 use YiiPress\Build\ThemeRegistry;
@@ -34,17 +35,28 @@ final class TemplateContextBench
             $this->tempDir . '/partials/nested.php',
             '<header><?= $partial("simple", ["title" => $heading]) ?></header><main><?= $body ?></main>',
         );
+        mkdir($this->tempDir . '/assets');
+        file_put_contents($this->tempDir . '/assets/style.css', 'body{}');
+        file_put_contents(
+            $this->tempDir . '/partials/assets.php',
+            '<?php for ($i = 0; $i < 6; ++$i): ?><link href="<?= $themeAsset("style.css") ?>"><?php endfor ?>',
+        );
 
         $registry = new ThemeRegistry();
         $registry->register(new Theme('bench', $this->tempDir));
         $resolver = new TemplateResolver($registry);
-        $this->context = new TemplateContext($resolver, 'bench');
+        $manifest = new AssetFingerprintManifest();
+        $manifest->register('assets/themes/bench/style.css', $this->tempDir . '/assets/style.css');
+        $this->context = new TemplateContext($resolver, 'bench', $manifest);
     }
 
     public function tearDown(): void
     {
         @unlink($this->tempDir . '/partials/simple.php');
         @unlink($this->tempDir . '/partials/nested.php');
+        @unlink($this->tempDir . '/partials/assets.php');
+        @unlink($this->tempDir . '/assets/style.css');
+        @rmdir($this->tempDir . '/assets');
         @rmdir($this->tempDir . '/partials');
         @rmdir($this->tempDir);
     }
@@ -63,5 +75,13 @@ final class TemplateContextBench
     public function benchNestedPartial(): void
     {
         $this->context->partial('nested', ['heading' => 'Title', 'body' => '<p>Content</p>']);
+    }
+
+    #[Revs(1000)]
+    #[Iterations(5)]
+    #[Warmup(1)]
+    public function benchThemeAssetPartial(): void
+    {
+        $this->context->partial('assets', ['rootPath' => '../../']);
     }
 }

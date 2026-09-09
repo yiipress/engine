@@ -111,6 +111,61 @@ final class ParallelEntryWriterTest extends TestCase
         assertStringContainsString('Only Post', (string) file_get_contents($tasks[0]['filePath']));
     }
 
+    public function testWriteWithWorkersSharingAnOutputDirectory(): void
+    {
+        $tasks = [];
+        for ($i = 0; $i < 128; ++$i) {
+            $tasks[] = [
+                'entry' => $this->createEntry('shared-' . $i, 'Shared ' . $i),
+                'filePath' => $this->outputDir . '/shared/deep/page-' . $i . '.html',
+                'permalink' => '/shared/deep/page-' . $i . '.html',
+            ];
+        }
+        $writer = new ParallelEntryWriter($this->createPipeline(), $this->createTemplateResolver(), workerPool: $this->createTestWorkerPool());
+        assertSame(128, $writer->write($this->createSiteConfig(), $tasks, $this->contentDir, 4));
+        foreach ($tasks as $task) {
+            assertFileExists($task['filePath']);
+        }
+    }
+
+    public function testWriteChunkCreatesMissingDirectories(): void
+    {
+        $tasks = [[
+            'entry' => $this->createEntry('chunk', 'Chunk'),
+            'filePath' => $this->outputDir . '/missing/deep/index.html',
+            'permalink' => '/missing/deep/',
+        ]];
+        $writer = new ParallelEntryWriter($this->createPipeline(), $this->createTemplateResolver());
+        $writer->writeChunk($this->createSiteConfig(), $tasks, $this->contentDir, null, null, [], false);
+        assertFileExists($tasks[0]['filePath']);
+    }
+
+    public function testNoWriteDoesNotCreateDirectories(): void
+    {
+        $tasks = [[
+            'entry' => $this->createEntry('no-write', 'No write'),
+            'filePath' => $this->outputDir . '/missing/index.html',
+            'permalink' => '/missing/',
+        ]];
+        $writer = new ParallelEntryWriter($this->createPipeline(), $this->createTemplateResolver());
+        $writer->writeChunk($this->createSiteConfig(), $tasks, $this->contentDir, null, null, [], true);
+        self::assertDirectoryDoesNotExist($this->outputDir . '/missing');
+    }
+
+    public function testWriteChunkReportsDirectoryCreationFailure(): void
+    {
+        file_put_contents($this->outputDir . '/blocked', 'file');
+        $tasks = [[
+            'entry' => $this->createEntry('blocked', 'Blocked'),
+            'filePath' => $this->outputDir . '/blocked/deep/index.html',
+            'permalink' => '/blocked/deep/',
+        ]];
+        $writer = new ParallelEntryWriter($this->createPipeline(), $this->createTemplateResolver());
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('was not created');
+        $writer->writeChunk($this->createSiteConfig(), $tasks, $this->contentDir, null, null, [], false);
+    }
+
     public function testWriteFailsWhenParallelWorkerIsTerminatedBySignal(): void
     {
         $this->skipWhenSignalWorkerTestIsUnsupported();

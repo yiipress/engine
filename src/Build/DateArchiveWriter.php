@@ -19,6 +19,7 @@ final readonly class DateArchiveWriter
     public function __construct(
         private TemplateResolver $templateResolver,
         private ?AssetFingerprintManifest $assetManifest = null,
+        private ?SharedOutputCache $sharedOutputs = null,
     ) {}
 
     /**
@@ -80,6 +81,21 @@ final readonly class DateArchiveWriter
                     'entries' => $monthEntries,
                 ];
             }
+        }
+
+        if (!$noWrite && $this->sharedOutputs !== null) {
+            $tasks = array_values(array_filter($tasks, function (array $task) use ($collection): bool {
+                $path = $collection->name . '/' . match ($task['type']) {
+                    'index' => 'archive',
+                    'year' => $task['year'],
+                    'month' => $task['year'] . '/' . $task['month'],
+                } . '/index.html';
+                $dependencies = $task;
+                if (isset($task['entries'])) {
+                    $dependencies['entries'] = $this->sharedOutputs->entryKeys($task['entries']);
+                }
+                return $this->sharedOutputs->needsWrite([$path], [$collection, $dependencies]);
+            }));
         }
 
         $taskRunner = new ParallelTaskRunner();

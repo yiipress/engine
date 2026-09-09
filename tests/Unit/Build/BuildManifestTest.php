@@ -42,6 +42,59 @@ final class BuildManifestTest extends TestCase
         assertTrue($manifest->isChanged($sourceFile));
     }
 
+    public function testRemappingOutputDirectoryPreservesVerifiedSourceMetadata(): void
+    {
+        $source = $this->tempDir . '/entry.md';
+        file_put_contents($source, '# Hello');
+        $manifest = new BuildManifest($this->tempDir . '/manifest.json');
+        $manifest->record($source, ['/old/page/index.html', '/old-other/index.html']);
+        $recorded = $manifest->entries()[$source];
+        // Remapping must not read or hash the source again.
+        unlink($source);
+        $manifest->remapOutputDirectory('/old', '/new');
+        $recorded['outputs'] = ['/new/page/index.html', '/old-other/index.html'];
+        assertSame($recorded, $manifest->entries()[$source]);
+        $manifest->save();
+        $manifest->load();
+        foreach ($recorded as $key => $value) {
+            assertSame($value, $manifest->entries()[$source][$key]);
+        }
+    }
+
+    public function testChangedSourceIsRevalidatedBeforeRecording(): void
+    {
+        $source = $this->tempDir . '/entry.md';
+        file_put_contents($source, 'old');
+        $manifest = new BuildManifest($this->tempDir . '/manifest.json');
+        $manifest->record($source, []);
+        file_put_contents($source, 'changed once');
+        assertTrue($manifest->isChanged($source));
+        $mtime = filemtime($source);
+        file_put_contents($source, 'changed more');
+        touch($source, $mtime);
+        $manifest->record($source, []);
+        assertSame(hash_file('xxh128', $source), $manifest->entries()[$source]['hash']);
+    }
+
+    public function testSameSizeSameTimestampEditsAreRehashedWhenRecorded(): void
+    {
+        $source = $this->tempDir . '/entry.md';
+        file_put_contents($source, 'first');
+        touch($source, 100);
+        $manifest = new BuildManifest($this->tempDir . '/manifest.json');
+        $manifest->record($source, []);
+        file_put_contents($source, 'other');
+        touch($source, 100);
+        assertTrue($manifest->isChanged($source));
+        file_put_contents($source, 'third');
+        touch($source, 100);
+        $manifest->record($source, []);
+        assertSame(hash_file('xxh128', $source), $manifest->entries()[$source]['hash']);
+        file_put_contents($source, 'other');
+        touch($source, 100);
+        assertTrue($manifest->isChanged($source), 'Restoring the first edit must invalidate the second edit output.');
+    }
+
     public function testRecordedFileIsNotChanged(): void
     {
         $sourceFile = $this->tempDir . '/entry.md';
@@ -56,6 +109,46 @@ final class BuildManifestTest extends TestCase
         $manifest2->load();
 
         assertFalse($manifest2->isChanged($sourceFile));
+    }
+
+    public function testChangeDetectionAndRecordingRefreshCachedFileMetadata(): void
+    {
+        $sourceFile = $this->tempDir . '/entry.md';
+        file_put_contents($sourceFile, 'old');
+        $manifest = new BuildManifest($this->tempDir . '/manifest.json');
+        $manifest->record($sourceFile, []);
+        assertFalse($manifest->isChanged($sourceFile));
+
+        $handle = fopen($sourceFile, 'ab');
+        self::assertNotFalse($handle);
+        fwrite($handle, ' appended');
+        fclose($handle);
+        assertTrue($manifest->isChanged($sourceFile));
+        $manifest->record($sourceFile, []);
+        assertFalse($manifest->isChanged($sourceFile));
+        assertSame(12, $manifest->entries()[$sourceFile]['size']);
+    }
+
+    public function testSameSizeEditWithPreservedTimestampIsDetected(): void
+    {
+        $sourceFile = $this->tempDir . '/entry.md';
+        file_put_contents($sourceFile, 'first');
+        $manifest = new BuildManifest($this->tempDir . '/manifest.json');
+        $manifest->record($sourceFile, []);
+        $mtime = filemtime($sourceFile);
+        file_put_contents($sourceFile, 'other');
+        touch($sourceFile, $mtime);
+        assertTrue($manifest->isChanged($sourceFile));
+    }
+
+    public function testDirectoryInventoryDetectsAdditionWithPreservedTimestamp(): void
+    {
+        $manifest = new BuildManifest($this->tempDir . '/manifest.json');
+        $mtime = filemtime($this->tempDir);
+        $manifest->setTrackedDirectories([$this->tempDir => $mtime]);
+        file_put_contents($this->tempDir . '/new.md', 'new');
+        touch($this->tempDir, $mtime);
+        assertTrue($manifest->trackedDirectoriesChanged());
     }
 
     public function testModifiedFileIsDetectedAsChanged(): void
@@ -314,7 +407,7 @@ final class BuildManifestTest extends TestCase
         assertSame(['/out/style.old.css'], $staleOutputs);
     }
 
-    public function testRecordReusesStoredHashWhenMtimeAndSizeMatch(): void
+    public function testRecordRevalidatesStoredHashWhenMtimeAndSizeMatch(): void
     {
         $sourceFile = $this->tempDir . '/entry.md';
         file_put_contents($sourceFile, '# Hello');
@@ -338,7 +431,7 @@ final class BuildManifestTest extends TestCase
         $manifest->record($sourceFile, ['/out/new.html']);
 
         $entry = $manifest->entries()[$sourceFile];
-        assertSame('stored-hash', $entry['hash']);
+        assertSame(hash_file('xxh128', $sourceFile), $entry['hash']);
         assertSame(['/out/new.html'], $entry['outputs']);
     }
 

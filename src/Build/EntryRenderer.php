@@ -142,6 +142,8 @@ final class EntryRenderer
 
         return hash('xxh128', serialize([
             'siteConfig' => $siteConfig,
+            'entryMetadata' => get_object_vars($entry),
+            'authors' => $this->authors,
             'permalink' => $permalink,
             'navigation' => $navigation,
             'navigationPager' => $navigationPager,

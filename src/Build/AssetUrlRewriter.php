@@ -12,21 +12,16 @@ use function substr;
 
 final readonly class AssetUrlRewriter
 {
-    /** @var list<string> */
-    private array $logicalPaths;
-
     public function __construct(
         private AssetFingerprintManifest $manifest,
-    ) {
-        $this->logicalPaths = array_keys($manifest->all());
-    }
+    ) {}
 
     public function rewrite(string $html, string $rootPath = ''): string
     {
         if (
             $html === ''
             || $this->manifest->isEmpty()
-            || !$this->containsLogicalAssetPath($html)
+            || !$this->manifest->containsLogicalPath($html)
             || (!str_contains($html, 'href=') && !str_contains($html, 'src='))
         ) {
             return $html;
@@ -66,11 +61,6 @@ final readonly class AssetUrlRewriter
         }
 
         return $prefix . $resolvedPath . $suffix;
-    }
-
-    private function containsLogicalAssetPath(string $html): bool
-    {
-        return array_any($this->logicalPaths, fn($logicalPath) => str_contains($html, $logicalPath));
     }
 
     /**

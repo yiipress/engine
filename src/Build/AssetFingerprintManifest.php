@@ -6,11 +6,17 @@ namespace YiiPress\Build;
 
 use RuntimeException;
 
-use function hash_file;
+use function array_keys;
+use function array_map;
 use function hash;
+use function hash_file;
+use function implode;
 use function is_file;
 use function ltrim;
 use function pathinfo;
+use function preg_match;
+use function preg_quote;
+use function str_contains;
 use function substr;
 
 final class AssetFingerprintManifest
@@ -20,12 +26,15 @@ final class AssetFingerprintManifest
 
     private ?string $signature = null;
 
+    private string|false|null $logicalPathPattern = null;
+
     public function register(string $logicalPath, string $sourceFilePath): string
     {
         $logicalPath = self::normalizePath($logicalPath);
         $fingerprintedPath = self::fingerprintPath($logicalPath, $sourceFilePath);
         $this->entries[$logicalPath] = $fingerprintedPath;
         $this->signature = null;
+        $this->logicalPathPattern = null;
 
         return $fingerprintedPath;
     }
@@ -48,6 +57,28 @@ final class AssetFingerprintManifest
     public function isEmpty(): bool
     {
         return $this->entries === [];
+    }
+
+    public function containsLogicalPath(string $text): bool
+    {
+        if ($this->entries === []) {
+            return false;
+        }
+
+        $this->logicalPathPattern ??= '~(?:' . implode('|', array_map(
+            static fn(string $path): string => preg_quote($path, '~'),
+            array_keys($this->entries),
+        )) . ')~';
+
+        if ($this->logicalPathPattern !== false) {
+            // Large manifests can exceed PCRE's compiled pattern limit.
+            $matched = @preg_match($this->logicalPathPattern, $text);
+            if ($matched !== false) {
+                return $matched === 1;
+            }
+            $this->logicalPathPattern = false;
+        }
+        return array_any($this->entries, fn($_, $path) => str_contains($text, $path));
     }
 
     public function signature(): string

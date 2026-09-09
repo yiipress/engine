@@ -13,8 +13,9 @@ use samdark\sitemap\Sitemap;
 
 use function sys_get_temp_dir;
 
-final class SitemapGenerator
+final readonly class SitemapGenerator
 {
+    public function __construct(private ?SharedOutputCache $sharedOutputs = null) {}
     /**
      * @param array<string, Collection> $collections
      * @param array<string, list<Entry>> $entriesByCollection
@@ -30,6 +31,23 @@ final class SitemapGenerator
         array $authors = [],
         bool $noWrite = false,
     ): void {
+        $dependencies = [];
+        if (!$noWrite && $this->sharedOutputs !== null) {
+            foreach ($collections as $name => $collection) {
+                $dependencies[] = $collection;
+                foreach ($entriesByCollection[$name] ?? [] as $entry) {
+                    $dependencies[] = [$entry->slug, $entry->permalink, $entry->language, $entry->date];
+                }
+            }
+            foreach ($standalonePages as $page) {
+                $dependencies[] = [$page->slug, $page->permalink, $page->language, $page->date];
+            }
+            $dependencies[] = array_keys($authors);
+            if (!$this->sharedOutputs->groupNeedsWrite('sitemap', $dependencies)) {
+                return;
+            }
+        }
+
         $sitemapPath = ($noWrite ? sys_get_temp_dir() : $outputDir) . '/sitemap.xml';
         $sitemap = new Sitemap($sitemapPath);
         $sitemap->setBufferSize(1000);
@@ -70,6 +88,10 @@ final class SitemapGenerator
 
         if (!$noWrite) {
             $sitemap->write();
+            $this->sharedOutputs?->recordGroup('sitemap', array_map(
+                static fn(string $path): string => substr($path, strlen($outputDir) + 1),
+                $sitemap->getWrittenFilePath(),
+            ), $dependencies);
         }
     }
 }

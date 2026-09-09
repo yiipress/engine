@@ -19,6 +19,27 @@ use function unlink;
 
 final class PortableWorkerPoolTest extends TestCase
 {
+    public function testWaitsForUnevenWorkersBeforeAggregatingResults(): void
+    {
+        $pidFile = sys_get_temp_dir() . '/yiipress-portable-worker-pids-' . bin2hex(random_bytes(8));
+        $workerScript = dirname(__DIR__, 2) . '/Support/portable-worker.php';
+
+        try {
+            $pool = new PortableWorkerPool([PHP_BINARY, $workerScript]);
+            assertSame(7, $pool->run([
+                new CountingWorkerJob($pidFile, 3, 175_000),
+                new CountingWorkerJob($pidFile, 4, 20_000),
+            ]));
+            $pids = file($pidFile, FILE_IGNORE_NEW_LINES);
+            assertNotFalse($pids);
+            assertSame(2, count(array_unique($pids)));
+        } finally {
+            if (is_file($pidFile)) {
+                unlink($pidFile);
+            }
+        }
+    }
+
     public function testRunsJobsInSeparateProcessesAndAggregatesResults(): void
     {
         $pidFile = sys_get_temp_dir() . '/yiipress-portable-worker-pids-' . bin2hex(random_bytes(8));

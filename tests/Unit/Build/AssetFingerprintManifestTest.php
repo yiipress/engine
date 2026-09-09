@@ -45,6 +45,56 @@ final class AssetFingerprintManifestTest extends TestCase
         assertSame($resolved, $manifest->resolve('assets/theme/style.css'));
     }
 
+    public function testLogicalPathMatcherUsesLiteralCaseSensitivePaths(): void
+    {
+        $source = $this->tempDir . '/style.css';
+        file_put_contents($source, 'css');
+        $manifest = new AssetFingerprintManifest();
+        assertSame(false, $manifest->containsLogicalPath('assets/a+[b]~.css'));
+        $manifest->register('assets/a+[b]~.css', $source);
+
+        assertSame(true, $manifest->containsLogicalPath('<link href="/assets/a+[b]~.css?v=1">'));
+        assertSame(false, $manifest->containsLogicalPath('assets/A+[b]~.css'));
+        assertSame(false, $manifest->containsLogicalPath('assets/aaab~Xcss'));
+        assertSame(false, $manifest->containsLogicalPath(''));
+    }
+
+    public function testRewriterSeesPathsRegisteredAfterFirstRewrite(): void
+    {
+        $source = $this->tempDir . '/style.css';
+        file_put_contents($source, 'css');
+        $manifest = new AssetFingerprintManifest();
+        $manifest->register('assets/first.css', $source);
+        $rewriter = new AssetUrlRewriter($manifest);
+        $html = '<link href="assets/second.css">';
+        assertSame($html, $rewriter->rewrite($html));
+
+        $fingerprinted = $manifest->register('assets/second.css', $source);
+        assertSame('<link href="' . $fingerprinted . '">', $rewriter->rewrite($html));
+        assertSame(true, $manifest->containsLogicalPath('assets/first.css'));
+    }
+
+    public function testLogicalPathMatcherFallsBackForOversizedPatterns(): void
+    {
+        $source = $this->tempDir . '/style.css';
+        file_put_contents($source, 'css');
+        $manifest = new AssetFingerprintManifest();
+        for ($i = 0; $i < 1000; $i++) {
+            $manifest->register('assets/' . str_repeat('a', 200) . $i . '.css', $source);
+        }
+        $lastPath = 'assets/' . str_repeat('a', 200) . '999.css';
+        assertSame(true, $manifest->containsLogicalPath($lastPath));
+        assertSame(false, $manifest->containsLogicalPath('no assets here'));
+        assertSame(true, $manifest->containsLogicalPath($lastPath));
+        assertSame(
+            '<link href="' . $manifest->resolve($lastPath) . '">',
+            new AssetUrlRewriter($manifest)->rewrite('<link href="' . $lastPath . '">'),
+        );
+
+        $manifest->register('assets/late.css', $source);
+        assertSame(true, $manifest->containsLogicalPath('assets/late.css'));
+    }
+
     public function testRegisterRejectsMissingSource(): void
     {
         $manifest = new AssetFingerprintManifest();

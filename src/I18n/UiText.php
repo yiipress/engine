@@ -97,15 +97,17 @@ final class UiText
         $normalizedLanguage = self::normalizeLanguage($language);
         $normalizedDefaultLanguage = self::normalizeLanguage($defaultLanguage);
         $catalogs = [
-            'en' => self::resolveCatalog('en', $templateResolver, $themeName, 'en'),
+            'en' => self::resolveCatalog('en', 'en', $templateResolver, $themeName, 'en'),
             $normalizedDefaultLanguage => self::resolveCatalog(
                 $defaultLanguage,
+                $normalizedDefaultLanguage,
                 $templateResolver,
                 $themeName,
                 $normalizedDefaultLanguage,
             ),
             $normalizedLanguage => self::resolveCatalog(
                 $language,
+                $normalizedLanguage,
                 $templateResolver,
                 $themeName,
                 $normalizedDefaultLanguage,
@@ -128,8 +130,14 @@ final class UiText
         $catalogs = [];
         $normalizedDefaultLanguage = self::normalizeLanguage($defaultLanguage);
 
-        foreach (array_values(array_unique(array_map(self::normalizeLanguage(...), $languages))) as $language) {
+        foreach ($languages as $language) {
+            $language = self::normalizeLanguage($language);
+            if (isset($catalogs[$language])) {
+                continue;
+            }
+
             $catalogs[$language] = self::resolveCatalog(
+                $language,
                 $language,
                 $templateResolver,
                 $themeName,
@@ -277,12 +285,11 @@ final class UiText
      */
     private static function resolveCatalog(
         string $language,
+        string $normalizedLanguage,
         TemplateResolver $templateResolver,
         string $themeName,
-        string $defaultLanguage,
+        string $normalizedDefaultLanguage,
     ): array {
-        $normalizedLanguage = self::normalizeLanguage($language);
-        $normalizedDefaultLanguage = self::normalizeLanguage($defaultLanguage);
         $cacheKey = $themeName . "\0" . $normalizedDefaultLanguage . "\0" . $normalizedLanguage;
         if (isset(self::$resolvedCatalogCache[$cacheKey])) {
             return self::$resolvedCatalogCache[$cacheKey];
@@ -295,7 +302,7 @@ final class UiText
         }
 
         if ($normalizedDefaultLanguage !== 'en') {
-            foreach (self::resolveLanguagePaths($defaultLanguage, $normalizedDefaultLanguage, $templateResolver, $themeName) as $path) {
+            foreach (self::resolveLanguagePaths($normalizedDefaultLanguage, $normalizedDefaultLanguage, $templateResolver, $themeName) as $path) {
                 $catalog = array_merge($catalog, self::loadCatalog($path));
             }
         }

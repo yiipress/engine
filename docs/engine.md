@@ -146,9 +146,9 @@ Writers turn page objects and indexed aggregate data into files:
 - `sitemap.xml`, `robots.txt`, redirects, and `404.html`;
 - copied content and theme assets.
 
-Entry pages and standalone pages can be rendered and written in parallel because each page writes to its own destination path.
+Entry pages and standalone pages can be rendered and written in parallel because each page writes to its own destination path. Each entry worker prepares the directories needed by its own task chunk before rendering, so directory creation overlaps across workers instead of delaying every worker behind a parent-process setup pass. Shared output directories tolerate concurrent creation; failures still abort the build. No-write builds do not create these directories.
 
-Scaffolding commands, cleanup commands, and importer media copying use `yiisoft/files` helpers for consistent filesystem errors and cross-platform directory removal. Build-path directory setup, page writes, output preparation, and bulk asset writer loops keep direct filesystem operations on their hot paths unless benchmarks show a helper abstraction is neutral or faster.
+Scaffolding commands, cleanup commands, and importer media copying use `yiisoft/files` helpers for consistent filesystem errors and cross-platform directory removal. Build-path directory setup, page writes, output preparation, and bulk asset writer loops keep direct filesystem operations on their hot paths unless benchmarks show a helper abstraction is neutral or faster. Full-build replacement cleanup uses native directory traversal through `DirectoryRemover`; directory symlinks are removed as links, preserving their targets. Asset URL rewriting reuses a literal path-search pattern cached by the fingerprint manifest, invalidates it on registration, and falls back to substring searches if PCRE cannot handle the pattern.
 
 ## Performance Model
 
@@ -157,14 +157,14 @@ Performance is handled by doing less work, keeping expensive work native, and le
 - YAML front matter uses `yaml_parse()`.
 - Markdown uses `ext-mdparser` from `iliaal/mdparser`, backed by bundled MD4C sources.
 - Syntax highlighting uses `ext-highlighter`, backed by syntect and Rust.
-- Incremental builds reuse the build manifest and content hashes.
+- Incremental builds reuse the build manifest and content hashes. Unchanged builds validate tracked directories, sources, and output existence before returning; they skip collecting a replacement directory inventory. Source checks hash file contents, so same-size edits with unchanged timestamps are detected. Directory checks include entry names, so rapid additions are detected even when directory timestamps match. Asset discovery filters content extensions before file type checks.
 - `--workers=auto` detects CPU capacity and caps user-facing defaults to avoid spawning too many workers for small builds.
 - OPCache can reuse compiled PHP templates when the runtime enables it.
 - JIT and preloading remain available to source installs where the PHP runtime is managed directly.
 
-Parallel builds spawn independent worker processes (`proc_open()`) rather than forking. Forked workers would inherit the running PHAR's file descriptor and its shared read offset, so two workers autoloading a class for the first time at once could race on that offset and corrupt the decompression (a phar crc32 mismatch, or a class body full of another file's bytes); independent processes each get their own file descriptor, so there is nothing to race on. This holds on every platform, not just Windows. The internal `worker` command used for these child processes remains executable but is hidden from the user-facing command list. Each worker receives an isolated typed rendering job — the indexed site, its assigned pages, and enough context to reconstruct its own processor pipeline and theme registry — renders them, and writes independent files. Secondary outputs stay sequential or are parallelized only when the task count is high enough to justify worker overhead.
+Parallel builds spawn independent worker processes (`proc_open()`) rather than forking. Forked workers would inherit the running PHAR's file descriptor and its shared read offset, so two workers autoloading a class for the first time at once could race on that offset and corrupt the decompression (a phar crc32 mismatch, or a class body full of another file's bytes); independent processes each get their own file descriptor, so there is nothing to race on. This holds on every platform, not just Windows. The internal `worker` command used for these child processes remains executable but is hidden from the user-facing command list. Each worker receives an isolated typed rendering job — the indexed site, its assigned pages, and enough context to reconstruct its own processor pipeline and theme registry — renders them, and writes independent files. Listing and archive batches stay sequential below 256 tasks; above that, the task runner allows one worker per 128 tasks, capped by the requested worker count. This threshold amortizes independent-process startup and serialization costs; it is a heuristic, and unusually expensive custom templates may have a different crossover point.
 
-This approach avoids shared memory and synchronization, at the cost of each worker re-bootstrapping its own pipeline rather than inheriting one already built in the parent. Feed generation can split work per collection when workers are enabled because feeds may render every entry body again. Sitemap and robots output remain serial.
+This approach avoids shared memory and synchronization, at the cost of each worker re-bootstrapping its own pipeline rather than inheriting one already built in the parent. Feed generation stays sequential when fewer than 1,000 entries will be included across collection feeds. At or above that threshold, work can split per collection, capped by the requested worker count. The count respects each collection's feed limit; unlimited feeds count every entry. This is a measured heuristic for the default pipeline, and expensive custom processors may have a different crossover point. Limited collection feeds send only the selected entries to workers; the complete collection remains available for site-wide feeds and other outputs. Sitemap and robots output remain serial.
 
 ## Quality Tooling
 
@@ -182,11 +182,19 @@ Source installs use `runtime/cache/`. PHAR and static binary runs use a project-
 
 The cache stores:
 
-- parsed front matter keyed by file path and modification time;
-- rendered Markdown HTML keyed by content hash;
-- incremental build manifests keyed by source and output paths.
+- rendered entry HTML keyed by source content, templates, and rendering context;
+- incremental build manifests keyed by source and output paths;
+- shared-output dependency fingerprints and the output paths they own.
 
 Build manifests are treated as disposable cache metadata: missing, unreadable, corrupt, or structurally invalid manifests reset incremental state and trigger normal rebuild work instead of failing the build. Manifest saves write a uniquely named temporary file in the target directory and replace the manifest atomically after the full JSON payload is written.
+
+Shared outputs use per-output dependency fingerprints: listing and taxonomy pages track their selected entries and pagination; date archives track their groups; author pages track profiles and entries; feeds track only entries within their configured limit. Sitemap dependencies track URLs and dates, so a body-only edit can leave it untouched. Global dependencies include configuration, navigation, authors, asset fingerprints, and the cross-reference map. Filtering happens before worker dispatch.
+
+The output inventory removes obsolete listing, archive, taxonomy, author, feed, and sitemap files, while preserving paths newly owned by entries or assets. Missing output files trigger regeneration. Changed build flags and configuration inventories invalidate reuse. Future publication deadlines use the same time as content filtering and prevent the next build from returning early after a deadline passes. Author profiles are tracked as configuration dependencies.
+
+Custom templates and project processors can read arbitrary other content, so builds with them conservatively regenerate entries and shared outputs whenever a rebuild is needed. Entry dependencies involving related posts, multiple languages, navigation pagers, or changed cross-reference targets also force entry regeneration. This preserves the same build pipeline for production and live preview.
+
+Shared-output metadata is invalidated before writing and saved atomically only after a successful build. Missing or corrupt metadata for an existing managed output triggers a full replacement, which also removes outputs whose ownership can no longer be recovered. `--no-cache` invalidates this metadata without building a replacement inventory; the next normal build reconstructs it. Manifest recording rehashes each source to detect edits after the initial change check, even when size and timestamps match. Shared-output keys reuse these recorded hashes, and output-directory remapping changes paths without rehashing. These checks cost more than timestamp-only unchanged-build detection; see [the measurements](benchmarking.md#current-results-8-september-2026).
 
 `yiipress clean` removes both configured output and the relevant build cache.
 

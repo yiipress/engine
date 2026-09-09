@@ -64,6 +64,11 @@ final class SmallSiteBuildBench
             unlink($manifestPath);
         }
 
+        $sharedOutputPath = $cachePath . '/shared-output-' . hash('xxh128', $this->outputDir) . '.json';
+        if (is_file($sharedOutputPath)) {
+            unlink($sharedOutputPath);
+        }
+
         $buildCacheDir = $cachePath . '/build';
         if (is_dir($buildCacheDir)) {
             $this->removeDir($buildCacheDir);
@@ -88,6 +93,14 @@ final class SmallSiteBuildBench
     public function benchFullRebuild4Workers(): void
     {
         $this->runBuild('--workers=4 --no-cache');
+    }
+
+    #[Revs(1)]
+    #[Iterations(5)]
+    #[Warmup(1)]
+    public function benchFullRebuild8Workers(): void
+    {
+        $this->runBuild('--workers=8 --no-cache');
     }
 
     #[Revs(1)]
@@ -117,7 +130,7 @@ final class SmallSiteBuildBench
 
     #[Revs(1)]
     #[Iterations(3)]
-    #[Warmup(1)]
+    // Setup already builds the site. A warmup would consume the pending edit.
     #[BeforeMethods('prepareIncrementalSingleChangedEntry')]
     public function benchIncrementalSingleChangedEntrySequential(): void
     {

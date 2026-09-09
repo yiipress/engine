@@ -9,6 +9,7 @@ use YiiPress\Build\PortableWorkerPool;
 use YiiPress\Build\WorkerJobInterface;
 use YiiPress\Tests\Support\SummingWorkerJob;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 
 use function array_unique;
@@ -50,6 +51,7 @@ final class ParallelTaskRunnerTest extends TestCase
             2,
             static fn(int $task): int => $task,
             static fn(array $chunk): WorkerJobInterface => new SummingWorkerJob($chunk),
+            minTasksPerWorker: 1,
         );
 
         assertSame(10, $count);
@@ -74,6 +76,44 @@ final class ParallelTaskRunnerTest extends TestCase
 
             assertSame(10, $count);
             assertSame(2, count(array_unique($pids)));
+        } finally {
+            if (is_file($pidFile)) {
+                unlink($pidFile);
+            }
+        }
+    }
+
+    /** @return iterable<string, array{int, int}> */
+    public static function taskVolumes(): iterable
+    {
+        yield 'below two worker threshold' => [255, 0];
+        yield 'two workers' => [256, 2];
+        yield 'four workers' => [512, 4];
+    }
+
+    #[DataProvider('taskVolumes')]
+    public function testDefaultMinimumTaskVolume(int $taskCount, int $expectedWorkers): void
+    {
+        $runner = new ParallelTaskRunner($this->createTestWorkerPool());
+        $pidFile = sys_get_temp_dir() . '/yiipress-task-volume-' . uniqid() . '.txt';
+        $tasks = array_fill(0, $taskCount, 1);
+
+        try {
+            $result = $runner->run(
+                $tasks,
+                4,
+                static fn(int $task): int => $task,
+                $expectedWorkers === 0
+                    ? $this->failingJobFactory()
+                    : static fn(array $chunk): WorkerJobInterface => new SummingWorkerJob($chunk, pidFile: $pidFile),
+            );
+
+            assertSame($taskCount, $result);
+            if ($expectedWorkers > 0) {
+                $pids = file($pidFile, FILE_IGNORE_NEW_LINES);
+                assertNotFalse($pids);
+                assertSame($expectedWorkers, count(array_unique($pids)));
+            }
         } finally {
             if (is_file($pidFile)) {
                 unlink($pidFile);

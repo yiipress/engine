@@ -148,6 +148,51 @@ final class EntrySorterTest extends TestCase
         assertSame([], $sorted);
     }
 
+    public function testEqualKeysKeepInputOrderInBothDirections(): void
+    {
+        $entries = [
+            $this->createEntry(slug: 'z', title: 'Same', date: new DateTimeImmutable('2024-01-01'), weight: 2),
+            $this->createEntry(slug: 'a', title: 'Same', date: new DateTimeImmutable('2024-01-01'), weight: 2),
+            $this->createEntry(slug: 'm', title: 'Same', date: new DateTimeImmutable('2024-01-01'), weight: 2),
+        ];
+        foreach (['date', 'weight', 'title', 'unknown'] as $field) {
+            foreach (['asc', 'desc'] as $direction) {
+                assertSame($entries, EntrySorter::sort($entries, $this->createCollection($field, $direction)));
+            }
+        }
+    }
+
+    public function testDatesPreserveMicrosecondsTimezonesAndStableNullOrdering(): void
+    {
+        $older = $this->createEntry(slug: 'older', date: new DateTimeImmutable('1960-01-01T00:00:00Z'));
+        $first = $this->createEntry(slug: 'z', date: new DateTimeImmutable('2024-01-01T00:00:00.100000Z'));
+        $same = $this->createEntry(slug: 'a', date: new DateTimeImmutable('2024-01-01T03:00:00.100000+03:00'));
+        $later = $this->createEntry(slug: 'later', date: new DateTimeImmutable('2024-01-01T00:00:00.200000Z'));
+        $nullFirst = $this->createEntry(slug: 'null-z');
+        $nullSecond = $this->createEntry(slug: 'null-a');
+        $entries = [$first, $nullFirst, $later, $same, $older, $nullSecond];
+
+        assertSame([$nullFirst, $nullSecond, $older, $first, $same, $later], EntrySorter::sort($entries, $this->createCollection('date', 'asc')));
+        assertSame([$later, $first, $same, $older, $nullFirst, $nullSecond], EntrySorter::sort($entries, $this->createCollection('date', 'desc')));
+    }
+
+    public function testNumericTitlesSortAsStrings(): void
+    {
+        $two = $this->createEntry(slug: 'two', title: '2');
+        $ten = $this->createEntry(slug: 'ten', title: '10');
+        assertSame([$ten, $two], EntrySorter::sort([$two, $ten], $this->createCollection('title', 'asc')));
+        assertSame([$two, $ten], EntrySorter::sort([$ten, $two], $this->createCollection('title', 'desc')));
+    }
+
+    public function testExplicitOrderKeepsUnlistedEntriesStableAndUsesLastDuplicatePosition(): void
+    {
+        $z = $this->createEntry(slug: 'z');
+        $a = $this->createEntry(slug: 'a');
+        $b = $this->createEntry(slug: 'b');
+        $y = $this->createEntry(slug: 'y');
+        assertSame([$b, $a, $z, $y], EntrySorter::sort([$z, $a, $b, $y], $this->createCollection('date', 'desc', ['a', 'b', 'a'])));
+    }
+
     /**
      * @param list<string> $order
      */

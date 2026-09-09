@@ -73,6 +73,11 @@ final class BuildCommandTest extends TestCase
         if (is_file($manifestPath)) {
             unlink($manifestPath);
         }
+        $sharedOutputPath = RuntimePaths::cachePath(dirname(__DIR__, 3))
+            . '/shared-output-' . hash('xxh128', $this->outputDir) . '.json';
+        if (is_file($sharedOutputPath)) {
+            unlink($sharedOutputPath);
+        }
     }
 
     public function testBuildGeneratesOutputFiles(): void
@@ -1288,6 +1293,31 @@ PHP,
         }
     }
 
+    public function testNewAssetDirectoryIsDetectedAfterUnchangedBuild(): void
+    {
+        $contentDir = $this->copyContentFixture();
+        $this->runBuild($contentDir);
+        $unchanged = $this->runBuildResult($contentDir);
+        assertSame(0, $unchanged['exitCode'], $unchanged['output']);
+        assertStringContainsString('No changes detected', $unchanged['output']);
+
+        mkdir($contentDir . '/new-assets');
+        file_put_contents($contentDir . '/new-assets/example.txt', 'new asset');
+        // Directory mtimes have second precision; make the inventory change deterministic.
+        touch($contentDir, time() + 2);
+        $result = $this->runBuildResult($contentDir);
+        assertSame(0, $result['exitCode'], $result['output']);
+        assertStringNotContainsString('No changes detected', $result['output']);
+        $assets = glob($this->outputDir . '/new-assets/example*.txt');
+        assertNotFalse($assets);
+        self::assertCount(1, $assets);
+        assertSame('new asset', file_get_contents($assets[0]));
+
+        $unchangedAgain = $this->runBuildResult($contentDir);
+        assertSame(0, $unchangedAgain['exitCode'], $unchangedAgain['output']);
+        assertStringContainsString('No changes detected', $unchangedAgain['output']);
+    }
+
     public function testIncrementalBuildRecreatesMissingOutputFiles(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';
@@ -1703,6 +1733,34 @@ PHP,
         assertSame(65, $result['exitCode'], $result['output']);
         assertSame([], glob($tempPattern) ?: []);
         assertStringContainsString('keep', (string) file_get_contents($this->outputDir . '/existing.txt'));
+    }
+
+    public function testNoCacheReplacementPreservesSymlinkedOutputTarget(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'index.md' => "---\ntitle: Home\npermalink: /\n---\n\nNew output.\n",
+        ]);
+        $previous = sys_get_temp_dir() . '/yiipress-previous-output-' . uniqid();
+        mkdir($previous);
+        $this->tempContentDirs[] = $previous;
+        file_put_contents($previous . '/.yiipress-build', "YiiPress build output\n");
+        file_put_contents($previous . '/keep.txt', 'keep');
+        if (!function_exists('symlink') || !@symlink($previous, $this->outputDir)) {
+            self::markTestSkipped('Creating symlinks is not supported.');
+        }
+
+        try {
+            $result = $this->runBuildResult($contentDir, '--no-cache');
+            assertSame(0, $result['exitCode'], $result['output']);
+            assertFalse(is_link($this->outputDir));
+            assertFileExists($this->outputDir . '/index.html');
+            assertSame('keep', file_get_contents($previous . '/keep.txt'));
+            assertSame([], glob(dirname($this->outputDir) . '/.' . basename($this->outputDir) . '.old-*') ?: []);
+        } finally {
+            if (is_link($this->outputDir)) {
+                unlink($this->outputDir);
+            }
+        }
     }
 
     public function testNoCacheBuildRefusesToReplaceUnmarkedOutputDirectory(): void

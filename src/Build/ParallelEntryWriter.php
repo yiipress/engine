@@ -58,18 +58,6 @@ final readonly class ParallelEntryWriter
 
         $effectiveWorkerCount = $this->workerCountFor(count($tasks), $workerCount);
 
-        if (!$noWrite) {
-            $dirs = [];
-            foreach ($tasks as $task) {
-                $dirs[dirname($task['filePath'])] = true;
-            }
-            foreach ($dirs as $dirPath => $_) {
-                if (!is_dir($dirPath) && !mkdir($dirPath, 0o755, true) && !is_dir($dirPath)) {
-                    throw new RuntimeException(sprintf('Directory "%s" was not created', $dirPath));
-                }
-            }
-        }
-
         if ($effectiveWorkerCount <= 1) {
             $this->writeChunk($siteConfig, $tasks, $contentDir, $navigation, $crossRefResolver, $authors, $noWrite);
         } else {
@@ -85,6 +73,19 @@ final readonly class ParallelEntryWriter
      */
     public function writeChunk(SiteConfig $siteConfig, array $tasks, string $contentDir, ?Navigation $navigation, ?CrossReferenceResolver $crossRefResolver, array $authors, bool $noWrite): void
     {
+        if (!$noWrite) {
+            $dirs = [];
+            foreach ($tasks as $task) {
+                $dirs[dirname($task['filePath'])] = true;
+            }
+            foreach ($dirs as $dirPath => $_) {
+                // Another worker may create a shared directory between the check and mkdir().
+                if (!is_dir($dirPath) && !@mkdir($dirPath, 0o755, true) && !is_dir($dirPath)) {
+                    throw new RuntimeException(sprintf('Directory "%s" was not created', $dirPath));
+                }
+            }
+        }
+
         $renderer = new EntryRenderer($this->pipeline, $this->templateResolver, $this->cache, $contentDir, $authors, $this->assetManifest, $this->relatedIndex, $this->translationIndex, $this->eventDispatcher);
 
         foreach ($tasks as $task) {

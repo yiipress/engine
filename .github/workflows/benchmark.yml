@@ -41,6 +41,11 @@ jobs:
           ref: master
           persist-credentials: false
 
+      - name: Use identical CLI benchmark scenarios
+        run: >-
+          cp current/benchmarks/SmallSiteBuildBench.php
+          current/benchmarks/LargeContentBuildBench.php baseline/benchmarks/
+
       - name: Install baseline dependencies
         working-directory: baseline
         run: make -- composer install --no-progress --no-interaction

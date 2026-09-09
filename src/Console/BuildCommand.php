@@ -24,6 +24,8 @@ use YiiPress\Build\ThemeAssetCopier;
 use YiiPress\Build\FeedGenerator;
 use YiiPress\Build\FeedWorkerJob;
 use YiiPress\Build\FeedWriter;
+use YiiPress\Build\DirectoryRemover;
+use YiiPress\Build\SharedOutputCache;
 use YiiPress\Build\FileWriter;
 use YiiPress\Build\ParallelEntryWriter;
 use YiiPress\Build\ParallelTaskRunner;
@@ -248,6 +250,13 @@ final class BuildCommand extends Command
         $themeAssetMappings = $themeAssetCopier->mappings($this->themeRegistry);
         $pipelineAssetMappings = $this->contentPipeline->collectAssetFiles();
         $allAssetMappings = $contentAssetMappings + $themeAssetMappings + $pipelineAssetMappings;
+        $sharedScope = [$contentDir, $siteConfig, $includeDrafts, $includeFuture, $this->templateResolver->templateDirs()];
+        $sharedOutputs = (!$dryRun && !$noWrite)
+            ? new SharedOutputCache(RuntimePaths::cachePath($rootPath) . '/shared-output-' . hash('xxh128', $outputDir) . '.json', $outputDir)
+            : null;
+        // Without a trustworthy output inventory, use atomic full replacement to remove stale pages.
+        $repairOutput = $sharedOutputs !== null && !$sharedOutputs->valid()
+            && is_file($outputDir . '/.yiipress-build');
         $trackedDirectories = [];
         $manifest = null;
         $changedSourceFiles = null;
@@ -256,15 +265,10 @@ final class BuildCommand extends Command
         $allSourceFiles = [];
 
         if (!$dryRun && !$noWrite && !$noCache) {
-            $trackedDirectories = $this->collectTrackedDirectories($contentDir);
-            foreach ($this->themeRegistry->all() as $theme) {
-                $trackedDirectories += $this->collectTrackedDirectories($theme->path);
-            }
-
             $manifestPath = RuntimePaths::cachePath($rootPath) . '/build-manifest-' . hash('xxh128', $outputDir) . '.json';
             $manifest = new BuildManifest($manifestPath);
             $manifest->load();
-            $canUseManifestInventory = $manifest->sourceFiles() !== [] && $manifest->hasTrackedDirectories() && !$manifest->trackedDirectoriesChanged();
+            $canUseManifestInventory = ($sharedOutputs?->matchesScope($sharedScope) ?? false) && $manifest->sourceFiles() !== [] && $manifest->hasTrackedDirectories() && !$manifest->trackedDirectoriesChanged();
 
             if ($canUseManifestInventory) {
                 $configFiles = $manifest->configFiles();
@@ -279,7 +283,9 @@ final class BuildCommand extends Command
                 $allSourceFiles = $sourceInventory['allSourceFiles'];
             }
 
-            $configChanged = array_any($configFiles, fn($configFile) => $manifest->isChanged($configFile));
+            $configChanged = $repairOutput || !$sharedOutputs?->matchesScope($sharedScope)
+                || $configFiles !== $manifest->configFiles()
+                || array_any($configFiles, fn($configFile) => $manifest->isChanged($configFile));
             $fullRebuildReason = 'config changed';
 
             if (!$configChanged) {
@@ -302,7 +308,7 @@ final class BuildCommand extends Command
                 $this->removeOutputFile($staleFile, $outputDir);
             }
 
-            if ($changedSourceFiles === [] && $staleOutputs === []) {
+            if ($changedSourceFiles === [] && $staleOutputs === [] && $sharedOutputs?->complete()) {
                 $output->writeln('<info>No changes detected, nothing to build.</info>');
                 try {
                     $this->writeOutputMarker($outputDir);
@@ -314,6 +320,11 @@ final class BuildCommand extends Command
                 }
                 $this->writeProfile($output, $profile);
                 return ExitCode::OK;
+            }
+
+            $trackedDirectories = $this->collectTrackedDirectories($contentDir);
+            foreach ($this->themeRegistry->all() as $theme) {
+                $trackedDirectories += $this->collectTrackedDirectories($theme->path);
             }
 
             if ($changedSourceFiles !== null) {
@@ -395,7 +406,7 @@ final class BuildCommand extends Command
                 return $exitCode;
             }
 
-            if (!$noWrite && $noCache) {
+            if (!$noWrite && ($noCache || $repairOutput)) {
                 try {
                     $atomicOutputDir = $this->prepareOutputDir($outputDir);
                     if ($atomicOutputDir !== null) {
@@ -406,6 +417,24 @@ final class BuildCommand extends Command
                     $this->writeProfile($output, $profile);
                     return ExitCode::DATAERR;
                 }
+            }
+
+            $customDependencies = $this->collectProjectProcessorFiles($contentDir, $siteConfig->processors) !== [];
+            foreach ($this->templateResolver->templateDirs() as $templateDir) {
+                if ($templateDir !== $rootPath . '/themes/minimal') {
+                    $customDependencies = true;
+                }
+            }
+            $sharedOutputs?->begin(
+                $outputDir,
+                $sharedScope,
+                [$siteConfig, $navigation, $authors, $assetManifest?->signature()],
+                $incremental && !$customDependencies,
+            );
+            if ($noCache) {
+                // The source manifest is not updated in this mode. Leave shared state invalid
+                // so a later normal build cannot mistake the old source inventory for this output.
+                $sharedOutputs = null;
             }
 
             $buildContext = new BuildContext(
@@ -437,6 +466,9 @@ final class BuildCommand extends Command
                         $sourcePath = $entry->filePath;
                         if ($entry->title === '') {
                             $output->writeln('<error>  Skipping ' . $sourcePath . ': no title found</error>');
+                            if ($manifest !== null) {
+                                $this->removeStaleOutputs($manifest->replace($sourcePath, []), $outputDir);
+                            }
                             continue;
                         }
                         $collectionEntries[] = $entry;
@@ -459,6 +491,9 @@ final class BuildCommand extends Command
                     $sourcePath = $page->filePath;
                     if ($page->title === '') {
                         $output->writeln('<error>  Skipping ' . $sourcePath . ': no title found</error>');
+                        if ($manifest !== null) {
+                            $this->removeStaleOutputs($manifest->replace($sourcePath, []), $outputDir);
+                        }
                         continue;
                     }
                     $standalonePages[] = $page;
@@ -604,16 +639,24 @@ final class BuildCommand extends Command
                 }
             }
 
+            $rebuildEntryDependencies = ($sharedOutputs?->referencesChanged($crossRefResolver->signature()) ?? false) || $customDependencies || $siteConfig->related !== null || count($siteConfig->contentLanguages()) > 1
+                || array_any($collections, static fn(Collection $collection): bool => $collection->navigationPager)
+                || ($staleOutputs ?? []) !== [];
+            if ($rebuildEntryDependencies) {
+                $changedSet = null;
+            }
+
             $cache = null;
-            if (!$noCache && !$noWrite) {
+            if (!$noCache && !$noWrite && !$rebuildEntryDependencies) {
                 $cacheDir = RuntimePaths::cachePath($rootPath) . '/build';
                 $cache = new BuildCache($cacheDir, $this->templateResolver->templateDirs());
             }
 
+            $recordedSources = $manifest?->entries() ?? [];
             if ($changedSet !== null) {
                 $tasksToWrite = array_values(array_filter(
                     $allTasks,
-                    static fn(array $task) => isset($changedSet[$task['sourcePath']]),
+                    static fn(array $task) => isset($changedSet[$task['sourcePath']]) || ($recordedSources[$task['sourcePath']]['outputs'] ?? []) === [],
                 ));
             } else {
                 $tasksToWrite = $allTasks;
@@ -700,13 +743,24 @@ final class BuildCommand extends Command
                 foreach ($rawEntriesByCollection as $entries) {
                     foreach ($entries as $entry) {
                         $sourcePath = $entry->filePath;
-                        if (!isset($manifest->entries()[$sourcePath])) {
+                        if (!$this->shouldGenerateEntry($entry, $includeDrafts, $includeFuture, $now)) {
                             $this->removeStaleOutputs($manifest->replace($sourcePath, []), $outputDir);
                         }
                     }
                 }
             }
 
+            if (!$includeFuture && $sharedOutputs !== null) {
+                foreach ($rawEntriesByCollection as $entries) {
+                    $sharedOutputs->trackFutureEntries($entries, $now);
+                }
+                $sharedOutputs->trackFutureEntries($standalonePages, $now);
+            }
+            foreach ($standalonePages as $page) {
+                if ($manifest !== null && !$this->shouldGenerateEntry($page, $includeDrafts, $includeFuture, $now)) {
+                    $this->removeStaleOutputs($manifest->replace($page->filePath, []), $outputDir);
+                }
+            }
             if (!$includeDrafts) {
                 $standalonePages = array_values(array_filter($standalonePages, static fn($e) => !$e->draft));
             }
@@ -729,7 +783,7 @@ final class BuildCommand extends Command
                     return ExitCode::DATAERR;
                 }
 
-                if ($changedSet !== null && !isset($changedSet[$sourcePath])) {
+                if ($changedSet !== null && !isset($changedSet[$sourcePath]) && is_file($filePath)) {
                     $outputs = [$filePath];
                     foreach ($page->aliases as $alias) {
                         $outputs[] = $this->aliasFilePath($outputDir, $this->normalizeAliasPermalink($alias));
@@ -867,6 +921,15 @@ final class BuildCommand extends Command
                 $output->writeln('  Asset fingerprints generated: <comment>' . count($assetManifest->all()) . '</comment>');
             }
 
+            $standalonePages = array_values(array_filter(
+                $standalonePages,
+                fn(Entry $entry): bool => $entry->redirectTo === '' && $this->shouldGenerateEntry($entry, $includeDrafts, $includeFuture, $now),
+            ));
+
+            if ($manifest !== null) {
+                $sharedOutputs?->useRecordedSources($manifest->entries());
+            }
+
             $profile->switchTo('write feeds');
             /** @var list<array{collectionName: string, collection: Collection, entries: list<Entry>}> $feedTasks */
             $feedTasks = [];
@@ -885,33 +948,52 @@ final class BuildCommand extends Command
                 array_push($siteFeedEntries, ...$collectionEntries);
             }
 
+            $hasFeeds = $feedTasks !== [];
+            if ($sharedOutputs !== null) {
+                $feedTasks = array_values(array_filter($feedTasks, static function (array $task) use ($sharedOutputs): bool {
+                    $collection = $task['collection'];
+                    $entries = $collection->feedLimit > 0 ? array_slice($task['entries'], 0, $collection->feedLimit) : $task['entries'];
+                    $prefix = $task['collectionName'] . '/';
+                    return $sharedOutputs->needsWrite(
+                        [$prefix . 'feed.xml', $prefix . 'rss.xml', $prefix . 'feed.json'],
+                        [$collection, $sharedOutputs->entryKeys($entries)],
+                    );
+                }));
+            }
+
             $feedWriter = new FeedWriter($this->feedPipeline, $authors);
             $feedCount = new ParallelTaskRunner()->run(
                 $feedTasks,
-                $workerCount,
+                $feedWriter->workerCountFor($feedTasks, $workerCount),
                 fn(array $feedTask): int => $feedWriter->writeTask($feedTask, $siteConfig, $outputDir, $noWrite),
                 fn(array $chunk): WorkerJobInterface => new FeedWorkerJob($chunk, $siteConfig, $outputDir, $contentDir, $authors, $noWrite),
                 minTasksPerWorker: 1,
             );
 
-            if ($feedTasks !== []) {
+            if ($hasFeeds) {
                 usort(
                     $siteFeedEntries,
                     static fn(Entry $a, Entry $b): int => ($b->date?->getTimestamp() ?? -PHP_INT_MAX)
                         <=> ($a->date?->getTimestamp() ?? -PHP_INT_MAX),
                 );
 
-                $feedGenerator = new FeedGenerator($this->feedPipeline, $authors);
-                if ($noWrite) {
-                    $feedGenerator->generateSiteAtom($siteConfig, $collections, $siteFeedEntries);
-                    $feedGenerator->generateSiteRss($siteConfig, $collections, $siteFeedEntries);
-                    $feedGenerator->generateSiteJson($siteConfig, $collections, $siteFeedEntries);
-                } else {
-                    $feedGenerator->writeSiteAtomFile($outputDir . '/feed.xml', $siteConfig, $collections, $siteFeedEntries);
-                    $feedGenerator->writeSiteRssFile($outputDir . '/rss.xml', $siteConfig, $collections, $siteFeedEntries);
-                    $feedGenerator->writeSiteJsonFile($outputDir . '/feed.json', $siteConfig, $collections, $siteFeedEntries);
+                $writeSiteFeed = $sharedOutputs?->needsWrite(
+                    ['feed.xml', 'rss.xml', 'feed.json'],
+                    [$collections, $sharedOutputs->entryKeys(array_slice($siteFeedEntries, 0, Collection::DEFAULT_FEED_LIMIT))],
+                ) ?? true;
+                if ($writeSiteFeed) {
+                    $feedGenerator = new FeedGenerator($this->feedPipeline, $authors);
+                    if ($noWrite) {
+                        $feedGenerator->generateSiteAtom($siteConfig, $collections, $siteFeedEntries);
+                        $feedGenerator->generateSiteRss($siteConfig, $collections, $siteFeedEntries);
+                        $feedGenerator->generateSiteJson($siteConfig, $collections, $siteFeedEntries);
+                    } else {
+                        $feedGenerator->writeSiteAtomFile($outputDir . '/feed.xml', $siteConfig, $collections, $siteFeedEntries);
+                        $feedGenerator->writeSiteRssFile($outputDir . '/rss.xml', $siteConfig, $collections, $siteFeedEntries);
+                        $feedGenerator->writeSiteJsonFile($outputDir . '/feed.json', $siteConfig, $collections, $siteFeedEntries);
+                    }
+                    $feedCount++;
                 }
-                $feedCount++;
             }
 
             if ($feedCount > 0) {
@@ -919,7 +1001,7 @@ final class BuildCommand extends Command
             }
 
             $profile->switchTo('write listings');
-            $listingWriter = new CollectionListingWriter($this->templateResolver, $assetManifest);
+            $listingWriter = new CollectionListingWriter($this->templateResolver, $assetManifest, $sharedOutputs);
             $listingPageCount = 0;
             foreach ($collections as $collectionName => $collection) {
                 if (!$collection->listing) {
@@ -941,7 +1023,7 @@ final class BuildCommand extends Command
             }
 
             $profile->switchTo('write archives');
-            $archiveWriter = new DateArchiveWriter($this->templateResolver, $assetManifest);
+            $archiveWriter = new DateArchiveWriter($this->templateResolver, $assetManifest, $sharedOutputs);
             $archivePageCount = 0;
             foreach ($collections as $collectionName => $collection) {
                 if ($collection->sortBy !== 'date') {
@@ -963,7 +1045,7 @@ final class BuildCommand extends Command
             }
 
             $profile->switchTo('write sitemap');
-            $sitemapGenerator = new SitemapGenerator();
+            $sitemapGenerator = new SitemapGenerator($sharedOutputs);
             $sitemapGenerator->generate(
                 $siteConfig,
                 $collections,
@@ -978,7 +1060,7 @@ final class BuildCommand extends Command
             $profile->switchTo('write support files');
             $robotsGenerator = new RobotsTxtGenerator();
             $robots = $robotsGenerator->generate($siteConfig);
-            if ($robots !== '') {
+            if ($robots !== '' && ($sharedOutputs?->needsWrite(['robots.txt'], $robots) ?? true)) {
                 if (!$noWrite) {
                     FileWriter::write($outputDir . '/robots.txt', $robots);
                 }
@@ -986,10 +1068,15 @@ final class BuildCommand extends Command
             }
 
             $notFoundWriter = new NotFoundPageWriter($this->templateResolver, $assetManifest);
-            $notFoundWriter->write($siteConfig, $outputDir, $navigation, $noWrite);
-            $output->writeln('  404 page generated.');
+            if ($sharedOutputs?->needsWrite(['404.html'], []) ?? true) {
+                $notFoundWriter->write($siteConfig, $outputDir, $navigation, $noWrite);
+                $output->writeln('  404 page generated.');
+            }
 
-            if ($siteConfig->search !== null) {
+            if ($siteConfig->search !== null && ($sharedOutputs?->needsWrite(
+                ['search-index.json'],
+                [$collections, $sharedOutputs->entryKeys(array_merge(...array_values($entriesByCollection))), $sharedOutputs->entryKeys($standalonePages)],
+            ) ?? true)) {
                 $searchGenerator = new SearchIndexGenerator();
                 $searchGenerator->generate($siteConfig, $collections, $entriesByCollection, $outputDir, $standalonePages, $noWrite);
                 $output->writeln('  Search index generated.');
@@ -999,7 +1086,7 @@ final class BuildCommand extends Command
                 $profile->switchTo('write taxonomy pages');
                 $allEntries = array_merge(...array_values($entriesByCollection));
                 $taxonomyData = TaxonomyCollector::collect($siteConfig->taxonomies, $allEntries);
-                $taxonomyWriter = new TaxonomyPageWriter($this->templateResolver, $assetManifest);
+                $taxonomyWriter = new TaxonomyPageWriter($this->templateResolver, $assetManifest, $sharedOutputs);
                 $taxonomyPageCount = $taxonomyWriter->write($siteConfig, $taxonomyData, $collections, $outputDir, $navigation, $noWrite);
                 $output->writeln("  Taxonomy pages: <comment>$taxonomyPageCount</comment>");
             }
@@ -1013,21 +1100,33 @@ final class BuildCommand extends Command
                         $entriesByAuthor[$authorSlug][] = $entry;
                     }
                 }
-                $authorWriter = new AuthorPageWriter($this->templateResolver, $assetManifest);
+                $authorWriter = new AuthorPageWriter($this->templateResolver, $assetManifest, $sharedOutputs);
                 $authorPageCount = $authorWriter->write($siteConfig, $authors, $entriesByAuthor, $collections, $outputDir, $navigation, $noWrite);
                 $output->writeln("  Author pages: <comment>$authorPageCount</comment>");
             }
+
+            $protectedOutputs = array_column($outputClaims, 'filePath');
+            foreach ($aliasOutputsBySource as $paths) {
+                array_push($protectedOutputs, ...$paths);
+            }
+            foreach ($allAssetMappings as $logicalPath) {
+                $protectedOutputs[] = $outputDir . '/' . ($assetManifest?->resolve($logicalPath) ?? $logicalPath);
+            }
+            $sharedOutputs?->removeObsolete($protectedOutputs);
 
             $profile->switchTo('save manifest');
             if ($manifest !== null) {
                 $manifest->setConfigFiles($configFiles);
                 $manifest->setTrackedDirectories($trackedDirectories);
                 foreach ($configFiles as $configFile) {
-                    $this->removeStaleOutputs($manifest->replace($configFile, []), $outputDir);
+                    $configOutputs = isset($allAssetMappings[$configFile])
+                        ? [$outputDir . '/' . ($assetManifest?->resolve($allAssetMappings[$configFile]) ?? $allAssetMappings[$configFile])]
+                        : [];
+                    $this->removeStaleOutputs($manifest->replace($configFile, $configOutputs), $outputDir);
                 }
-                $manifest->save();
             }
 
+            $builtOutputDir = $outputDir;
             if (!$noWrite) {
                 try {
                     $this->writeOutputMarker($outputDir);
@@ -1045,7 +1144,14 @@ final class BuildCommand extends Command
                 }
             }
 
+            if ($manifest !== null) {
+                if ($builtOutputDir !== $outputDir) {
+                    $manifest->remapOutputDirectory($builtOutputDir, $outputDir);
+                }
+                $manifest->save();
+            }
             $this->eventDispatcher?->dispatch(new BuildFinishedEvent($buildContext, $siteConfig));
+            $sharedOutputs?->save();
 
             $profile->stop();
             $this->writeProfile($output, $profile);
@@ -1060,7 +1166,7 @@ final class BuildCommand extends Command
             return ExitCode::OK;
         } finally {
             if ($atomicOutputDir !== null) {
-                $this->removeDirectory($atomicOutputDir);
+                DirectoryRemover::remove($atomicOutputDir);
             }
         }
     }
@@ -1538,7 +1644,7 @@ final class BuildCommand extends Command
             throw new RuntimeException(sprintf('Unable to move "%s" to "%s".', $sourceDir, $targetDir));
         }
 
-        $this->removeDirectory($backupDir);
+        DirectoryRemover::remove($backupDir);
     }
 
     private function writeOutputMarker(string $outputDir): void
@@ -1555,30 +1661,6 @@ final class BuildCommand extends Command
         }
 
         return !$iterator->valid();
-    }
-
-    private function removeDirectory(string $directory): void
-    {
-        if (!is_dir($directory)) {
-            return;
-        }
-
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
-            RecursiveIteratorIterator::CHILD_FIRST,
-        );
-
-        foreach ($iterator as $item) {
-            /** @var SplFileInfo $item */
-            if ($item->isDir() && !$item->isLink()) {
-                rmdir($item->getPathname());
-                continue;
-            }
-
-            unlink($item->getPathname());
-        }
-
-        rmdir($directory);
     }
 
     /**
@@ -1810,6 +1892,11 @@ final class BuildCommand extends Command
             $contentDir . '/_collection.yaml',
             $contentDir . '/navigation.yaml',
         ], is_file(...));
+        foreach (glob($contentDir . '/authors/*.md', GLOB_NOSORT) ?: [] as $authorFile) {
+            if (is_file($authorFile)) {
+                $configFiles[] = $authorFile;
+            }
+        }
 
         $contentFiles = [];
         $iterator = new FilesystemIterator($contentDir, BaseFilesystemIterator::SKIP_DOTS);

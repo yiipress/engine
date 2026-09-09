@@ -15,7 +15,8 @@ use function min;
 
 final class ParallelTaskRunner
 {
-    private const int MIN_TASKS_PER_WORKER = 32;
+    // Small listing/archive batches cost less than bootstrapping independent workers.
+    private const int MIN_TASKS_PER_WORKER = 128;
 
     public function __construct(private ?PortableWorkerPool $workerPool = null) {}
 

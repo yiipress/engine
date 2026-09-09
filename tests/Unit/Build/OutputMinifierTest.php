@@ -83,6 +83,26 @@ final class OutputMinifierTest extends TestCase
         );
     }
 
+    public function testRemovesOnlyInterTagWhitespaceBeforeProtectedBlocks(): void
+    {
+        assertSame(
+            '<p>Before</p><pre>  code  </pre>',
+            OutputMinifier::html("<p>Before</p> \t\r\n\f\v<pre>  code  </pre>"),
+        );
+        assertSame(
+            'Before <pre>  code  </pre> after',
+            OutputMinifier::html('Before   <pre>  code  </pre>   after'),
+        );
+        assertSame(
+            "<p>Before</p>\0 <pre>  code  </pre>",
+            OutputMinifier::html("<p>Before</p>\0 <pre>  code  </pre>"),
+        );
+        assertSame(
+            '<p>Before</p><pre>  code  </pre> between <textarea>  text  </textarea><p>After</p>',
+            OutputMinifier::html("<p>Before</p>\n<pre>  code  </pre>\n  between  \n<textarea>  text  </textarea>\n<p>After</p>"),
+        );
+    }
+
     public function testPreservesMermaidDiagramWhitespace(): void
     {
         $html = <<<'HTML'
@@ -139,6 +159,38 @@ final class OutputMinifierTest extends TestCase
             HTML;
 
         assertSame('<div><a title="1 > 0" data-test=\'x > y\'> Link </a></div>', OutputMinifier::html($html));
+    }
+
+    public function testPreservesWhitespaceInsideTagAttributes(): void
+    {
+        assertSame(
+            '<p title="  spaced   value  " data-value=\'one   two\'> A B </p>',
+            OutputMinifier::html('<p title="  spaced   value  " data-value=\'one   two\'>  A   B  </p>'),
+        );
+    }
+
+    public function testPreservesIncompleteTagTokenBehavior(): void
+    {
+        assertSame('<p> A B </p><unfinished  attribute="  value', OutputMinifier::html('<p>  A   B  </p><unfinished  attribute="  value'));
+        assertSame('Text < unfinished text', OutputMinifier::html('Text  <  unfinished   text'));
+        assertSame('<unfinished  attribute="<p> A B </p>', OutputMinifier::html('<unfinished  attribute="<p>  A   B  </p>'));
+    }
+
+    public function testLongOrdinaryDivAttributesDoNotExhaustBacktrackingLimit(): void
+    {
+        $attributes = 'data-' . str_repeat('x', 100) . '="value" class="ordinary"';
+
+        assertSame(
+            '<div ' . $attributes . '> Ordinary content </div>',
+            OutputMinifier::html('<div ' . $attributes . ">\n  Ordinary   content\n</div>"),
+        );
+    }
+
+    public function testPreservesMermaidAfterLongUnquotedAttribute(): void
+    {
+        $html = '<div data-value=' . str_repeat('x', 100) . " class='diagram mermaid'>flowchart LR\n    A --> B\n</div>";
+
+        assertSame('<article>' . $html . '</article>', OutputMinifier::html("<article>\n  " . $html . "\n</article>"));
     }
 
     public function testUnclosedProtectedElementDoesNotCauseBacktracking(): void

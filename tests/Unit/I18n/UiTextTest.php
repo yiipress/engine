@@ -95,6 +95,41 @@ final class UiTextTest extends TestCase
         assertSame('Март', $catalogs['ru']['month.03']);
     }
 
+    public function testCatalogExportNormalizesAndDeduplicatesLanguagesInOrder(): void
+    {
+        $resolver = $this->createTemplateResolver();
+        $catalogs = UiText::catalogsForTheme(
+            ['RU_ru', 'ru', '', 'EN-us', 'de-DE', 'DE'],
+            $resolver,
+            'minimal',
+            'RU-ru',
+        );
+
+        assertSame(['ru', 'en', 'de'], array_keys($catalogs));
+        assertSame('Поиск', $catalogs['ru']['search']);
+        assertSame('Search', $catalogs['en']['search']);
+        assertSame('Поиск', $catalogs['de']['search']);
+        assertSame([], UiText::catalogsForTheme([], $resolver, 'minimal'));
+    }
+
+    public function testRegionalThemeLookupPreservesExactLanguageTranslation(): void
+    {
+        $themePath = sys_get_temp_dir() . '/yiipress-ui-text-regional-' . uniqid();
+        mkdir($themePath . '/translation', 0o755, true);
+        file_put_contents($themePath . '/translation/en.yaml', "search: Search\n");
+        file_put_contents($themePath . '/translation/pt-br.yaml', "search: Buscar\n");
+
+        try {
+            $registry = new ThemeRegistry();
+            $registry->register(new Theme('regional', $themePath));
+            $ui = UiText::forTheme('PT_BR', new TemplateResolver($registry), 'regional');
+
+            assertSame('Buscar', $ui->get('search'));
+        } finally {
+            $this->removeDir($themePath);
+        }
+    }
+
     public function testFallsBackToKeyWhenThemeHasNoTranslationFiles(): void
     {
         $registry = new ThemeRegistry();

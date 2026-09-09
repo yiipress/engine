@@ -20,6 +20,7 @@ final readonly class TaxonomyPageWriter
     public function __construct(
         private TemplateResolver $templateResolver,
         private ?AssetFingerprintManifest $assetManifest = null,
+        private ?SharedOutputCache $sharedOutputs = null,
     ) {}
 
     /**
@@ -44,8 +45,10 @@ final readonly class TaxonomyPageWriter
 
             // PHP converts numeric string keys to integers - cast back to strings
             $termNames = array_map(strval(...), array_keys($terms));
-            $this->writeIndexPage($renderer, $siteConfig, $taxonomyName, $termNames, $outputDir, $navigation, $noWrite);
-            $pageCount++;
+            if ($noWrite || ($this->sharedOutputs?->needsWrite([$taxonomyName . '/index.html'], $termNames) ?? true)) {
+                $this->writeIndexPage($renderer, $siteConfig, $taxonomyName, $termNames, $outputDir, $navigation, $noWrite);
+                $pageCount++;
+            }
 
             foreach ($terms as $term => $entries) {
                 $pageCount += $this->writeTermPages($renderer, $siteConfig, $taxonomyName, (string) $term, $entries, $collections, $outputDir, $navigation, $noWrite);
@@ -122,6 +125,12 @@ final readonly class TaxonomyPageWriter
         foreach ($pages as $pageIndex => $pageEntries) {
             $pageNumber = $pageIndex + 1;
             $permalink = $this->termPagePermalink($taxonomyName, $term, $pageNumber);
+            if (!$noWrite && $this->sharedOutputs !== null && !$this->sharedOutputs->needsWrite(
+                [ltrim($permalink, '/') . 'index.html'],
+                [$collections, $taxonomyName, $term, $pageNumber, $totalPages, $this->sharedOutputs->entryKeys($pageEntries)],
+            )) {
+                continue;
+            }
             $rootPath = UrlResolver::rootPath($permalink);
 
             $entryData = [];
