@@ -126,6 +126,20 @@ make bench CLI_ARGS="'--filter=benchFullRebuild|benchIncrementalNoChanges' --ite
 make bench CLI_ARGS='--filter=benchIncrementalSingleChangedEntry --iterations=5 --report=aggregate'
 ```
 
+UI translation lookup microbenchmarks (9 September 2026), using the same environment with
+100,000 revisions and seven iterations per subject:
+
+| Benchmark | Time | Relative standard deviation |
+|---|---:|---:|
+| Single UI language, cached catalogs | 0.491 µs | ±2.74% |
+| Two UI languages, cached catalogs | 0.414 µs | ±2.97% |
+
+These measure warmed catalog lookup, excluding translation-file loading. Run them with:
+
+```bash
+make bench CLI_ARGS='--filter=UiTextBench --revs=100000 --iterations=7 --report=aggregate'
+```
+
 `PortableWorkerPoolBench` tracks the startup and job-transport overhead of two portable worker processes used by parallel builds.
 
 Benchmarks are run with xdebug disabled automatically (`make bench` sets `XDEBUG_MODE=off`).
