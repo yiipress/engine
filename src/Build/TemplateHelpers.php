@@ -16,9 +16,7 @@ final class TemplateHelpers
      */
     public static function inject(array $variables): array
     {
-        if (!isset($variables['h'])) {
-            $variables['h'] = self::escape(...);
-        }
+        $variables['h'] ??= self::escape(...);
 
         if (!isset($variables['url'])) {
             $rootPath = $variables['rootPath'] ?? '';

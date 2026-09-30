@@ -85,9 +85,7 @@ final class FrontMatterParser
                     );
                 }
 
-                if ($parsed === null) {
-                    $parsed = [];
-                }
+                $parsed ??= [];
 
                 if (!is_array($parsed) || ($parsed !== [] && array_is_list($parsed))) {
                     throw new InvalidContentConfigException(
