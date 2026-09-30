@@ -329,7 +329,7 @@ final class ConfigurationPackagingTest extends TestCase
             $workflow,
         );
         self::assertStringContainsString('path: dist/windows-amd64/yiipress.exe', $workflow);
-        self::assertStringContainsString('runs-on: macos-14', $workflow);
+        self::assertStringContainsString('runs-on: macos-15', $workflow);
         self::assertStringContainsString('targets: aarch64-apple-darwin', $workflow);
         self::assertStringContainsString('Cache macOS package dependencies', $workflow);
         self::assertStringNotContainsString('runtime/package-macos/yiipress-markdown', $workflow);
@@ -409,7 +409,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('output/blog/hello-windows/index.html', $workflow);
 
         self::assertStringContainsString('name: macOS binary tests', $workflow);
-        self::assertStringContainsString('runs-on: macos-14', $workflow);
+        self::assertStringContainsString('runs-on: macos-15', $workflow);
         self::assertStringContainsString('targets: aarch64-apple-darwin', $workflow);
         self::assertStringContainsString('runtime/package-macos/static-php-cli', $workflow);
         self::assertStringContainsString(

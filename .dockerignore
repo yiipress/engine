@@ -20,4 +20,5 @@
 !.env*
 !/docker/Dockerfile.distroless-binary
 !/docker/php.ini
+!/docker/php-dev.ini
 !/docker/php-prod.ini

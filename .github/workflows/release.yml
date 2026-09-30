@@ -109,7 +109,7 @@ jobs:
 
   macos:
     name: macOS static binary
-    runs-on: macos-14
+    runs-on: macos-15
     permissions:
       contents: read
 
