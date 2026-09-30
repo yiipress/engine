@@ -176,6 +176,10 @@ Development and CI commands run in Docker through `make`:
 
 CI workflows use path filters and concurrency cancellation to avoid obsolete or unrelated runs. Pull requests compare PHPBench results with `master`, and same-repository branches receive automatic Rector and PHP CS Fixer commits. Infection enforces a 70% covered-code mutation score and publishes the `master` mutation score to Stryker Dashboard when the `STRYKER_DASHBOARD_API_KEY` repository secret is configured. Dependabot maintains Composer and pinned GitHub Actions dependencies, while Zizmor checks workflow changes for security issues. PHPStan runs at max level without a baseline, so every finding fails CI.
 
+The development/test Docker image preserves PHPDoc comments in OPcache because Rector/PHPStan dependencies read annotations at runtime. Production keeps comment stripping enabled. After changing Docker PHP configuration, rebuild the development image with `make build` before running quality tools.
+
+Native macOS test, packaging, and release jobs use the Apple silicon `macos-15` runner. PHP setup requires a Homebrew-supported macOS version; `macos-14` can fail before dependencies or tests run because PHP dependencies no longer have supported Homebrew bottles.
+
 ## Caching
 
 Source installs use `runtime/cache/`. PHAR and static binary runs use a project-scoped cache under the OS temp directory, so packaged commands do not write framework state into the site checkout.

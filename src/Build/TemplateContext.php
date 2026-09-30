@@ -25,12 +25,8 @@ final class TemplateContext
     public function partial(string $name, array $variables = []): string
     {
         $variables['partial'] = $this->partial(...);
-        if (!isset($variables['themeName'])) {
-            $variables['themeName'] = $this->themeName;
-        }
-        if (!isset($variables['assetManifest'])) {
-            $variables['assetManifest'] = $this->assetManifest;
-        }
+        $variables['themeName'] ??= $this->themeName;
+        $variables['assetManifest'] ??= $this->assetManifest;
         if (!isset($variables['themeAsset'])) {
             $rootPath = $variables['rootPath'] ?? '';
             $rootPath = is_string($rootPath) ? $rootPath : '';

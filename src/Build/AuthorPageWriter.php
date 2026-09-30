@@ -186,9 +186,7 @@ final class AuthorPageWriter
         $authorEmail = $author->email;
         $authorUrl = $author->url;
         $authorAvatar = $author->avatar;
-        if ($this->markdownRenderer === null) {
-            $this->markdownRenderer = new MarkdownRenderer($siteConfig->markdown);
-        }
+        $this->markdownRenderer ??= new MarkdownRenderer($siteConfig->markdown);
         $authorBio = $this->markdownRenderer->render($author->body());
 
         $entryData = [];

@@ -82,6 +82,7 @@ RUN install-php-extensions \
     xdebug
 
 COPY --from=composer /composer /usr/bin/composer
+COPY docker/php-dev.ini $PHP_INI_DIR/conf.d/99-yiipress-dev.ini
 
 RUN \
 	groupadd --gid ${GROUP_ID} ${GROUP_NAME}; \

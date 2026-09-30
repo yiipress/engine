@@ -482,14 +482,12 @@ final class ServeCommand extends Command
 
     private function ensureLiveReloadWatcher(): void
     {
-        if ($this->liveReloadPingTimer === null) {
-            $this->liveReloadPingTimer = Loop::addPeriodicTimer(
-                self::LIVE_RELOAD_PING_SECONDS,
-                function (): void {
-                    $this->broadcastLiveReloadEvent('ping', 'ok', false);
-                },
-            );
-        }
+        $this->liveReloadPingTimer ??= Loop::addPeriodicTimer(
+            self::LIVE_RELOAD_PING_SECONDS,
+            function (): void {
+                $this->broadcastLiveReloadEvent('ping', 'ok', false);
+            },
+        );
 
         if ($this->liveReloadStream !== null) {
             return;
