@@ -308,7 +308,7 @@ final class BuildCommand extends Command
                 $this->removeOutputFile($staleFile, $outputDir);
             }
 
-            if ($changedSourceFiles === [] && $staleOutputs === [] && $sharedOutputs?->complete()) {
+            if ($changedSourceFiles === [] && $staleOutputs === [] && $sharedOutputs->complete()) {
                 $output->writeln('<info>No changes detected, nothing to build.</info>');
                 try {
                     $this->writeOutputMarker($outputDir);
@@ -788,7 +788,7 @@ final class BuildCommand extends Command
                     foreach ($page->aliases as $alias) {
                         $outputs[] = $this->aliasFilePath($outputDir, $this->normalizeAliasPermalink($alias));
                     }
-                    $manifest?->record($sourcePath, $outputs);
+                    $manifest->record($sourcePath, $outputs);
                     continue;
                 }
 
