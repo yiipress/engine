@@ -97,6 +97,30 @@ final class SelectiveBuildTest extends TestCase
         $this->assertMatchesCleanBuild();
     }
 
+    public function testIncrementalBuildPreservesUnchangedStandalonePageAndAlias(): void
+    {
+        file_put_contents(
+            $this->content . '/about.md',
+            "---\ntitle: About\naliases: [/old-about/]\n---\nAbout this site.\n",
+        );
+        $this->build();
+        $unchanged = ['about/index.html', 'old-about/index.html'];
+        foreach ($unchanged as $relative) {
+            touch($this->output . '/' . $relative, 100);
+        }
+
+        file_put_contents($this->entry(1), "\nExtra body text.\n", FILE_APPEND);
+        $result = $this->build();
+
+        self::assertStringContainsString('Incremental build', $result);
+        clearstatcache();
+        foreach ($unchanged as $relative) {
+            self::assertSame(100, filemtime($this->output . '/' . $relative), $relative);
+        }
+        self::assertStringContainsString('No changes detected', $this->build());
+        $this->assertMatchesCleanBuild();
+    }
+
     /** @return iterable<string, array{string}> */
     public static function changes(): iterable
     {

@@ -18,6 +18,7 @@ final class SiteConfigTest extends TestCase
     {
         yield 'search disabled' => [null, 10];
         yield 'configured result count' => [new SearchConfig(results: 25), 25];
+        yield 'zero result count' => [new SearchConfig(results: 0), 0];
     }
 
     #[DataProvider('searchResultsProvider')]
@@ -45,6 +46,7 @@ final class SiteConfigTest extends TestCase
     {
         yield 'multilingual support disabled' => [null, 'en'];
         yield 'multilingual default' => [new I18nConfig(['en', 'de'], 'de'), 'de'];
+        yield 'empty default language' => [new I18nConfig([''], ''), ''];
     }
 
     #[DataProvider('defaultContentLanguageProvider')]
@@ -72,6 +74,7 @@ final class SiteConfigTest extends TestCase
     {
         yield 'multilingual support disabled' => [null, ['en']];
         yield 'configured languages' => [new I18nConfig(['en', 'de'], 'de'), ['en', 'de']];
+        yield 'empty language list' => [new I18nConfig([], 'en'), []];
     }
 
     /** @param list<string> $expected */

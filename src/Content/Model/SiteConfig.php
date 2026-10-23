@@ -47,17 +47,17 @@ final readonly class SiteConfig
 
     public function searchResults(): int
     {
-        return $this->search?->results ?? 10;
+        return $this->search->results ?? 10;
     }
 
     public function defaultContentLanguage(): string
     {
-        return $this->i18n?->defaultLanguage ?? $this->defaultLanguage;
+        return $this->i18n->defaultLanguage ?? $this->defaultLanguage;
     }
 
     /** @return list<string> */
     public function contentLanguages(): array
     {
-        return $this->i18n?->languages ?? [$this->defaultLanguage];
+        return $this->i18n->languages ?? [$this->defaultLanguage];
     }
 }
