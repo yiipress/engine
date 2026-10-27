@@ -35,7 +35,7 @@ manifest: 1
 id: example/emoji
 type: processor
 name: Emoji
-description: Replaces :shortcodes: with emoji.
+description: "Replaces :shortcodes: with emoji."
 version: 0.2.0
 yiipress: ">=0.1.13 <0.3"
 license: MIT
