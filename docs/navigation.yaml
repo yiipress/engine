@@ -32,6 +32,8 @@ sidebar:
         url: /templates/
       - title: Plugins
         url: /plugins/
+      - title: Extension packages
+        url: /extensions/
   - title: Internals
     children:
       - title: Architecture

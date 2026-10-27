@@ -152,6 +152,17 @@ final class ManifestParserTest extends TestCase
         assertSame('https://demo.example.com', $theme->demo);
     }
 
+    public function testDocumentationExamplesAreValid(): void
+    {
+        $docs = (string) file_get_contents(dirname(__DIR__, 4) . '/docs/extensions.md');
+        preg_match_all('/```yaml\n(manifest: 1\n.*?)```/s', $docs, $matches);
+
+        assertCount(2, $matches[1]);
+        foreach ($matches[1] as $yaml) {
+            new ManifestParser()->parse($yaml);
+        }
+    }
+
     public function testCollectsEveryErrorAtOnce(): void
     {
         $yaml = str_replace(['name: Wonder', 'version: 1.0.0'], ['name: ""', 'version: v1'], self::THEME);
