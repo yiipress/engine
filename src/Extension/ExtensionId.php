@@ -16,7 +16,7 @@ use function strlen;
  */
 final readonly class ExtensionId implements Stringable
 {
-    private const string PART_PATTERN = '/^[a-z0-9]+(?:-[a-z0-9]+)*$/';
+    private const string PART_PATTERN = '/^[a-z0-9]+(?:-[a-z0-9]+)*$/D';
     private const int PART_MAX_LENGTH = 64;
 
     private function __construct(

@@ -51,6 +51,8 @@ final class ExtensionIdTest extends TestCase
         yield 'reserved com1' => ['vendor/com1'];
         yield 'reserved lpt9' => ['lpt9/wonder'];
         yield 'reserved com0' => ['vendor/com0'];
+        yield 'trailing newline' => ["acme/wonder\n"];
+        yield 'reserved name with trailing newline' => ["acme/minimal\n"];
     }
 
     #[DataProvider('invalidIdDataProvider')]

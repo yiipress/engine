@@ -62,6 +62,7 @@ final class EngineVersionTest extends TestCase
         yield 'no version set' => ['1.0.0+no-version-set'];
         yield 'commit reference' => [self::COMMIT];
         yield 'v prefix' => ['v0.1.13'];
+        yield 'trailing newline' => ["0.1.13\n"];
     }
 
     #[DataProvider('unknownVersionDataProvider')]

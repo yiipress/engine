@@ -15,7 +15,7 @@ final class SemanticVersion
 {
     private const string IDENTIFIER = '(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)';
     private const string PATTERN = '/^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)'
-        . '(?:-' . self::IDENTIFIER . '(?:\.' . self::IDENTIFIER . ')*)?$/';
+        . '(?:-' . self::IDENTIFIER . '(?:\.' . self::IDENTIFIER . ')*)?$/D';
 
     public static function isValid(string $version): bool
     {

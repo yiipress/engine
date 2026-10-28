@@ -16,6 +16,6 @@ final class ReservedName
 {
     public static function isReserved(string $name): bool
     {
-        return preg_match('/^(?:con|prn|aux|nul|com\d|lpt\d)$/', strtolower($name)) === 1;
+        return preg_match('/^(?:con|prn|aux|nul|com\d|lpt\d)$/D', strtolower($name)) === 1;
     }
 }
