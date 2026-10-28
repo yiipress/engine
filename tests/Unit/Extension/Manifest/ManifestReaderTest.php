@@ -174,6 +174,52 @@ final class ManifestReaderTest extends TestCase
         assertSame('processor.entry_points[0].path: file "src/emoji.php" resolves to a location outside package/.', $error->message);
     }
 
+    public function testRejectsManifestSymlinkLeavingPackageRoot(): void
+    {
+        file_put_contents($this->outside . '/secret.yaml', self::PROCESSOR);
+        unlink($this->root . '/extension.yaml');
+        symlink($this->outside . '/secret.yaml', $this->root . '/extension.yaml');
+
+        $error = $this->onlyError();
+
+        assertSame('path_outside', $error->code);
+        assertSame('extension.yaml resolves to a location outside the package root.', $error->message);
+    }
+
+    public function testAcceptsManifestSymlinkInsidePackageRoot(): void
+    {
+        rename($this->root . '/extension.yaml', $this->root . '/manifest.yaml');
+        symlink($this->root . '/manifest.yaml', $this->root . '/extension.yaml');
+
+        $manifest = new ManifestReader()->read($this->root);
+
+        assertSame('example/emoji', (string) $manifest->id);
+    }
+
+    public function testRejectsPackageDirectorySymlinkLeavingPackageRoot(): void
+    {
+        self::removeDir($this->root . '/package');
+        mkdir($this->outside . '/src');
+        file_put_contents($this->outside . '/src/emoji.php', '<?php');
+        symlink($this->outside, $this->root . '/package');
+
+        $error = $this->onlyError();
+
+        assertSame('path_outside', $error->code);
+        assertSame('package', $error->field);
+        assertSame('package/ resolves to a location outside the package root.', $error->message);
+    }
+
+    public function testReadsPackageThroughSymlinkedRoot(): void
+    {
+        $link = dirname($this->root) . '/root-link';
+        symlink($this->root, $link);
+
+        $manifest = new ManifestReader()->read($link);
+
+        assertSame('example/emoji', (string) $manifest->id);
+    }
+
     public function testReportsMissingCatalogFile(): void
     {
         unlink($this->root . '/examples/out.html');

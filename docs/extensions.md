@@ -117,7 +117,8 @@ Every path in the manifest must work on Linux, macOS and Windows:
 - no segment that is a Windows device name (`con`, `aux.php`, `nul.tar.gz`) or ends in a dot or a space.
 
 When a package is read from disk, each path must also be a regular file, and its real path must stay inside its
-base directory. A symlink that points outside the package is an error.
+base directory. `extension.yaml` and `package/` must resolve inside the package root too. A symlink that points
+outside the package is an error.
 
 ## YiiPress versions
 
@@ -131,8 +132,8 @@ base directory. A symlink that points outside the package is an error.
 
 Two ranges joined with `||` accept either of them, for example `^0.1.13 || ^1.0`.
 
-`*`, branch names such as `dev-master` and stability flags such as `@dev` are not allowed: a package states the
-versions it was tested with.
+Constraints that accept every version (`*`, `x`, `>=0`, `!=0.5.0`), branch names such as `dev-master` and
+stability flags such as `@dev` are not allowed: a package states the versions it was tested with.
 
 The running YiiPress is checked as follows:
 
@@ -169,13 +170,13 @@ extension.yaml has 2 errors:
 | `type_unsupported` | `type` is `importer` or `plugin`. |
 | `type_mismatch` | The package is of another type than expected, for example a processor installed as a theme. |
 | `version_invalid` | `version` is not a SemVer version. |
-| `constraint_invalid` | `yiipress` is not a valid constraint, or is `*`, a branch or has a stability flag. |
+| `constraint_invalid` | `yiipress` is not a valid constraint, accepts every version, names a branch or has a stability flag. |
 | `url_invalid` | Not an `https://` URL. |
 | `email_invalid` | Not a valid email address. |
 | `value_invalid` | A value outside the allowed set (`fallback`, `stages`, `os`, `arch`). |
 | `path_invalid` | A path breaks a path rule. |
 | `path_not_found` | A path is not a file in the package. |
-| `path_outside` | A path resolves to a location outside its base directory. |
+| `path_outside` | A path, `extension.yaml` or `package/` resolves to a location outside its base directory. |
 | `entry_not_php` | A processor entry point does not end in `.php`. |
 | `package_dir_missing` | No `package/` directory. |
 | `engine_version_unknown` | The version of the running YiiPress is unknown. |

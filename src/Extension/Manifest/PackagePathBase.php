@@ -6,6 +6,7 @@ namespace YiiPress\Extension\Manifest;
 
 use function is_file;
 use function realpath;
+use function rtrim;
 use function sprintf;
 use function str_starts_with;
 
@@ -28,6 +29,14 @@ final readonly class PackagePathBase
         private string $label,
     ) {}
 
+    /**
+     * Whether a real path lies below a real base directory.
+     */
+    public static function isInside(string $realPath, string $realBase): bool
+    {
+        return str_starts_with($realPath, rtrim($realBase, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+    }
+
     public function check(string $path, string $field): ?ManifestError
     {
         $base = realpath($this->directory);
@@ -37,7 +46,7 @@ final readonly class PackagePathBase
         }
 
         $real = realpath($this->directory . DIRECTORY_SEPARATOR . $path);
-        if ($real !== false && !str_starts_with($real, $base . DIRECTORY_SEPARATOR)) {
+        if ($real !== false && !self::isInside($real, $base)) {
             return new ManifestError('path_outside', $field, sprintf(
                 '%s: file "%s" resolves to a location outside %s.',
                 $field,
