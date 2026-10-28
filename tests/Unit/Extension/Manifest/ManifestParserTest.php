@@ -163,6 +163,24 @@ final class ManifestParserTest extends TestCase
         }
     }
 
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function boundedConstraintDataProvider(): iterable
+    {
+        yield 'upper bound only' => ['"<1.0"'];
+        yield 'lower bound only' => ['">=0.1.13"'];
+        yield 'or of ranges' => ['"^0.1.13 || ^1.0"'];
+    }
+
+    #[DataProvider('boundedConstraintDataProvider')]
+    public function testAcceptsConstraintWithABound(string $constraint): void
+    {
+        $manifest = new ManifestParser()->parse(str_replace('^0.1.13', $constraint, self::THEME));
+
+        assertSame(trim($constraint, '"'), $manifest->yiipress);
+    }
+
     public function testCollectsEveryErrorAtOnce(): void
     {
         $yaml = str_replace(['name: Wonder', 'version: 1.0.0'], ['name: ""', 'version: v1'], self::THEME);
@@ -230,9 +248,18 @@ final class ManifestParserTest extends TestCase
         yield 'version prefix' => [str_replace('version: 1.0.0', 'version: v1.0.0', $theme), 'version_invalid', 'version', 'SemVer'];
         yield 'version build metadata' => [str_replace('version: 1.0.0', 'version: 1.0.0+build', $theme), 'version_invalid', 'version', 'SemVer'];
         yield 'version leading zero' => [str_replace('version: 1.0.0', 'version: 1.01.0', $theme), 'version_invalid', 'version', 'SemVer'];
+        yield 'id trailing newline' => [str_replace('id: yiipress/wonder', 'id: "yiipress/wonder\n"', $theme), 'id_invalid', 'id', 'vendor/name'];
+        yield 'reserved theme name trailing newline' => [str_replace('id: yiipress/wonder', 'id: "acme/minimal\n"', $theme), 'id_invalid', 'id', 'vendor/name'];
+        yield 'version trailing newline' => [str_replace('version: 1.0.0', 'version: "1.0.0\n"', $theme), 'version_invalid', 'version', 'SemVer'];
+        yield 'license trailing newline' => [str_replace('license: BSD-3-Clause', 'license: "MIT\n"', $theme), 'field_invalid', 'license', 'license'];
+        yield 'constraint match-all x' => [str_replace('^0.1.13', 'x', $theme), 'constraint_invalid', 'yiipress', 'matches every version'];
+        yield 'constraint match-all star dot star' => [str_replace('^0.1.13', '"*.*"', $theme), 'constraint_invalid', 'yiipress', 'matches every version'];
+        yield 'constraint match-all x.x.x' => [str_replace('^0.1.13', 'x.x.x', $theme), 'constraint_invalid', 'yiipress', 'matches every version'];
+        yield 'constraint match-all from zero' => [str_replace('^0.1.13', '">=0"', $theme), 'constraint_invalid', 'yiipress', 'matches every version'];
+        yield 'constraint match-all not equal' => [str_replace('^0.1.13', '"!=0.5.0"', $theme), 'constraint_invalid', 'yiipress', 'matches every version'];
         yield 'version float' => [str_replace('version: 1.0.0', 'version: 1.0', $theme), 'field_type', 'version', 'must be a string'];
         yield 'constraint garbage' => [str_replace('^0.1.13', 'latest', $theme), 'constraint_invalid', 'yiipress', '"latest"'];
-        yield 'constraint star' => [str_replace('^0.1.13', '"*"', $theme), 'constraint_invalid', 'yiipress', 'real version range'];
+        yield 'constraint star' => [str_replace('^0.1.13', '"*"', $theme), 'constraint_invalid', 'yiipress', 'matches every version'];
         yield 'constraint branch' => [str_replace('^0.1.13', 'dev-master', $theme), 'constraint_invalid', 'yiipress', 'real version range'];
         yield 'constraint stability' => [str_replace('^0.1.13', '^0.1@dev', $theme), 'constraint_invalid', 'yiipress', 'real version range'];
         yield 'author url http' => [str_replace('url: https://example.com', 'url: http://example.com', $theme), 'url_invalid', 'authors[0].url', 'https://'];

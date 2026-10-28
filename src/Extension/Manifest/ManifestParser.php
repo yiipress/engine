@@ -15,8 +15,8 @@ use function filter_var;
 use function in_array;
 use function preg_match;
 use function sprintf;
+use function str_contains;
 use function stripos;
-use function trim;
 
 use const FILTER_VALIDATE_EMAIL;
 
@@ -34,7 +34,7 @@ final class ManifestParser
     ];
     private const array SECTION_KEYS = ['theme', 'processor'];
     private const array RESERVED_THEME_NAMES = ['minimal', 'local'];
-    private const string LICENSE_PATTERN = '/^[A-Za-z0-9.+\-() ]{1,100}$/';
+    private const string LICENSE_PATTERN = '/^[A-Za-z0-9.+\-() ]{1,100}$/D';
     private const int MAX_AUTHORS = 20;
 
     /**
@@ -215,19 +215,28 @@ final class ManifestParser
         if ($value === null) {
             return null;
         }
-        if (trim($value) === '*' || stripos($value, 'dev') !== false || preg_match('/@/', $value) === 1) {
+        if (stripos($value, 'dev') !== false || str_contains($value, '@')) {
             $fields->error('constraint_invalid', 'yiipress', sprintf(
-                '"%s" must state a real version range such as ^0.1.13; "*", branches and stability flags are not allowed',
+                '"%s" must state a real version range such as ^0.1.13; branches and stability flags are not allowed',
                 $value,
             ));
             return null;
         }
 
         try {
-            new VersionParser()->parseConstraints($value);
+            $constraint = new VersionParser()->parseConstraints($value);
         } catch (UnexpectedValueException) {
             $fields->error('constraint_invalid', 'yiipress', sprintf(
                 '"%s" is not a valid version constraint; use Composer syntax such as ^0.1.13',
+                $value,
+            ));
+            return null;
+        }
+
+        // `*`, `x`, `>=0` or `!=0.5.0` accept any version, so the package states nothing about compatibility.
+        if ($constraint->getLowerBound()->isZero() && $constraint->getUpperBound()->isPositiveInfinity()) {
+            $fields->error('constraint_invalid', 'yiipress', sprintf(
+                '"%s" matches every version; state a real version range such as ^0.1.13',
                 $value,
             ));
             return null;
