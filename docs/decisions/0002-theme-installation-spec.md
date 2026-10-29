@@ -16,7 +16,8 @@ yiipress get:theme --url=<github repository URL> [--version=X.Y.Z] [--no-activat
 - `--engine-version` exists only if the lead accepts open question 2; it is refused when
   `EngineVersion::current()` knows the version.
 - Exit codes: `ExitCode::OK`, `ExitCode::DATAERR` for every error in «Error codes» except `mutation_locked`
-  (`ExitCode::TEMPFAIL`) and network/rate-limit errors (`ExitCode::UNAVAILABLE`).
+  (`ExitCode::TEMPFAIL`), network/rate-limit errors (`ExitCode::UNAVAILABLE`) and command-line usage errors, a
+  missing `--url` or a refused `--engine-version` (`ExitCode::USAGE`, 64).
 - Output: the selected release and why («Wonder 1.2.0, highest stable release compatible with YiiPress 0.1.13»),
   the destination, the activation result; on error one friendly message per problem.
 
