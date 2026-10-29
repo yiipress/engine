@@ -44,6 +44,7 @@ final class Recovery
     public function recover(string $projectRoot): ?string
     {
         $paths = new StatePaths($projectRoot);
+        $paths->assertSafe();
         if (!is_file($paths->journal())) {
             return self::removeOrphans($paths)
                 ? 'Temporary files of an interrupted extension operation were removed.'

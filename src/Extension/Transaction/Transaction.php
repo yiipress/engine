@@ -41,7 +41,9 @@ final class Transaction
 
     public static function begin(string $projectRoot, string $operation = 'install'): self
     {
-        $transaction = new self(new StatePaths($projectRoot), bin2hex(random_bytes(8)), $operation);
+        $paths = new StatePaths($projectRoot);
+        $paths->assertSafe();
+        $transaction = new self($paths, bin2hex(random_bytes(8)), $operation);
         StatePaths::makeDirectory($transaction->stagingDirectory());
 
         return $transaction;

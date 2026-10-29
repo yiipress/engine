@@ -6,9 +6,13 @@ namespace YiiPress\Extension\Transaction;
 
 use YiiPress\Extension\Install\InstallException;
 
+use function file_exists;
 use function is_dir;
+use function is_link;
 use function mkdir;
+use function realpath;
 use function sprintf;
+use function str_starts_with;
 
 /**
  * Paths inside `.yiipress/`, the project directory that holds the state of extension commands.
@@ -48,6 +52,39 @@ final readonly class StatePaths
     public function backup(string $tx): string
     {
         return self::DIRECTORY . '/backup/' . $tx;
+    }
+
+    /**
+     * Refuses a `.yiipress/`, `staging/` or `backup/` that is a symbolic link or resolves outside the project:
+     * extension commands write and delete there, and must never do it in another directory.
+     *
+     * @throws InstallException `filesystem_failed`.
+     */
+    public function assertSafe(): void
+    {
+        $root = realpath($this->projectRoot);
+        foreach ([self::DIRECTORY, self::DIRECTORY . '/staging', self::DIRECTORY . '/backup'] as $relative) {
+            $path = $this->absolute($relative);
+            if (!is_link($path) && !file_exists($path)) {
+                continue;
+            }
+            $resolved = realpath($path);
+            if (
+                is_link($path)
+                || $root === false
+                || $resolved === false
+                || !str_starts_with($resolved, $root . '/')
+            ) {
+                throw new InstallException(
+                    'filesystem_failed',
+                    sprintf(
+                        '"%s" is a symbolic link or lies outside the project; it must be a plain directory.',
+                        $relative,
+                    ),
+                    solution: sprintf('Delete "%s" in the project and run the command again.', $relative),
+                );
+            }
+        }
     }
 
     public function absolute(string $relative): string

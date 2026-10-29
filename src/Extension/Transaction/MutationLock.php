@@ -33,6 +33,7 @@ final class MutationLock
     public static function acquire(string $projectRoot): self
     {
         $paths = new StatePaths($projectRoot);
+        $paths->assertSafe();
         StatePaths::makeDirectory($paths->directory());
         $handle = @fopen($paths->mutationLock(), 'c');
         if ($handle === false) {

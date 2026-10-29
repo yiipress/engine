@@ -288,7 +288,7 @@ Namespaces are under `YiiPress\Extension\` (directory `src/Extension/`), except 
 | `lock_invalid`, `lock_unsupported` | `yiipress.lock` unreadable, malformed or newer. |
 | `mutation_locked` | Another extension command runs in this project. |
 | `recovery_failed` | An interrupted transaction cannot be undone safely. |
-| `filesystem_failed` | A write, `rename()` or delete failed; message names the path. |
+| `filesystem_failed` | A write, `rename()` or delete failed, or `.yiipress/`, its `staging/` or `backup/` is a link or lies outside the project; message names the path. |
 
 Messages are full sentences naming the value, e.g. «Release v1.3.0 of yiipress/theme-wonder supports YiiPress
 ^0.2; this is YiiPress 0.1.13.» They never contain tokens or full response bodies.

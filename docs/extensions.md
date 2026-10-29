@@ -327,7 +327,7 @@ Each error is one message naming the value, with a hint when there is one. The e
 | `lock_invalid`, `lock_unsupported` | `yiipress.lock` is malformed, or written by a newer YiiPress. |
 | `mutation_locked` | Another extension command is running in this project. |
 | `recovery_failed` | An interrupted installation cannot be undone safely; see [above](#interrupted-installations). |
-| `filesystem_failed` | A file could not be written, moved or deleted; the message names it. |
+| `filesystem_failed` | A file could not be written, moved or deleted, or `.yiipress/`, `.yiipress/staging/` or `.yiipress/backup/` is a symbolic link or lies outside the project; the message names it. |
 
 ## Reading manifests in PHP
 
