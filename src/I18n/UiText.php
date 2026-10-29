@@ -13,6 +13,7 @@ use function array_unique;
 use function array_values;
 use function explode;
 use function file_get_contents;
+use function implode;
 use function is_array;
 use function sprintf;
 use function str_replace;
@@ -290,27 +291,33 @@ final class UiText
         string $themeName,
         string $normalizedDefaultLanguage,
     ): array {
-        $cacheKey = $themeName . "\0" . $normalizedDefaultLanguage . "\0" . $normalizedLanguage;
-        if (isset(self::$resolvedCatalogCache[$cacheKey])) {
-            return self::$resolvedCatalogCache[$cacheKey];
-        }
-
-        $catalog = [];
+        $paths = [];
         $englishPath = $templateResolver->resolveResource('translation/en.yaml', $themeName);
         if ($englishPath !== null) {
-            $catalog = self::loadCatalog($englishPath);
+            $paths[] = $englishPath;
         }
 
         if ($normalizedDefaultLanguage !== 'en') {
             foreach (self::resolveLanguagePaths($normalizedDefaultLanguage, $normalizedDefaultLanguage, $templateResolver, $themeName) as $path) {
-                $catalog = array_merge($catalog, self::loadCatalog($path));
+                $paths[] = $path;
             }
         }
 
         if ($normalizedLanguage !== $normalizedDefaultLanguage) {
             foreach (self::resolveLanguagePaths($language, $normalizedLanguage, $templateResolver, $themeName) as $path) {
-                $catalog = array_merge($catalog, self::loadCatalog($path));
+                $paths[] = $path;
             }
+        }
+
+        // Keyed by the files, not the theme name: the same name may resolve to other files through another fallback.
+        $cacheKey = implode("\0", $paths);
+        if (isset(self::$resolvedCatalogCache[$cacheKey])) {
+            return self::$resolvedCatalogCache[$cacheKey];
+        }
+
+        $catalog = [];
+        foreach ($paths as $path) {
+            $catalog = array_merge($catalog, self::loadCatalog($path));
         }
 
         return self::$resolvedCatalogCache[$cacheKey] = $catalog;
