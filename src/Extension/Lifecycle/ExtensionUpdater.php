@@ -7,7 +7,6 @@ namespace YiiPress\Extension\Lifecycle;
 use Composer\Semver\Comparator;
 use YiiPress\Extension\EngineVersion;
 use YiiPress\Extension\ExtensionId;
-use YiiPress\Extension\ExtensionType;
 use YiiPress\Extension\Install\InstallException;
 use YiiPress\Extension\Install\InstallRequest;
 use YiiPress\Extension\Install\PackageStager;
@@ -25,26 +24,36 @@ use YiiPress\Extension\Transaction\Transaction;
 use function sprintf;
 
 /**
- * Replaces an installed theme with another release from its recorded source: the newest compatible stable release,
- * or an exact version (a downgrade too). The package files and the lock entry change in one transaction; the
- * theme keeps its name and directory, so `config.yaml` and content that select it stay as they are.
+ * Replaces an installed extension with another release from its recorded source: the newest compatible stable
+ * release, or an exact version (a downgrade too). The package files and the lock entry change in one transaction;
+ * the extension keeps its name and directory, so configuration and content that use it stay as they are.
  */
-final readonly class ThemeUpdater
+final readonly class ExtensionUpdater
 {
     private PackageStager $stager;
 
-    public function __construct(
+    private function __construct(
         private GitHubReleaseSource $source,
-        ?PackageStager $stager = null,
-        private Recovery $recovery = new Recovery(),
+        private LifecycleRulesInterface $rules,
+        ?PackageStager $stager,
+        private Recovery $recovery,
     ) {
         $this->stager = $stager ?? new PackageStager($source);
+    }
+
+    public static function forTheme(
+        GitHubReleaseSource $source,
+        ?PackageStager $stager = null,
+        Recovery $recovery = new Recovery(),
+    ): self {
+        return new self($source, new ThemeLifecycleRules(), $stager, $recovery);
     }
 
     /**
      * @param string|null $version Exact `X.Y.Z`; `null` takes the newest compatible release when it is newer.
      *
-     * @throws InstallException With the code of the problem; the installed theme and its lock entry stay unchanged.
+     * @throws InstallException With the code of the problem; the installed extension and its lock entry stay
+     *     unchanged.
      */
     public function update(
         string $projectRoot,
@@ -57,11 +66,18 @@ final readonly class ThemeUpdater
         try {
             $recovered = $this->recovery->recover($projectRoot);
             $lockFile = LockFile::read($projectRoot . '/' . LockFile::FILE_NAME);
-            $previous = InstalledTheme::unchanged($projectRoot, $lockFile, $id, 'update:theme');
+            $type = $this->rules->type();
+            $previous = InstalledExtension::unchanged(
+                $projectRoot,
+                $lockFile,
+                $id,
+                'update:' . $type->value,
+                $this->rules,
+            );
             $request = new InstallRequest(
                 $projectRoot,
                 GitHubRepository::fromUrl($previous->source),
-                ExtensionType::Theme,
+                $type,
                 $version,
                 $engine,
                 $platform,
@@ -77,6 +93,7 @@ final readonly class ThemeUpdater
             if (!self::changes($previous, $selected, $version)) {
                 return new UpdateResult($previous, $previous, $selected, $recovered);
             }
+            $this->rules->checkUpdate($projectRoot, $previous, $selected->manifest);
 
             $transaction = Transaction::begin($projectRoot, 'update');
             try {
@@ -110,13 +127,18 @@ final readonly class ThemeUpdater
         GitHubRepository $repository,
     ): void {
         if ((string) $selected->manifest->id !== (string) $id) {
+            $type = $selected->manifest->type->value;
             throw new InstallException('manifest_mismatch', sprintf(
-                'Release %s of %s is %s, not the installed theme %s.',
+                'Release %s of %s is %s, not the installed %s %s.',
                 $selected->release->tag,
                 $repository,
                 $selected->manifest->id,
+                $type,
                 $id,
-            ), solution: 'Remove the theme and install the other one with get:theme if you want to switch.');
+            ), solution: sprintf(
+                'Remove the %1$s and install the other one with get:%1$s if you want to switch.',
+                $type,
+            ));
         }
     }
 

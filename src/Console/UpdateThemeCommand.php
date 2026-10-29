@@ -13,7 +13,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use YiiPress\Extension\EngineVersion;
 use YiiPress\Extension\Http\HttpClientInterface;
 use YiiPress\Extension\Install\InstallException;
-use YiiPress\Extension\Lifecycle\ThemeUpdater;
+use YiiPress\Extension\Lifecycle\ExtensionUpdater;
 use YiiPress\Extension\Lifecycle\UpdateResult;
 use YiiPress\Extension\Platform;
 use YiiPress\Extension\Release\GitHubReleaseSource;
@@ -60,7 +60,7 @@ final class UpdateThemeCommand extends Command
     {
         try {
             $version = $input->getOption('version');
-            $result = new ThemeUpdater(new GitHubReleaseSource($this->http))->update(
+            $result = ExtensionUpdater::forTheme(new GitHubReleaseSource($this->http))->update(
                 $this->rootPath,
                 ExtensionIdArgument::resolve($input),
                 is_string($version) ? $version : null,

@@ -347,9 +347,11 @@ All `final`; value objects `readonly`. Names may be adjusted by the developer if
 | `Restore\PackageRestorer` | shared | `restore(string $projectRoot, EngineVersion, Platform): RestoreResult`; throws `RestoreRefusedException` with every problem |
 | `Install\PackageStager` | shared | `stage(Transaction, InstallRequest, SelectedRelease): StagedPackage` (download, extract, manifest and compatibility checks); `StagedPackage::locked(string $destination, ?string $name): LockedExtension` |
 | `Theme\LockedThemeDestination` | theme | `static problem(string $id, LockedExtension): ?InstallException` (`themes/<name>` rule) |
-| `Lifecycle\InstalledTheme` | theme | `static find(LockFile, ExtensionId): LockedExtension` (step 2), `static unchanged(string $projectRoot, LockFile, ExtensionId, string $command): LockedExtension` (steps 2–3), `static unchangedOrGone(string $projectRoot, LockedExtension, string $id): bool` (step 3 for removal) |
-| `Lifecycle\ThemeUpdater` | theme | `update(string $projectRoot, ExtensionId, ?string $version, EngineVersion, Platform): UpdateResult` |
-| `Lifecycle\ThemeRemover`, `Lifecycle\ThemeReferences` | theme | `remove(string $projectRoot, ExtensionId, string $contentDir): RemoveResult`; `find(string $themeName, string $contentDir): list<string>` |
+| `Lifecycle\InstalledExtension` | shared | `static find(LockFile, ExtensionId, LifecycleRulesInterface): LockedExtension` (step 2), `static unchanged(string $projectRoot, LockFile, ExtensionId, string $command, LifecycleRulesInterface): LockedExtension` (steps 2–3), `static unchangedOrGone(string $projectRoot, LockedExtension, string $id, LifecycleRulesInterface): bool` (step 3 for removal) |
+| `Lifecycle\LifecycleRulesInterface` | shared, internal to `Extension` | `type()`, `destinationProblem(string $id, LockedExtension): ?InstallException`, `checkUnused(string $projectRoot, LockedExtension)`, `checkUpdate(string $projectRoot, LockedExtension $previous, ExtensionManifest $next)` |
+| `Lifecycle\ExtensionUpdater` | shared | `static forTheme(GitHubReleaseSource)`; `update(string $projectRoot, ExtensionId, ?string $version, EngineVersion, Platform): UpdateResult` |
+| `Lifecycle\ExtensionRemover` | shared | `static forTheme(string $contentDir)`; `remove(string $projectRoot, ExtensionId): RemoveResult` |
+| `Lifecycle\ThemeLifecycleRules`, `Lifecycle\ThemeReferences` | theme | the `themes/<name>` rule, `theme_in_use`; `find(string $themeName, string $contentDir): list<string>` |
 | `Console\GetThemeCommand`, `Console\RecoverExtensionsCommand`, `Console\RestoreExtensionsCommand`, `Console\UpdateThemeCommand`, `Console\RemoveThemeCommand` | console | `get:theme`, `recover:extensions`, `restore:extensions`, `update:theme`, `remove:theme`, registered in `config/console/commands.php` |
 
 Namespaces are under `YiiPress\Extension\` (directory `src/Extension/`), except the commands.

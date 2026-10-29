@@ -11,7 +11,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiPress\Extension\Install\InstallException;
-use YiiPress\Extension\Lifecycle\ThemeRemover;
+use YiiPress\Extension\Lifecycle\ExtensionRemover;
 use Yiisoft\Yii\Console\ExitCode;
 
 use function sprintf;
@@ -41,7 +41,7 @@ final class RemoveThemeCommand extends Command
             /** @var string $contentDir */
             $contentDir = $input->getOption('content-dir');
             $id = ExtensionIdArgument::resolve($input);
-            $result = new ThemeRemover()->remove($this->rootPath, $id, $contentDir);
+            $result = ExtensionRemover::forTheme($contentDir)->remove($this->rootPath, $id);
         } catch (InstallException $exception) {
             return ExtensionIdArgument::fail($output, $exception);
         }

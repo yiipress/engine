@@ -13,7 +13,7 @@ use YiiPress\Extension\Install\InstallException;
 use YiiPress\Extension\Install\InstallRequest;
 use YiiPress\Extension\Install\PackageInstaller;
 use YiiPress\Extension\Lifecycle\RemoveResult;
-use YiiPress\Extension\Lifecycle\ThemeRemover;
+use YiiPress\Extension\Lifecycle\ExtensionRemover;
 use YiiPress\Extension\Lock\LockFile;
 use YiiPress\Extension\Platform;
 use YiiPress\Extension\Release\GitHubReleaseSource;
@@ -32,7 +32,7 @@ use function unlink;
 
 use const GLOB_BRACE;
 
-final class ThemeRemoverTest extends TestCase
+final class ExtensionRemoverTest extends TestCase
 {
     private string $root;
 
@@ -211,7 +211,7 @@ final class ThemeRemoverTest extends TestCase
 
     private function remove(): RemoveResult
     {
-        return new ThemeRemover()->remove($this->root, $this->id(), 'content');
+        return ExtensionRemover::forTheme('content')->remove($this->root, $this->id());
     }
 
     private function removeFails(string $code): InstallException

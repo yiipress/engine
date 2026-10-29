@@ -18,7 +18,7 @@ use YiiPress\Extension\Platform;
 use YiiPress\Extension\Release\GitHubReleaseSource;
 use YiiPress\Extension\Release\GitHubRepository;
 use YiiPress\Extension\Theme\ThemeDestinationPolicy;
-use YiiPress\Extension\Lifecycle\ThemeUpdater;
+use YiiPress\Extension\Lifecycle\ExtensionUpdater;
 use YiiPress\Extension\Lifecycle\UpdateResult;
 use YiiPress\Tests\Support\FakeHttpClient;
 use YiiPress\Tests\Support\WonderFixture;
@@ -35,7 +35,7 @@ use function unlink;
 
 use const GLOB_BRACE;
 
-final class ThemeUpdaterTest extends TestCase
+final class ExtensionUpdaterTest extends TestCase
 {
     private const string CONFIG = "title: Blog\ntheme: wonder\n";
 
@@ -209,7 +209,7 @@ final class ThemeUpdaterTest extends TestCase
     {
         $http->requests = [];
 
-        return new ThemeUpdater(new GitHubReleaseSource($http))->update(
+        return ExtensionUpdater::forTheme(new GitHubReleaseSource($http))->update(
             $this->root,
             ExtensionId::tryFromString(WonderFixture::ID),
             $version,
