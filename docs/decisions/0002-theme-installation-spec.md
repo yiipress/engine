@@ -1,9 +1,9 @@
 # 0002 appendix: `get:theme` and the shared installer (reference)
 
 Reference for [decision 0002](0002-theme-installation.md). Scope: `yiipress get:theme`, the parts it shares with
-later commands, the lock file format, recovery and `restore:extensions` (see «Restore»). `update:*`, `remove:*`,
-processors and the full fallback rules are later steps; they appear here only where the lock format must serve
-them.
+later commands, the lock file format, recovery, `restore:extensions` (see «Restore») and `update:theme` /
+`remove:theme` (see «Update and removal»). `update:*` / `remove:*` for other types, processors and the full fallback
+rules are later steps; they appear here only where the lock format must serve them.
 
 ## Command
 
@@ -217,11 +217,14 @@ Directory `.yiipress/` in the project root (created on demand; docs recommend ig
   {"kind": "replace_file", "path": "yiipress.lock", "backup": "backup/<tx>/yiipress.lock" | null},
   {"kind": "add_file", "from": "...", "to": "themes/wonder/assets/style.css", "hash": "<sha256>"}, ...]}`.
   `backup: null` means the file did not exist. `add_file` (restore only) puts a missing file into an existing
-  package directory; `to` must not exist.
+  package directory; `to` must not exist. `{"kind": "retire_dir", "from": "themes/wonder", "backup":
+  ".yiipress/backup/<tx>/<n>"}` (update, remove) moves an installed directory, which must be a directory and not a
+  link, into the transaction's backup with one `rename()`; commit deletes it with the backups.
 - Recovery (start of every mutating command, and `yiipress recover:extensions`):
   `prepared` → undo steps in reverse: restore or delete each file from its backup, delete a moved directory only if
-  its files equal the staged hashes recorded in the journal, delete an added file only if it equals its `hash`;
-  anything else stops with
+  its files equal the staged hashes recorded in the journal, delete an added file only if it equals its `hash`,
+  move a retired directory back when its backup exists and nothing took its place (a `move_dir` to a directory
+  whose `retire_dir` never ran is skipped: what is there is the old package); anything else stops with
   `recovery_failed` and keeps journal and backups. `committed` → delete staging, backups and the journal.
 - Builds and `serve`: if `.yiipress/journal.json` exists, stop with «An extension operation was interrupted. Run
   `yiipress recover:extensions`.» They never take the mutation lock.
@@ -251,6 +254,46 @@ only: it never lists releases, activates, edits `config.yaml` or writes the lock
 5. One transaction (`operation: "restore"`): a missing destination is a `move_dir` of the staged `package/`, each
    missing file of an existing destination an `add_file`. Nothing is overwritten or deleted.
 
+## Update and removal
+
+`yiipress update:theme <id> [--version=X.Y.Z] [--engine-version=X.Y.Z]` and `yiipress remove:theme <id>
+[--content-dir=content]`, project root as for `get:theme`, exit codes as for it (`64` for a malformed ID).
+Issue #177 «Updates and removal»; design decisions of the lead on #256 (2026-10-29): one journal step `retire_dir`
+for both, content that cannot be parsed blocks removal, the commands live in `src/Extension/Lifecycle/`.
+
+Both commands, before any download or change:
+
+1. Take the mutation lock; run recovery. Read `yiipress.lock`.
+2. The ID must have an entry (`not_installed`) of type `theme` (`extension_not_theme`) with destination
+   `themes/<name>` (`lock_invalid`).
+3. Compare the destination with `files` as restore does (`Restore\InstalledPackage`): a changed, added or deleted
+   file, a missing directory or something in its place is `local_changes`, listing them. The solution points to
+   `restore:extensions` when files are only missing.
+
+Update:
+
+4. Select the release from the entry's `source` with `ReleaseSelector` (`--version` exact, a downgrade allowed;
+   without it the newest compatible stable release). Its manifest `id` must be the entry's ID
+   (`manifest_mismatch`). Without `--version`, a release that is not newer than the entry's `version` is no change;
+   with it, the same version is no change. No change: exit 0, nothing downloaded.
+5. `Install\PackageStager` downloads, reads and checks the archive as `get:theme` does (shared code).
+6. One transaction (`operation: "update"`): `retire_dir` of the destination, `move_dir` of the staged `package/` to
+   the same destination, `replace_file` of `yiipress.lock` with the new entry (same `destination` and `name`).
+   `config.yaml` is not touched: the name does not change, so activation and entry selections stay valid.
+
+Removal:
+
+4. The theme must not be selected: `theme` in `<content-dir>/config.yaml` (parsed by `SiteConfigParser`) or
+   `theme` in the front matter of any entry or standalone page (`ContentParser`, no cache). Every selecting file is
+   listed (`theme_in_use`); content that cannot be parsed is `content_unreadable`. Nothing is edited. Theme
+   fallbacks cannot name an installed theme (`fallback` is `minimal` or `none`), so there is nothing else to check;
+   references from custom PHP are not detected (documented).
+5. One transaction (`operation: "remove"`): `retire_dir` of the destination, `replace_file` of `yiipress.lock`
+   without the entry.
+
+A failure or kill at any point leaves, after recovery, the old directory and the old lock, or (once committed) the
+new state; never a mix.
+
 ## Classes
 
 All `final`; value objects `readonly`. Names may be adjusted by the developer if the API stays.
@@ -266,10 +309,10 @@ All `final`; value objects `readonly`. Names may be adjusted by the developer if
 | `Release\ReleaseSelector` | shared | `select(GitHubRepository, ExtensionType, ?string $version, EngineVersion, Platform): SelectedRelease` |
 | `Archive\TarGzReader` | shared | `extract(string $file, string $targetDir, InstallLimits): ExtractedArchive` (`commit`, `root`) |
 | `Archive\InstallLimits` | shared | constants of «Limits» |
-| `Lock\LockFile` | shared | `static read(string $path): self`, `get(ExtensionId): ?LockedExtension`, `withExtension(ExtensionId, LockedExtension): self`, `toJson(): string`, `destinations(): list<string>` |
+| `Lock\LockFile` | shared | `static read(string $path): self`, `get(ExtensionId): ?LockedExtension`, `withExtension(ExtensionId, LockedExtension): self`, `withoutExtension(ExtensionId): self`, `toJson(): string`, `destinations(): list<string>` |
 | `Lock\LockedExtension` | shared | the fields above |
 | `Transaction\MutationLock` | shared | `static acquire(string $projectRoot): self`, `release(): void` |
-| `Transaction\Transaction` | shared | `moveDirectory(string $from, string $to, array $hashes)`, `replaceFile(string $path, string $contents)`, `commit(): void` |
+| `Transaction\Transaction` | shared | `moveDirectory(string $from, string $to, array $hashes)`, `retireDirectory(string $path)`, `replaceFile(string $path, string $contents)`, `commit(): void` |
 | `Transaction\Recovery` | shared | `static pending(string $projectRoot): bool`, `recover(string $projectRoot): void` |
 | `Install\PackageInstaller` | shared | `install(InstallRequest, DestinationPolicyInterface): InstallResult` (steps 2–13) |
 | `Install\DestinationPolicyInterface` | shared | `destination(ExtensionManifest, LockFile, string $projectRoot): string`, `activation(ExtensionManifest, string $localName): ?FileChange` |
@@ -279,7 +322,12 @@ All `final`; value objects `readonly`. Names may be adjusted by the developer if
 | `Restore\InstalledPackage` | shared | `static inspect(string $projectRoot, LockedExtension): self` (`exists`, `missing`, `modified`, `unexpected`, `collision`) |
 | `Restore\LockedArchive` | shared | `fetch(string $id, LockedExtension, string $stagingDir, EngineVersion, Platform): VerifiedPackage` |
 | `Restore\PackageRestorer` | shared | `restore(string $projectRoot, EngineVersion, Platform): RestoreResult`; throws `RestoreRefusedException` with every problem |
-| `Console\GetThemeCommand`, `Console\RecoverExtensionsCommand`, `Console\RestoreExtensionsCommand` | console | `get:theme`, `recover:extensions`, `restore:extensions`, registered in `config/console/commands.php` |
+| `Install\PackageStager` | shared | `stage(Transaction, InstallRequest, SelectedRelease): StagedPackage` (download, extract, manifest and compatibility checks); `StagedPackage::locked(string $destination, ?string $name): LockedExtension` |
+| `Theme\LockedThemeDestination` | theme | `static problem(string $id, LockedExtension): ?InstallException` (`themes/<name>` rule) |
+| `Lifecycle\InstalledTheme` | theme | `static unchanged(string $projectRoot, LockFile, ExtensionId, string $command): LockedExtension` (steps 2–3 of «Update and removal») |
+| `Lifecycle\ThemeUpdater` | theme | `update(string $projectRoot, ExtensionId, ?string $version, EngineVersion, Platform): UpdateResult` |
+| `Lifecycle\ThemeRemover`, `Lifecycle\ThemeReferences` | theme | `remove(string $projectRoot, ExtensionId, string $contentDir): RemoveResult`; `find(string $themeName, string $contentDir): list<string>` |
+| `Console\GetThemeCommand`, `Console\RecoverExtensionsCommand`, `Console\RestoreExtensionsCommand`, `Console\UpdateThemeCommand`, `Console\RemoveThemeCommand` | console | `get:theme`, `recover:extensions`, `restore:extensions`, `update:theme`, `remove:theme`, registered in `config/console/commands.php` |
 
 Namespaces are under `YiiPress\Extension\` (directory `src/Extension/`), except the commands.
 
@@ -321,6 +369,12 @@ Namespaces are under `YiiPress\Extension\` (directory `src/Extension/`), except 
 | `files_modified` | Restore: installed files differ from the lock's `files`. |
 | `files_unexpected` | Restore: the destination holds files or links not in `files`. |
 | `archive_mismatch` | Restore: the locked archive holds another commit, manifest, ID, version or files than the lock. |
+| `id_invalid` | Update, remove: the argument is not a `vendor/name` ID (exit 64). |
+| `not_installed` | Update, remove: no lock entry with that ID. |
+| `extension_not_theme` | Update, remove: the lock entry is another type. |
+| `local_changes` | Update, remove: installed files were changed, added or deleted. |
+| `theme_in_use` | Remove: `config.yaml` or an entry selects the theme. |
+| `content_unreadable` | Remove: `config.yaml` or an entry cannot be parsed. |
 | `mutation_locked` | Another extension command runs in this project. |
 | `recovery_failed` | An interrupted transaction cannot be undone safely. |
 | `filesystem_failed` | A write, `rename()` or delete failed, or `.yiipress/`, its `staging/` or `backup/` is a link or lies outside the project; message names the path. |

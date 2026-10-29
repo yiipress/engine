@@ -390,6 +390,75 @@ done, and [`recover:extensions`](#interrupted-installations) handles a killed ru
 | `archive_mismatch` | The archive holds another commit, manifest, ID, version or other files than the lock records. |
 | `release_incompatible` | The locked release does not support this YiiPress or platform. |
 
+## Updating a theme
+
+```shell
+yiipress update:theme yiipress/wonder
+yiipress update:theme yiipress/wonder --version=1.2.0
+```
+
+The theme ID is the one in `yiipress.lock`. Without `--version`, YiiPress picks the newest stable release of the
+recorded repository that supports this YiiPress and platform, and updates only when it is newer than the installed
+one. With `--version`, it installs exactly that release, even an older one, so it can also roll a theme back.
+
+```text
+Updated yiipress/wonder from 1.0.0 to 1.2.0 (v1.2.0, highest stable release compatible with YiiPress 0.1.13) in themes/wonder.
+yiipress/wonder 1.2.0 is up to date: the newest compatible release is 1.2.0.
+```
+
+The theme keeps its name and directory, so `config.yaml` and entries that select it are not touched and an active
+theme stays active. The new release is downloaded and checked completely (see
+[installing a theme](#installing-a-theme)) before anything changes; then the package directory and its entry in
+`yiipress.lock` are replaced in one transaction. If the update fails or is killed, the old package and its lock entry
+come back, never a mix of both ([`recover:extensions`](#interrupted-installations) handles a killed run).
+
+An update refuses to run while the installed theme has local changes: a changed file, a file that is not part of
+the release, or a deleted file. Nothing is downloaded then. Move your changes out of the theme directory (keep a
+copy), run `restore:extensions` to bring the files back as installed, and update again. A theme you want to change is
+better copied with `init:theme` or overridden in the content directory's `templates/`.
+
+## Removing a theme
+
+```shell
+yiipress remove:theme yiipress/wonder
+yiipress remove:theme yiipress/wonder --content-dir=site
+```
+
+Removal deletes only the directory recorded in `yiipress.lock` and the theme's entry there, in one transaction. It
+refuses, and changes nothing, when:
+
+- the theme has local changes, as for an update;
+- the site still selects it: `theme` in `config.yaml` (`--content-dir` names its directory, `content` by default);
+- an entry or a standalone page selects it in its front matter (`theme: wonder`);
+- the content cannot be read, for example an entry with broken front matter: YiiPress cannot tell whether that
+  entry selects the theme. Fix the content so that `build` reads it, then remove the theme.
+
+```text
+Theme "wonder" is still selected by content/config.yaml, content/blog/launch.md.
+Set "theme" in config.yaml to another theme and change or remove "theme: wonder" in the listed entries, then run remove:theme again. YiiPress does not change content for you.
+```
+
+YiiPress never edits `config.yaml` or content to switch themes for you. It finds references in `config.yaml` and in
+front matter only: a theme name used from custom PHP code (a plugin, a template that renders with another theme) is
+not detected, so check such code before removing a theme.
+
+### Update and removal errors
+
+Exit codes are those of [installing a theme](#installation-errors): `64` for a malformed ID, `65` for the errors
+below, `69` for network errors, `75` while another extension command runs or an operation was interrupted.
+
+| Code | Meaning |
+| --- | --- |
+| `id_invalid` | The argument is not a `vendor/name` ID. |
+| `not_installed` | `yiipress.lock` has no entry with that ID. |
+| `extension_not_theme` | The entry is another extension type. |
+| `local_changes` | Files of the installed theme were changed, added or deleted; the message lists them. |
+| `lock_invalid` | The entry's destination is not `themes/<name>`. |
+| `manifest_mismatch` | Update: the selected release of the recorded repository is another extension. |
+| `release_not_found`, `release_incompatible`, `no_compatible_release` | Update: as for `get:theme --version`. |
+| `theme_in_use` | Removal: `config.yaml` or an entry still selects the theme; the message lists the files. |
+| `content_unreadable` | Removal: `config.yaml` or an entry cannot be parsed, so the theme may be selected there. |
+
 ## Reading manifests in PHP
 
 The classes live in `YiiPress\Extension` (`src/Extension/`):

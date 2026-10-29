@@ -173,6 +173,36 @@ yiipress get:theme --url=https://github.com/<owner>/<repo> [--version=X.Y.Z] [--
 
 See [Installing a theme](extensions.md#installing-a-theme) for release selection, the lock file, limits and errors.
 
+## `update:theme`
+
+Updates an installed theme to the newest compatible release, or to an exact version, which may be older.
+
+```shell
+yiipress update:theme <vendor/name> [--version=X.Y.Z]
+```
+
+**Options:**
+
+- `--version` — the release to install, `X.Y.Z` without `v` (default: the newest release compatible with this YiiPress, if it is newer).
+- `--engine-version` — as for `get:theme`.
+
+The theme keeps its directory and stays active. See [Updating a theme](extensions.md#updating-a-theme).
+
+## `remove:theme`
+
+Removes an installed theme: its directory and its entry in `yiipress.lock`. It refuses while `config.yaml` or an
+entry selects the theme, and never edits content.
+
+```shell
+yiipress remove:theme <vendor/name> [--content-dir=content]
+```
+
+**Options:**
+
+- `--content-dir` — path to the content directory containing `config.yaml` (default: `content`).
+
+See [Removing a theme](extensions.md#removing-a-theme).
+
 ## `recover:extensions`
 
 Finishes or undoes an extension installation that was interrupted.
