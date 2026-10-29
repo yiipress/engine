@@ -108,7 +108,11 @@ final class TransactionTest extends TestCase
         $tx = Transaction::begin($this->root);
         $this->stagePackage($tx);
 
-        $tx->addFile($tx->stagingPath('package/assets/style.css'), 'themes/wonder/assets/style.css', hash('sha256', 'body{}'));
+        $tx->addFile(
+            $tx->stagingPath('package/assets/style.css'),
+            'themes/wonder/assets/style.css',
+            hash('sha256', 'body{}'),
+        );
         $tx->commit();
 
         self::assertSame('body{}', file_get_contents($this->root . '/themes/wonder/assets/style.css'));
