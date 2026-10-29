@@ -32,6 +32,14 @@ final readonly class ExtensionRemover
     }
 
     /**
+     * Its content directory is the one in the lock destination, where the package was installed.
+     */
+    public static function forProcessor(Recovery $recovery = new Recovery()): self
+    {
+        return new self(new ProcessorLifecycleRules(), $recovery);
+    }
+
+    /**
      * @throws InstallException With the code of the problem; the extension and its lock entry stay unchanged.
      */
     public function remove(string $projectRoot, ExtensionId $id): RemoveResult
