@@ -34,6 +34,8 @@ use YiiPress\Build\TemplateResolver;
 use YiiPress\Build\TaxonomyPageWriter;
 use YiiPress\Build\Theme;
 use YiiPress\Build\ThemeRegistry;
+use YiiPress\Extension\Install\InstallException;
+use YiiPress\Extension\Theme\ManagedThemes;
 use YiiPress\Extension\Transaction\Recovery;
 use YiiPress\Build\WorkerJobInterface;
 use YiiPress\Content\CrossReferenceResolver;
@@ -232,7 +234,16 @@ final class BuildCommand extends Command
             return ExitCode::DATAERR;
         }
 
-        new ProjectThemeDiscovery()->register($this->themeRegistry, $rootPath . '/themes');
+        try {
+            $managedThemes = ManagedThemes::directoryNames($rootPath);
+        } catch (InstallException $e) {
+            $managedThemes = [];
+            $output->writeln(sprintf(
+                '<comment>Warning: %s Installed themes are used as fallback like any other theme.</comment>',
+                $e->getMessage(),
+            ));
+        }
+        new ProjectThemeDiscovery()->register($this->themeRegistry, $rootPath . '/themes', $managedThemes);
 
         $localTemplatesDir = $contentDir . '/templates';
         if (is_dir($localTemplatesDir)) {

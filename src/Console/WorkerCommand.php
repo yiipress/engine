@@ -20,6 +20,8 @@ use YiiPress\Build\TemplateResolver;
 use YiiPress\Build\Theme;
 use YiiPress\Build\ThemeRegistry;
 use YiiPress\Content\Model\SiteConfig;
+use YiiPress\Extension\Install\InstallException;
+use YiiPress\Extension\Theme\ManagedThemes;
 use YiiPress\Processor\ContentProcessorPipeline;
 use YiiPress\Processor\ProjectProcessorConfigurator;
 use Psr\EventDispatcher\EventDispatcherInterface;
@@ -152,7 +154,13 @@ final class WorkerCommand extends Command
 
     private function registerThemes(string $contentDir): void
     {
-        new ProjectThemeDiscovery()->register($this->themeRegistry, $this->rootPath . '/themes');
+        try {
+            $managedThemes = ManagedThemes::directoryNames($this->rootPath);
+        } catch (InstallException) {
+            // The build reported the invalid lock file already.
+            $managedThemes = [];
+        }
+        new ProjectThemeDiscovery()->register($this->themeRegistry, $this->rootPath . '/themes', $managedThemes);
         $localTemplatesDir = $contentDir . '/templates';
         if (is_dir($localTemplatesDir)) {
             $this->themeRegistry->register(new Theme('local', $localTemplatesDir));

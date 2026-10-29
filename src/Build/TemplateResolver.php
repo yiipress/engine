@@ -31,7 +31,7 @@ final class TemplateResolver
         }
 
         foreach ($this->themeRegistry->all() as $theme) {
-            if ($theme->name === $themeName) {
+            if ($theme->name === $themeName || $theme->managed) {
                 continue;
             }
             $path = $theme->path . '/' . $templateName . '.php';
@@ -63,7 +63,7 @@ final class TemplateResolver
         }
 
         foreach ($this->themeRegistry->all() as $theme) {
-            if ($theme->name === $themeName) {
+            if ($theme->name === $themeName || $theme->managed) {
                 continue;
             }
             $path = $theme->path . '/' . $resourcePath;
@@ -85,7 +85,7 @@ final class TemplateResolver
         }
 
         foreach ($this->themeRegistry->all() as $theme) {
-            if ($theme->name === $themeName) {
+            if ($theme->name === $themeName || $theme->managed) {
                 continue;
             }
             $path = $theme->path . '/' . $resourcePath;
@@ -99,7 +99,13 @@ final class TemplateResolver
 
     public function defaultThemeName(): string
     {
-        return $this->themeRegistry->all()[0]->name ?? '';
+        foreach ($this->themeRegistry->all() as $theme) {
+            if (!$theme->managed) {
+                return $theme->name;
+            }
+        }
+
+        return '';
     }
 
     /**

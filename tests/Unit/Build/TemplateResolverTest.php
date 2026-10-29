@@ -10,6 +10,7 @@ use YiiPress\Build\TemplateResolver;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
+use function PHPUnit\Framework\assertNull;
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringEndsWith;
 
@@ -118,6 +119,42 @@ final class TemplateResolverTest extends TestCase
         } finally {
             rmdir($tempDir);
         }
+    }
+
+    public function testManagedThemeIsUsedOnlyWhenRequested(): void
+    {
+        $managedDir = sys_get_temp_dir() . '/yiipress-theme-test-' . uniqid();
+        mkdir($managedDir . '/assets', 0o755, true);
+        file_put_contents($managedDir . '/special.php', '<p>managed</p>');
+        file_put_contents($managedDir . '/assets/only.css', 'a{}');
+
+        try {
+            $registry = new ThemeRegistry();
+            $registry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
+            $registry->register(new Theme('wonder', $managedDir, managed: true));
+            $resolver = new TemplateResolver($registry);
+
+            assertSame($managedDir . '/special.php', $resolver->resolve('special', 'wonder'));
+            assertSame($managedDir . '/assets/only.css', $resolver->resolveResource('assets/only.css', 'wonder'));
+            assertNull($resolver->resolveResource('assets/only.css', 'minimal'));
+            assertSame('minimal', $resolver->resolveResourceThemeName('assets/only.css', 'minimal'));
+            $this->expectException(RuntimeException::class);
+            $resolver->resolve('special', 'minimal');
+        } finally {
+            unlink($managedDir . '/special.php');
+            unlink($managedDir . '/assets/only.css');
+            rmdir($managedDir . '/assets');
+            rmdir($managedDir);
+        }
+    }
+
+    public function testDefaultThemeIsNeverManaged(): void
+    {
+        $registry = new ThemeRegistry();
+        $registry->register(new Theme('wonder', '/themes/wonder', managed: true));
+        $registry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
+
+        assertSame('minimal', new TemplateResolver($registry)->defaultThemeName());
     }
 
     private function createResolver(): TemplateResolver

@@ -9,6 +9,7 @@ use SplFileInfo;
 use UnexpectedValueException;
 
 use function array_values;
+use function in_array;
 use function is_dir;
 use function is_readable;
 use function ksort;
@@ -17,9 +18,10 @@ use function preg_match;
 final readonly class ProjectThemeDiscovery
 {
     /**
+     * @param list<string> $managedNames Directory names of themes installed by `get:theme`.
      * @return list<Theme>
      */
-    public function discover(string $themesDir): array
+    public function discover(string $themesDir, array $managedNames = []): array
     {
         if (!is_dir($themesDir) || !is_readable($themesDir)) {
             return [];
@@ -39,7 +41,7 @@ final readonly class ProjectThemeDiscovery
                     continue;
                 }
 
-                $themes[$name] = new Theme($name, $item->getPathname());
+                $themes[$name] = new Theme($name, $item->getPathname(), in_array($name, $managedNames, true));
             }
         } catch (UnexpectedValueException) {
             return [];
@@ -50,10 +52,13 @@ final readonly class ProjectThemeDiscovery
         return array_values($themes);
     }
 
-    public function register(ThemeRegistry $registry, string $themesDir): int
+    /**
+     * @param list<string> $managedNames Directory names of themes installed by `get:theme`.
+     */
+    public function register(ThemeRegistry $registry, string $themesDir, array $managedNames = []): int
     {
         $registered = 0;
-        foreach ($this->discover($themesDir) as $theme) {
+        foreach ($this->discover($themesDir, $managedNames) as $theme) {
             if ($registry->has($theme->name)) {
                 continue;
             }
