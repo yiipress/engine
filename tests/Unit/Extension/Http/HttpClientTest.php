@@ -14,6 +14,7 @@ use YiiPress\Extension\Install\InstallException;
 use YiiPress\Tests\Support\LocalHttpServer;
 
 use function file_get_contents;
+use function hrtime;
 use function is_file;
 use function sys_get_temp_dir;
 use function uniqid;
@@ -135,6 +136,25 @@ final class HttpClientTest extends TestCase
         } catch (InstallException $exception) {
             self::assertSame('network_failed', $exception->errorCode);
         }
+    }
+
+    /**
+     * The body arrives a byte every 0.2 s for 4 s: no read waits long, the whole request does.
+     */
+    public function testStreamRequestStopsAtWholeRequestTimeout(): void
+    {
+        $client = new StreamHttpClient(new UrlPolicy(['http'], ['127.0.0.1']), connectTimeout: 1, requestTimeout: 1);
+        $start = hrtime(true);
+
+        try {
+            $client->get(self::$server->baseUrl . '/drip', $this->file, 100);
+            self::fail('No exception thrown.');
+        } catch (InstallException $exception) {
+            self::assertSame('network_failed', $exception->errorCode, $exception->getMessage());
+            self::assertStringContainsString('timed out', $exception->getMessage());
+        }
+        self::assertLessThan(2.5, (hrtime(true) - $start) / 1e9);
+        self::assertFileDoesNotExist($this->file);
     }
 
     private function expectFailure(string $code, string $transport, string $path, int $maxBytes): void

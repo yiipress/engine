@@ -23,6 +23,15 @@ switch ($path) {
     case '/big':
         echo str_repeat('x', 2000);
         break;
+    case '/drip':
+        // Never idle for long, but slow overall: 20 bytes, one every 0.2 s.
+        header('Content-Length: 20');
+        for ($i = 0; $i < 20; $i++) {
+            echo 'x';
+            flush();
+            usleep(200_000);
+        }
+        break;
     case '/agent':
         echo $_SERVER['HTTP_USER_AGENT'] ?? '';
         break;
