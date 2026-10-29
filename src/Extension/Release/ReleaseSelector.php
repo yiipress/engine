@@ -22,6 +22,7 @@ use function array_map;
 use function array_slice;
 use function count;
 use function implode;
+use function in_array;
 use function sprintf;
 use function str_contains;
 
@@ -31,6 +32,9 @@ use function str_contains;
  */
 final readonly class ReleaseSelector
 {
+    /** Errors of one candidate's manifest that make selection try the next release. */
+    private const array CANDIDATE_ERRORS = ['manifest_invalid', 'manifest_mismatch'];
+
     public function __construct(
         private GitHubReleaseSource $source,
         private ManifestParser $parser = new ManifestParser(),
@@ -140,6 +144,11 @@ final readonly class ReleaseSelector
             try {
                 $manifest = $this->manifest($repository, $release, $type);
             } catch (InstallException $exception) {
+                // Only a missing or broken manifest disqualifies a release; a network failure or rate limit
+                // says nothing about it, so falling back to an older release would be wrong.
+                if (!in_array($exception->errorCode, self::CANDIDATE_ERRORS, true)) {
+                    throw $exception;
+                }
                 $reasons[] = sprintf('%s: %s', $release->tag, $exception->getMessage());
                 continue;
             }

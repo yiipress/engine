@@ -15,6 +15,7 @@ use YiiPress\Extension\Release\GitHubRepository;
 use YiiPress\Extension\Release\ReleaseSelector;
 use YiiPress\Extension\Release\SelectedRelease;
 use YiiPress\Tests\Support\FakeHttpClient;
+use Yiisoft\Yii\Console\ExitCode;
 
 use function sprintf;
 
@@ -162,6 +163,36 @@ final class ReleaseSelectorTest extends TestCase
             null,
             'network_failed',
         ];
+    }
+
+    /**
+     * @return iterable<string, array{int, array<string, list<string>>, string}>
+     */
+    public static function manifestFetchFailures(): iterable
+    {
+        yield 'server error' => [503, [], 'network_failed'];
+        yield 'rate limit' => [403, ['x-ratelimit-remaining' => ['0']], 'rate_limited'];
+    }
+
+    /**
+     * @param array<string, list<string>> $headers
+     */
+    #[DataProvider('manifestFetchFailures')]
+    public function testFailedManifestFetchStopsInsteadOfFallingBack(int $status, array $headers, string $code): void
+    {
+        $http = new FakeHttpClient()->gitHub(self::REPO, [
+            'v1.0.0' => ['manifest' => self::manifest('1.0.0')],
+            'v2.0.0' => [],
+        ]);
+        $http->route('https://raw.githubusercontent.com/' . self::REPO . '/v2.0.0/extension.yaml', 'Unavailable', $status, $headers);
+
+        try {
+            $selected = $this->select($http);
+            self::fail(sprintf('Selected %s although v2.0.0 could not be checked.', $selected->release->tag));
+        } catch (InstallException $exception) {
+            self::assertSame($code, $exception->errorCode, $exception->getMessage());
+            self::assertSame(ExitCode::UNAVAILABLE, $exception->getCode());
+        }
     }
 
     public function testNoCompatibleReleaseListsCandidates(): void
