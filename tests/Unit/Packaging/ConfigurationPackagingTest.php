@@ -812,8 +812,7 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString("getenv('YIIPRESS_COMMIT')", $packageScript);
         self::assertStringContainsString("strtolower(getenv('YIIPRESS_COMMIT')", $packageScript);
         self::assertStringContainsString("\$localPath === 'src/ApplicationInfo.php'", $packageScript);
-        self::assertStringContainsString("public const string COMMIT = '{\$commit}';", $packageScript);
-        self::assertStringContainsString('$replacementCount !== 1', $packageScript);
+        self::assertStringContainsString('ApplicationInfoStamper::stamp($contents, $commit, $baseVersion)', $packageScript);
         self::assertStringNotContainsString('packages/highlighter-extension/php', $stage);
         self::assertStringNotContainsString("'packages/highlighter-extension/php'", $packageScript);
         self::assertStringContainsString('COPY config /app/config', $stage);
@@ -821,7 +820,8 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('COPY src /app/src', $stage);
         self::assertStringContainsString('COPY themes /app/themes', $stage);
         self::assertStringContainsString(
-            'COPY build/package-phar.php build/PharArchiveFilter.php build/PharArchiveValidator.php build/PhpDocStripper.php /app/build/',
+            'COPY build/package-phar.php build/ApplicationInfoStamper.php build/PharArchiveFilter.php'
+            . ' build/PharArchiveValidator.php build/PhpDocStripper.php /app/build/',
             $stage,
         );
         self::assertStringContainsString('COPY yii composer.json composer.lock /app/', $stage);
@@ -907,6 +907,42 @@ PHP;
     }
 
     #[Test]
+    public function nightlyBuildsStampTheReleaseTheyAreBuiltOn(): void
+    {
+        $root = dirname(__DIR__, 3);
+        $workflow = file_get_contents($root . '/.github/workflows/package-static.yml');
+        $dockerfile = file_get_contents($root . '/docker/Dockerfile');
+        $makefile = file_get_contents($root . '/Makefile');
+        $packageScript = file_get_contents($root . '/build/package-phar.php');
+        $windowsScript = file_get_contents($root . '/build/package-windows.ps1');
+        $macosScript = file_get_contents($root . '/build/package-macos.sh');
+        self::assertIsString($workflow);
+        self::assertIsString($dockerfile);
+        self::assertIsString($makefile);
+        self::assertIsString($packageScript);
+        self::assertIsString($windowsScript);
+        self::assertIsString($macosScript);
+
+        $describe = "git describe --tags --abbrev=0 --match '[0-9]*.[0-9]*.[0-9]*' --exclude '*[!0-9.]*'";
+
+        self::assertSame(3, substr_count($workflow, 'fetch-depth: 0'));
+        self::assertSame(3, substr_count($workflow, 'base_version="$(' . $describe . ')"'));
+        self::assertSame(3, substr_count($workflow, 'echo "YIIPRESS_BASE_VERSION=${base_version}" >> "$GITHUB_ENV"'));
+        self::assertStringContainsString('YIIPRESS_BASE_VERSION=${{ env.YIIPRESS_BASE_VERSION }}', $workflow);
+        self::assertStringContainsString('ARG YIIPRESS_BASE_VERSION', $dockerfile);
+        self::assertStringContainsString(
+            'YIIPRESS_COMMIT="${YIIPRESS_COMMIT}" YIIPRESS_BASE_VERSION="${YIIPRESS_BASE_VERSION}" php -d phar.readonly=0',
+            $dockerfile,
+        );
+        self::assertStringContainsString('YIIPRESS_BASE_VERSION ?= $(shell ' . $describe . ' 2>/dev/null)', $makefile);
+        self::assertStringContainsString('export YIIPRESS_BASE_VERSION', $makefile);
+        self::assertSame(3, substr_count($makefile, '--build-arg YIIPRESS_BASE_VERSION=$(YIIPRESS_BASE_VERSION)'));
+        self::assertStringContainsString("getenv('YIIPRESS_BASE_VERSION')", $packageScript);
+        self::assertStringContainsString('build/ApplicationInfoStamper.php', $macosScript);
+        self::assertStringContainsString('build/ApplicationInfoStamper.php', $windowsScript);
+    }
+
+    #[Test]
     public function platformPackageScriptsUseStrippedPharBuilderSupportFiles(): void
     {
         $windowsScript = file_get_contents(dirname(__DIR__, 3) . '/build/package-windows.ps1');
@@ -935,10 +971,7 @@ PHP;
             'COMPOSER_CACHE_DIR=/tmp/composer-cache COMPOSER_ROOT_VERSION="${COMPOSER_ROOT_VERSION}" composer install',
             $dockerfile,
         );
-        self::assertStringContainsString(
-            'YIIPRESS_COMMIT="${YIIPRESS_COMMIT}" php -d phar.readonly=0 build/package-phar.php',
-            $dockerfile,
-        );
+        self::assertStringContainsString('php -d phar.readonly=0 build/package-phar.php dist/yiipress.phar', $dockerfile);
         self::assertStringContainsString('COMPOSER_CACHE_DIR=/tmp/composer-cache composer create-project', $dockerfile);
         self::assertStringNotContainsString('ARG HIGHLIGHTER_VERSION', $dockerfile);
         self::assertStringNotContainsString('ARG MARKDOWN_VERSION', $dockerfile);

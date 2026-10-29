@@ -156,6 +156,7 @@ for directory in config src themes; do
 done
 mkdir -p "${APP_PATH}/build"
 cp "${ROOT}/build/package-phar.php" "${APP_PATH}/build/package-phar.php"
+cp "${ROOT}/build/ApplicationInfoStamper.php" "${APP_PATH}/build/ApplicationInfoStamper.php"
 cp "${ROOT}/build/PharArchiveFilter.php" "${APP_PATH}/build/PharArchiveFilter.php"
 cp "${ROOT}/build/PharArchiveValidator.php" "${APP_PATH}/build/PharArchiveValidator.php"
 cp "${ROOT}/build/PhpDocStripper.php" "${APP_PATH}/build/PhpDocStripper.php"

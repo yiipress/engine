@@ -10,6 +10,8 @@ final class ApplicationInfo
 {
     public const string NAME = 'YiiPress';
     public const string COMMIT = '';
+    /** Release a nightly build is built on, stamped at packaging time; empty otherwise. */
+    public const string BASE_VERSION = '';
     public const string VERSION = 'unknown';
 
     public static function version(): string

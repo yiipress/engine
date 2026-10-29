@@ -104,6 +104,7 @@
         "classmap": [
             "benchmarks/MarkdownParserComparisonBench.php",
             "benchmarks/InitPluginCommandBench.php",
+            "build/ApplicationInfoStamper.php",
             "build/PharArchiveFilter.php",
             "build/PharArchiveValidator.php",
             "build/PhpDocStripper.php"

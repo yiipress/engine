@@ -7,9 +7,6 @@ namespace YiiPress\Extension;
 use Composer\InstalledVersions;
 use YiiPress\ApplicationInfo;
 
-use function constant;
-use function defined;
-use function is_string;
 use function sprintf;
 use function substr;
 
@@ -36,10 +33,8 @@ final readonly class EngineVersion
     {
         $package = InstalledVersions::getRootPackage();
         $packageVersion = $package['name'] === 'yiipress/engine' ? $package['pretty_version'] : null;
-        $baseVersionConstant = ApplicationInfo::class . '::BASE_VERSION';
-        $baseVersion = defined($baseVersionConstant) ? constant($baseVersionConstant) : '';
 
-        return self::fromBuild($packageVersion, ApplicationInfo::COMMIT, is_string($baseVersion) ? $baseVersion : '');
+        return self::fromBuild($packageVersion, ApplicationInfo::COMMIT, ApplicationInfo::BASE_VERSION);
     }
 
     /**

@@ -138,7 +138,8 @@ stability flags such as `@dev` are not allowed: a package states the versions it
 The running YiiPress is checked as follows:
 
 - a release checks its own version, for example `0.1.13`;
-- a nightly build checks the release it is built on, for example «nightly built on 0.1.13 (commit 80964110a7e8)»;
+- a nightly build checks the latest release tag it is built on, stamped at packaging time, for example
+  «nightly built on 0.1.13 (commit 80964110a7e8)»;
 - a build from source has no known version, so the check fails.
 
 ## Errors
