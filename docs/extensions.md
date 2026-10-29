@@ -259,6 +259,10 @@ are left out of that lookup: an installed theme is used only when it is the site
 entry). Installing a theme with `--no-activate` therefore does not change the built site. If `yiipress.lock` cannot
 be read, `build` prints a warning and treats installed themes like any other project theme.
 
+To learn which entries select an installed theme that is not the site theme, `build` reads the front
+matter of every entry. It keeps the result in the build cache (`yiipress clean` removes it) and reads the entries
+again only when a Markdown file or `_collection.yaml` was added, removed or changed since.
+
 ### Requirements
 
 Downloads use PHP's `https` stream wrapper (the `openssl` extension) when PHP has it, otherwise the `curl`

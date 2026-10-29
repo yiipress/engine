@@ -5,19 +5,21 @@ declare(strict_types=1);
 namespace YiiPress\Console;
 
 use Symfony\Component\Console\Output\OutputInterface;
-use Throwable;
 use YiiPress\Build\ProjectThemeDiscovery;
 use YiiPress\Build\Theme;
 use YiiPress\Build\ThemeRegistry;
 use YiiPress\Content\Model\SiteConfig;
-use YiiPress\Content\Parser\ContentParser;
 use YiiPress\Extension\Install\InstallException;
 use YiiPress\Extension\Theme\ManagedThemes;
+use YiiPress\Extension\Theme\UsedThemes;
 use YiiPress\Extension\Transaction\Recovery;
+use YiiPress\RuntimePaths;
 use Yiisoft\Yii\Console\ExitCode;
 
 use function array_diff;
+use function array_filter;
 use function array_values;
+use function hash;
 use function in_array;
 use function is_dir;
 use function sprintf;
@@ -65,7 +67,7 @@ final class ExtensionState
                 $exception->getMessage(),
             ));
         }
-        $used = $siteConfig === null ? $managed : self::usedThemes($managed, $contentDir, $siteConfig);
+        $used = $siteConfig === null ? $managed : self::usedThemes($managed, $rootPath, $contentDir, $siteConfig);
 
         foreach (new ProjectThemeDiscovery()->discover($rootPath . '/themes', $managed) as $theme) {
             if (!$registry->has($theme->name) && (!$theme->managed || in_array($theme->name, $used, true))) {
@@ -81,27 +83,22 @@ final class ExtensionState
      * @param list<string> $managed
      * @return list<string> Installed themes that the site or one of its entries selects.
      */
-    private static function usedThemes(array $managed, string $contentDir, SiteConfig $siteConfig): array
-    {
+    private static function usedThemes(
+        array $managed,
+        string $rootPath,
+        string $contentDir,
+        SiteConfig $siteConfig,
+    ): array {
         $unused = array_values(array_diff($managed, [$siteConfig->theme]));
         if ($unused === []) {
             return $managed;
         }
-        $used = array_values(array_diff($managed, $unused));
-        $parser = new ContentParser();
-        try {
-            foreach ([$parser->parseAllEntries($contentDir), $parser->parseStandalonePages($contentDir)] as $entries) {
-                foreach ($entries as $entry) {
-                    if (in_array($entry->theme, $unused, true) && !in_array($entry->theme, $used, true)) {
-                        $used[] = $entry->theme;
-                    }
-                }
-            }
-        } catch (Throwable) {
-            // The build reports broken content itself; until then keep every installed theme available.
-            return $managed;
-        }
+        $cacheFile = RuntimePaths::cachePath($rootPath) . '/used-themes-' . hash('xxh128', $contentDir) . '.json';
+        $selected = new UsedThemes($cacheFile)->find($unused, $contentDir);
 
-        return $used;
+        return array_values(array_filter(
+            $managed,
+            static fn(string $name): bool => !in_array($name, $unused, true) || in_array($name, $selected, true),
+        ));
     }
 }
