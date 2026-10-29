@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiPress\Extension\Lifecycle;
 
 use Throwable;
+use YiiPress\Content\Model\Entry;
 use YiiPress\Content\Parser\ContentParser;
 use YiiPress\Content\Parser\SiteConfigParser;
 use YiiPress\Extension\Install\InstallException;
@@ -40,15 +41,9 @@ final readonly class ThemeReferences
             if (is_file($config) && $this->configParser->parse($config)->theme === $themeName) {
                 $files[] = $config;
             }
-            $entries = [
-                $this->contentParser->parseAllEntries($contentDir),
-                $this->contentParser->parseStandalonePages($contentDir),
-            ];
-            foreach ($entries as $list) {
-                foreach ($list as $entry) {
-                    if ($entry->theme === $themeName) {
-                        $files[] = $entry->sourceFilePath();
-                    }
+            foreach ($this->entries($contentDir) as $entry) {
+                if ($entry->theme === $themeName) {
+                    $files[] = $entry->sourceFilePath();
                 }
             }
         } catch (Throwable $exception) {
@@ -66,5 +61,14 @@ final readonly class ThemeReferences
         }
 
         return $files;
+    }
+
+    /**
+     * @return iterable<Entry> Entries of every collection, then standalone pages.
+     */
+    private function entries(string $contentDir): iterable
+    {
+        yield from $this->contentParser->parseAllEntries($contentDir);
+        yield from $this->contentParser->parseStandalonePages($contentDir);
     }
 }
