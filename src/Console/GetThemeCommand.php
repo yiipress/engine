@@ -53,11 +53,16 @@ final class GetThemeCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addOption('url', null, InputOption::VALUE_REQUIRED, 'GitHub repository of the theme, https://github.com/<owner>/<repo>')
-            ->addOption('version', null, InputOption::VALUE_REQUIRED, 'Release to install, X.Y.Z without "v"; the highest compatible one when omitted')
+            ->addOption('url', null, InputOption::VALUE_REQUIRED, 'Theme repository, https://github.com/<owner>/<repo>')
+            ->addOption('version', null, InputOption::VALUE_REQUIRED, 'Release X.Y.Z; the newest compatible if omitted')
             ->addOption('no-activate', null, InputOption::VALUE_NONE, 'Install without setting "theme" in config.yaml')
             ->addOption('content-dir', null, InputOption::VALUE_REQUIRED, 'Directory of config.yaml', 'content')
-            ->addOption('engine-version', null, InputOption::VALUE_REQUIRED, 'YiiPress version to check compatibility against; only in a source checkout, where the version is unknown')
+            ->addOption(
+                'engine-version',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'YiiPress version to check releases against; only when this YiiPress does not know its version',
+            )
             ->addUsage('--url=https://github.com/yiipress/theme-wonder')
             ->addUsage('--url=https://github.com/yiipress/theme-wonder --version=1.2.0 --no-activate');
     }
