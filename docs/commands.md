@@ -154,6 +154,35 @@ yiipress init:theme [target-dir] [--theme=minimal] [--content-dir=content]
 
 The command creates parent directories as needed, fails if any target file already exists, and updates `config.yaml` to use the initialized theme. The theme name is derived from the target directory name, so the default target `themes/custom` sets `theme: "custom"`.
 
+## `get:theme`
+
+Installs a theme from the releases of its GitHub repository, records it in `yiipress.lock` and makes it the site
+theme.
+
+```shell
+yiipress get:theme --url=https://github.com/<owner>/<repo> [--version=X.Y.Z] [--no-activate] [--content-dir=content]
+```
+
+**Options:**
+
+- `--url` — the theme repository on GitHub. Required.
+- `--version` — the release to install, `X.Y.Z` without `v` (default: the highest release compatible with this YiiPress).
+- `--no-activate` — install without changing `theme` in `config.yaml`.
+- `--content-dir` — path to the content directory containing `config.yaml` (default: `content`).
+- `--engine-version` — the YiiPress version to check releases against; accepted only by a build from source, which does not know its version.
+
+See [Installing a theme](extensions.md#installing-a-theme) for release selection, the lock file, limits and errors.
+
+## `recover:extensions`
+
+Finishes or undoes an extension installation that was interrupted.
+
+```shell
+yiipress recover:extensions
+```
+
+`build` and `serve` refuse to run while `.yiipress/journal.json` exists. See [Interrupted installations](extensions.md#interrupted-installations).
+
 ## `new`
 
 Scaffolds a new content entry or standalone page.

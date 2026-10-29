@@ -4,8 +4,9 @@ An extension package is a theme or a content processor that can be shared betwee
 describes itself in an `extension.yaml` manifest: what it is, which version it is, which YiiPress versions it
 supports and where its files are.
 
-YiiPress reads and validates the manifest without running any code from the package. Installing packages and the
-extension catalog are planned; this page describes the manifest format they use.
+YiiPress reads and validates the manifest without running any code from the package. Themes are installed from
+GitHub releases with [`get:theme`](#installing-a-theme). Installing processors, updating and removing packages and
+the extension catalog are planned.
 
 ## Package layout
 
@@ -183,6 +184,150 @@ extension.yaml has 2 errors:
 | `engine_version_unknown` | The version of the running YiiPress is unknown. |
 | `engine_incompatible` | The running YiiPress does not satisfy `yiipress`. |
 | `platform_unsupported` | The local operating system or architecture is not in `platforms`. |
+
+## Installing a theme
+
+```shell
+yiipress get:theme --url=https://github.com/yiipress/theme-wonder
+yiipress get:theme --url=https://github.com/yiipress/theme-wonder --version=1.2.0 --no-activate
+```
+
+Run it in the project root, where you run `build`.
+
+| Option | Meaning |
+| --- | --- |
+| `--url` | The theme repository, `https://github.com/<owner>/<repo>` (a trailing `.git` or `/` is fine). Required. |
+| `--version` | The release to install, `X.Y.Z` without `v`. Without it, the highest compatible release is used. |
+| `--no-activate` | Install only; leave `config.yaml` as it is. |
+| `--content-dir` | The directory of `config.yaml` (default: `content`). |
+| `--engine-version` | The YiiPress version to check releases against. Only for a build that does not know its version, such as a build from source; refused otherwise. |
+
+What happens:
+
+1. **Release.** YiiPress lists the stable releases of the repository. Drafts, pre-releases and tags that are not
+   SemVer versions (an optional leading `v` is allowed) are skipped. Without `--version` it reads `extension.yaml` of
+   up to 20 releases, newest first, and takes the first theme that supports this YiiPress and this platform. The
+   output names the release and why it was chosen:
+
+   ```text
+   Selected Wonder 1.2.0 (v1.2.0), highest stable release compatible with YiiPress 0.1.13.
+   Installed yiipress/wonder into themes/wonder.
+   Activated: "theme" is now "wonder" in content/config.yaml.
+   ```
+
+2. **Archive.** The source archive of the release tag is downloaded from GitHub and checked before anything in the
+   project changes: one top-level directory holding `extension.yaml` and `package/`, only regular files and
+   directories (no links), [portable paths](#path-rules), no two paths that differ only in case, the
+   [limits](#installation-limits) below, and a manifest that matches the selected release. No file of the package is
+   run.
+3. **Destination.** Only `package/` is installed, into `themes/<name>`, where `<name>` is the name part of the
+   theme ID (`yiipress/wonder` → `themes/wonder`). An existing `themes/<name>` in any letter case is never replaced.
+4. **Activation.** Unless `--no-activate` is given, the top-level `theme` key of `config.yaml` is set to the
+   theme name. The file is edited as text, so comments, order and line endings stay. When the key cannot be changed
+   safely as one line (for example it appears twice or holds a multi-line value), nothing is installed and the
+   message names the line to fix; use `--no-activate` and set `theme` by hand meanwhile.
+
+The theme files, `yiipress.lock` and `config.yaml` change together: if the command fails or is killed, either all
+of them change or none.
+
+### Files in the project
+
+- `yiipress.lock` records each installed package: its source, version and tag, the commit, the URL, size and
+  SHA-256 of the archive, the destination and the SHA-256 of every installed file. The same installation always
+  writes the same bytes. Commit it with the site.
+- `.yiipress/` holds the state of a running installation: a lock that keeps two extension commands from running at
+  once, a journal and temporary files. Add it to `.gitignore`.
+
+### Interrupted installations
+
+If an installation was killed (power loss, `kill -9`), `.yiipress/journal.json` stays behind and `build` and `serve`
+stop with:
+
+```text
+An extension operation was interrupted. Run `yiipress recover:extensions`.
+```
+
+`yiipress recover:extensions` undoes the unfinished installation, or only cleans up if it had completed. It never
+deletes theme files that were changed after the installation; in that case it stops, keeps the journal and the
+backups in `.yiipress/`, and asks you to check `themes/`, `yiipress.lock` and `config.yaml` by hand. `get:theme` runs
+the same recovery before it starts.
+
+### Installed themes and template fallback
+
+A template missing from the site theme is looked up in the other registered themes. Themes installed by `get:theme`
+are left out of that lookup: an installed theme is used only when it is the site theme (or the `theme` of an
+entry). Installing a theme with `--no-activate` therefore does not change the built site. If `yiipress.lock` cannot
+be read, `build` prints a warning and treats installed themes like any other project theme.
+
+### Requirements
+
+Downloads use PHP's `https` stream wrapper (the `openssl` extension) when PHP has it, otherwise the `curl`
+program; Windows 10 version 1803 and later ship `curl.exe`. The distroless Docker image has neither, so `get:theme`
+fails there with `http_client_missing`: run it with a PHAR, a static binary or the full image, and commit the
+installed theme and `yiipress.lock`.
+
+Only public GitHub repositories are supported, and no token is sent. Listing releases counts against GitHub's API
+rate limit for requests without a token; reading manifests and downloading archives does not. When the limit is
+reached, the command stops with `rate_limited` and says when to retry.
+
+### Installation limits
+
+These are the current defaults; they may change before the extension catalog is released. They cannot be turned
+off.
+
+| Limit | Value |
+| --- | --- |
+| Archive download | 50 MiB |
+| Total extracted size | 200 MiB |
+| Single file | 20 MiB |
+| Archive entries | 10 000 |
+| Release list pages (100 releases each) | 10 |
+| Release manifests read when choosing a release | 20 |
+| Connect timeout / whole request | 15 s / 300 s |
+| Retries on connection failure, HTTP 5xx and 429 | 3, waiting as `Retry-After` asks, up to 60 s |
+| Redirects | 5, `https` only, GitHub hosts only |
+
+### Installation errors
+
+Each error is one message naming the value, with a hint when there is one. The exit code is `65` (data error),
+`64` for a missing `--url` or a refused `--engine-version`, `75` when another extension command runs in the project
+(`mutation_locked`) and `69` for network problems and rate limits.
+
+| Code | Meaning |
+| --- | --- |
+| `source_invalid` | `--url` is missing or not `https://github.com/<owner>/<repo>`. |
+| `source_unsupported` | The URL is not on GitHub. |
+| `http_client_missing` | Neither PHP's `https` wrapper nor `curl` is available. |
+| `network_failed` | Connection, TLS, timeout, or HTTP 5xx after retries. |
+| `rate_limited` | GitHub's rate limit is reached; the message says until when. |
+| `redirect_refused` | A redirect to a non-`https` URL or a host other than GitHub. |
+| `repository_not_found` | The repository does not exist or is private. |
+| `release_none` | The repository has no stable release with a version tag. |
+| `release_not_found` | `--version` names no release. |
+| `release_prerelease` | `--version` names a pre-release. |
+| `release_ambiguous` | Two tags are the same version, for example `1.0.0` and `v1.0.0`. |
+| `release_incompatible` | The requested release does not support this YiiPress or platform. |
+| `no_compatible_release` | No release is compatible; the message lists each one checked and why. |
+| `engine_version_unknown` | This YiiPress does not know its version, or `--engine-version` was refused. |
+| `manifest_invalid` | `extension.yaml` has [errors](#errors), is missing, or is not a theme. |
+| `manifest_mismatch` | The archive's manifest differs from the release's in ID or version, or the version differs from the tag. |
+| `download_too_large` | The archive is over the download limit. |
+| `archive_invalid` | Not a valid `.tar.gz`: broken header, checksum or truncation. |
+| `archive_layout` | Not one top-level directory, or no `extension.yaml` and `package/` in it. |
+| `archive_entry_type`, `archive_link` | An entry that is not a file or directory; links are always refused. |
+| `archive_path_invalid` | A path breaks the [path rules](#path-rules). |
+| `archive_path_collision` | Two paths differ only in case, or a file and a directory share a path. |
+| `archive_too_many_entries`, `archive_file_too_large`, `archive_too_large` | Over a [limit](#installation-limits). |
+| `archive_commit_missing` | The archive does not name its commit; only GitHub tag archives are supported. |
+| `already_installed` | The theme ID is in `yiipress.lock` already. |
+| `name_collision` | Another installed theme uses the same name. |
+| `destination_exists` | `themes/<name>` exists, in any letter case. |
+| `config_missing` | No `config.yaml` in the content directory. |
+| `config_unsupported` | `theme` in `config.yaml` cannot be changed safely, or the content directory is outside the project. |
+| `lock_invalid`, `lock_unsupported` | `yiipress.lock` is malformed, or written by a newer YiiPress. |
+| `mutation_locked` | Another extension command is running in this project. |
+| `recovery_failed` | An interrupted installation cannot be undone safely; see [above](#interrupted-installations). |
+| `filesystem_failed` | A file could not be written, moved or deleted; the message names it. |
 
 ## Reading manifests in PHP
 

@@ -123,6 +123,13 @@
 - [x] [Per-entry table-of-contents depth and visibility](https://github.com/yiipress/engine/issues/109)
 - [x] [Per-entry last-updated visibility override](https://github.com/yiipress/engine/issues/111)
 - [x] [Per-entry documentation aside visibility](https://github.com/yiipress/engine/issues/110)
+- [ ] [Extension catalog and package installation](https://github.com/yiipress/engine/issues/177)
+  - [x] `extension.yaml` manifest format and validator
+  - [x] `get:theme` and `recover:extensions`: install a theme from a GitHub release with `yiipress.lock`
+  - [ ] `restore:extensions`, `update:theme`, `remove:theme`
+  - [ ] Full theme fallback rules
+  - [ ] `get:processor` and processor enablement
+  - [ ] Static catalog website
 
 ## Priority 8: Advanced features
 
