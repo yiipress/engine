@@ -173,6 +173,26 @@ yiipress get:theme --url=https://github.com/<owner>/<repo> [--version=X.Y.Z] [--
 
 See [Installing a theme](extensions.md#installing-a-theme) for release selection, the lock file, limits and errors.
 
+## `get:processor`
+
+Installs a content processor from the releases of its GitHub repository into
+`<content-dir>/extensions/processors/<vendor>/<name>` and records it in `yiipress.lock`. It stays disabled: the
+command prints the `processors` setting that enables it, and never edits `config.yaml`.
+
+```shell
+yiipress get:processor --url=https://github.com/<owner>/<repo> [--version=X.Y.Z] [--content-dir=content]
+```
+
+**Options:**
+
+- `--url` — the processor repository on GitHub. Required.
+- `--version` — as for `get:theme`.
+- `--content-dir` — path to the content directory containing `config.yaml` (default: `content`); the package is
+  installed into it.
+- `--engine-version` — as for `get:theme`.
+
+See [Installing a processor](extensions.md#installing-a-processor).
+
 ## `restore:extensions`
 
 Installs the extensions listed in `yiipress.lock` exactly as locked, for example in a fresh checkout, and puts back
@@ -186,8 +206,8 @@ yiipress restore:extensions
 
 - `--engine-version` — as for `get:theme`.
 
-It never chooses another release, activates a theme, edits `config.yaml` or writes `yiipress.lock`, and never
-overwrites or deletes a file. See [Restoring extensions](extensions.md#restoring-extensions).
+It never chooses another release, activates a theme, enables a processor, edits `config.yaml` or writes
+`yiipress.lock`, and never overwrites or deletes a file. See [Restoring extensions](extensions.md#restoring-extensions).
 
 ## `update:theme`
 
@@ -218,6 +238,30 @@ yiipress remove:theme <vendor/name> [--content-dir=content]
 - `--content-dir` — path to the content directory containing `config.yaml` (default: `content`).
 
 See [Removing a theme](extensions.md#removing-a-theme).
+
+## `update:processor`
+
+Updates an installed processor to the newest compatible release, or to an exact version, which may be older.
+
+```shell
+yiipress update:processor <vendor/name> [--version=X.Y.Z]
+```
+
+**Options:** `--version` and `--engine-version`, as for `update:theme`.
+
+The processor keeps its directory, so `processors` in `config.yaml` stays valid. A release that no longer declares an
+enabled entry point, or its enabled stage, is refused. See [Updating a processor](extensions.md#updating-a-processor).
+
+## `remove:processor`
+
+Removes an installed processor: its directory and its entry in `yiipress.lock`. It refuses while `processors` in
+`config.yaml` lists a file of the package, and never edits configuration.
+
+```shell
+yiipress remove:processor <vendor/name>
+```
+
+See [Removing a processor](extensions.md#removing-a-processor).
 
 ## `recover:extensions`
 

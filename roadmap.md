@@ -129,7 +129,7 @@
   - [x] `restore:extensions`: install the packages of `yiipress.lock` into a fresh checkout
   - [x] `update:theme`, `remove:theme`
   - [x] Full theme fallback rules
-  - [ ] `get:processor` and processor enablement
+  - [x] `get:processor`, `update:processor`, `remove:processor`: processor packages enabled through `processors`
   - [ ] Static catalog website
 
 ## Priority 8: Advanced features

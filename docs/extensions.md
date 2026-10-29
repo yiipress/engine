@@ -5,8 +5,8 @@ describes itself in an `extension.yaml` manifest: what it is, which version it i
 supports and where its files are.
 
 YiiPress reads and validates the manifest without running any code from the package. Themes are installed from
-GitHub releases with [`get:theme`](#installing-a-theme). Installing processors, updating and removing packages and
-the extension catalog are planned.
+GitHub releases with [`get:theme`](#installing-a-theme), processors with [`get:processor`](#installing-a-processor);
+both can be updated, removed and restored. The extension catalog is planned.
 
 ## Package layout
 
@@ -371,7 +371,9 @@ yiipress/clean: put back assets/style.css in themes/clean.
 yiipress/plain: matches yiipress.lock in themes/plain.
 ```
 
-Restoring never chooses another release, activates a theme, edits `config.yaml` or writes `yiipress.lock`. It never
+Processors are restored into the destination their entry records, so into the content directory they were installed
+into. Restoring never chooses another release, activates a theme, enables a processor, edits `config.yaml` or writes
+`yiipress.lock`. It never
 overwrites or deletes a file. Before it downloads anything it checks every package, and if one of them has a
 changed file, a file the lock does not list, or something else in its place, it reports all such problems and
 changes nothing:
@@ -402,7 +404,7 @@ done, and [`recover:extensions`](#interrupted-installations) handles a killed ru
 | `files_unexpected` | The package directory holds files or links that the lock does not list. |
 | `destination_exists` | A file, a link or a directory in another letter case takes the place of the package. |
 | `name_collision` | Two entries of `yiipress.lock` use the same destination. |
-| `lock_invalid` | An entry cannot be restored as recorded: for example its destination is not `themes/<name>`, its tag does not name its version, or its archive URL is not the archive of that tag. |
+| `lock_invalid` | An entry cannot be restored as recorded: for example its destination is not `themes/<name>` (a theme) or `<content-dir>/extensions/processors/<vendor>/<name>` (a processor), its tag does not name its version, or its archive URL is not the archive of that tag. |
 | `release_not_found` | The locked tag or its archive is no longer on GitHub. |
 | `archive_mismatch` | The archive holds another commit, manifest, ID, version or other files than the lock records. |
 | `release_incompatible` | The locked release does not support this YiiPress or platform. |
@@ -467,6 +469,109 @@ YiiPress never edits `config.yaml` or content to switch themes for you. It finds
 front matter only: a theme name used from custom PHP code (a plugin, a template that renders with another theme) is
 not detected, so check such code before removing a theme.
 
+## Installing a processor
+
+```shell
+yiipress get:processor --url=https://github.com/acme/processor-toc
+yiipress get:processor --url=https://github.com/acme/processor-toc --version=1.2.0 --content-dir=site
+```
+
+Release selection, the archive checks, `yiipress.lock`, the limits and the errors are those of
+[installing a theme](#installing-a-theme), with these differences:
+
+| Option | Meaning |
+| --- | --- |
+| `--url` | The processor repository on GitHub. Required. |
+| `--version` | The release to install; the highest compatible one without it. |
+| `--content-dir` | The content directory, which holds `config.yaml` (default: `content`). It must be inside the project. |
+| `--engine-version` | As for `get:theme`. |
+
+- **Destination.** `package/` goes to `<content-dir>/extensions/processors/<vendor>/<name>`
+  (`acme/toc` → `content/extensions/processors/acme/toc`), outside the discovered `processors/*.php`, so none of
+  its files runs by itself. An existing directory there, in any letter case, is never replaced. The destination
+  in `yiipress.lock` includes the content directory, so `update:processor`, `remove:processor` and
+  `restore:extensions` need no `--content-dir`. `content/extensions/` is reserved for installed packages: `build`
+  does not copy its files to the site as content assets.
+- **Enabling.** Installing changes no configuration: the processor stays disabled until `processors` in
+  `config.yaml` lists its entry points (see below). YiiPress never runs a file of the package while installing it.
+
+### Enabling an installed processor
+
+List the entry points in the existing [`processors`](plugins.md#project-processors) setting, under the stage you
+want (`before_markdown` for Markdown, `after_markdown` for HTML) and for pages (`content`), feeds (`feed`) or both.
+Paths are relative to the content directory; list order is execution order. `get:processor` prints a setting to copy:
+the current one with each entry point added under the first stage the package declares, for pages and feeds:
+
+```text
+Selected TOC 1.0.0 (v1.0.0), highest stable release compatible with YiiPress 0.1.13.
+Installed acme/toc into content/extensions/processors/acme/toc.
+Not enabled: installing changes no configuration. Entry points: extensions/processors/acme/toc/toc.php (before_markdown).
+To run it, set "processors" in content/config.yaml to:
+
+processors:
+  content:
+    before_markdown:
+      - processors/10-badge.php
+      - extensions/processors/acme/toc/toc.php
+  feed:
+    before_markdown:
+      - processors/10-badge.php
+      - extensions/processors/acme/toc/toc.php
+
+List order is execution order. Remove the feed lists to leave feeds as they are.
+Listing processors turns off discovery of processors/*.php, so the discovered ones are listed first, in filename order, to keep them running.
+```
+
+A site without a `processors` key discovers `content/processors/*.php`. Listing processors turns that discovery off,
+so the printed setting lists the discovered files first, in filename order, as they run today; drop the ones you no
+longer want. With an explicit setting, the entry points are added to its lists. The `stages` of the manifest only
+describe the processor: YiiPress does not enable, reorder or check them at build time.
+
+An entry point may load other files of its package (`require __DIR__ . '/lib/...'`). Incremental builds track every
+file of a package one of whose files `processors` lists, so a changed support file rebuilds the site.
+
+## Updating a processor
+
+```shell
+yiipress update:processor acme/toc
+yiipress update:processor acme/toc --version=1.2.0
+```
+
+It works as [updating a theme](#updating-a-theme): the same release choice, local changes refused, the package and
+its lock entry replaced together. The processor keeps its directory, so `processors` in `config.yaml` stays valid
+and an enabled processor stays enabled.
+
+Before the archive is downloaded, every path of `processors` that points into the package must still be an entry point
+of the new release, declared for the stage it is listed under. Otherwise the update is refused (`entry_point_in_use`)
+and nothing changes:
+
+```text
+Release 2.0.0 of processor acme/toc does not declare what content/config.yaml enables: content.before_markdown: extensions/processors/acme/toc/toc.php (no entry point "toc.php" for before_markdown).
+Change "processors" in content/config.yaml to entry points and stages that 2.0.0 declares in its extension.yaml, or pick another release with --version. YiiPress does not change configuration for you.
+```
+
+## Removing a processor
+
+```shell
+yiipress remove:processor acme/toc
+```
+
+Removal deletes only the recorded directory and the entry in `yiipress.lock`, in one transaction. It reads
+`config.yaml` of the content directory the processor was installed into, and refuses, changing nothing, when:
+
+- `processors` lists a file of the package, for pages or feeds, before or after Markdown. Paths resolve as the build
+  resolves them, through symbolic links too; a discovered `processors/*.php` that links into the package counts;
+- `config.yaml` cannot be read (`content_unreadable`);
+- the package has local changes, as for an update. A directory that is gone entirely only drops the lock entry.
+
+```text
+Processor "content/extensions/processors/acme/toc" is still enabled in content/config.yaml: content.before_markdown: extensions/processors/acme/toc/toc.php; feed.before_markdown: extensions/processors/acme/toc/toc.php.
+Remove these paths from "processors" in content/config.yaml, then run remove:processor again. YiiPress does not change configuration for you.
+```
+
+Only `processors` is checked. A processor file of your own that loads a package file (`require` of a path inside
+`extensions/processors/`) is not detected, so check such code before removing a processor.
+
 ### Update and removal errors
 
 Exit codes are those of [installing a theme](#installation-errors): `64` for a malformed ID, `65` for the errors
@@ -476,13 +581,15 @@ below, `69` for network errors, `75` while another extension command runs or an 
 | --- | --- |
 | `id_invalid` | The argument is not a `vendor/name` ID. |
 | `not_installed` | `yiipress.lock` has no entry with that ID. |
-| `extension_not_theme` | The entry is another extension type. |
-| `local_changes` | Files of the installed theme were changed, added or deleted (for update, also when its whole directory is gone); the message lists them. |
-| `lock_invalid` | The entry's destination is not `themes/<name>`. |
+| `extension_not_theme`, `extension_not_processor` | The entry is another extension type. |
+| `local_changes` | Files of the installed package were changed, added or deleted (for update, also when its whole directory is gone); the message lists them. |
+| `lock_invalid` | The entry's destination is not `themes/<name>` (a theme) or `<content-dir>/extensions/processors/<vendor>/<name>` (a processor). |
 | `manifest_mismatch` | Update: the selected release of the recorded repository is another extension. |
 | `release_not_found`, `release_incompatible`, `no_compatible_release` | Update: as for `get:theme --version`. |
 | `theme_in_use` | Removal: `config.yaml` or an entry still selects the theme; the message lists the files. |
-| `content_unreadable` | Removal: `config.yaml` or an entry cannot be parsed, so the theme may be selected there. |
+| `content_unreadable` | Removal, and update of a processor: `config.yaml` or an entry cannot be parsed, so the package may be used there. |
+| `extension_in_use` | Removal of a processor: `processors` in `config.yaml` still lists a file of the package; the message lists the paths. |
+| `entry_point_in_use` | Update of a processor: the release does not declare an enabled entry point, or not for the stage it is enabled for. |
 
 ## Reading manifests in PHP
 

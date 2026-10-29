@@ -2,8 +2,8 @@
 
 Reference for [decision 0002](0002-theme-installation.md). Scope: `yiipress get:theme`, the parts it shares with
 later commands, the lock file format, recovery, `restore:extensions` (see «Restore») and `update:theme` /
-`remove:theme` (see «Update and removal») and the theme fallback (see «Theme fallback»). `update:*` / `remove:*` for
-other types and processors are later steps; they appear here only where the lock format must serve them.
+`remove:theme` (see «Update and removal»), the theme fallback (see «Theme fallback») and `get:processor`,
+`update:processor`, `remove:processor` (see «Processors»). Importers and plugins are later steps.
 
 ## Command
 
@@ -254,8 +254,8 @@ Directory `.yiipress/` in the project root (created on demand; docs recommend ig
 only: it never lists releases, activates, edits `config.yaml` or writes the lock. Exit codes as for `get:theme`.
 
 1. Take the mutation lock; run recovery. Read `yiipress.lock` (absent = nothing to restore).
-2. For every entry, sorted by ID, with no network and no change: the type must be `theme` and `destination` must be
-   `themes/<name>` (`lock_invalid`); two entries with one destination ignoring case are `name_collision`. Compare
+2. For every entry, sorted by ID, with no network and no change: the type must be `theme` with `destination`
+   `themes/<name>`, or `processor` with the destination of «Processors» (`lock_invalid`); two entries with one destination ignoring case are `name_collision`. Compare
    the destination with `files`, without following links: a file, a link or another-case name in its place is
    `destination_exists`; a file whose SHA-256 differs is `files_modified`; a file, link or other entry not in
    `files` is `files_unexpected`; a missing file is only a repair. Every problem of every entry is reported
@@ -317,6 +317,40 @@ Removal:
 A failure or kill at any point leaves, after recovery, the old directory and the old lock, or (once committed) the
 new state; never a mix.
 
+## Processors
+
+Issue #177 «Package layout», «Processor enablement and ordering», «Updates and removal»; lead decisions on #256
+rev 82 (2026-10-29), all nine picks of the plan in rev 81.
+
+- **Install.** `yiipress get:processor --url= [--version=] [--content-dir=content] [--engine-version=]`, the shared
+  installer with `Processor\ProcessorDestinationPolicy`. Destination `<content-dir>/extensions/processors/<vendor>/<name>`
+  relative to the project root (`ContentDirectory::relative`: a content directory outside the project or with `..`
+  is `config_unsupported`). `already_installed` for a locked ID; `destination_exists` when `<vendor>` and `<name>`
+  exist there in any letter case. No local name (`name` is `null`), no activation, `config.yaml` is not written.
+- **Lock.** No new field. The content directory is the destination without its last four segments
+  (`LockedProcessorDestination::contentDir`, `.` for the project root). `LockedProcessorDestination::problem`:
+  the destination ends in `extensions/processors/<id>` and is a journal directory target; else `lock_invalid`.
+- **Journal paths.** Directory targets are `themes/<name>` or `[<prefix>/]extensions/processors/<vendor>/<name>`,
+  whose prefix does not start with `.yiipress/`; package file targets are files below either.
+- **Enablement.** Only through the existing `processors` setting. `EnablementSnippet` prints it: the current
+  setting (a list counts for `content` and `feed` before Markdown; discovery adds the discovered `processors/*.php`
+  first, in filename order), each entry point appended under its first declared stage for `content` and `feed`.
+  Unparseable `config.yaml`: the entry points only, and why.
+- **Removal.** `ProcessorReferences::find` lists every path of the four lists whose path, after `.`/`..` or after
+  resolving links, lies in the package directory, and discovered files that link into it: `extension_in_use`.
+  Unparseable `config.yaml`: `content_unreadable`. `require` from other PHP files is not detected (documented).
+- **Update.** After release selection and before the archive is downloaded, every reference must name an entry point
+  `path` of the new manifest whose `stages` hold the referenced stage, else `entry_point_in_use` (strict, rev 82).
+  Not checked when the release does not change.
+- **Restore.** `PackageRestorer` accepts `processor` entries under the destination rule above.
+- **Build.** `Processor\ProjectProcessorFiles::collect` (replaces `BuildCommand`'s private collector): discovered
+  files, configured files, and every file of `<content-dir>/extensions/processors/<vendor>/<name>/` when a configured
+  path resolves inside it. `ContentAssetCopier` skips `<content-dir>/extensions/`, so package files are never
+  published.
+- **Lifecycle.** `ExtensionUpdater` / `ExtensionRemover` with an internal `LifecycleRulesInterface` per type
+  (`ThemeLifecycleRules`, `ProcessorLifecycleRules`), chosen by `forTheme()` / `forProcessor()`. Theme behaviour is
+  unchanged by the generalisation (commit `c5f2f70`).
+
 ## Classes
 
 All `final`; value objects `readonly`. Names may be adjusted by the developer if the API stays.
@@ -349,10 +383,15 @@ All `final`; value objects `readonly`. Names may be adjusted by the developer if
 | `Theme\LockedThemeDestination` | theme | `static problem(string $id, LockedExtension): ?InstallException` (`themes/<name>` rule) |
 | `Lifecycle\InstalledExtension` | shared | `static find(LockFile, ExtensionId, LifecycleRulesInterface): LockedExtension` (step 2), `static unchanged(string $projectRoot, LockFile, ExtensionId, string $command, LifecycleRulesInterface): LockedExtension` (steps 2–3), `static unchangedOrGone(string $projectRoot, LockedExtension, string $id, LifecycleRulesInterface): bool` (step 3 for removal) |
 | `Lifecycle\LifecycleRulesInterface` | shared, internal to `Extension` | `type()`, `destinationProblem(string $id, LockedExtension): ?InstallException`, `checkUnused(string $projectRoot, LockedExtension)`, `checkUpdate(string $projectRoot, LockedExtension $previous, ExtensionManifest $next)` |
-| `Lifecycle\ExtensionUpdater` | shared | `static forTheme(GitHubReleaseSource)`; `update(string $projectRoot, ExtensionId, ?string $version, EngineVersion, Platform): UpdateResult` |
-| `Lifecycle\ExtensionRemover` | shared | `static forTheme(string $contentDir)`; `remove(string $projectRoot, ExtensionId): RemoveResult` |
+| `Lifecycle\ExtensionUpdater` | shared | `static forTheme(GitHubReleaseSource)`, `static forProcessor(GitHubReleaseSource)`; `update(string $projectRoot, ExtensionId, ?string $version, EngineVersion, Platform): UpdateResult` |
+| `Lifecycle\ExtensionRemover` | shared | `static forTheme(string $contentDir)`, `static forProcessor()`; `remove(string $projectRoot, ExtensionId): RemoveResult` |
+| `Lifecycle\ProcessorLifecycleRules` | processor | the destination rule, `extension_in_use`, `entry_point_in_use` |
+| `Install\ContentDirectory` | shared | `static relative(string $contentDir, string $projectRoot, string $outsideReason, string $solution): string` |
+| `Processor\ProcessorDestinationPolicy`, `Processor\LockedProcessorDestination` | processor | «Processors»: install destination; `static problem(string $id, LockedExtension): ?InstallException`, `static contentDir(LockedExtension): string` |
+| `Processor\EnablementSnippet`, `Processor\ProcessorReferences`, `Processor\ProcessorReference` | processor | `forInstalled(string $projectRoot, LockedExtension, ProcessorMetadata): list<string>`; `find(string $contentDir, string $packageDir): list<ProcessorReference>` |
+| `YiiPress\Processor\ProjectProcessorFiles` | build | `static collect(string $contentDir, ProcessorConfig): list<string>` (build cache dependencies) |
 | `Lifecycle\ThemeLifecycleRules`, `Lifecycle\ThemeReferences` | theme | the `themes/<name>` rule, `theme_in_use`; `find(string $themeName, string $contentDir): list<string>` |
-| `Console\GetThemeCommand`, `Console\RecoverExtensionsCommand`, `Console\RestoreExtensionsCommand`, `Console\UpdateThemeCommand`, `Console\RemoveThemeCommand` | console | `get:theme`, `recover:extensions`, `restore:extensions`, `update:theme`, `remove:theme`, registered in `config/console/commands.php` |
+| `Console\GetThemeCommand`, `Console\RecoverExtensionsCommand`, `Console\RestoreExtensionsCommand`, `Console\UpdateThemeCommand`, `Console\RemoveThemeCommand`, `Console\GetProcessorCommand`, `Console\UpdateProcessorCommand`, `Console\RemoveProcessorCommand` | console | `get:theme`, `recover:extensions`, `restore:extensions`, `update:theme`, `remove:theme`, `get:processor`, `update:processor`, `remove:processor`, registered in `config/console/commands.php` |
 
 Namespaces are under `YiiPress\Extension\` (directory `src/Extension/`), except the commands.
 
@@ -396,10 +435,12 @@ Namespaces are under `YiiPress\Extension\` (directory `src/Extension/`), except 
 | `archive_mismatch` | Restore: the locked archive holds another commit, manifest, ID, version or files than the lock. |
 | `id_invalid` | Update, remove: the argument is not a `vendor/name` ID (exit 64). |
 | `not_installed` | Update, remove: no lock entry with that ID. |
-| `extension_not_theme` | Update, remove: the lock entry is another type. |
+| `extension_not_theme`, `extension_not_processor` | Update, remove: the lock entry is another type. |
 | `local_changes` | Update, remove: installed files were changed, added or deleted (update also: the directory is gone). |
 | `theme_in_use` | Remove: `config.yaml` or an entry selects the theme. |
-| `content_unreadable` | Remove: `config.yaml` or an entry cannot be parsed. |
+| `content_unreadable` | Remove; update of a processor: `config.yaml` or an entry cannot be parsed. |
+| `extension_in_use` | Remove a processor: `processors` lists a file of the package. |
+| `entry_point_in_use` | Update a processor: the release does not declare an enabled entry point for its enabled stage. |
 | `mutation_locked` | Another extension command runs in this project. |
 | `recovery_failed` | An interrupted transaction cannot be undone safely. |
 | `filesystem_failed` | A write, `rename()` or delete failed, or `.yiipress/`, its `staging/` or `backup/` is a link or lies outside the project; message names the path. |
