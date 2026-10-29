@@ -10,6 +10,7 @@ return [
     'build' => Console\BuildCommand::class,
     'check:links' => Console\CheckCommand::class,
     'clean|clear' => Console\CleanCommand::class,
+    'get:processor' => Console\GetProcessorCommand::class,
     'get:theme' => Console\GetThemeCommand::class,
     'init:content' => Console\InitContentCommand::class,
     'init:plugin' => Console\InitPluginCommand::class,

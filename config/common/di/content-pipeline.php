@@ -7,6 +7,7 @@ use YiiPress\Build\ThemeRegistry;
 use YiiPress\Console\BuildCommand;
 use YiiPress\Console\CheckCommand;
 use YiiPress\Console\CleanCommand;
+use YiiPress\Console\GetProcessorCommand;
 use YiiPress\Console\GetThemeCommand;
 use YiiPress\Console\InitContentCommand;
 use YiiPress\Console\InitPluginCommand;
@@ -104,6 +105,12 @@ return [
     CheckCommand::class => [
         '__construct()' => [
             'rootPath' => $workingDirectory,
+        ],
+    ],
+    GetProcessorCommand::class => [
+        '__construct()' => [
+            'rootPath' => $workingDirectory,
+            'http' => Reference::to(AvailableHttpClient::class),
         ],
     ],
     GetThemeCommand::class => [

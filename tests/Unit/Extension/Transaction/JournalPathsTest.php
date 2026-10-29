@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiPress\Build\DirectoryRemover;
 use YiiPress\Extension\Install\InstallException;
+use YiiPress\Extension\Transaction\JournalPaths;
 use YiiPress\Extension\Transaction\Recovery;
 use YiiPress\Extension\Transaction\Transaction;
 
@@ -110,6 +111,31 @@ final class JournalPathsTest extends TestCase
         self::assertSame('precious', file_get_contents($this->outside . '/config.yaml'));
         self::assertSame('precious', file_get_contents($this->outside . '/yiipress.lock'));
         self::assertFileExists($this->root . '/.yiipress/journal.json');
+    }
+
+    /**
+     * @return iterable<string, array{string, bool, bool}> Path, directory target, package file target.
+     */
+    public static function packagePaths(): iterable
+    {
+        yield 'theme' => ['themes/wonder', true, false];
+        yield 'theme file' => ['themes/wonder/layout.php', false, true];
+        yield 'processor' => ['content/extensions/processors/acme/toc', true, false];
+        yield 'processor in content root' => ['extensions/processors/acme/toc', true, false];
+        yield 'processor in nested content' => ['site/content/extensions/processors/acme/toc', true, false];
+        yield 'processor file' => ['content/extensions/processors/acme/toc/src/toc.php', false, true];
+        yield 'processor vendor only' => ['content/extensions/processors/acme', false, false];
+        yield 'processor in state directory' => ['.yiipress/extensions/processors/acme/toc', false, false];
+        yield 'processor with dot segment' => ['content/../extensions/processors/acme/toc', false, false];
+        yield 'processor with upper case' => ['content/extensions/processors/Acme/toc', false, false];
+        yield 'processors directory' => ['content/extensions/processors', false, false];
+    }
+
+    #[DataProvider('packagePaths')]
+    public function testPackageTargets(string $path, bool $directory, bool $file): void
+    {
+        self::assertSame($directory, JournalPaths::isDirectoryTarget($path));
+        self::assertSame($file, JournalPaths::isPackageFileTarget($path));
     }
 
     public function testTransactionRefusesFileAnInstallationNeverChanges(): void

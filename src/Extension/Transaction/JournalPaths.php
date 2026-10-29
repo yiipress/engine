@@ -19,10 +19,16 @@ use function str_starts_with;
  */
 final class JournalPaths
 {
-    /** A theme directory; later extension types add their own. */
-    private const string DIRECTORY_PATTERN = '~^themes/[a-z0-9]+(?:-[a-z0-9]+)*$~D';
-    /** A file inside a theme directory. */
-    private const string PACKAGE_FILE_PATTERN = '~^themes/[a-z0-9]+(?:-[a-z0-9]+)*/.+$~sD';
+    /**
+     * A theme directory, `themes/<name>`, or a processor directory, `<content-dir>/extensions/processors/<id>`;
+     * later extension types add their own. The content directory is any prefix outside the state directory.
+     */
+    private const string DIRECTORY_PATTERN = '~^' . self::PACKAGE . '$~D';
+    /** A file inside a package directory. */
+    private const string PACKAGE_FILE_PATTERN = '~^' . self::PACKAGE . '/.+$~sD';
+    private const string PACKAGE = '(?:themes/' . self::PART . '|(?!\\.yiipress/)(?:[^/]+/)*extensions/processors/'
+        . self::PART . '/' . self::PART . ')';
+    private const string PART = '[a-z0-9]+(?:-[a-z0-9]+)*';
     /** `yiipress.lock` in the root, or `config.yaml` in the root or a content directory. */
     private const string FILE_PATTERN = '~^(?:yiipress\.lock|(?:[^/]+/)*config\.yaml)$~D';
 
@@ -37,7 +43,7 @@ final class JournalPaths
     }
 
     /**
-     * A file inside a theme directory, which a restore puts back when it is missing.
+     * A file inside a package directory, which a restore puts back when it is missing.
      */
     public static function isPackageFileTarget(string $path): bool
     {
