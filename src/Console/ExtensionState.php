@@ -17,6 +17,7 @@ use YiiPress\RuntimePaths;
 use Yiisoft\Yii\Console\ExitCode;
 
 use function array_diff;
+use function array_keys;
 use function array_filter;
 use function array_values;
 use function hash;
@@ -45,8 +46,9 @@ final class ExtensionState
     /**
      * Registers the project themes from `themes/` and the `local` templates of the content directory.
      *
-     * A theme installed by `get:theme` is registered as managed, and with a site config only when the site or an
-     * entry uses it: an installed theme that is not used adds neither templates nor assets to the site.
+     * A theme installed by `get:theme` is registered as managed, with the fallback recorded in `yiipress.lock`, and
+     * with a site config only when the site or an entry uses it: an installed theme that is not used adds neither
+     * templates nor assets to the site.
      *
      * @param SiteConfig|null $siteConfig `null` registers every installed theme; workers render what the build chose.
      * @param OutputInterface|null $output Receives a warning when `yiipress.lock` cannot be read.
@@ -59,7 +61,7 @@ final class ExtensionState
         ?OutputInterface $output = null,
     ): void {
         try {
-            $managed = ManagedThemes::directoryNames($rootPath);
+            $managed = ManagedThemes::fallbacks($rootPath);
         } catch (InstallException $exception) {
             $managed = [];
             $output?->writeln(sprintf(
@@ -67,15 +69,16 @@ final class ExtensionState
                 $exception->getMessage(),
             ));
         }
-        $used = $siteConfig === null ? $managed : self::usedThemes($managed, $rootPath, $contentDir, $siteConfig);
+        $names = array_keys($managed);
+        $used = $siteConfig === null ? $names : self::usedThemes($names, $rootPath, $contentDir, $siteConfig);
 
         foreach (new ProjectThemeDiscovery()->discover($rootPath . '/themes', $managed) as $theme) {
-            if (!$registry->has($theme->name) && (!$theme->managed || in_array($theme->name, $used, true))) {
+            if (!$registry->has($theme->name) && (!$theme->managed() || in_array($theme->name, $used, true))) {
                 $registry->register($theme);
             }
         }
         if (is_dir($contentDir . '/templates')) {
-            $registry->register(new Theme('local', $contentDir . '/templates'));
+            $registry->register(new Theme(Theme::LOCAL, $contentDir . '/templates'));
         }
     }
 

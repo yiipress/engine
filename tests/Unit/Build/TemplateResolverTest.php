@@ -70,7 +70,7 @@ final class TemplateResolverTest extends TestCase
         $resolver = $this->createResolver();
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Template "nonexistent" not found.');
+        $this->expectExceptionMessage('Template "nonexistent" not found in themes: minimal.');
         $resolver->resolve('nonexistent');
     }
 
@@ -131,7 +131,7 @@ final class TemplateResolverTest extends TestCase
         try {
             $registry = new ThemeRegistry();
             $registry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
-            $registry->register(new Theme('wonder', $managedDir, managed: true));
+            $registry->register(new Theme('wonder', $managedDir, fallback: [Theme::BUNDLED, Theme::LOCAL]));
             $resolver = new TemplateResolver($registry);
 
             assertSame($managedDir . '/special.php', $resolver->resolve('special', 'wonder'));
@@ -151,7 +151,7 @@ final class TemplateResolverTest extends TestCase
     public function testDefaultThemeIsNeverManaged(): void
     {
         $registry = new ThemeRegistry();
-        $registry->register(new Theme('wonder', '/themes/wonder', managed: true));
+        $registry->register(new Theme('wonder', '/themes/wonder', fallback: [Theme::BUNDLED, Theme::LOCAL]));
         $registry->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
 
         assertSame('minimal', new TemplateResolver($registry)->defaultThemeName());

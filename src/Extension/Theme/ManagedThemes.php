@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace YiiPress\Extension\Theme;
 
+use YiiPress\Build\Theme;
 use YiiPress\Extension\Install\InstallException;
 use YiiPress\Extension\Lock\LockFile;
+use YiiPress\Extension\Manifest\ThemeFallback;
 
 use function str_contains;
 use function str_starts_with;
@@ -20,20 +22,24 @@ final class ManagedThemes
     private const string PREFIX = ThemeDestinationPolicy::THEMES_DIR . '/';
 
     /**
-     * @return list<string> Directory names under `themes/` that are a destination in `yiipress.lock`.
+     * @return array<string, list<string>> Directory name under `themes/` that is a destination in `yiipress.lock` →
+     *         the themes tried after it ({@see Theme::$fallback}): its declared fallback, then `local`.
      *
      * @throws InstallException `lock_invalid` or `lock_unsupported`.
      */
-    public static function directoryNames(string $projectRoot): array
+    public static function fallbacks(string $projectRoot): array
     {
-        $names = [];
-        foreach (LockFile::read($projectRoot . '/' . LockFile::FILE_NAME)->destinations() as $destination) {
+        $fallbacks = [];
+        foreach (LockFile::read($projectRoot . '/' . LockFile::FILE_NAME)->extensions() as $locked) {
+            $destination = $locked->destination;
             $name = substr($destination, strlen(self::PREFIX));
             if (str_starts_with($destination, self::PREFIX) && $name !== '' && !str_contains($name, '/')) {
-                $names[] = $name;
+                $fallbacks[$name] = $locked->fallback === ThemeFallback::None
+                    ? [Theme::LOCAL]
+                    : [Theme::BUNDLED, Theme::LOCAL];
             }
         }
 
-        return $names;
+        return $fallbacks;
     }
 }

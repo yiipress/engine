@@ -81,13 +81,13 @@ final class ProjectThemeDiscoveryTest extends TestCase
         mkdir($this->rootDir . '/themes/wonder');
         mkdir($this->rootDir . '/themes/mine');
 
-        $themes = new ProjectThemeDiscovery()->discover($this->rootDir . '/themes', ['wonder']);
+        $themes = new ProjectThemeDiscovery()->discover($this->rootDir . '/themes', ['wonder' => ['local']]);
 
         assertSame(
-            ['mine' => false, 'wonder' => true],
+            ['mine' => null, 'wonder' => ['local']],
             array_combine(
                 array_map(static fn(Theme $theme): string => $theme->name, $themes),
-                array_map(static fn(Theme $theme): bool => $theme->managed, $themes),
+                array_map(static fn(Theme $theme): ?array => $theme->fallback, $themes),
             ),
         );
     }

@@ -37,17 +37,21 @@ final class ManagedThemesTest extends TestCase
 
     public function testNoLockMeansNoManagedThemes(): void
     {
-        self::assertSame([], ManagedThemes::directoryNames($this->root));
+        self::assertSame([], ManagedThemes::fallbacks($this->root));
     }
 
-    public function testNamesThemeDestinations(): void
+    public function testNamesThemeDestinationsWithTheirFallback(): void
     {
         file_put_contents($this->root . '/yiipress.lock', self::lock([
             'yiipress/wonder' => 'themes/wonder',
             'acme/emoji' => 'processors/emoji',
-        ]));
+            'acme/bare' => 'themes/bare',
+        ], ['acme/bare' => 'none']));
 
-        self::assertSame(['wonder'], ManagedThemes::directoryNames($this->root));
+        self::assertSame(
+            ['wonder' => ['minimal', 'local'], 'bare' => ['local']],
+            ManagedThemes::fallbacks($this->root),
+        );
     }
 
     public function testInvalidLockIsAnError(): void
@@ -56,13 +60,14 @@ final class ManagedThemesTest extends TestCase
 
         $this->expectException(InstallException::class);
 
-        ManagedThemes::directoryNames($this->root);
+        ManagedThemes::fallbacks($this->root);
     }
 
     /**
      * @param array<string, string> $destinations ID → destination.
+     * @param array<string, string> $fallbacks ID → `fallback` other than `minimal`.
      */
-    private static function lock(array $destinations): string
+    private static function lock(array $destinations, array $fallbacks = []): string
     {
         $extensions = [];
         foreach ($destinations as $id => $destination) {
@@ -82,7 +87,7 @@ final class ManagedThemesTest extends TestCase
                 'type' => str_starts_with($destination, 'themes/') ? 'theme' : 'processor',
                 'version' => '1.0.0',
             ] + (str_starts_with($destination, 'themes/')
-                ? ['name' => substr($destination, 7), 'fallback' => 'minimal']
+                ? ['name' => substr($destination, 7), 'fallback' => $fallbacks[$id] ?? 'minimal']
                 : []);
         }
 
