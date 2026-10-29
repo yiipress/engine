@@ -1,8 +1,9 @@
 # 0002 appendix: `get:theme` and the shared installer (reference)
 
 Reference for [decision 0002](0002-theme-installation.md). Scope: `yiipress get:theme`, the parts it shares with
-later commands, the lock file format and recovery. `restore:extensions`, `update:*`, `remove:*`, processors and the
-full fallback rules are later steps; they appear here only where the lock format must serve them.
+later commands, the lock file format, recovery and `restore:extensions` (see «Restore»). `update:*`, `remove:*`,
+processors and the full fallback rules are later steps; they appear here only where the lock format must serve
+them.
 
 ## Command
 
@@ -213,14 +214,42 @@ Directory `.yiipress/` in the project root (created on demand; docs recommend ig
 - Journal (`journal.json`, written as temp + `rename()`):
   `{"journal": 1, "tx": "<id>", "operation": "install", "state": "prepared|committed",
   "steps": [{"kind": "move_dir", "from": "...", "to": "themes/wonder"},
-  {"kind": "replace_file", "path": "yiipress.lock", "backup": "backup/<tx>/yiipress.lock" | null}, ...]}`.
-  `backup: null` means the file did not exist.
+  {"kind": "replace_file", "path": "yiipress.lock", "backup": "backup/<tx>/yiipress.lock" | null},
+  {"kind": "add_file", "from": "...", "to": "themes/wonder/assets/style.css", "hash": "<sha256>"}, ...]}`.
+  `backup: null` means the file did not exist. `add_file` (restore only) puts a missing file into an existing
+  package directory; `to` must not exist.
 - Recovery (start of every mutating command, and `yiipress recover:extensions`):
   `prepared` → undo steps in reverse: restore or delete each file from its backup, delete a moved directory only if
-  its files equal the staged hashes recorded in the journal; anything else stops with
+  its files equal the staged hashes recorded in the journal, delete an added file only if it equals its `hash`;
+  anything else stops with
   `recovery_failed` and keeps journal and backups. `committed` → delete staging, backups and the journal.
 - Builds and `serve`: if `.yiipress/journal.json` exists, stop with «An extension operation was interrupted. Run
   `yiipress recover:extensions`.» They never take the mutation lock.
+
+## Restore
+
+`yiipress restore:extensions [--engine-version=X.Y.Z]`, project root as for `get:theme`. It reads `yiipress.lock`
+only: it never lists releases, activates, edits `config.yaml` or writes the lock. Exit codes as for `get:theme`.
+
+1. Take the mutation lock; run recovery. Read `yiipress.lock` (absent = nothing to restore).
+2. For every entry, sorted by ID, with no network and no change: the type must be `theme` and `destination` must be
+   `themes/<name>` (`lock_invalid`); two entries with one destination ignoring case are `name_collision`. Compare
+   the destination with `files`, without following links: a file, a link or another-case name in its place is
+   `destination_exists`; a file whose SHA-256 differs is `files_modified`; a file, link or other entry not in
+   `files` is `files_unexpected`; a missing file is only a repair. Every problem of every entry is reported
+   together and nothing is downloaded. All files present and equal: the entry is skipped.
+3. Each entry with something missing: `tag` must name `version` and `archive.url` must be the tag archive of
+   `source` (`lock_invalid`, before any request). Download that URL (404: `release_not_found`, no other release is
+   tried) into `.yiipress/staging/<tx>/<id>/`, read it by «Archive rules». The pax commit, the SHA-256 of
+   `extension.yaml`, the manifest `id` and `version` and the hash of every file under `package/` must equal the
+   lock (`archive_mismatch`); `ManifestReader` and `EngineCompatibility::check()` run as at install
+   (`manifest_invalid`, `release_incompatible`). Network errors stop at once; data problems of all entries are
+   reported together, before any change.
+4. Archive `sha256` or `size` different while all of step 3 matches: a warning, not an error; the restore goes on
+   and the lock is not rewritten. Owner's decision, 2026-10-29, on open question 3 of decision 0002: GitHub may
+   regenerate a tag tarball, so its bytes are not stable; the commit and the file hashes are what is locked.
+5. One transaction (`operation: "restore"`): a missing destination is a `move_dir` of the staged `package/`, each
+   missing file of an existing destination an `add_file`. Nothing is overwritten or deleted.
 
 ## Classes
 
@@ -247,7 +276,10 @@ All `final`; value objects `readonly`. Names may be adjusted by the developer if
 | `Install\InstallException` | shared | `RuntimeException` + `FriendlyExceptionInterface`; `string $errorCode`; wraps `InvalidManifestException` as `manifest_invalid` with its errors |
 | `Theme\ThemeDestinationPolicy` | theme | «Destination», activation via `ThemeActivator` |
 | `Theme\ThemeActivator` | theme | `activate(string $configYaml, string $themeName): string` (pure, testable) |
-| `Console\GetThemeCommand`, `Console\RecoverExtensionsCommand` | console | `get:theme`, `recover:extensions`, registered in `config/console/commands.php` |
+| `Restore\InstalledPackage` | shared | `static inspect(string $projectRoot, LockedExtension): self` (`exists`, `missing`, `modified`, `unexpected`, `collision`) |
+| `Restore\LockedArchive` | shared | `fetch(string $id, LockedExtension, string $stagingDir, EngineVersion, Platform): VerifiedPackage` |
+| `Restore\PackageRestorer` | shared | `restore(string $projectRoot, EngineVersion, Platform): RestoreResult`; throws `RestoreRefusedException` with every problem |
+| `Console\GetThemeCommand`, `Console\RecoverExtensionsCommand`, `Console\RestoreExtensionsCommand` | console | `get:theme`, `recover:extensions`, `restore:extensions`, registered in `config/console/commands.php` |
 
 Namespaces are under `YiiPress\Extension\` (directory `src/Extension/`), except the commands.
 
@@ -286,6 +318,9 @@ Namespaces are under `YiiPress\Extension\` (directory `src/Extension/`), except 
 | `config_missing` | No `config.yaml` to activate in. |
 | `config_unsupported` | `theme` cannot be changed safely as text. |
 | `lock_invalid`, `lock_unsupported` | `yiipress.lock` unreadable, malformed or newer. |
+| `files_modified` | Restore: installed files differ from the lock's `files`. |
+| `files_unexpected` | Restore: the destination holds files or links not in `files`. |
+| `archive_mismatch` | Restore: the locked archive holds another commit, manifest, ID, version or files than the lock. |
 | `mutation_locked` | Another extension command runs in this project. |
 | `recovery_failed` | An interrupted transaction cannot be undone safely. |
 | `filesystem_failed` | A write, `rename()` or delete failed, or `.yiipress/`, its `staging/` or `backup/` is a link or lies outside the project; message names the path. |

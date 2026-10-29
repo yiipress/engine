@@ -80,8 +80,8 @@ Option 1 in each group. Shared code goes to `src/Extension/` (`Http`, `Release`,
 - Worse: no `get:theme` in the distroless image or on systems without `curl` (clear error, documented); size limits
   are enforced during transfer only where `curl` supports it, otherwise right after; one more hidden directory
   (`.yiipress/`) to ignore in VCS; builds read `yiipress.lock` (a local file, no network).
-- Follow-up: the fallback step replaces the stop-gap in spec «Theme fallback in this step»; `restore:extensions`
-  decides what an archive checksum mismatch with matching commit and files means (open question 3).
+- Follow-up: the fallback step replaces the stop-gap in spec «Theme fallback in this step». `restore:extensions`
+  treats an archive checksum mismatch with matching commit and files as a warning (open question 3, answered).
 
 ## Open questions for the lead
 
@@ -90,7 +90,7 @@ Option 1 in each group. Shared code goes to `src/Extension/` (`Http`, `Release`,
 2. `--engine-version=X.Y.Z`, accepted only when the engine version is unknown (source checkouts, the dev image):
    add (recommended, otherwise `get:theme` cannot run from a checkout) or not.
 3. For `restore`: an archive SHA-256 mismatch with the same commit and identical files: error (as #177 says) or
-   warning.
+   warning. Answered by the owner (2026-10-29): a warning; restore continues. See spec «Restore».
 4. Limits in spec «Limits» are proposals, not measured; the benchmark of this step should confirm them.
 
 ## Confirmation

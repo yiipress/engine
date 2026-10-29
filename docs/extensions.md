@@ -234,7 +234,8 @@ of them change or none.
 
 - `yiipress.lock` records each installed package: its source, version and tag, the commit, the URL, size and
   SHA-256 of the archive, the destination and the SHA-256 of every installed file. The same installation always
-  writes the same bytes. Commit it with the site.
+  writes the same bytes. Commit it with the site; [`restore:extensions`](#restoring-extensions) installs the same
+  packages into a fresh checkout.
 - `.yiipress/` holds the state of a running installation: a lock that keeps two extension commands from running at
   once, a journal and temporary files. Add it to `.gitignore`.
 
@@ -268,7 +269,7 @@ than two minutes before the build (file times on a network share or a virtual ma
 
 Downloads use PHP's `https` stream wrapper (the `openssl` extension) when PHP has it, otherwise the `curl`
 program; Windows 10 version 1803 and later ship `curl.exe`. The distroless Docker image has neither, so `get:theme`
-fails there with `http_client_missing`: run it with a PHAR, a static binary or the full image, and commit the
+and `restore:extensions` fail there with `http_client_missing`: run it with a PHAR, a static binary or the full image, and commit the
 installed theme and `yiipress.lock`.
 
 Only public GitHub repositories are supported, and no token is sent. Listing releases counts against GitHub's API
@@ -333,6 +334,61 @@ Each error is one message naming the value, with a hint when there is one. The e
 | `mutation_locked` | Another extension command is running in this project. |
 | `recovery_failed` | An interrupted installation cannot be undone safely; see [above](#interrupted-installations). |
 | `filesystem_failed` | A file could not be written, moved or deleted, or `.yiipress/`, `.yiipress/staging/` or `.yiipress/backup/` is a symbolic link or lies outside the project; the message names it. |
+
+## Restoring extensions
+
+```shell
+yiipress restore:extensions
+```
+
+Run it in the project root of a fresh checkout, or whenever installed packages may be missing. For every package in
+`yiipress.lock` it compares the files in its destination with the SHA-256 hashes in the lock:
+
+- All files match: the package is skipped and nothing is downloaded.
+- The directory or some files are missing: YiiPress downloads the archive of exactly the locked tag and puts back
+  only what is missing. Files that are in place are kept as they are.
+
+```text
+yiipress/wonder: installed into themes/wonder from the locked archive.
+yiipress/clean: put back assets/style.css in themes/clean.
+yiipress/plain: matches yiipress.lock in themes/plain.
+```
+
+Restoring never chooses another release, activates a theme, edits `config.yaml` or writes `yiipress.lock`. It never
+overwrites or deletes a file. Before it downloads anything it checks every package, and if one of them has a
+changed file, a file the lock does not list, or something else in its place, it reports all such problems and
+changes nothing:
+
+```text
+Nothing was restored: 2 problems found; no file was changed.
+ - Files of yiipress/wonder 1.0.0 in "themes/wonder" differ from the locked release: layout/page.php.
+   Move your files out of "themes/wonder" (keep a copy of your changes), then run restore:extensions again.
+ - "themes/wonder" holds files that are not part of yiipress/wonder 1.0.0: notes.txt.
+   Move your files out of "themes/wonder" (keep a copy of your changes), then run restore:extensions again.
+```
+
+Each downloaded archive must hold the locked commit, `extension.yaml` and file hashes, and support this YiiPress
+and platform, before any package is changed. GitHub may rebuild a tag's tarball, so its bytes, and therefore its
+SHA-256, can change while its contents do not: when the commit and every file still match, a different archive
+checksum is only a warning and the restore continues. A tag that was moved to another commit, or a release that was
+deleted, is an error; restore never substitutes another release.
+
+All repairs happen in one transaction, like an installation: if the command fails or is killed, nothing is left half
+done, and [`recover:extensions`](#interrupted-installations) handles a killed run.
+
+`--engine-version=X.Y.Z` works as for `get:theme`. Requirements and exit codes are those of
+[installing a theme](#installation-errors). Errors particular to restoring:
+
+| Code | Meaning |
+| --- | --- |
+| `files_modified` | Installed files differ from the locked release; the message lists them. |
+| `files_unexpected` | The package directory holds files or links that the lock does not list. |
+| `destination_exists` | A file, a link or a directory in another letter case takes the place of the package. |
+| `name_collision` | Two entries of `yiipress.lock` use the same destination. |
+| `lock_invalid` | An entry cannot be restored as recorded: for example its destination is not `themes/<name>`, its tag does not name its version, or its archive URL is not the archive of that tag. |
+| `release_not_found` | The locked tag or its archive is no longer on GitHub. |
+| `archive_mismatch` | The archive holds another commit, manifest, ID, version or other files than the lock records. |
+| `release_incompatible` | The locked release does not support this YiiPress or platform. |
 
 ## Reading manifests in PHP
 
