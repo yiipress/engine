@@ -10,8 +10,11 @@ use YiiPress\Extension\Install\InstallException;
 use YiiPress\Extension\Lock\LockFile;
 use YiiPress\Extension\Manifest\ExtensionManifest;
 
+use function array_filter;
+use function array_values;
 use function explode;
 use function file_get_contents;
+use function implode;
 use function in_array;
 use function is_dir;
 use function is_file;
@@ -22,7 +25,6 @@ use function sprintf;
 use function str_starts_with;
 use function strlen;
 use function substr;
-use function trim;
 
 /**
  * Themes go to `themes/<name>`, where `<name>` is the name part of the theme ID; activation sets `theme` in
@@ -123,14 +125,17 @@ final readonly class ThemeDestinationPolicy implements DestinationPolicyInterfac
             }
             $dir = substr($dir, strlen($root));
         }
-        $dir = trim($dir, '/');
-        if (in_array('..', explode('/', $dir), true)) {
+        $segments = array_values(array_filter(
+            explode('/', $dir),
+            static fn(string $segment): bool => $segment !== '' && $segment !== '.',
+        ));
+        if (in_array('..', $segments, true)) {
             throw new InstallException('config_unsupported', sprintf(
                 'The content directory "%s" must not contain "..".',
                 $this->contentDir,
             ), solution: 'Use --no-activate and set "theme" in config.yaml by hand.');
         }
 
-        return $dir === '' || $dir === '.' ? '' : $dir . '/';
+        return $segments === [] ? '' : implode('/', $segments) . '/';
     }
 }

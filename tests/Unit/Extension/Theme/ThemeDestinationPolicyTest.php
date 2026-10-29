@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiPress\Tests\Unit\Extension\Theme;
 
 use LogicException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiPress\Build\DirectoryRemover;
 use YiiPress\Extension\ExtensionId;
@@ -85,6 +86,27 @@ final class ThemeDestinationPolicyTest extends TestCase
         $change = new ThemeDestinationPolicy($this->root . '/content/')->activation(self::manifest(), $this->root);
 
         self::assertSame('content/config.yaml', $change?->path);
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function contentDirectories(): iterable
+    {
+        yield 'plain' => ['content', 'content/config.yaml'];
+        yield 'dot segment' => ['./content', 'content/config.yaml'];
+        yield 'repeated slashes' => ['content//', 'content/config.yaml'];
+        yield 'project root' => ['.', 'config.yaml'];
+    }
+
+    #[DataProvider('contentDirectories')]
+    public function testActivationNormalisesContentDirectory(string $contentDir, string $expected): void
+    {
+        file_put_contents($this->root . '/config.yaml', "title: Root\n");
+
+        $change = new ThemeDestinationPolicy($contentDir)->activation(self::manifest(), $this->root);
+
+        self::assertSame($expected, $change?->path);
     }
 
     public function testNoActivationWhenTurnedOff(): void

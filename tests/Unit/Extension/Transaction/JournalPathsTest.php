@@ -109,6 +109,15 @@ final class JournalPathsTest extends TestCase
         $transaction->replaceFile('index.php', '<?php');
     }
 
+    public function testTransactionRefusesPathWithDotSegment(): void
+    {
+        $transaction = Transaction::begin($this->root);
+
+        $this->expectException(InstallException::class);
+
+        $transaction->replaceFile('./content/config.yaml', 'theme: wonder');
+    }
+
     public function testTransactionRefusesTargetOutsideProject(): void
     {
         $transaction = Transaction::begin($this->root);
