@@ -196,13 +196,11 @@ final readonly class PackageRestorer
             $problems = [];
             $packages = [];
             foreach ($repairs as $id => $locked) {
-                try {
-                    $packages[$id] = $this->stage($transaction, $id, $locked, $installed[$id], $engine, $platform);
-                } catch (InstallException $exception) {
-                    if (in_array($exception->getCode(), [ExitCode::UNAVAILABLE, ExitCode::TEMPFAIL], true)) {
-                        throw $exception;
-                    }
-                    $problems[] = $exception;
+                $staged = $this->tryStage($transaction, $id, $locked, $installed[$id], $engine, $platform);
+                if ($staged instanceof InstallException) {
+                    $problems[] = $staged;
+                } else {
+                    $packages[$id] = $staged;
                 }
             }
             if ($problems !== []) {
@@ -214,6 +212,30 @@ final readonly class PackageRestorer
         }
 
         return $packages;
+    }
+
+    /**
+     * @return RestoredPackage|InstallException The staged package, or the data problem that prevents it.
+     *
+     * @throws InstallException A network, lock or file system problem, which stops the whole restore.
+     */
+    private function tryStage(
+        Transaction $transaction,
+        string $id,
+        LockedExtension $locked,
+        InstalledPackage $installed,
+        EngineVersion $engine,
+        Platform $platform,
+    ): RestoredPackage|InstallException {
+        try {
+            return $this->stage($transaction, $id, $locked, $installed, $engine, $platform);
+        } catch (InstallException $exception) {
+            if (in_array($exception->getCode(), [ExitCode::UNAVAILABLE, ExitCode::TEMPFAIL], true)) {
+                throw $exception;
+            }
+
+            return $exception;
+        }
     }
 
     private function stage(

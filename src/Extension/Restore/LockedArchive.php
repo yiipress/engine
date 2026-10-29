@@ -16,6 +16,7 @@ use YiiPress\Extension\Manifest\InvalidManifestException;
 use YiiPress\Extension\Manifest\ManifestError;
 use YiiPress\Extension\Manifest\ManifestReader;
 use YiiPress\Extension\Platform;
+use YiiPress\Extension\Release\DownloadedArchive;
 use YiiPress\Extension\Release\GitHubReleaseSource;
 use YiiPress\Extension\Release\GitHubRepository;
 use YiiPress\Extension\Release\Release;
@@ -66,21 +67,7 @@ final readonly class LockedArchive
         Platform $platform,
     ): VerifiedPackage {
         $repository = GitHubRepository::fromUrl($locked->source);
-        $release = $this->release($id, $locked, $repository);
-        try {
-            $archive = $this->source->downloadArchive($repository, $release, $stagingDir . '/' . self::ARCHIVE);
-        } catch (InstallException $exception) {
-            if ($exception->errorCode !== 'release_not_found') {
-                throw $exception;
-            }
-            throw new InstallException('release_not_found', sprintf(
-                'The archive of %s %s that yiipress.lock records for %s is no longer on GitHub.',
-                $repository,
-                $locked->tag,
-                $id,
-            ), solution: 'restore:extensions installs only the locked release. Ask the author to restore the tag, '
-                . 'or install another release of the extension.', previous: $exception);
-        }
+        $archive = $this->download($id, $locked, $repository, $stagingDir . '/' . self::ARCHIVE);
         $extracted = $this->archiveReader->extract($archive->file, $stagingDir . '/' . self::ROOT, $this->limits);
         $describe = sprintf('The archive of %s %s', $repository, $locked->tag);
         if ($extracted->commit !== $locked->commit) {
@@ -91,28 +78,9 @@ final readonly class LockedArchive
                 $locked->commit,
             ));
         }
-        if (hash_file('sha256', $extracted->root . '/' . ManifestReader::FILE_NAME) !== $locked->manifestSha256) {
-            throw self::mismatch($id, sprintf(
-                '%s holds an extension.yaml that differs from the locked one.',
-                $describe,
-            ));
-        }
         $this->checkManifest($id, $locked, $extracted->root, $describe, $engine, $platform);
-
         $directory = $extracted->root . '/' . ManifestReader::PACKAGE_DIR;
-        $files = DirectoryHashes::of($directory);
-        $different = array_unique(array_merge(
-            array_keys(array_diff_assoc($files, $locked->files)),
-            array_keys(array_diff_assoc($locked->files, $files)),
-        ));
-        if ($different !== []) {
-            sort($different, SORT_STRING);
-            throw self::mismatch($id, sprintf(
-                '%s holds package files that differ from yiipress.lock: %s.',
-                $describe,
-                implode(', ', $different),
-            ));
-        }
+        self::checkFiles($id, $locked, $directory, $describe);
 
         $warning = null;
         if ($archive->sha256 !== $locked->archiveSha256 || $archive->size !== $locked->archiveSize) {
@@ -128,6 +96,49 @@ final readonly class LockedArchive
         }
 
         return new VerifiedPackage($directory, $warning);
+    }
+
+    /**
+     * Downloads the archive of exactly the locked tag; a missing one is never replaced by another release.
+     */
+    private function download(
+        string $id,
+        LockedExtension $locked,
+        GitHubRepository $repository,
+        string $file,
+    ): DownloadedArchive {
+        $release = $this->release($id, $locked, $repository);
+        try {
+            return $this->source->downloadArchive($repository, $release, $file);
+        } catch (InstallException $exception) {
+            if ($exception->errorCode !== 'release_not_found') {
+                throw $exception;
+            }
+            throw new InstallException('release_not_found', sprintf(
+                'The archive of %s %s that yiipress.lock records for %s is no longer on GitHub.',
+                $repository,
+                $locked->tag,
+                $id,
+            ), solution: 'restore:extensions installs only the locked release. Ask the author to restore the tag, '
+                . 'or install another release of the extension.', previous: $exception);
+        }
+    }
+
+    private static function checkFiles(string $id, LockedExtension $locked, string $directory, string $describe): void
+    {
+        $files = DirectoryHashes::of($directory);
+        $different = array_unique(array_merge(
+            array_keys(array_diff_assoc($files, $locked->files)),
+            array_keys(array_diff_assoc($locked->files, $files)),
+        ));
+        if ($different !== []) {
+            sort($different, SORT_STRING);
+            throw self::mismatch($id, sprintf(
+                '%s holds package files that differ from yiipress.lock: %s.',
+                $describe,
+                implode(', ', $different),
+            ));
+        }
     }
 
     /**
@@ -161,6 +172,12 @@ final readonly class LockedArchive
         EngineVersion $engine,
         Platform $platform,
     ): void {
+        if (hash_file('sha256', $root . '/' . ManifestReader::FILE_NAME) !== $locked->manifestSha256) {
+            throw self::mismatch($id, sprintf(
+                '%s holds an extension.yaml that differs from the locked one.',
+                $describe,
+            ));
+        }
         try {
             $manifest = $this->manifestReader->read($root, $locked->type);
         } catch (InvalidManifestException $exception) {
