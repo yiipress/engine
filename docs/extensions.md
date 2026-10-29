@@ -530,6 +530,12 @@ describe the processor: YiiPress does not enable, reorder or check them at build
 An entry point may load other files of its package (`require __DIR__ . '/lib/...'`). Incremental builds track every
 file of a package one of whose files `processors` lists, so a changed support file rebuilds the site.
 
+`yiipress serve` runs every rebuild as a new `build` process, so it always loads the current processor code, also
+with `opcache.validate_timestamps=0`. With inotify it watches the directories that exist when it starts: installing,
+updating or removing a processor while it runs triggers a rebuild, but files of a package installed or updated since
+then are not watched for later edits until `serve` restarts. A PHP script that runs several builds in one process
+should call `opcache_invalidate()` for processor files it changes.
+
 ## Updating a processor
 
 ```shell
