@@ -4,16 +4,20 @@ declare(strict_types=1);
 
 namespace YiiPress\Extension\Transaction;
 
+use RuntimeException;
 use YiiPress\Build\DirectoryRemover;
 use YiiPress\Extension\DirectoryHashes;
 use YiiPress\Extension\Install\InstallException;
 
 use function array_reverse;
+use function bin2hex;
+use function dirname;
 use function file_exists;
 use function file_get_contents;
 use function is_dir;
 use function is_file;
 use function is_link;
+use function random_bytes;
 use function sprintf;
 use function unlink;
 
@@ -66,7 +70,7 @@ final class Recovery
         }
         foreach (array_reverse($journal->steps) as $step) {
             if ($step['kind'] === 'move_dir') {
-                $this->undoMove($paths, $step['to'], $step['hashes']);
+                $this->undoMove($paths, $journal->tx, $step['to'], $step['hashes']);
                 continue;
             }
             $target = $paths->absolute($step['path']);
@@ -87,17 +91,18 @@ final class Recovery
 
     public static function cleanUp(StatePaths $paths, string $tx): void
     {
-        DirectoryRemover::remove($paths->absolute($paths->staging($tx)));
-        DirectoryRemover::remove($paths->absolute($paths->backup($tx)));
+        // The journal goes first: leftovers in staging or backup never block a later command.
         if (is_file($paths->journal()) && !@unlink($paths->journal())) {
             throw new InstallException('filesystem_failed', sprintf('Could not delete "%s".', $paths->journal()));
         }
+        self::removeQuietly($paths->absolute($paths->staging($tx)));
+        self::removeQuietly($paths->absolute($paths->backup($tx)));
     }
 
     /**
      * @param array<string, string> $hashes
      */
-    private function undoMove(StatePaths $paths, string $to, array $hashes): void
+    private function undoMove(StatePaths $paths, string $tx, string $to, array $hashes): void
     {
         $target = $paths->absolute($to);
         if (!file_exists($target) && !is_link($target)) {
@@ -114,7 +119,24 @@ final class Recovery
                 $to,
             ));
         }
-        DirectoryRemover::remove($target);
+        // One rename takes the directory out of the project; a kill while deleting it then leaves only staging.
+        $trash = $paths->absolute($paths->staging($tx)) . '/undone-' . bin2hex(random_bytes(4));
+        StatePaths::makeDirectory(dirname($trash));
+        if (!@rename($target, $trash)) {
+            throw self::failed(sprintf('Could not move "%s" out of the project.', $to));
+        }
+        self::removeQuietly($trash);
+    }
+
+    /**
+     * Deletes a directory of `.yiipress/`; what cannot be deleted now is removed by a later recovery.
+     */
+    private static function removeQuietly(string $directory): void
+    {
+        try {
+            DirectoryRemover::remove($directory);
+        } catch (RuntimeException) {
+        }
     }
 
     private static function failed(string $problem): InstallException

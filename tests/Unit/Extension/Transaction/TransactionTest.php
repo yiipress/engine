@@ -14,14 +14,18 @@ use YiiPress\Extension\Transaction\Recovery;
 use YiiPress\Extension\Transaction\StatePaths;
 use YiiPress\Extension\Transaction\Transaction;
 
+use function chmod;
 use function file_exists;
 use function file_get_contents;
 use function file_put_contents;
+use function glob;
 use function is_dir;
 use function mkdir;
 use function rename;
 use function sys_get_temp_dir;
 use function uniqid;
+
+use const GLOB_BRACE;
 
 final class TransactionTest extends TestCase
 {
@@ -134,6 +138,33 @@ final class TransactionTest extends TestCase
 
         self::assertSame('edited', file_get_contents($this->root . '/themes/wonder/entry.php'));
         self::assertTrue(Recovery::pending($this->root));
+    }
+
+    public function testRecoveryRemovesInstalledDirectoryInOneStep(): void
+    {
+        $tx = Transaction::begin($this->root);
+        $this->stagePackage($tx);
+        mkdir($tx->stagingDirectory() . '/package/locked');
+        file_put_contents($tx->stagingDirectory() . '/package/locked/file.php', 'x');
+        $hashes = DirectoryHashes::of($tx->stagingDirectory() . '/package');
+        new Journal($tx->tx, 'install', Journal::PREPARED, [
+            ['kind' => 'move_dir', 'from' => $tx->stagingPath('package'), 'to' => 'themes/wonder', 'hashes' => $hashes],
+        ])->write(new StatePaths($this->root));
+        mkdir($this->root . '/themes');
+        rename($tx->stagingDirectory() . '/package', $this->root . '/themes/wonder');
+        // Deleting this file fails, as if the process were killed in the middle of deleting the directory.
+        chmod($this->root . '/themes/wonder/locked', 0o555);
+
+        try {
+            new Recovery()->recover($this->root);
+        } finally {
+            foreach (glob($this->root . '/{themes/wonder,.yiipress/staging/*/*}/locked', GLOB_BRACE) ?: [] as $locked) {
+                chmod($locked, 0o755);
+            }
+        }
+
+        self::assertFalse(file_exists($this->root . '/themes/wonder'));
+        self::assertFalse(Recovery::pending($this->root));
     }
 
     public function testRecoveryRefusesMalformedJournal(): void
