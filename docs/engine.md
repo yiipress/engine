@@ -217,7 +217,7 @@ The source-open overlay resolves the browser path through the build manifest, ve
 
 ## Theme Registration
 
-Project themes under `<project>/themes/<name>/` are registered automatically by directory name. Themes installed by [`get:theme`](extensions.md#installing-a-theme) are marked as managed: they are used only when selected, never as a template fallback for another theme. Project-local templates under `content/templates/` are registered automatically as the `local` theme. Engine-level themes may still be registered in [Yii3 DI](https://yiisoft.github.io/docs/guide/concept/di-container.html):
+Project themes under `<project>/themes/<name>/` are registered automatically by directory name. Themes installed by [`get:theme`](extensions.md#installing-a-theme) are marked as managed, with the fallback recorded in `yiipress.lock`: they are used only when selected, never as a template fallback for another theme, and resolve missing files through `minimal` (unless `fallback: none`) and then `local` only (`Theme::$fallback`). Project-local templates under `content/templates/` are registered automatically as the `local` theme. Engine-level themes may still be registered in [Yii3 DI](https://yiisoft.github.io/docs/guide/concept/di-container.html):
 
 ```php
 use YiiPress\Build\Theme;

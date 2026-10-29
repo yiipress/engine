@@ -127,8 +127,8 @@
   - [x] `extension.yaml` manifest format and validator
   - [x] `get:theme` and `recover:extensions`: install a theme from a GitHub release with `yiipress.lock`
   - [x] `restore:extensions`: install the packages of `yiipress.lock` into a fresh checkout
-  - [ ] `update:theme`, `remove:theme`
-  - [ ] Full theme fallback rules
+  - [x] `update:theme`, `remove:theme`
+  - [x] Full theme fallback rules
   - [ ] `get:processor` and processor enablement
   - [ ] Static catalog website
 

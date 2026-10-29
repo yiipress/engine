@@ -2,8 +2,8 @@
 
 Reference for [decision 0002](0002-theme-installation.md). Scope: `yiipress get:theme`, the parts it shares with
 later commands, the lock file format, recovery, `restore:extensions` (see «Restore») and `update:theme` /
-`remove:theme` (see «Update and removal»). `update:*` / `remove:*` for other types, processors and the full fallback
-rules are later steps; they appear here only where the lock format must serve them.
+`remove:theme` (see «Update and removal») and the theme fallback (see «Theme fallback»). `update:*` / `remove:*` for
+other types and processors are later steps; they appear here only where the lock format must serve them.
 
 ## Command
 
@@ -143,13 +143,30 @@ text so comments and layout stay.
   otherwise). Line endings (`\n`/`\r\n`) and a BOM are kept.
 - Per-entry `theme` front matter is not touched.
 
-## Theme fallback in this step
+## Theme fallback
 
-Stop-gap, if the lead accepts open question 1: `ThemeRegistry` marks themes whose directory is a `destination` in
-`yiipress.lock` as managed. `TemplateResolver` uses a managed theme only when it is the requested theme; the
-loop over «all registered themes» skips managed ones. Unmanaged themes behave as today. Builds read
-`yiipress.lock` only for this; a missing or invalid lock means no managed themes, and an invalid lock is a
-warning, not a build failure. The `fallback` step replaces this with the full rules.
+Lead decisions on #256 rev 74.
+
+- Where the build reads it: `get:theme` and `update:theme` copy the manifest's `theme.fallback` (default `minimal`)
+  into the lock entry (`fallback`, required for themes). The build reads only `yiipress.lock`, never
+  `extension.yaml`: the installed directory holds the package alone, and the value is pinned by `manifest_sha256`.
+  `restore:extensions` refuses (`archive_mismatch`) a lock whose `fallback` differs from the release manifest.
+- Managed theme (its directory is a `destination` in the lock): `Build\Theme::$fallback` is `[minimal, local]`, or
+  `[local]` for `fallback: none`. `TemplateResolver` looks for templates, partials and resources (translations,
+  asset owners) in the theme, then in that list, skipping themes that are not registered. A managed theme is never
+  in another theme's list, so an unrelated installed theme is never used.
+- `local` (`content/templates/`) stays last in the chain: it belongs to the project, so installs and removals cannot
+  change it, and sites that keep custom page templates there keep working after switching to a managed theme.
+  `fallback: none` drops only `minimal`.
+- Off switch: the manifest's `fallback: none` only; no `config.yaml` override.
+- Not found: `Template "<name>" not found in themes: <themes tried>.`
+- Unused managed themes are not registered at all (`ExtensionState::registerThemes`, see «Installed themes and
+  template fallback» in the user docs), so installing or removing one does not change the output.
+- Themes without a manifest (`fallback` is `null`): unchanged, every other registered theme that is not managed, in
+  registration order. A missing or invalid lock means no managed themes; an invalid lock is a warning, not a build
+  failure.
+- `UiText` caches theme catalogs by the resolved translation files, not the theme name, because one name may resolve
+  to other files through another fallback.
 
 ## Lock file
 
@@ -169,6 +186,7 @@ be committed.
             },
             "commit": "acf0346e709f2934037914577a98a6ee62a28000",
             "destination": "themes/wonder",
+            "fallback": "minimal",
             "files": {
                 "assets/style.css": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
                 "layout.php": "60303ae22b998861bce3b28f33eec1be758a213c86c93c076dbe9f558c11c752"
@@ -197,6 +215,7 @@ be committed.
 | `archive.url`, `archive.sha256`, `archive.size` | what was downloaded | restore |
 | `destination` | path relative to the project root, `/` separators | restore, update, remove |
 | `name` | theme local name (themes only) | fallback, remove |
+| `fallback` | `minimal` or `none`, from the manifest (themes only, required) | build (theme fallback), restore (must match) |
 | `manifest_sha256` | SHA-256 of `extension.yaml` as installed from | update (detects re-tagged releases) |
 | `files` | every regular file under `package/`, path relative to `destination` → SHA-256 | restore, update, remove (local changes) |
 

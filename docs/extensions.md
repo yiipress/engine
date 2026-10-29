@@ -90,7 +90,7 @@ instead of being ignored. An empty value (`~` or `null`) counts as missing.
 
 | Field | Type | Required | Rules |
 | --- | --- | --- | --- |
-| `fallback` | string | no | `minimal` (default): templates the theme does not provide come from the built-in theme. `none`: no fallback. |
+| `fallback` | string | no | `minimal` (default): templates, partials, translations and assets the theme does not provide come from the built-in theme. `none`: no built-in fallback; the theme provides every template the site renders. See [Installed themes and template fallback](#installed-themes-and-template-fallback). |
 | `intended_use` | string | no | What the theme is for, 1 to 200 characters, one line. |
 | `screenshots` | list | no | Up to 10 catalog paths to `.png`, `.jpg`, `.jpeg` or `.webp` files. |
 | `demo` | string | no | `https://` URL of a demo site. |
@@ -233,7 +233,7 @@ of them change or none.
 ### Files in the project
 
 - `yiipress.lock` records each installed package: its source, version and tag, the commit, the URL, size and
-  SHA-256 of the archive, the destination and the SHA-256 of every installed file. The same installation always
+  SHA-256 of the archive, the destination, the theme's `fallback` and the SHA-256 of every installed file. The same installation always
   writes the same bytes. Commit it with the site; [`restore:extensions`](#restoring-extensions) installs the same
   packages into a fresh checkout.
 - `.yiipress/` holds the state of a running installation: a lock that keeps two extension commands from running at
@@ -255,10 +255,27 @@ the same recovery before it starts.
 
 ### Installed themes and template fallback
 
-A template missing from the site theme is looked up in the other registered themes. Themes installed by `get:theme`
-are left out of that lookup: an installed theme is used only when it is the site theme (or the `theme` of an
-entry). Installing a theme with `--no-activate` therefore does not change the built site. If `yiipress.lock` cannot
-be read, `build` prints a warning and treats installed themes like any other project theme.
+A theme installed by `get:theme` looks up every file it does not have, whether a template, a partial, a
+translation or an asset, in this order and nowhere else:
+
+1. the theme itself;
+2. the built-in `minimal` theme, unless the theme's manifest sets `fallback: none`;
+3. the project's [`local` theme](templates.md#local-theme) (`content/templates/`), when it exists.
+
+The `fallback` is copied from the manifest into `yiipress.lock` at installation, so the build reads it from there;
+`restore:extensions` refuses a lock whose `fallback` differs from the release. A partial theme, which overrides only
+some templates, works with the default `fallback: minimal`. A theme with `fallback: none` must provide every
+template the site renders, including `errors/404.php`; a missing one stops the build with a message naming the themes
+that were tried, for example `Template "errors/404" not found in themes: wonder, local.`
+
+An installed theme is never used to fill in for another theme, and is used at all only when it is the site theme or
+the `theme` of an entry. Installing a theme with `--no-activate`, or removing a theme that is not used, therefore does
+not change the built site.
+
+Themes without a manifest (copied into `themes/` by hand, or created with `init:theme`) keep the earlier behaviour: a
+file they do not have is looked up in every other registered theme that was not installed by `get:theme`, in
+registration order (`minimal` first, then project themes by name, then `local`). If `yiipress.lock` cannot be read,
+`build` prints a warning and treats installed themes like themes without a manifest.
 
 To learn which entries select an installed theme that is not the site theme, `build` reads the front
 matter of every entry. It keeps the result in the build cache (`yiipress clean` removes it) and reads the entries

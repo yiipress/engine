@@ -80,7 +80,8 @@ Option 1 in each group. Shared code goes to `src/Extension/` (`Http`, `Release`,
 - Worse: no `get:theme` in the distroless image or on systems without `curl` (clear error, documented); size limits
   are enforced during transfer only where `curl` supports it, otherwise right after; one more hidden directory
   (`.yiipress/`) to ignore in VCS; builds read `yiipress.lock` (a local file, no network).
-- Follow-up: the fallback step replaces the stop-gap in spec «Theme fallback in this step». `restore:extensions`
+- Follow-up: the fallback step replaced the stop-gap with the rules in spec «Theme fallback» (`fallback` recorded in
+  `yiipress.lock`, chain theme → `minimal` unless `none` → `local`). `restore:extensions`
   treats an archive checksum mismatch with matching commit and files as a warning (open question 3, answered).
 
 ## Open questions for the lead
