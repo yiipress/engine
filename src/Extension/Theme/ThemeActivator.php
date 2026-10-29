@@ -56,7 +56,7 @@ final class ThemeActivator
 
         if ($matches === []) {
             $separator = $text === '' || str_ends_with($text, "\n") ? '' : $eol;
-            $new = $text . $separator . 'theme: ' . $themeName . $eol;
+            $new = $text . $separator . 'theme: ' . self::scalar($themeName) . $eol;
         } else {
             $index = $matches[0];
             $lines[$index] = $this->replaceLine($lines[$index], $lines[$index + 1] ?? null, $themeName);
@@ -102,7 +102,7 @@ final class ThemeActivator
             throw self::unsupported(sprintf('the value of "%s" continues on the next line', rtrim($line)));
         }
 
-        return 'theme: ' . $themeName . ($comment === '' ? '' : ' ' . $comment) . $ending;
+        return 'theme: ' . self::scalar($themeName) . ($comment === '' ? '' : ' ' . $comment) . $ending;
     }
 
     /**
@@ -132,6 +132,16 @@ final class ThemeActivator
         }
 
         return [$matches[1], $matches[2] ?? ''];
+    }
+
+    /**
+     * The name as a YAML value: plain, or double-quoted when YAML would read it as a number, boolean or null.
+     */
+    private static function scalar(string $themeName): string
+    {
+        $parsed = @yaml_parse('theme: ' . $themeName);
+
+        return is_array($parsed) && ($parsed['theme'] ?? null) === $themeName ? $themeName : '"' . $themeName . '"';
     }
 
     private function checkOnlyThemeChanged(string $old, string $new, string $themeName): void

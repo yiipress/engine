@@ -39,6 +39,33 @@ final class ThemeActivatorTest extends TestCase
         ];
     }
 
+    #[DataProvider('namesYamlReadsAsOtherTypes')]
+    public function testQuotesNameThatYamlWouldNotReadAsString(string $name): void
+    {
+        self::assertSame(
+            "title: Blog\ntheme: \"$name\"\n",
+            new ThemeActivator()->activate("title: Blog\ntheme: minimal\n", $name),
+        );
+        self::assertSame("theme: \"$name\"\n", new ThemeActivator()->activate('', $name));
+    }
+
+    /**
+     * Valid theme names (`[a-z0-9-]`) that YAML 1.1 reads as a number, boolean or null.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function namesYamlReadsAsOtherTypes(): iterable
+    {
+        foreach (['2026', '0', 'null', 'yes', 'no', 'on', 'off', 'true', 'y'] as $name) {
+            yield $name => [$name];
+        }
+    }
+
+    public function testKeepsNameThatYamlReadsAsStringPlain(): void
+    {
+        self::assertSame("theme: 1e3\n", new ThemeActivator()->activate('', '1e3'));
+    }
+
     #[DataProvider('unsupported')]
     public function testRefusesUnsafeEdit(string $config): void
     {
