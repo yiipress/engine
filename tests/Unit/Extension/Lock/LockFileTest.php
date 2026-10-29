@@ -79,6 +79,17 @@ final class LockFileTest extends TestCase
         self::assertSame("{\n    \"extensions\": {},\n    \"lock\": 1\n}\n", LockFile::empty()->toJson());
     }
 
+    public function testNumericFileNamesStayAnObject(): void
+    {
+        $files = ['0' => self::hash('zero'), '1' => self::hash('one')];
+        $lock = LockFile::empty()->withExtension(self::id('x/wonder'), self::extension('wonder', $files));
+
+        $json = $lock->toJson();
+
+        self::assertStringContainsString('"files": {', $json);
+        self::assertSame($files, LockFile::fromJson($json)->get(self::id('x/wonder'))?->files);
+    }
+
     public function testMissingFileIsEmptyLock(): void
     {
         $lock = LockFile::read(sys_get_temp_dir() . '/yiipress-no-lock-' . uniqid() . '/yiipress.lock');

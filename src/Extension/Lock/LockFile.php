@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace YiiPress\Extension\Lock;
 
 use JsonException;
-use stdClass;
 use YiiPress\Extension\ExtensionId;
 use YiiPress\Extension\Install\InstallException;
 
@@ -151,7 +150,7 @@ final readonly class LockFile
         ksort($extensions, SORT_STRING);
 
         return json_encode(
-            ['extensions' => $extensions === [] ? new stdClass() : $extensions, 'lock' => self::VERSION],
+            ['extensions' => (object) $extensions, 'lock' => self::VERSION],
             JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
         ) . "\n";
     }

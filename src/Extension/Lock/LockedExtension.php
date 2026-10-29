@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace YiiPress\Extension\Lock;
 
-use stdClass;
 use YiiPress\Extension\ExtensionType;
 
 use function ksort;
@@ -59,7 +58,8 @@ final readonly class LockedExtension
             ],
             'commit' => $this->commit,
             'destination' => $this->destination,
-            'files' => $files === [] ? new stdClass() : $files,
+            // An object even for file names such as `0`, which PHP turns into list keys.
+            'files' => (object) $files,
             'manifest_sha256' => $this->manifestSha256,
             'name' => $this->name,
             'source' => $this->source,
