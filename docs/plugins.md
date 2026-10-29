@@ -122,7 +122,7 @@ The highlighting color scheme is configured site-wide in `content/config.yaml` v
 
 ### MermaidProcessor
 
-Renders [Mermaid](https://mermaid.js.org/) diagrams on the client side.
+Renders [Mermaid](https://mermaid.js.org/) diagrams on the client side with [Pele](https://pele.run/).
 
 Use fenced code blocks with `mermaid` language identifier:
 
@@ -158,14 +158,26 @@ gantt
 ```
 ````
 
-The processor converts the code block to a `<div class="mermaid">` element.
-Mermaid.js (loaded via CDN in the template) renders the diagram as SVG in the browser.
-HTML minification preserves the diagram source whitespace because Mermaid uses line breaks to separate statements when semicolons are omitted.
+The processor converts the code block to a `<div class="mermaid">` element and keeps the diagram source HTML-escaped.
+Pele (loaded from jsDelivr, pinned with a Subresource Integrity hash) renders the diagram as SVG in the browser.
+HTML minification preserves the diagram source whitespace because Mermaid syntax uses line breaks to separate statements when semicolons are omitted.
 
-Supported diagram types: flowcharts, sequence diagrams, Gantt charts, pie charts, class diagrams, state diagrams, 
-user journey maps, and more.
+Pele supports every diagram type built into Mermaid 12.1.0: flowcharts, sequence diagrams, Gantt charts, pie charts,
+class diagrams, state diagrams, user journey maps, and more. See its [compatibility page](https://pele.run/compatibility)
+for the differences from Mermaid.js: Pele uses its own layout engine, ignores Mermaid `themeVariables`, draws labels as
+SVG text (`<br>` line breaks, bold and italic; no arbitrary HTML), opens `click` links with `http`, `https`, `mailto`
+and `tel` URLs, and ignores JavaScript callbacks.
 
-**Note:** Mermaid.js is only loaded on pages that contain diagrams to reduce bandwidth.
+Diagrams fit the width of their container. On narrow screens Pele may wrap labels or switch a wide `flowchart LR`
+to a vertical layout. Diagrams that shrink to fit can be zoomed with pinch, Ctrl/⌘ + wheel, double-click or the
+`+`, `-`, `0` and arrow keys when focused.
+
+Colors and fonts come from CSS variables. `assets/plugins/mermaid.css` maps the `--pele-*` variables to the theme's
+`--c-*` colors and `--font-sans`/`--font-mono`, so diagrams follow the light and dark modes without re-rendering.
+Override any `--pele-*` variable on `.mermaid` in a theme stylesheet to restyle diagrams; the full list is on the
+[Pele theming page](https://pele.run/theming).
+
+**Note:** Pele is only loaded on pages that contain diagrams to reduce bandwidth.
 
 For full syntax reference, see [Mermaid documentation](https://mermaid.js.org/intro/).
 
