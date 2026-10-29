@@ -6,6 +6,7 @@ namespace YiiPress\Console;
 
 use YiiPress\Build\WorkerExecutable;
 use YiiPress\Environment;
+use YiiPress\Extension\Transaction\Recovery;
 use YiiPress\RuntimePaths;
 use YiiPress\Web\DevServer\DevHtmlInjector;
 use YiiPress\Web\LiveReload\SiteBuildResult;
@@ -175,6 +176,11 @@ final class ServeCommand extends Command
         $port = $input->getOption('port');
 
         $root = $this->workingDirectory();
+        if (Recovery::pending($root)) {
+            $output->writeln('<error>' . Recovery::INTERRUPTED_MESSAGE . '</error>');
+
+            return ExitCode::TEMPFAIL;
+        }
         /** @var string $contentDirOption */
         $contentDirOption = $input->getOption('content-dir');
         $this->contentDir = $this->resolvePath($contentDirOption, $root);

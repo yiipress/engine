@@ -15,6 +15,7 @@ return [
     'init:theme' => Console\InitThemeCommand::class,
     'import' => Console\ImportCommand::class,
     'new' => Console\NewCommand::class,
+    'recover:extensions' => Console\RecoverExtensionsCommand::class,
     'serve' => Console\ServeCommand::class,
     'self-update' => Console\SelfUpdateCommand::class,
 ];

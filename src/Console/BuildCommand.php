@@ -34,6 +34,7 @@ use YiiPress\Build\TemplateResolver;
 use YiiPress\Build\TaxonomyPageWriter;
 use YiiPress\Build\Theme;
 use YiiPress\Build\ThemeRegistry;
+use YiiPress\Extension\Transaction\Recovery;
 use YiiPress\Build\WorkerJobInterface;
 use YiiPress\Content\CrossReferenceResolver;
 use YiiPress\Content\EntrySorter;
@@ -198,6 +199,11 @@ final class BuildCommand extends Command
     {
         $startedAt = hrtime(true);
         $rootPath = $this->rootPath;
+        if (Recovery::pending($rootPath)) {
+            $output->writeln('<error>' . Recovery::INTERRUPTED_MESSAGE . '</error>');
+
+            return ExitCode::TEMPFAIL;
+        }
 
         /** @var string $contentDirOption */
         $contentDirOption = $input->getOption('content-dir');
