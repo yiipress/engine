@@ -302,7 +302,7 @@ content policy.
 
 ### Project Processors
 
-Static binary users can add site-level content processors without editing Yii3 DI configuration. Put PHP processor files in `content/processors/`; files matching `*.php` are discovered automatically, sorted by filename, and inserted before Markdown rendering in both the page and feed pipelines.
+Static binary users can add site-level content processors without editing Yii3 DI configuration. Put PHP processor files in `content/processors/`; files matching `*.php` are discovered automatically, sorted by filename, and inserted before Markdown rendering in both the page and feed pipelines. The `processors/` directory is never copied to the built site, so processor source stays private.
 
 Create a no-op processor scaffold, then edit its returned callable:
 
