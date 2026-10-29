@@ -14,6 +14,7 @@ use YiiPress\Extension\Install\InstallException;
 use YiiPress\Extension\Lock\LockedExtension;
 use YiiPress\Extension\Lock\LockFile;
 
+use function array_keys;
 use function json_decode;
 use function hash;
 use function json_encode;
@@ -72,6 +73,23 @@ final class LockFileTest extends TestCase
 
         self::assertSame($a->toJson(), $b->toJson());
         self::assertSame($a->toJson(), LockFile::fromJson($a->toJson())->toJson());
+    }
+
+    public function testWithoutExtensionDropsOnlyThatEntry(): void
+    {
+        $lock = LockFile::empty()
+            ->withExtension(self::id('a/one'), self::extension('one'))
+            ->withExtension(self::id('b/two'), self::extension('two'));
+
+        $without = $lock->withoutExtension(self::id('a/one'));
+
+        self::assertNull($without->get(self::id('a/one')));
+        self::assertSame(['b/two'], array_keys($without->extensions()));
+        self::assertNotNull($lock->get(self::id('a/one')));
+        self::assertSame(
+            LockFile::empty()->withExtension(self::id('b/two'), self::extension('two'))->toJson(),
+            $without->toJson(),
+        );
     }
 
     public function testEmptyLockSerialisesObjects(): void

@@ -120,6 +120,14 @@ final readonly class LockFile
         return new self($extensions);
     }
 
+    public function withoutExtension(ExtensionId $id): self
+    {
+        $extensions = $this->extensions;
+        unset($extensions[(string) $id]);
+
+        return new self($extensions);
+    }
+
     /**
      * @return array<string, LockedExtension> Keyed by extension ID.
      */
