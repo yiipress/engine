@@ -19,7 +19,6 @@ use YiiPress\Extension\Install\PackageInstaller;
 use YiiPress\Extension\Platform;
 use YiiPress\Extension\Release\GitHubReleaseSource;
 use YiiPress\Extension\Release\GitHubRepository;
-use YiiPress\Extension\SemanticVersion;
 use YiiPress\Extension\Theme\ThemeDestinationPolicy;
 use Yiisoft\Yii\Console\ExitCode;
 
@@ -57,14 +56,9 @@ final class GetThemeCommand extends Command
             ->addOption('version', null, InputOption::VALUE_REQUIRED, 'Release X.Y.Z; the newest compatible if omitted')
             ->addOption('no-activate', null, InputOption::VALUE_NONE, 'Install without setting "theme" in config.yaml')
             ->addOption('content-dir', null, InputOption::VALUE_REQUIRED, 'Directory of config.yaml', 'content')
-            ->addOption(
-                'engine-version',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'YiiPress version to check releases against; only when this YiiPress does not know its version',
-            )
             ->addUsage('--url=https://github.com/yiipress/theme-wonder')
             ->addUsage('--url=https://github.com/yiipress/theme-wonder --version=1.2.0 --no-activate');
+        EngineVersionOption::add($this, 'releases');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -107,30 +101,9 @@ final class GetThemeCommand extends Command
             GitHubRepository::fromUrl($url),
             ExtensionType::Theme,
             is_string($version) ? $version : null,
-            $this->engineVersion($input->getOption('engine-version')),
+            EngineVersionOption::resolve($this->engine, $input->getOption(EngineVersionOption::NAME)),
             $this->platform,
         );
-    }
-
-    private function engineVersion(mixed $override): EngineVersion
-    {
-        if (!is_string($override)) {
-            return $this->engine;
-        }
-        if ($this->engine->version !== null) {
-            throw new InstallException('engine_version_unknown', sprintf(
-                '--engine-version can only be used when the YiiPress version is unknown; this is YiiPress %s.',
-                $this->engine->describe(),
-            ), ExitCode::USAGE);
-        }
-        if (!SemanticVersion::isValid($override)) {
-            throw new InstallException('engine_version_unknown', sprintf(
-                '--engine-version="%s" is not a version in the form X.Y.Z.',
-                $override,
-            ), ExitCode::USAGE);
-        }
-
-        return EngineVersion::fromBuild($override);
     }
 
     private function report(OutputInterface $output, InstallResult $result): void

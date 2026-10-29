@@ -16,14 +16,17 @@ use YiiPress\Build\Theme;
 use YiiPress\Build\ThemeRegistry;
 use YiiPress\Console\BuildCommand;
 use YiiPress\Console\GetThemeCommand;
+use YiiPress\Console\RestoreExtensionsCommand;
 use YiiPress\Extension\EngineVersion;
 use YiiPress\Extension\Platform;
 use YiiPress\Processor\ContentProcessorPipeline;
 use YiiPress\Processor\MarkdownProcessor;
 use YiiPress\Render\MarkdownRenderer;
 use YiiPress\Tests\Support\FakeHttpClient;
+use YiiPress\Tests\Support\WonderFixture;
 use Yiisoft\Yii\Console\ExitCode;
 
+use function copy;
 use function dirname;
 use function file_get_contents;
 use function file_put_contents;
@@ -38,7 +41,7 @@ use function uniqid;
 
 /**
  * `get:theme` installs a theme release served from a local fixture (the archive is made by `git archive`), then
- * `build` renders the site with it.
+ * `build` renders the site with it; `restore:extensions` brings the same theme back into a fresh checkout.
  */
 final class GetThemeTest extends TestCase
 {
@@ -123,6 +126,33 @@ final class GetThemeTest extends TestCase
         self::assertNotSame([], glob($this->root . '/output/assets/themes/wonder/style*.css'));
     }
 
+    public function testFreshCheckoutIsRestoredFromTheLockAndBuildsTheSameSite(): void
+    {
+        $get = $this->getTheme(['--url' => 'https://github.com/' . self::REPOSITORY]);
+        self::assertSame(ExitCode::OK, $get->getStatusCode(), $get->getDisplay());
+        $this->build('output');
+        $checkout = $this->root . '/checkout';
+        mkdir($checkout . '/content', 0o755, true);
+        foreach (['content/config.yaml', 'content/index.md', 'yiipress.lock'] as $file) {
+            copy($this->root . '/' . $file, $checkout . '/' . $file);
+        }
+
+        $restore = $this->restore($checkout);
+        $again = $this->restore($checkout);
+        $build = $this->build('output', $checkout);
+
+        self::assertSame(ExitCode::OK, $restore->getStatusCode(), $restore->getDisplay());
+        self::assertStringContainsString('installed into themes/wonder', $restore->getDisplay());
+        self::assertStringContainsString('matches yiipress.lock in themes/wonder', $again->getDisplay());
+        self::assertSame(ExitCode::OK, $build->getStatusCode(), $build->getDisplay());
+        self::assertFileEquals($this->root . '/yiipress.lock', $checkout . '/yiipress.lock');
+        self::assertFileEquals($this->root . '/content/config.yaml', $checkout . '/content/config.yaml');
+        self::assertSame($this->files('output'), $this->files('checkout/output'));
+        foreach ($this->files('output') as $file) {
+            self::assertFileEquals($this->root . '/output/' . $file, $checkout . '/output/' . $file, $file);
+        }
+    }
+
     /**
      * @return list<string> Paths of every file under the output directory, sorted.
      */
@@ -176,12 +206,25 @@ final class GetThemeTest extends TestCase
         return $tester;
     }
 
-    private function build(string $outputDir): CommandTester
+    private function restore(string $root): CommandTester
+    {
+        $tester = new CommandTester(new RestoreExtensionsCommand(
+            $root,
+            WonderFixture::http(),
+            EngineVersion::fromBuild('0.1.13'),
+            new Platform('linux', 'amd64'),
+        ));
+        $tester->execute([]);
+
+        return $tester;
+    }
+
+    private function build(string $outputDir, ?string $root = null): CommandTester
     {
         $registry = new ThemeRegistry();
         $registry->register(new Theme('minimal', dirname(__DIR__, 2) . '/themes/minimal'));
         $tester = new CommandTester(new BuildCommand(
-            rootPath: $this->root,
+            rootPath: $root ?? $this->root,
             contentPipeline: new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())),
             feedPipeline: new ContentProcessorPipeline(new MarkdownProcessor(new MarkdownRenderer())),
             themeRegistry: $registry,

@@ -13,6 +13,7 @@ use YiiPress\Console\InitPluginCommand;
 use YiiPress\Console\InitThemeCommand;
 use YiiPress\Console\NewCommand;
 use YiiPress\Console\RecoverExtensionsCommand;
+use YiiPress\Console\RestoreExtensionsCommand;
 use YiiPress\Console\WorkerCommand;
 use YiiPress\Extension\Http\AvailableHttpClient;
 use YiiPress\Processor\ContentProcessorPipeline;
@@ -112,6 +113,12 @@ return [
     RecoverExtensionsCommand::class => [
         '__construct()' => [
             'rootPath' => $workingDirectory,
+        ],
+    ],
+    RestoreExtensionsCommand::class => [
+        '__construct()' => [
+            'rootPath' => $workingDirectory,
+            'http' => Reference::to(AvailableHttpClient::class),
         ],
     ],
     CleanCommand::class => [
