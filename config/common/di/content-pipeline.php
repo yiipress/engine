@@ -22,6 +22,7 @@ use YiiPress\Processor\Shortcode\TweetProcessor;
 use YiiPress\Processor\Shortcode\VimeoProcessor;
 use YiiPress\Processor\Shortcode\YouTubeProcessor;
 use YiiPress\Processor\MarkdownProcessor;
+use YiiPress\Processor\RootRelativeLinkProcessor;
 use YiiPress\Processor\SyntaxHighlightProcessor;
 use YiiPress\Processor\TagLinkProcessor;
 use YiiPress\Processor\Toc\TocProcessor;
@@ -53,6 +54,8 @@ return [
             Reference::to(MarkdownProcessor::class),
             // Render preserved oEmbed HTML after Markdown.
             Reference::to(OEmbedProcessor::class),
+            // Rebase root-relative links from Markdown and raw HTML onto the current page.
+            Reference::to(RootRelativeLinkProcessor::class),
             Reference::to(LatexMathProcessor::class),
             Reference::to(TagLinkProcessor::class),
             Reference::to(MermaidProcessor::class),
@@ -70,6 +73,8 @@ return [
             // Preserve question shortcode metadata before Markdown.
             Reference::to(QuestionProcessor::class),
             Reference::to(MarkdownProcessor::class),
+            // Make root-relative links absolute with the base_url path.
+            Reference::to(RootRelativeLinkProcessor::class),
             Reference::to(TagLinkProcessor::class),
             // Render preserved question shortcodes after the later processors.
             Reference::to(QuestionProcessor::class),
