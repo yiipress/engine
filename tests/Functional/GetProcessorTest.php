@@ -27,7 +27,9 @@ use Yiisoft\Yii\Console\ExitCode;
 use function dirname;
 use function file_get_contents;
 use function file_put_contents;
+use function function_exists;
 use function mkdir;
+use function opcache_invalidate;
 use function strpos;
 use function substr;
 use function sys_get_temp_dir;
@@ -87,6 +89,7 @@ final class GetProcessorTest extends TestCase
 
         file_put_contents($this->root . '/content/config.yaml', self::CONFIG . self::snippet($display));
         $html = $this->build('after');
+        self::assertDirectoryDoesNotExist($this->root . '/after/extensions', 'Package files are never published.');
         $local = strpos($html, 'LOCAL-MARK');
         $package = strpos($html, 'PACKAGE-MARK');
         self::assertNotFalse($local, $html);
@@ -133,6 +136,25 @@ final class GetProcessorTest extends TestCase
         self::assertSame(ExitCode::OK, $remove->getStatusCode(), $remove->getDisplay());
         self::assertFileDoesNotExist($this->root . '/content/extensions/processors/acme/toc');
         self::assertStringContainsString('LOCAL-MARK', $this->build('removed'));
+    }
+
+    public function testCachedBuildSeesChangedSupportFileOfEnabledPackage(): void
+    {
+        $display = $this->get(ProcessorFixture::http(['v1.0.0' => ProcessorFixture::release('1.0.0', self::PACKAGE)]));
+        file_put_contents($this->root . '/content/config.yaml', self::CONFIG . self::snippet($display));
+        self::assertStringContainsString('PACKAGE-MARK', $this->build('cached', cache: true));
+
+        $support = $this->root . '/content/extensions/processors/acme/toc/lib/mark.php';
+        file_put_contents(
+            $support,
+            "<?php\nreturn static fn(string \$content): string => \$content . \"\\n\\nEDITED-MARK\\n\";\n",
+        );
+        // Both builds run in this process; a real build is a process of its own, which opcache does not span.
+        if (function_exists('opcache_invalidate')) {
+            opcache_invalidate($support, true);
+        }
+
+        self::assertStringContainsString('EDITED-MARK', $this->build('cached', cache: true));
     }
 
     public function testCustomContentDirectory(): void
@@ -200,7 +222,7 @@ final class GetProcessorTest extends TestCase
         return substr($display, $start, $end - $start + 1);
     }
 
-    private function build(string $outputDir): string
+    private function build(string $outputDir, bool $cache = false): string
     {
         $registry = new ThemeRegistry();
         $registry->register(new Theme(Theme::BUNDLED, dirname(__DIR__, 2) . '/themes/minimal'));
@@ -215,7 +237,7 @@ final class GetProcessorTest extends TestCase
             '--content-dir' => 'content',
             '--output-dir' => $outputDir,
             '--workers' => '1',
-            '--no-cache' => true,
+            '--no-cache' => !$cache,
         ]);
         self::assertSame(ExitCode::OK, $tester->getStatusCode(), $tester->getDisplay());
 

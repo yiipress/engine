@@ -135,6 +135,17 @@ final class ContentAssetCopierTest extends TestCase
         assertSame(0, $copied);
     }
 
+    public function testSkipsInstalledExtensionPackages(): void
+    {
+        mkdir($this->contentDir . '/extensions/processors/acme/toc/lib', 0o755, true);
+        file_put_contents($this->contentDir . '/extensions/processors/acme/toc/toc.php', '<?php');
+        file_put_contents($this->contentDir . '/extensions/processors/acme/toc/lib/style.css', 'a{}');
+        mkdir($this->contentDir . '/blog/extensions', 0o755, true);
+        file_put_contents($this->contentDir . '/blog/extensions/kept.png', 'png');
+
+        assertSame(['blog/extensions/kept.png'], new ContentAssetCopier()->collect($this->contentDir));
+    }
+
     public function testCollectReturnsRelativePaths(): void
     {
         file_put_contents($this->contentDir . '/blog/assets/banner.svg', '<svg/>');

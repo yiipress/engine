@@ -54,6 +54,7 @@ use YiiPress\Hook\BuildStartedEvent;
 use YiiPress\I18n\UiText;
 use YiiPress\Processor\ContentProcessorPipeline;
 use YiiPress\Processor\ProjectProcessorConfigurator;
+use YiiPress\Processor\ProjectProcessorFiles;
 use YiiPress\RuntimePaths;
 use DateTimeImmutable;
 use FilesystemIterator;
@@ -96,7 +97,6 @@ use function number_format;
 use function pathinfo;
 use function preg_match;
 use function range;
-use function realpath;
 use function shell_exec;
 use function round;
 use function sort;
@@ -414,7 +414,7 @@ final class BuildCommand extends Command
                 }
             }
 
-            $customDependencies = $this->collectProjectProcessorFiles($contentDir, $siteConfig->processors) !== [];
+            $customDependencies = ProjectProcessorFiles::collect($contentDir, $siteConfig->processors) !== [];
             foreach ($this->templateResolver->templateDirs() as $templateDir) {
                 if ($templateDir !== $rootPath . '/themes/minimal') {
                     $customDependencies = true;
@@ -1965,7 +1965,7 @@ final class BuildCommand extends Command
         }
 
         $templateFiles = $this->collectTemplateFiles();
-        $processorFiles = $this->collectProjectProcessorFiles($contentDir, $processorConfig);
+        $processorFiles = ProjectProcessorFiles::collect($contentDir, $processorConfig);
         $configFiles = array_values(array_unique([...$configFiles, ...$templateFiles, ...$processorFiles]));
         sort($configFiles);
         sort($contentFiles);
@@ -2106,46 +2106,6 @@ final class BuildCommand extends Command
         sort($files);
 
         return $files;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function collectProjectProcessorFiles(string $contentDir, ProcessorConfig $processorConfig): array
-    {
-        $files = [];
-
-        if ($processorConfig->discover) {
-            $discoveredFiles = glob($contentDir . '/processors/*.php', GLOB_NOSORT);
-            if ($discoveredFiles !== false) {
-                $files = [...$files, ...$discoveredFiles];
-            }
-        }
-
-        foreach ($this->configuredProjectProcessorPaths($processorConfig) as $path) {
-            $realPath = realpath(str_starts_with($path, '/') ? $path : $contentDir . '/' . $path);
-            if ($realPath !== false && is_file($realPath)) {
-                $files[] = $realPath;
-            }
-        }
-
-        $files = array_values(array_unique($files));
-        sort($files);
-
-        return $files;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function configuredProjectProcessorPaths(ProcessorConfig $processorConfig): array
-    {
-        return [
-            ...$processorConfig->contentBeforeMarkdown,
-            ...$processorConfig->contentAfterMarkdown,
-            ...$processorConfig->feedBeforeMarkdown,
-            ...$processorConfig->feedAfterMarkdown,
-        ];
     }
 
     /**

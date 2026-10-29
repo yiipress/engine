@@ -10,6 +10,7 @@ use YiiPress\Extension\Install\FileChange;
 use YiiPress\Extension\Install\InstallException;
 use YiiPress\Extension\Lock\LockFile;
 use YiiPress\Extension\Manifest\ExtensionManifest;
+use YiiPress\Processor\ProjectProcessorFiles;
 
 use function is_dir;
 use function mb_strtolower;
@@ -22,7 +23,7 @@ use function sprintf;
  */
 final readonly class ProcessorDestinationPolicy implements DestinationPolicyInterface
 {
-    public const string PROCESSORS_DIR = 'extensions/processors';
+    public const string PROCESSORS_DIR = ProjectProcessorFiles::PACKAGES_DIR;
 
     /**
      * @param string $contentDir Directory of `config.yaml`, relative to the project root or absolute inside it.
