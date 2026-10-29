@@ -103,6 +103,14 @@ final class YamlDocumentLoader
         if (!is_array($value)) {
             return true;
         }
-        return array_all($value, fn($item) => self::withinNodeLimit($item, $remaining));
+        // A foreach, not array_all(): an arrow function would capture $remaining by value, so siblings
+        // would not share one node budget.
+        foreach ($value as $item) {
+            if (!self::withinNodeLimit($item, $remaining)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
