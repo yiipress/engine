@@ -5,23 +5,30 @@ declare(strict_types=1);
 namespace YiiPress\Extension\Http;
 
 use Closure;
+use YiiPress\Build\DirectoryRemover;
 use YiiPress\Extension\Archive\InstallLimits;
 use YiiPress\Extension\Install\InstallException;
 use YiiPress\Extension\Release\GitHubReleaseSource;
 use Yiisoft\Yii\Console\ExitCode;
 
+use function bin2hex;
+use function chmod;
+use function copy;
 use function explode;
 use function file;
 use function filesize;
 use function is_file;
 use function mb_strcut;
+use function mkdir;
 use function preg_match;
+use function random_bytes;
+use function rename;
 use function sprintf;
 use function str_starts_with;
 use function strlen;
+use function sys_get_temp_dir;
 use function touch;
 use function trim;
-use function unlink;
 
 use const FILE_IGNORE_NEW_LINES;
 
@@ -52,12 +59,14 @@ final class CurlHttpClient implements HttpClientInterface
     public function get(string $url, string $destination, int $maxBytes): HttpResponse
     {
         $this->policy->check($url, $url);
-        $headerFile = $destination . '.headers';
-        @unlink($destination);
+        $directory = self::privateDirectory();
+        $bodyFile = $directory . '/body';
+        $headerFile = $directory . '/headers';
 
         try {
             $result = ($this->runner)([
                 $this->binary,
+                '-q',
                 '--proto', $this->policy->curlProtocols(),
                 '--proto-redir', $this->policy->curlProtocols(),
                 '--location',
@@ -69,7 +78,7 @@ final class CurlHttpClient implements HttpClientInterface
                 '--silent',
                 '--show-error',
                 '--dump-header', $headerFile,
-                '--output', $destination,
+                '--output', $bodyFile,
                 '--write-out', '%{http_code} %{url_effective}',
                 $url,
             ]);
@@ -77,18 +86,34 @@ final class CurlHttpClient implements HttpClientInterface
 
             [$status, $effectiveUrl] = $this->parseWriteOut($result['stdout'], $url);
             $this->policy->check($effectiveUrl, $url);
-            if (!is_file($destination)) {
+            if (!is_file($bodyFile)) {
                 // curl writes no file for an empty body.
-                @touch($destination);
+                @touch($bodyFile);
             }
-            if ((int) @filesize($destination) > $maxBytes) {
+            if ((int) @filesize($bodyFile) > $maxBytes) {
                 throw GitHubReleaseSource::tooLarge($url, $maxBytes);
+            }
+            if (!@rename($bodyFile, $destination) && !@copy($bodyFile, $destination)) {
+                throw new InstallException('filesystem_failed', sprintf('Could not write "%s".', $destination));
             }
 
             return HttpResponse::fromHeaderLines($status, $this->lastHeaderBlock($headerFile));
         } finally {
-            @unlink($headerFile);
+            DirectoryRemover::remove($directory);
         }
+    }
+
+    /**
+     * A new directory only this user can enter, so curl's output paths cannot be claimed by another local user.
+     */
+    private static function privateDirectory(): string
+    {
+        $directory = sys_get_temp_dir() . '/yiipress-curl-' . bin2hex(random_bytes(8));
+        if (!@mkdir($directory, 0o700) || !@chmod($directory, 0o700)) {
+            throw new InstallException('filesystem_failed', sprintf('Could not create "%s".', $directory));
+        }
+
+        return $directory;
     }
 
     private function checkExitCode(int $exitCode, string $stderr, string $url, int $maxBytes): void
