@@ -12,6 +12,7 @@ use YiiPress\Extension\Lock\LockedExtensionParser;
 use YiiPress\Extension\Lock\LockFile;
 use YiiPress\Extension\Platform;
 use YiiPress\Extension\Release\GitHubReleaseSource;
+use YiiPress\Extension\Processor\LockedProcessorDestination;
 use YiiPress\Extension\Theme\LockedThemeDestination;
 use YiiPress\Extension\Transaction\MutationLock;
 use YiiPress\Extension\Transaction\Recovery;
@@ -123,13 +124,14 @@ final readonly class PackageRestorer
 
     private static function destinationProblem(string $id, LockedExtension $locked): ?InstallException
     {
-        if ($locked->type !== ExtensionType::Theme) {
-            return LockedExtensionParser::invalid(
+        return match ($locked->type) {
+            ExtensionType::Theme => LockedThemeDestination::problem($id, $locked),
+            ExtensionType::Processor => LockedProcessorDestination::problem($id, $locked),
+            default => LockedExtensionParser::invalid(
                 "extensions.$id.type",
                 sprintf('is "%s", which this YiiPress cannot restore yet', $locked->type->value),
-            );
-        }
-        return LockedThemeDestination::problem($id, $locked);
+            ),
+        };
     }
 
     /**
