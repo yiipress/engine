@@ -16,7 +16,6 @@ use YiiPress\Build\ContentAssetCopier;
 use YiiPress\Build\DateArchiveWriter;
 use YiiPress\Build\NotFoundPageWriter;
 use YiiPress\Build\NavigationPager;
-use YiiPress\Build\ProjectThemeDiscovery;
 use YiiPress\Build\RedirectPageWriter;
 use YiiPress\Build\RobotsTxtGenerator;
 use YiiPress\Build\SearchIndexGenerator;
@@ -32,11 +31,7 @@ use YiiPress\Build\ParallelTaskRunner;
 use YiiPress\Build\SitemapGenerator;
 use YiiPress\Build\TemplateResolver;
 use YiiPress\Build\TaxonomyPageWriter;
-use YiiPress\Build\Theme;
 use YiiPress\Build\ThemeRegistry;
-use YiiPress\Extension\Install\InstallException;
-use YiiPress\Extension\Theme\ManagedThemes;
-use YiiPress\Extension\Transaction\Recovery;
 use YiiPress\Build\WorkerJobInterface;
 use YiiPress\Content\CrossReferenceResolver;
 use YiiPress\Content\EntrySorter;
@@ -201,10 +196,8 @@ final class BuildCommand extends Command
     {
         $startedAt = hrtime(true);
         $rootPath = $this->rootPath;
-        if (Recovery::pending($rootPath)) {
-            $output->writeln('<error>' . Recovery::INTERRUPTED_MESSAGE . '</error>');
-
-            return ExitCode::TEMPFAIL;
+        if (($stop = ExtensionState::stop($rootPath, $output)) !== null) {
+            return $stop;
         }
 
         /** @var string $contentDirOption */
@@ -234,26 +227,11 @@ final class BuildCommand extends Command
             return ExitCode::DATAERR;
         }
 
-        try {
-            $managedThemes = ManagedThemes::directoryNames($rootPath);
-        } catch (InstallException $e) {
-            $managedThemes = [];
-            $output->writeln(sprintf(
-                '<comment>Warning: %s Installed themes are used as fallback like any other theme.</comment>',
-                $e->getMessage(),
-            ));
-        }
-        new ProjectThemeDiscovery()->register($this->themeRegistry, $rootPath . '/themes', $managedThemes);
-
-        $localTemplatesDir = $contentDir . '/templates';
-        if (is_dir($localTemplatesDir)) {
-            $this->themeRegistry->register(new Theme('local', $localTemplatesDir));
-        }
-
         $parser = new ContentParser();
         try {
             $siteConfig = $parser->parseSiteConfig($contentDir);
             $this->configureProjectProcessors($contentDir, $siteConfig);
+            ExtensionState::registerThemes($this->themeRegistry, $rootPath, $contentDir, $siteConfig, $output);
         } catch (FriendlyExceptionInterface $e) {
             $this->writeFriendlyException($output, $e);
             $this->writeProfile($output, $profile);

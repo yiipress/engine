@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace YiiPress\Tests\Functional;
 
+use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 use Symfony\Component\Console\Tester\CommandTester;
 use YiiPress\Build\DirectoryRemover;
 use YiiPress\Build\TemplateResolver;
@@ -23,7 +27,11 @@ use Yiisoft\Yii\Console\ExitCode;
 use function dirname;
 use function file_get_contents;
 use function file_put_contents;
+use function glob;
 use function mkdir;
+use function sort;
+use function strlen;
+use function substr;
 use function sys_get_temp_dir;
 use function trim;
 use function uniqid;
@@ -86,10 +94,50 @@ final class GetThemeTest extends TestCase
 
         self::assertSame(ExitCode::OK, $build->getStatusCode(), $build->getDisplay());
         self::assertFileExists($this->root . '/themes/wonder/entry.php');
-        self::assertSame(
-            file_get_contents($this->root . '/before/index.html'),
-            file_get_contents($this->root . '/after/index.html'),
+        self::assertSame($this->files('before'), $this->files('after'));
+        foreach ($this->files('before') as $file) {
+            self::assertSame(
+                file_get_contents($this->root . '/before/' . $file),
+                file_get_contents($this->root . '/after/' . $file),
+                $file,
+            );
+        }
+    }
+
+    public function testThemeUsedOnlyByAnEntryIsAvailable(): void
+    {
+        file_put_contents(
+            $this->root . '/content/special.md',
+            "---\ntitle: Special\npermalink: /special/\ntheme: wonder\n---\n\nSpecial page.\n",
         );
+        $get = $this->getTheme(['--url' => 'https://github.com/' . self::REPOSITORY, '--no-activate' => true]);
+        self::assertSame(ExitCode::OK, $get->getStatusCode(), $get->getDisplay());
+
+        $build = $this->build('output');
+
+        self::assertSame(ExitCode::OK, $build->getStatusCode(), $build->getDisplay());
+        self::assertSame(
+            '<p>Special page.</p>',
+            trim((string) file_get_contents($this->root . '/output/special/index.html')),
+        );
+        self::assertNotSame([], glob($this->root . '/output/assets/themes/wonder/style*.css'));
+    }
+
+    /**
+     * @return list<string> Paths of every file under the output directory, sorted.
+     */
+    private function files(string $outputDir): array
+    {
+        $base = $this->root . '/' . $outputDir;
+        $files = [];
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS));
+        foreach ($iterator as $file) {
+            /** @var SplFileInfo $file */
+            $files[] = substr($file->getPathname(), strlen($base) + 1);
+        }
+        sort($files);
+
+        return $files;
     }
 
     public function testInvalidLockFileIsOnlyAWarningForBuild(): void
