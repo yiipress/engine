@@ -12,6 +12,7 @@ use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
+use React\EventLoop\Loop;
 use React\Socket\ConnectionInterface;
 use React\Stream\WritableStreamInterface;
 use RecursiveDirectoryIterator;
@@ -458,6 +459,68 @@ final class ServeCommandTest extends TestCase
             62,
             $method->invoke($command, "POST / HTTP/1.1\r\nHost: example.test\r\nContent-Length: 4\r\n\r\nabcd"),
         );
+    }
+
+    #[Test]
+    public function liveReloadWatchesDirectoriesCreatedAfterStart(): void
+    {
+        if (!function_exists('inotify_init')) {
+            self::markTestSkipped('The inotify extension is required.');
+        }
+
+        $root = sys_get_temp_dir() . '/yiipress-live-reload-new-dir-' . uniqid();
+        mkdir($root . '/content', 0o755, true);
+        mkdir($root . '/output', 0o755, true);
+        file_put_contents($root . '/content/index.md', 'one');
+        // Stands in for `yii build` so a rebuild is instant and always succeeds.
+        file_put_contents($root . '/fake-yii', "#!/bin/sh\nexit 0\n");
+        chmod($root . '/fake-yii', 0o755);
+
+        $previousArgv = $_SERVER['argv'] ?? null;
+        $_SERVER['argv'] = [$root . '/fake-yii'];
+
+        $command = new ServeCommand();
+        new ReflectionProperty($command, 'contentDir')->setValue($command, $root . '/content');
+        new ReflectionProperty($command, 'outputDir')->setValue($command, $root . '/output');
+        $lastBuildTime = new ReflectionProperty($command, 'lastLiveReloadBuildTime');
+        $writeMethod = new ReflectionMethod($command, 'writeLiveReloadResponse');
+        $closeMethod = new ReflectionMethod($command, 'closeLiveReloadWatcher');
+
+        try {
+            $beforeCreate = new FakeConnection();
+            $writeMethod->invoke($command, $beforeCreate);
+            mkdir($root . '/content/guides');
+            $this->runLoopUntil(static fn(): bool => str_contains($beforeCreate->written, 'event: reload'));
+            self::assertStringContainsString('event: reload', $beforeCreate->written);
+
+            $lastBuildTime->setValue($command, 0.0);
+            $afterCreate = new FakeConnection();
+            $writeMethod->invoke($command, $afterCreate);
+            file_put_contents($root . '/content/guides/intro.md', 'new');
+            $this->runLoopUntil(static fn(): bool => str_contains($afterCreate->written, 'event: reload'));
+
+            self::assertStringContainsString('event: reload', $afterCreate->written);
+        } finally {
+            $closeMethod->invoke($command);
+            $_SERVER['argv'] = $previousArgv;
+            $this->removeDirectory($root);
+        }
+    }
+
+    private function runLoopUntil(callable $done, float $timeout = 2.0): void
+    {
+        $deadline = microtime(true) + $timeout;
+        $timer = Loop::addPeriodicTimer(0.01, static function () use ($done, $deadline): void {
+            if ($done() || microtime(true) > $deadline) {
+                Loop::stop();
+            }
+        });
+
+        try {
+            Loop::run();
+        } finally {
+            Loop::cancelTimer($timer);
+        }
     }
 
     private function removeDirectory(string $directory): void
