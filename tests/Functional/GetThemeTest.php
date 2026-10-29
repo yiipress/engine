@@ -16,7 +16,9 @@ use YiiPress\Build\Theme;
 use YiiPress\Build\ThemeRegistry;
 use YiiPress\Console\BuildCommand;
 use YiiPress\Console\GetThemeCommand;
+use YiiPress\Console\RemoveThemeCommand;
 use YiiPress\Console\RestoreExtensionsCommand;
+use YiiPress\Console\UpdateThemeCommand;
 use YiiPress\Extension\EngineVersion;
 use YiiPress\Extension\Platform;
 use YiiPress\Processor\ContentProcessorPipeline;
@@ -33,6 +35,7 @@ use function file_put_contents;
 use function glob;
 use function mkdir;
 use function sort;
+use function str_replace;
 use function strlen;
 use function substr;
 use function sys_get_temp_dir;
@@ -41,7 +44,8 @@ use function uniqid;
 
 /**
  * `get:theme` installs a theme release served from a local fixture (the archive is made by `git archive`), then
- * `build` renders the site with it; `restore:extensions` brings the same theme back into a fresh checkout.
+ * `build` renders the site with it; `restore:extensions` brings the same theme back into a fresh checkout;
+ * `update:theme` replaces it with a newer release and `remove:theme` deletes it once the site no longer uses it.
  */
 final class GetThemeTest extends TestCase
 {
@@ -168,6 +172,44 @@ final class GetThemeTest extends TestCase
         sort($files);
 
         return $files;
+    }
+
+    public function testUpdatedThemeIsUsedByBuildAndUnusedThemeIsRemoved(): void
+    {
+        $get = $this->getTheme(['--url' => 'https://github.com/' . self::REPOSITORY]);
+        self::assertSame(ExitCode::OK, $get->getStatusCode(), $get->getDisplay());
+        $config = (string) file_get_contents($this->root . '/content/config.yaml');
+
+        $update = new CommandTester(new UpdateThemeCommand(
+            $this->root,
+            WonderFixture::httpWith([
+                'v1.1.0' => WonderFixture::release('1.1.0', "<?php echo '<main>' . \$content . '</main>';\n"),
+            ]),
+            EngineVersion::fromBuild('0.1.13'),
+            new Platform('linux', 'amd64'),
+        ));
+        $update->execute(['id' => WonderFixture::ID]);
+        self::assertSame(ExitCode::OK, $update->getStatusCode(), $update->getDisplay());
+        self::assertSame($config, file_get_contents($this->root . '/content/config.yaml'));
+
+        $build = $this->build('output');
+        self::assertSame(ExitCode::OK, $build->getStatusCode(), $build->getDisplay());
+        self::assertSame(
+            '<main><p>Hello from the site.</p></main>',
+            trim((string) file_get_contents($this->root . '/output/index.html')),
+        );
+
+        $remove = new CommandTester(new RemoveThemeCommand($this->root));
+        $remove->execute(['id' => WonderFixture::ID]);
+        self::assertSame(ExitCode::DATAERR, $remove->getStatusCode(), $remove->getDisplay());
+        self::assertFileExists($this->root . '/themes/wonder/entry.php');
+
+        $switched = str_replace('theme: wonder', 'theme: minimal', $config);
+        file_put_contents($this->root . '/content/config.yaml', $switched);
+        $remove->execute(['id' => WonderFixture::ID]);
+        self::assertSame(ExitCode::OK, $remove->getStatusCode(), $remove->getDisplay());
+        self::assertDirectoryDoesNotExist($this->root . '/themes/wonder');
+        self::assertSame(ExitCode::OK, $this->build('after')->getStatusCode());
     }
 
     public function testInvalidLockFileIsOnlyAWarningForBuild(): void

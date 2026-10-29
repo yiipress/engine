@@ -13,7 +13,9 @@ use YiiPress\Console\InitPluginCommand;
 use YiiPress\Console\InitThemeCommand;
 use YiiPress\Console\NewCommand;
 use YiiPress\Console\RecoverExtensionsCommand;
+use YiiPress\Console\RemoveThemeCommand;
 use YiiPress\Console\RestoreExtensionsCommand;
+use YiiPress\Console\UpdateThemeCommand;
 use YiiPress\Console\WorkerCommand;
 use YiiPress\Extension\Http\AvailableHttpClient;
 use YiiPress\Processor\ContentProcessorPipeline;
@@ -119,6 +121,17 @@ return [
         '__construct()' => [
             'rootPath' => $workingDirectory,
             'http' => Reference::to(AvailableHttpClient::class),
+        ],
+    ],
+    UpdateThemeCommand::class => [
+        '__construct()' => [
+            'rootPath' => $workingDirectory,
+            'http' => Reference::to(AvailableHttpClient::class),
+        ],
+    ],
+    RemoveThemeCommand::class => [
+        '__construct()' => [
+            'rootPath' => $workingDirectory,
         ],
     ],
     CleanCommand::class => [
