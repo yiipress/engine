@@ -14,7 +14,7 @@ yiipress get:theme --url=<github repository URL> [--version=X.Y.Z] [--no-activat
 
 - Project root: the working directory, as for `build` (`getcwd()`). `themes/`, `yiipress.lock` and `.yiipress/`
   live there; `--content-dir` only locates `config.yaml`.
-- `--engine-version` exists only if the lead accepts open question 2; it is refused when
+- `--engine-version` (open question 2 of decision 0002, accepted by the lead) is refused when
   `EngineVersion::current()` knows the version.
 - Exit codes: `ExitCode::OK`, `ExitCode::DATAERR` for every error in «Error codes» except `mutation_locked`
   (`ExitCode::TEMPFAIL`), network/rate-limit errors (`ExitCode::UNAVAILABLE`) and command-line usage errors, a
@@ -82,7 +82,8 @@ URL: `https://codeload.github.com/<owner>/<repo>/tar.gz/refs/tags/<tag>` (no red
 
 ## Limits
 
-One class, `InstallLimits`, constants only; no option disables them. Values are proposals, to be confirmed.
+One class, `InstallLimits`, constants only; no option disables them. Values are proposed defaults, not measured
+(open question 4 of decision 0002).
 
 | Limit | Value |
 | --- | --- |
@@ -99,6 +100,10 @@ One class, `InstallLimits`, constants only; no option disables them. Values are 
 Size limits are checked while reading the stream for extraction. For download: `curl --max-filesize` (stops a
 running transfer since curl 8.4.0, per the curl 8.18 manual read 2026-10-29; older curl stops only on a known `Content-Length`) and, for any
 transport, the file size right after download before anything reads it.
+
+Timeouts: `curl --connect-timeout` and `--max-time`. The stream transport uses the connect timeout for connecting and
+for each header read, then reads the body with the time left before the whole-request deadline, so a server that
+sends slowly but never pauses fails at the deadline too. For both transports the deadline covers the redirects.
 
 ## HTTP
 

@@ -84,15 +84,16 @@ Option 1 in each group. Shared code goes to `src/Extension/` (`Http`, `Release`,
   `yiipress.lock`, chain theme → `minimal` unless `none` → `local`). `restore:extensions`
   treats an archive checksum mismatch with matching commit and files as a warning (open question 3, answered).
 
-## Open questions for the lead
+## Questions for the lead (all answered)
 
-1. Stop-gap for inactive themes (spec «Theme fallback in this step»): include in `get-theme` (recommended) or leave
-   to the `fallback` step and document the gap.
+1. Stop-gap for inactive themes: include in `get-theme` or leave to the `fallback` step. Answered by the lead
+   (2026-10-29): included in `get-theme`; the `fallback` step later replaced it with spec «Theme fallback».
 2. `--engine-version=X.Y.Z`, accepted only when the engine version is unknown (source checkouts, the dev image):
-   add (recommended, otherwise `get:theme` cannot run from a checkout) or not.
+   add or not. Answered by the lead (2026-10-29): added, only for an unknown engine version. See spec «Command».
 3. For `restore`: an archive SHA-256 mismatch with the same commit and identical files: error (as #177 says) or
    warning. Answered by the owner (2026-10-29): a warning; restore continues. See spec «Restore».
-4. Limits in spec «Limits» are proposals, not measured; the benchmark of this step should confirm them.
+4. Limits in spec «Limits» are proposals, not measured. Answered by the lead (2026-10-29): they stay as proposed
+   defaults and are documented as such.
 
 ## Confirmation
 
