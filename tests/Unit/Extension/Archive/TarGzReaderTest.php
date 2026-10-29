@@ -147,6 +147,21 @@ final class TarGzReaderTest extends TestCase
             )),
             'archive_invalid',
         ];
+        yield 'directory entry with data' => [
+            static fn(string $f) => self::valid()
+                ->entry('theme-wonder-1.0.0/package/big/', '5', str_repeat("\0", 4096))
+                ->writeTo($f),
+            'archive_invalid',
+        ];
+        yield 'enclosing directory with data' => [
+            static fn(string $f) => new TarGzBuilder()
+                ->globalHeader(['comment' => str_repeat('a', 40)])
+                ->entry('theme-wonder-1.0.0/', '5', 'data')
+                ->file('theme-wonder-1.0.0/extension.yaml', 'x')
+                ->directory('theme-wonder-1.0.0/package/')
+                ->writeTo($f),
+            'archive_invalid',
+        ];
         yield 'symbolic link' => [
             static fn(string $f) => self::valid()->symlink('theme-wonder-1.0.0/package/l', 'layout.php')->writeTo($f),
             'archive_link',

@@ -157,6 +157,10 @@ final class TarGzReader
                 $type === "\0" ? '\0' : $type,
             ));
         }
+        if ($directory && $size !== 0) {
+            // Data of a directory would be decompressed without counting toward the extracted size.
+            throw TarHeader::invalid(sprintf('directory entry "%s" carries %d bytes of data', $path, $size));
+        }
         if (++$this->entries > $this->limits->entries) {
             throw new InstallException('archive_too_many_entries', sprintf(
                 'The release archive has more than %d entries.',
@@ -166,7 +170,6 @@ final class TarGzReader
 
         $relative = $this->stripEnclosing($directory ? rtrim($path, '/') : $path, $directory);
         if ($relative === null) {
-            $this->skip($size);
             return;
         }
         $problem = PortablePath::problem($relative);
@@ -177,7 +180,6 @@ final class TarGzReader
 
         if ($directory) {
             $this->makeDirectory($this->target . '/' . $relative);
-            $this->skip($size);
             return;
         }
         $this->writeFile($relative, $size);
@@ -263,16 +265,6 @@ final class TarGzReader
         }
 
         return (int) $value;
-    }
-
-    private function skip(int $size): void
-    {
-        $left = $size + TarHeader::padding($size);
-        while ($left > 0) {
-            $length = min(self::CHUNK, $left);
-            $this->read($length);
-            $left -= $length;
-        }
     }
 
     /**
