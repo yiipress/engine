@@ -17,6 +17,8 @@ use function file_put_contents;
 use function hash;
 use function hash_file;
 use function mkdir;
+use function sha1;
+use function str_replace;
 use function strlen;
 use function sys_get_temp_dir;
 use function uniqid;
@@ -44,6 +46,44 @@ final class WonderFixture
         return new FakeHttpClient()->gitHub(self::REPOSITORY, [
             'v1.0.0' => ['manifest' => self::manifest(), 'archive' => $archive ?? self::archive()],
         ]);
+    }
+
+    /**
+     * Serves v1.0.0 (the fixture) and the given further releases of yiipress/theme-wonder.
+     *
+     * @param array<string, array{manifest: string, archive: string}> $releases Keyed by tag, for example `v1.1.0`.
+     */
+    public static function httpWith(array $releases): FakeHttpClient
+    {
+        return new FakeHttpClient()->gitHub(self::REPOSITORY, [
+            'v1.0.0' => ['manifest' => self::manifest(), 'archive' => self::archive()],
+            ...$releases,
+        ]);
+    }
+
+    /**
+     * Another release of the theme: its manifest with the given version and ID, and an archive whose package holds
+     * `entry.php` with the given contents and `assets/style.css`.
+     *
+     * @return array{manifest: string, archive: string}
+     */
+    public static function release(string $version, string $entry, string $id = self::ID): array
+    {
+        $manifest = str_replace(
+            ['version: 1.0.0', 'id: ' . self::ID],
+            ['version: ' . $version, 'id: ' . $id],
+            self::manifest(),
+        );
+        $prefix = 'theme-wonder-' . $version;
+        $archive = TarGzBuilder::gitArchive($prefix, sha1($version))
+            ->file($prefix . '/extension.yaml', $manifest)
+            ->directory($prefix . '/package/')
+            ->directory($prefix . '/package/assets/')
+            ->file($prefix . '/package/assets/style.css', "body{}\n")
+            ->file($prefix . '/package/entry.php', $entry)
+            ->gzip();
+
+        return ['manifest' => $manifest, 'archive' => $archive];
     }
 
     public static function manifest(): string

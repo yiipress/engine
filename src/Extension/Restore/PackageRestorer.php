@@ -12,8 +12,7 @@ use YiiPress\Extension\Lock\LockedExtensionParser;
 use YiiPress\Extension\Lock\LockFile;
 use YiiPress\Extension\Platform;
 use YiiPress\Extension\Release\GitHubReleaseSource;
-use YiiPress\Extension\Theme\ThemeDestinationPolicy;
-use YiiPress\Extension\Transaction\JournalPaths;
+use YiiPress\Extension\Theme\LockedThemeDestination;
 use YiiPress\Extension\Transaction\MutationLock;
 use YiiPress\Extension\Transaction\Recovery;
 use YiiPress\Extension\Transaction\StatePaths;
@@ -130,15 +129,7 @@ final readonly class PackageRestorer
                 sprintf('is "%s", which this YiiPress cannot restore yet', $locked->type->value),
             );
         }
-        $expected = ThemeDestinationPolicy::THEMES_DIR . '/' . $locked->name;
-        if ($locked->destination !== $expected || !JournalPaths::isDirectoryTarget($expected)) {
-            return LockedExtensionParser::invalid(
-                "extensions.$id.destination",
-                sprintf('must be "%s" for theme "%s"', $expected, $locked->name),
-            );
-        }
-
-        return null;
+        return LockedThemeDestination::problem($id, $locked);
     }
 
     /**
