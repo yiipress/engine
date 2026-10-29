@@ -6,6 +6,7 @@ namespace YiiPress\I18n;
 
 use YiiPress\Build\TemplateResolver;
 use RuntimeException;
+use WeakMap;
 
 use function array_filter;
 use function array_merge;
@@ -13,7 +14,6 @@ use function array_unique;
 use function array_values;
 use function explode;
 use function file_get_contents;
-use function implode;
 use function is_array;
 use function sprintf;
 use function str_replace;
@@ -66,8 +66,13 @@ final class UiText
     /** @var array<string, array<string, string>> */
     private static array $catalogCache = [];
 
-    /** @var array<string, array<string, string>> */
-    private static array $resolvedCatalogCache = [];
+    /**
+     * Per resolver: the same theme name may resolve to other files with another registry, for example through
+     * another fallback.
+     *
+     * @var WeakMap<TemplateResolver, array<string, array<string, string>>>|null
+     */
+    private static ?WeakMap $resolvedCatalogCache = null;
 
     /** @var array<int, string> */
     private array $monthNameCache = [];
@@ -291,36 +296,35 @@ final class UiText
         string $themeName,
         string $normalizedDefaultLanguage,
     ): array {
-        $paths = [];
+        $cacheKey = $themeName . "\0" . $normalizedDefaultLanguage . "\0" . $normalizedLanguage;
+        self::$resolvedCatalogCache ??= new WeakMap();
+        $cached = self::$resolvedCatalogCache[$templateResolver] ?? [];
+        if (isset($cached[$cacheKey])) {
+            return $cached[$cacheKey];
+        }
+
+        $catalog = [];
         $englishPath = $templateResolver->resolveResource('translation/en.yaml', $themeName);
         if ($englishPath !== null) {
-            $paths[] = $englishPath;
+            $catalog = self::loadCatalog($englishPath);
         }
 
         if ($normalizedDefaultLanguage !== 'en') {
             foreach (self::resolveLanguagePaths($normalizedDefaultLanguage, $normalizedDefaultLanguage, $templateResolver, $themeName) as $path) {
-                $paths[] = $path;
+                $catalog = array_merge($catalog, self::loadCatalog($path));
             }
         }
 
         if ($normalizedLanguage !== $normalizedDefaultLanguage) {
             foreach (self::resolveLanguagePaths($language, $normalizedLanguage, $templateResolver, $themeName) as $path) {
-                $paths[] = $path;
+                $catalog = array_merge($catalog, self::loadCatalog($path));
             }
         }
 
-        // Keyed by the files, not the theme name: the same name may resolve to other files through another fallback.
-        $cacheKey = implode("\0", $paths);
-        if (isset(self::$resolvedCatalogCache[$cacheKey])) {
-            return self::$resolvedCatalogCache[$cacheKey];
-        }
+        $cached[$cacheKey] = $catalog;
+        self::$resolvedCatalogCache[$templateResolver] = $cached;
 
-        $catalog = [];
-        foreach ($paths as $path) {
-            $catalog = array_merge($catalog, self::loadCatalog($path));
-        }
-
-        return self::$resolvedCatalogCache[$cacheKey] = $catalog;
+        return $catalog;
     }
 
 }

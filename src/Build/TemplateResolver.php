@@ -68,6 +68,15 @@ final class TemplateResolver
 
     public function resolveResourceThemeName(string $resourcePath, string $themeName = ''): string
     {
+        // Called for every asset reference of every page: skip building the fallback list when the theme has the file.
+        if (
+            $themeName !== ''
+            && $this->themeRegistry->has($themeName)
+            && is_file($this->themeRegistry->get($themeName)->path . '/' . $resourcePath)
+        ) {
+            return $themeName;
+        }
+
         foreach ($this->candidates($themeName) as $theme) {
             if (is_file($theme->path . '/' . $resourcePath)) {
                 return $theme->name;

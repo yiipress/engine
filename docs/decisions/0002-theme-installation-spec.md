@@ -165,8 +165,8 @@ Lead decisions on #256 rev 74.
 - Themes without a manifest (`fallback` is `null`): unchanged, every other registered theme that is not managed, in
   registration order. A missing or invalid lock means no managed themes; an invalid lock is a warning, not a build
   failure.
-- `UiText` caches theme catalogs by the resolved translation files, not the theme name, because one name may resolve
-  to other files through another fallback.
+- `UiText` caches theme catalogs per `TemplateResolver` (a `WeakMap`), not by theme name alone, because one name may
+  resolve to other files through another registry and fallback.
 
 ## Lock file
 
