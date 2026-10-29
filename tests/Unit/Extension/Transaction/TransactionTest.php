@@ -167,6 +167,22 @@ final class TransactionTest extends TestCase
         self::assertFalse(Recovery::pending($this->root));
     }
 
+    public function testRecoveryRemovesStagingOfKilledDownload(): void
+    {
+        $tx = Transaction::begin($this->root);
+        file_put_contents($tx->stagingDirectory() . '/archive.tar.gz', 'partial download');
+        mkdir($this->root . '/.yiipress/backup/' . $tx->tx, 0o755, true);
+        // The process is killed before the journal is written, so no `finally` runs.
+        $lock = MutationLock::acquire($this->root);
+
+        $result = new Recovery()->recover($this->root);
+        $lock->release();
+
+        self::assertNotNull($result);
+        self::assertSame([], glob($this->root . '/.yiipress/{staging,backup}/*', GLOB_BRACE));
+        self::assertFileExists($this->root . '/.yiipress/mutation.lock');
+    }
+
     public function testRecoveryRefusesMalformedJournal(): void
     {
         mkdir($this->root . '/.yiipress');

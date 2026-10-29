@@ -18,6 +18,7 @@ use function is_dir;
 use function is_file;
 use function is_link;
 use function random_bytes;
+use function scandir;
 use function sprintf;
 use function unlink;
 
@@ -44,17 +45,43 @@ final class Recovery
     {
         $paths = new StatePaths($projectRoot);
         if (!is_file($paths->journal())) {
-            return null;
+            return self::removeOrphans($paths)
+                ? 'Temporary files of an interrupted extension operation were removed.'
+                : null;
         }
         $journal = Journal::read($paths);
         if ($journal->state === Journal::COMMITTED) {
             self::cleanUp($paths, $journal->tx);
-
-            return sprintf('The interrupted %s had completed; its temporary files were removed.', $journal->operation);
+            $result = sprintf('The interrupted %s had completed; its temporary files were removed.', $journal->operation);
+        } else {
+            $this->undo($paths, $journal);
+            $result = sprintf('The interrupted %s was undone.', $journal->operation);
         }
-        $this->undo($paths, $journal);
+        self::removeOrphans($paths);
 
-        return sprintf('The interrupted %s was undone.', $journal->operation);
+        return $result;
+    }
+
+    /**
+     * Deletes staging and backup directories that no journal names, left by a process killed before it wrote
+     * its journal. The caller holds the {@see MutationLock}, so no other operation is using them.
+     *
+     * @return bool Whether anything was found.
+     */
+    private static function removeOrphans(StatePaths $paths): bool
+    {
+        $found = false;
+        foreach ([dirname($paths->staging('-')), dirname($paths->backup('-'))] as $parent) {
+            $entries = @scandir($paths->absolute($parent));
+            foreach ($entries === false ? [] : $entries as $entry) {
+                if ($entry !== '.' && $entry !== '..') {
+                    $found = true;
+                    self::removeQuietly($paths->absolute($parent . '/' . $entry));
+                }
+            }
+        }
+
+        return $found;
     }
 
     /**
