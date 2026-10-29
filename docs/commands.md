@@ -173,6 +173,22 @@ yiipress get:theme --url=https://github.com/<owner>/<repo> [--version=X.Y.Z] [--
 
 See [Installing a theme](extensions.md#installing-a-theme) for release selection, the lock file, limits and errors.
 
+## `restore:extensions`
+
+Installs the extensions listed in `yiipress.lock` exactly as locked, for example in a fresh checkout, and puts back
+missing files of installed ones.
+
+```shell
+yiipress restore:extensions
+```
+
+**Options:**
+
+- `--engine-version` — as for `get:theme`.
+
+It never chooses another release, activates a theme, edits `config.yaml` or writes `yiipress.lock`, and never
+overwrites or deletes a file. See [Restoring extensions](extensions.md#restoring-extensions).
+
 ## `update:theme`
 
 Updates an installed theme to the newest compatible release, or to an exact version, which may be older.
