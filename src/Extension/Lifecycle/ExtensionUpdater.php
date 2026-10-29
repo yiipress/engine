@@ -90,14 +90,7 @@ final readonly class ExtensionUpdater
                 $engine,
                 $platform,
             );
-            $selected = new ReleaseSelector($this->source)->select(
-                $request->repository,
-                $request->type,
-                $request->version,
-                $request->engine,
-                $request->platform,
-            );
-            self::checkSameExtension($id, $selected, $request->repository);
+            $selected = $this->select($request, $id);
             if (!self::changes($previous, $selected, $version)) {
                 return new UpdateResult($previous, $previous, $selected, $recovered);
             }
@@ -115,6 +108,23 @@ final readonly class ExtensionUpdater
         }
 
         return new UpdateResult($previous, $current, $selected, $recovered);
+    }
+
+    /**
+     * The release to update to, refused when the repository now holds another extension.
+     */
+    private function select(InstallRequest $request, ExtensionId $id): SelectedRelease
+    {
+        $selected = new ReleaseSelector($this->source)->select(
+            $request->repository,
+            $request->type,
+            $request->version,
+            $request->engine,
+            $request->platform,
+        );
+        self::checkSameExtension($id, $selected, $request->repository);
+
+        return $selected;
     }
 
     /**

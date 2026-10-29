@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiPress\Extension\Processor;
 
 use Throwable;
+use YiiPress\Content\Model\ProcessorConfig;
 use YiiPress\Content\Parser\SiteConfigParser;
 use YiiPress\Extension\Install\InstallException;
 use YiiPress\Processor\ProjectProcessorLoader;
@@ -43,21 +44,7 @@ final readonly class ProcessorReferences
         if (!is_file($configFile)) {
             return [];
         }
-        try {
-            $config = $this->configParser->parse($configFile)->processors;
-        } catch (Throwable $exception) {
-            throw new InstallException(
-                'content_unreadable',
-                sprintf(
-                    'The configuration in "%s" could not be read, so it is unknown whether it enables "%s": %s',
-                    $configFile,
-                    $packageDir,
-                    $exception->getMessage(),
-                ),
-                solution: 'Fix config.yaml so that the build reads it, then run the command again.',
-                previous: $exception,
-            );
-        }
+        $config = $this->config($configFile, $packageDir);
 
         $references = [];
         $lists = [
@@ -91,6 +78,28 @@ final readonly class ProcessorReferences
         }
 
         return $references;
+    }
+
+    /**
+     * @throws InstallException `content_unreadable` when `config.yaml` cannot be parsed.
+     */
+    private function config(string $configFile, string $packageDir): ProcessorConfig
+    {
+        try {
+            return $this->configParser->parse($configFile)->processors;
+        } catch (Throwable $exception) {
+            throw new InstallException(
+                'content_unreadable',
+                sprintf(
+                    'The configuration in "%s" could not be read, so it is unknown whether it enables "%s": %s',
+                    $configFile,
+                    $packageDir,
+                    $exception->getMessage(),
+                ),
+                solution: 'Fix config.yaml so that the build reads it, then run the command again.',
+                previous: $exception,
+            );
+        }
     }
 
     /**

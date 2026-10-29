@@ -65,32 +65,7 @@ final readonly class EnablementSnippet
         string $packagePath,
         ProcessorMetadata $processor,
     ): array {
-        $configFile = $contentDir . '/config.yaml';
-        $unreadable = null;
-        try {
-            $config = is_file($configFile)
-                ? $this->configParser->parse($configFile)->processors
-                : new ProcessorConfig();
-        } catch (Throwable $exception) {
-            $unreadable = $exception->getMessage();
-            $config = new ProcessorConfig(discover: false);
-        }
-        $discovered = $config->discover
-            ? array_map(
-                static fn(string $path): string => 'processors/' . basename($path),
-                new ProjectProcessorLoader($contentDir, $configFile)->discoveredPaths(),
-            )
-            : [];
-        $lists = [
-            'content' => [
-                'before_markdown' => [...$discovered, ...$config->contentBeforeMarkdown],
-                'after_markdown' => $config->contentAfterMarkdown,
-            ],
-            'feed' => [
-                'before_markdown' => [...$discovered, ...$config->feedBeforeMarkdown],
-                'after_markdown' => $config->feedAfterMarkdown,
-            ],
-        ];
+        [$lists, $discovered, $unreadable] = $this->current($contentDir);
         $entryPoints = [];
         foreach ($processor->entryPoints as $entryPoint) {
             $path = $packagePath . '/' . $entryPoint->path;
@@ -127,6 +102,44 @@ final readonly class EnablementSnippet
         }
 
         return $lines;
+    }
+
+    /**
+     * The processors the build runs today, with discovered `processors/*.php` spelled out.
+     *
+     * @return array{array<string, array<string, list<string>>>, list<string>, ?string} Pipeline → stage → paths,
+     * the discovered paths and why `config.yaml` could not be read, if it could not.
+     */
+    private function current(string $contentDir): array
+    {
+        $configFile = $contentDir . '/config.yaml';
+        $unreadable = null;
+        try {
+            $config = is_file($configFile)
+                ? $this->configParser->parse($configFile)->processors
+                : new ProcessorConfig();
+        } catch (Throwable $exception) {
+            $unreadable = $exception->getMessage();
+            $config = new ProcessorConfig(discover: false);
+        }
+        $discovered = $config->discover
+            ? array_map(
+                static fn(string $path): string => 'processors/' . basename($path),
+                new ProjectProcessorLoader($contentDir, $configFile)->discoveredPaths(),
+            )
+            : [];
+        $lists = [
+            'content' => [
+                'before_markdown' => [...$discovered, ...$config->contentBeforeMarkdown],
+                'after_markdown' => $config->contentAfterMarkdown,
+            ],
+            'feed' => [
+                'before_markdown' => [...$discovered, ...$config->feedBeforeMarkdown],
+                'after_markdown' => $config->feedAfterMarkdown,
+            ],
+        ];
+
+        return [$lists, $discovered, $unreadable];
     }
 
     /**
