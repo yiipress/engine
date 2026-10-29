@@ -11,6 +11,7 @@ use YiiPress\Extension\Archive\TarGzReader;
 use YiiPress\Extension\DirectoryHashes;
 use YiiPress\Extension\ExtensionType;
 use YiiPress\Extension\Lock\LockedExtension;
+use YiiPress\Extension\Manifest\ThemeFallback;
 
 use function file_get_contents;
 use function file_put_contents;
@@ -117,6 +118,7 @@ final class WonderFixture
             archiveSize: strlen($archive),
             destination: 'themes/wonder',
             name: 'wonder',
+            fallback: ThemeFallback::Minimal,
             manifestSha256: (string) hash_file('sha256', $extracted->root . '/extension.yaml'),
             files: DirectoryHashes::of($extracted->root . '/package'),
         ));

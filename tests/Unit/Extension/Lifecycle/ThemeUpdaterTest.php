@@ -154,7 +154,10 @@ final class ThemeUpdaterTest extends TestCase
 
     public function testRefusesLockEntryThatIsNotATheme(): void
     {
-        $locked = LockedArchiveTest::with(WonderFixture::locked(), ['type' => 'processor', 'name' => null]);
+        $locked = LockedArchiveTest::with(
+            WonderFixture::locked(),
+            ['type' => 'processor', 'name' => null, 'fallback' => null],
+        );
         file_put_contents(
             $this->root . '/yiipress.lock',
             LockFile::empty()->withExtension(ExtensionId::tryFromString(WonderFixture::ID), $locked)->toJson(),

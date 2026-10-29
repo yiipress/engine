@@ -11,6 +11,7 @@ use YiiPress\Extension\ExtensionId;
 use YiiPress\Extension\Install\InstallException;
 use YiiPress\Extension\Lock\LockedExtension;
 use YiiPress\Extension\Lock\LockFile;
+use YiiPress\Extension\Manifest\ThemeFallback;
 use YiiPress\Extension\Platform;
 use YiiPress\Extension\Release\GitHubReleaseSource;
 use YiiPress\Extension\Restore\PackageRestorer;
@@ -281,6 +282,7 @@ final class PackageRestorerTest extends TestCase
             archiveSize: 100,
             destination: $destination,
             name: $name,
+            fallback: ThemeFallback::Minimal,
             manifestSha256: str_repeat('c', 64),
             files: ['entry.php' => hash('sha256', '<?php')],
         );

@@ -6,6 +6,7 @@ namespace YiiPress\Extension\Lock;
 
 use YiiPress\Extension\ExtensionType;
 use YiiPress\Extension\Install\InstallException;
+use YiiPress\Extension\Manifest\ThemeFallback;
 use YiiPress\Extension\PortablePath;
 use YiiPress\Extension\Release\GitHubRepository;
 use YiiPress\Extension\SemanticVersion;
@@ -28,7 +29,8 @@ use function sprintf;
 final class LockedExtensionParser
 {
     private const array KEYS = [
-        'archive', 'commit', 'destination', 'files', 'manifest_sha256', 'name', 'source', 'tag', 'type', 'version',
+        'archive', 'commit', 'destination', 'fallback', 'files', 'manifest_sha256', 'name', 'source', 'tag', 'type',
+        'version',
     ];
     private const array ARCHIVE_KEYS = ['kind', 'sha256', 'size', 'url'];
     private const string SHA256 = '/^[0-9a-f]{64}$/D';
@@ -59,10 +61,17 @@ final class LockedExtensionParser
         $commit = self::matching($data, 'commit', '/^[0-9a-f]{40}$/D', $field('commit'));
         $destination = self::path(self::string($data, 'destination', $field('destination')), $field('destination'));
         $name = null;
+        $fallback = null;
         if ($type === ExtensionType::Theme) {
             $name = self::matching($data, 'name', '/^[a-z0-9]+(?:-[a-z0-9]+)*$/D', $field('name'));
-        } elseif (isset($data['name'])) {
-            throw self::invalid($field('name'), 'is allowed for themes only');
+            $fallback = ThemeFallback::tryFrom(self::string($data, 'fallback', $field('fallback')))
+                ?? throw self::invalid($field('fallback'), 'must be "minimal" or "none"');
+        } else {
+            foreach (['name', 'fallback'] as $themeOnly) {
+                if (isset($data[$themeOnly])) {
+                    throw self::invalid($field($themeOnly), 'is allowed for themes only');
+                }
+            }
         }
 
         $archive = $data['archive'] ?? null;
@@ -91,6 +100,7 @@ final class LockedExtensionParser
             archiveSize: $size,
             destination: $destination,
             name: $name,
+            fallback: $fallback,
             manifestSha256: self::matching($data, 'manifest_sha256', self::SHA256, $field('manifest_sha256')),
             files: self::files($data['files'] ?? null, $field('files')),
         );

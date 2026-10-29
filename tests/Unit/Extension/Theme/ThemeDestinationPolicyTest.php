@@ -15,6 +15,7 @@ use YiiPress\Extension\Lock\LockedExtension;
 use YiiPress\Extension\Lock\LockFile;
 use YiiPress\Extension\Manifest\ExtensionManifest;
 use YiiPress\Extension\Manifest\ManifestParser;
+use YiiPress\Extension\Manifest\ThemeFallback;
 use YiiPress\Extension\Theme\ThemeDestinationPolicy;
 use YiiPress\Tests\Unit\Extension\Release\ReleaseSelectorTest;
 
@@ -166,6 +167,7 @@ final class ThemeDestinationPolicyTest extends TestCase
             10,
             'themes/' . $name,
             $name,
+            ThemeFallback::Minimal,
             str_repeat('c', 64),
             [],
         );

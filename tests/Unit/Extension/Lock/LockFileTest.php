@@ -13,6 +13,7 @@ use YiiPress\Extension\ExtensionType;
 use YiiPress\Extension\Install\InstallException;
 use YiiPress\Extension\Lock\LockedExtension;
 use YiiPress\Extension\Lock\LockFile;
+use YiiPress\Extension\Manifest\ThemeFallback;
 
 use function array_keys;
 use function json_decode;
@@ -36,6 +37,7 @@ final class LockFileTest extends TestCase
                     },
                     "commit": "acf0346e709f2934037914577a98a6ee62a28000",
                     "destination": "themes/wonder",
+                    "fallback": "minimal",
                     "files": {
                         "assets/style.css": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
                         "layout.php": "60303ae22b998861bce3b28f33eec1be758a213c86c93c076dbe9f558c11c752"
@@ -60,6 +62,7 @@ final class LockFileTest extends TestCase
         self::assertSame(self::SPEC_EXAMPLE, $lock->toJson());
         self::assertSame(['themes/wonder'], $lock->destinations());
         self::assertSame('wonder', $lock->get(self::id('yiipress/wonder'))?->name);
+        self::assertSame(ThemeFallback::Minimal, $lock->get(self::id('yiipress/wonder'))?->fallback);
     }
 
     public function testSerialisationDoesNotDependOnInsertionOrder(): void
@@ -161,6 +164,28 @@ final class LockFileTest extends TestCase
             'lock_invalid',
             'files',
         ];
+        yield 'theme without fallback' => [
+            static function (array $d): array {
+                unset($d['extensions']['yiipress/wonder']['fallback']);
+                return $d;
+            },
+            'lock_invalid',
+            'extensions.yiipress/wonder.fallback',
+        ];
+        yield 'unknown fallback' => [
+            $entry('fallback', 'wonder'),
+            'lock_invalid',
+            'extensions.yiipress/wonder.fallback',
+        ];
+        yield 'fallback of a processor' => [
+            static function (array $d): array {
+                $d['extensions']['yiipress/wonder']['type'] = 'processor';
+                unset($d['extensions']['yiipress/wonder']['name']);
+                return $d;
+            },
+            'lock_invalid',
+            'extensions.yiipress/wonder.fallback',
+        ];
         yield 'bad file hash' => [$entry('files', ['x.php' => 'abc']), 'lock_invalid', 'files.x.php'];
         yield 'archive size' => [
             $entry('archive', ['kind' => 'github-tarball', 'sha256' => str_repeat('a', 64), 'size' => '1', 'url' => 'https://x/y']),
@@ -204,6 +229,7 @@ final class LockFileTest extends TestCase
             archiveSize: 10,
             destination: "themes/$name",
             name: $name,
+            fallback: ThemeFallback::Minimal,
             manifestSha256: self::hash('manifest'),
             files: $files,
         );

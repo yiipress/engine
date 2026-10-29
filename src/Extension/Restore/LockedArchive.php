@@ -193,6 +193,15 @@ final readonly class LockedArchive
                 $locked->version,
             ));
         }
+        $fallback = $manifest->theme()?->fallback;
+        if ($fallback !== null && $fallback !== $locked->fallback) {
+            throw self::mismatch($id, sprintf(
+                '%s declares theme fallback "%s", but yiipress.lock records "%s".',
+                $describe,
+                $fallback->value,
+                $locked->fallback?->value,
+            ));
+        }
         $errors = $this->compatibility->check($manifest, $engine, $platform);
         if ($errors !== []) {
             throw new InstallException('release_incompatible', sprintf(

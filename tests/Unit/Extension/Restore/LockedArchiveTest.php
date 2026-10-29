@@ -89,6 +89,18 @@ final class LockedArchiveTest extends TestCase
         $this->assertFails('archive_mismatch', WonderFixture::http(), WonderFixture::locked(), 'yiipress/other');
     }
 
+    public function testFallbackOtherThanTheManifestOneIsRefused(): void
+    {
+        $locked = self::with(WonderFixture::locked(), ['fallback' => 'none']);
+
+        $exception = $this->assertFails('archive_mismatch', WonderFixture::http(), $locked);
+
+        self::assertStringContainsString(
+            'fallback "minimal", but yiipress.lock records "none"',
+            $exception->getMessage(),
+        );
+    }
+
     public function testMissingReleaseFailsWithoutLookingForAnother(): void
     {
         $http = new FakeHttpClient();

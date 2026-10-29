@@ -81,7 +81,9 @@ final class ManagedThemesTest extends TestCase
                 'tag' => 'v1.0.0',
                 'type' => str_starts_with($destination, 'themes/') ? 'theme' : 'processor',
                 'version' => '1.0.0',
-            ] + (str_starts_with($destination, 'themes/') ? ['name' => substr($destination, 7)] : []);
+            ] + (str_starts_with($destination, 'themes/')
+                ? ['name' => substr($destination, 7), 'fallback' => 'minimal']
+                : []);
         }
 
         return json_encode(['extensions' => $extensions, 'lock' => 1], JSON_THROW_ON_ERROR);

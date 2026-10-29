@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use YiiPress\Build\DirectoryRemover;
 use YiiPress\Extension\ExtensionType;
 use YiiPress\Extension\Lock\LockedExtension;
+use YiiPress\Extension\Manifest\ThemeFallback;
 use YiiPress\Extension\Restore\InstalledPackage;
 
 use function file_put_contents;
@@ -146,6 +147,7 @@ final class InstalledPackageTest extends TestCase
             archiveSize: 100,
             destination: $destination,
             name: $name,
+            fallback: ThemeFallback::Minimal,
             manifestSha256: str_repeat('c', 64),
             files: ['assets/style.css' => hash('sha256', 'body{}'), 'entry.php' => hash('sha256', '<?php')],
         );

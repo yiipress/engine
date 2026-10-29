@@ -47,6 +47,7 @@ final readonly class StagedPackage
             archiveSize: $this->archive->size,
             destination: $destination,
             name: $name,
+            fallback: $this->manifest->theme()?->fallback,
             manifestSha256: $this->manifestSha256,
             files: $this->files,
         );

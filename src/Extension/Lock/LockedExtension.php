@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiPress\Extension\Lock;
 
 use YiiPress\Extension\ExtensionType;
+use YiiPress\Extension\Manifest\ThemeFallback;
 
 use function ksort;
 
@@ -24,6 +25,7 @@ final readonly class LockedExtension
      * @param string $commit Commit from the archive, 40 hex characters.
      * @param string $destination Path relative to the project root, `/` separators.
      * @param string|null $name Local theme name; `null` for other types.
+     * @param ThemeFallback|null $fallback Theme the build falls back to, from the manifest; `null` for other types.
      * @param array<string, string> $files Path relative to `$destination` → SHA-256 of every regular file.
      */
     public function __construct(
@@ -38,6 +40,7 @@ final readonly class LockedExtension
         public int $archiveSize,
         public string $destination,
         public ?string $name,
+        public ?ThemeFallback $fallback,
         public string $manifestSha256,
         public array $files,
     ) {}
@@ -58,6 +61,7 @@ final readonly class LockedExtension
             ],
             'commit' => $this->commit,
             'destination' => $this->destination,
+            'fallback' => $this->fallback?->value,
             // An object even for file names such as `0`, which PHP turns into list keys.
             'files' => (object) $files,
             'manifest_sha256' => $this->manifestSha256,
@@ -69,6 +73,9 @@ final readonly class LockedExtension
         ];
         if ($this->name === null) {
             unset($data['name']);
+        }
+        if ($this->fallback === null) {
+            unset($data['fallback']);
         }
 
         return $data;
