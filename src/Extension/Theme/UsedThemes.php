@@ -20,6 +20,7 @@ use function clearstatcache;
 use function dirname;
 use function file_get_contents;
 use function file_put_contents;
+use function hash_file;
 use function hash_final;
 use function hash_init;
 use function hash_update;
@@ -41,6 +42,7 @@ use function time;
 use function unlink;
 
 use const JSON_THROW_ON_ERROR;
+use const PHP_OS_FAMILY;
 use const SORT_STRING;
 
 /**
@@ -48,7 +50,8 @@ use const SORT_STRING;
  *
  * Parsing every entry is the costly part, so the themes found are cached together with a fingerprint of the
  * content: the path, size, modification and change times and inode of every Markdown file and `_collection.yaml`,
- * so unchanged content is answered from `stat()` alone. As in git's racy rule, a file whose times are too close to
+ * so unchanged content is answered from `stat()` alone (on Windows, `ctime` and the inode give way to a content
+ * hash). As in git's racy rule, a file whose times are too close to
  * the scan cannot be told apart by them and makes the cache miss. File times come from the clock of the content's
  * filesystem, which may run behind the local one (a network share, a volume of a virtual machine), so "too close"
  * means up to {@see CLOCK_SKEW_SECONDS} before the local time of the scan.
@@ -64,8 +67,15 @@ final readonly class UsedThemes
 
     /**
      * @param Closure(): int|null $clock Current Unix time; `time()` when `null`.
+     * @param bool $changeTimeIsCreationTime Whether `ctime` is the creation time, as PHP reports it on Windows.
+     * A rewrite then leaves `ctime` as it was, so the fingerprint takes each file's content hash instead of
+     * `ctime` and the inode.
      */
-    public function __construct(private string $cacheFile, private ?Closure $clock = null) {}
+    public function __construct(
+        private string $cacheFile,
+        private ?Closure $clock = null,
+        private bool $changeTimeIsCreationTime = PHP_OS_FAMILY === 'Windows',
+    ) {}
 
     /**
      * @param list<string> $candidates
@@ -130,7 +140,9 @@ final readonly class UsedThemes
                     $modified = $file->getMTime();
                     $changed = $file->getCTime();
                     $newestModification = max($newestModification, $modified, $changed);
-                    $stats[$relative] = $file->getSize() . ':' . $modified . ':' . $changed . ':' . $file->getInode();
+                    $stats[$relative] = $file->getSize() . ':' . $modified . ':' . ($this->changeTimeIsCreationTime
+                        ? (string) @hash_file('xxh128', $file->getPathname())
+                        : $changed . ':' . $file->getInode());
                 }
             }
         }

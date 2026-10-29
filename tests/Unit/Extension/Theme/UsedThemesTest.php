@@ -8,12 +8,14 @@ use PHPUnit\Framework\TestCase;
 use YiiPress\Build\DirectoryRemover;
 use YiiPress\Extension\Theme\UsedThemes;
 
+use function copy;
 use function file_get_contents;
 use function file_put_contents;
 use function filemtime;
 use function json_decode;
 use function json_encode;
 use function mkdir;
+use function rename;
 use function sys_get_temp_dir;
 use function time;
 use function touch;
@@ -99,6 +101,38 @@ final class UsedThemesTest extends TestCase
         self::assertSame(['wonder'], $used);
     }
 
+    public function testRewriteWithRestoredModificationTimeIsSeenWhereChangeTimeIsCreationTime(): void
+    {
+        $entry = $this->contentDir . '/blog/first.md';
+        $this->writeEntry('blog/first.md', 'aaaaaa');
+        $modified = time() - 600;
+        touch($entry, $modified);
+        $this->windowsScan()->find(['aaaaaa', 'wonder'], $this->contentDir);
+        $this->writeEntry('blog/first.md', 'wonder');
+        touch($entry, $modified);
+
+        $used = $this->windowsScan()->find(['aaaaaa', 'wonder'], $this->contentDir);
+
+        self::assertSame(['wonder'], $used);
+    }
+
+    public function testChangeTimeAndInodeAreNotTrustedWhereChangeTimeIsCreationTime(): void
+    {
+        $entry = $this->contentDir . '/blog/first.md';
+        $modified = time() - 600;
+        touch($entry, $modified);
+        $this->windowsScan()->find(['wonder'], $this->contentDir);
+        $this->rewriteCachedThemes(['spare']);
+        // Same contents and modification time in a new file: only the change time and the inode differ.
+        copy($entry, $entry . '.new');
+        rename($entry . '.new', $entry);
+        touch($entry, $modified);
+
+        $used = $this->windowsScan()->find(['wonder', 'spare'], $this->contentDir);
+
+        self::assertSame(['spare'], $used);
+    }
+
     public function testAddedEntryIsScannedAgain(): void
     {
         $this->laterScan()->find(['spare'], $this->contentDir);
@@ -134,6 +168,18 @@ final class UsedThemesTest extends TestCase
     private function laterScan(): UsedThemes
     {
         return new UsedThemes($this->cacheFile, static fn(): int => time() + UsedThemes::CLOCK_SKEW_SECONDS + 1);
+    }
+
+    /**
+     * A later scan as on Windows, where PHP reports the creation time as `ctime`.
+     */
+    private function windowsScan(): UsedThemes
+    {
+        return new UsedThemes(
+            $this->cacheFile,
+            static fn(): int => time() + UsedThemes::CLOCK_SKEW_SECONDS + 1,
+            changeTimeIsCreationTime: true,
+        );
     }
 
     private function writeEntry(string $path, string $theme): void

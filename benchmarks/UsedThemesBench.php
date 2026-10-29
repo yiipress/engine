@@ -53,4 +53,12 @@ final class UsedThemesBench
     {
         new UsedThemes($this->cacheFile)->find(['wonder'], $this->dataDir);
     }
+
+    #[Revs(1)]
+    #[Iterations(5)]
+    #[Warmup(1)]
+    public function benchFindUnchangedContentWhereChangeTimeIsCreationTime(): void
+    {
+        new UsedThemes($this->cacheFile, changeTimeIsCreationTime: true)->find(['wonder'], $this->dataDir);
+    }
 }
