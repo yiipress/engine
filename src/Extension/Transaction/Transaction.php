@@ -71,11 +71,13 @@ final class Transaction
      */
     public function moveDirectory(string $from, string $to, array $hashes): void
     {
+        self::checkTarget($to, JournalPaths::isDirectoryTarget($to));
         $this->steps[] = ['kind' => 'move_dir', 'from' => $from, 'to' => $to, 'hashes' => $hashes];
     }
 
     public function replaceFile(string $path, string $contents): void
     {
+        self::checkTarget($path, JournalPaths::isFileTarget($path));
         $staged = $this->paths->staging($this->tx) . '/files/' . count($this->steps);
         $absolute = $this->paths->absolute($staged);
         StatePaths::makeDirectory(dirname($absolute));
@@ -87,6 +89,15 @@ final class Transaction
 
     public function commit(): void
     {
+        foreach ($this->steps as $step) {
+            $target = $step['kind'] === 'move_dir' ? $step['to'] : $step['path'];
+            if (!JournalPaths::staysInside($target, $this->paths)) {
+                throw new InstallException('filesystem_failed', sprintf(
+                    '"%s" resolves to a location outside the project; nothing was changed.',
+                    $target,
+                ));
+            }
+        }
         $steps = $this->backUp();
         $journal = new Journal($this->tx, $this->operation, Journal::PREPARED, $steps);
         $journal->write($this->paths);
@@ -106,6 +117,16 @@ final class Transaction
         $journal->withState(Journal::COMMITTED)->write($this->paths);
         Recovery::cleanUp($this->paths, $this->tx);
         $this->done = true;
+    }
+
+    private static function checkTarget(string $path, bool $allowed): void
+    {
+        if (!$allowed) {
+            throw new InstallException('filesystem_failed', sprintf(
+                'An extension installation cannot change "%s".',
+                $path,
+            ));
+        }
     }
 
     /**

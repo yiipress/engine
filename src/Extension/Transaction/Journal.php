@@ -6,7 +6,6 @@ namespace YiiPress\Extension\Transaction;
 
 use JsonException;
 use YiiPress\Extension\Install\InstallException;
-use YiiPress\Extension\PortablePath;
 
 use function file_get_contents;
 use function in_array;
@@ -84,7 +83,7 @@ final readonly class Journal
 
         $steps = [];
         foreach ($data['steps'] as $step) {
-            $steps[] = self::step($step, $paths);
+            $steps[] = self::step($step, $data['tx'], $paths);
         }
 
         return new self($data['tx'], $data['operation'], $data['state'], $steps);
@@ -93,24 +92,25 @@ final readonly class Journal
     /**
      * @return array{kind: 'move_dir', from: string, to: string, hashes: array<string, string>}|array{kind: 'replace_file', path: string, staged: string, backup: string|null}
      */
-    private static function step(mixed $step, StatePaths $paths): array
+    private static function step(mixed $step, string $tx, StatePaths $paths): array
     {
         if (!is_array($step)) {
             throw self::malformed($paths);
         }
+        $isTransactionPath = static fn(string $path): bool => JournalPaths::isTransactionPath($path, $tx, $paths);
         if (($step['kind'] ?? null) === 'move_dir' && is_array($step['hashes'] ?? null)) {
             $hashes = [];
             foreach ($step['hashes'] as $file => $hash) {
                 if (!is_string($hash)) {
                     throw self::malformed($paths);
                 }
-                $hashes[self::path((string) $file, $paths)] = $hash;
+                $hashes[self::path((string) $file, $paths, JournalPaths::isPortable(...))] = $hash;
             }
 
             return [
                 'kind' => 'move_dir',
-                'from' => self::path($step['from'] ?? null, $paths),
-                'to' => self::path($step['to'] ?? null, $paths),
+                'from' => self::path($step['from'] ?? null, $paths, $isTransactionPath),
+                'to' => self::path($step['to'] ?? null, $paths, JournalPaths::isDirectoryTarget(...)),
                 'hashes' => $hashes,
             ];
         }
@@ -119,18 +119,21 @@ final readonly class Journal
 
             return [
                 'kind' => 'replace_file',
-                'path' => self::path($step['path'] ?? null, $paths),
-                'staged' => self::path($step['staged'] ?? null, $paths),
-                'backup' => $backup === null ? null : self::path($backup, $paths),
+                'path' => self::path($step['path'] ?? null, $paths, JournalPaths::isFileTarget(...)),
+                'staged' => self::path($step['staged'] ?? null, $paths, $isTransactionPath),
+                'backup' => $backup === null ? null : self::path($backup, $paths, $isTransactionPath),
             ];
         }
 
         throw self::malformed($paths);
     }
 
-    private static function path(mixed $path, StatePaths $paths): string
+    /**
+     * @param callable(string): bool $allowed
+     */
+    private static function path(mixed $path, StatePaths $paths, callable $allowed): string
     {
-        if (!is_string($path) || PortablePath::problem($path) !== null) {
+        if (!is_string($path) || !$allowed($path)) {
             throw self::malformed($paths);
         }
 

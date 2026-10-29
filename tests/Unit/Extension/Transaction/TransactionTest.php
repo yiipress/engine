@@ -64,7 +64,7 @@ final class TransactionTest extends TestCase
         $hashes = $this->stagePackage($tx);
         $tx->moveDirectory($tx->stagingPath('package'), 'themes/wonder', $hashes);
         $tx->replaceFile('content/config.yaml', "theme: wonder\n");
-        $tx->replaceFile('blocker/inside', 'x');
+        $tx->replaceFile('blocker/config.yaml', 'x');
 
         try {
             $tx->commit();

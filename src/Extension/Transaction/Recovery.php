@@ -58,6 +58,12 @@ final class Recovery
      */
     public function undo(StatePaths $paths, Journal $journal): void
     {
+        foreach ($journal->steps as $step) {
+            $target = $step['kind'] === 'move_dir' ? $step['to'] : $step['path'];
+            if (!JournalPaths::staysInside($target, $paths)) {
+                throw self::failed(sprintf('"%s" resolves to a location outside the project.', $target));
+            }
+        }
         foreach (array_reverse($journal->steps) as $step) {
             if ($step['kind'] === 'move_dir') {
                 $this->undoMove($paths, $step['to'], $step['hashes']);
