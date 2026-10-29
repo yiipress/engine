@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiPress\Tests\Unit\Extension\Transaction;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiPress\Build\DirectoryRemover;
 use YiiPress\Extension\DirectoryHashes;
@@ -15,14 +16,18 @@ use YiiPress\Extension\Transaction\StatePaths;
 use YiiPress\Extension\Transaction\Transaction;
 
 use function chmod;
+use function dirname;
 use function file_exists;
 use function file_get_contents;
 use function file_put_contents;
 use function glob;
 use function hash;
 use function is_dir;
+use function is_link;
+use function json_encode;
 use function mkdir;
 use function rename;
+use function symlink;
 use function sys_get_temp_dir;
 use function uniqid;
 
@@ -136,6 +141,200 @@ final class TransactionTest extends TestCase
         }
 
         self::assertSame('mine', file_get_contents($this->root . '/themes/wonder/entry.php'));
+    }
+
+    public function testCommitReplacesRetiredDirectory(): void
+    {
+        $this->installOldPackage();
+        $tx = Transaction::begin($this->root);
+        $hashes = $this->stagePackage($tx);
+        $tx->retireDirectory('themes/wonder');
+        $tx->moveDirectory($tx->stagingPath('package'), 'themes/wonder', $hashes);
+        $tx->replaceFile('yiipress.lock', "{\"new\": true}\n");
+
+        $tx->commit();
+
+        self::assertSame('<?php', file_get_contents($this->root . '/themes/wonder/entry.php'));
+        self::assertFileDoesNotExist($this->root . '/themes/wonder/old.php');
+        self::assertSame("{\"new\": true}\n", file_get_contents($this->root . '/yiipress.lock'));
+        self::assertFalse(is_dir($this->root . '/.yiipress/backup/' . $tx->tx));
+        self::assertFalse(Recovery::pending($this->root));
+    }
+
+    public function testCommitDeletesRetiredDirectory(): void
+    {
+        $this->installOldPackage();
+        $tx = Transaction::begin($this->root);
+        $tx->retireDirectory('themes/wonder');
+        $tx->replaceFile('yiipress.lock', "{}\n");
+
+        $tx->commit();
+
+        self::assertFalse(file_exists($this->root . '/themes/wonder'));
+        self::assertTrue(is_dir($this->root . '/themes'));
+        self::assertSame("{}\n", file_get_contents($this->root . '/yiipress.lock'));
+        self::assertFalse(is_dir($this->root . '/.yiipress/backup/' . $tx->tx));
+    }
+
+    public function testFailedStepPutsRetiredDirectoryBack(): void
+    {
+        $this->installOldPackage();
+        file_put_contents($this->root . '/blocker', 'a file');
+        $tx = Transaction::begin($this->root);
+        $hashes = $this->stagePackage($tx);
+        $tx->retireDirectory('themes/wonder');
+        $tx->moveDirectory($tx->stagingPath('package'), 'themes/wonder', $hashes);
+        $tx->replaceFile('yiipress.lock', "{}\n");
+        $tx->replaceFile('blocker/config.yaml', 'x');
+
+        try {
+            $tx->commit();
+            self::fail('No exception thrown.');
+        } catch (InstallException $exception) {
+            self::assertSame('filesystem_failed', $exception->errorCode);
+        }
+
+        $this->assertOldPackageInPlace();
+        self::assertFalse(Recovery::pending($this->root));
+    }
+
+    public function testRetiringMissingDirectoryChangesNothing(): void
+    {
+        file_put_contents($this->root . '/yiipress.lock', "{\"old\": true}\n");
+        $tx = Transaction::begin($this->root);
+        $tx->retireDirectory('themes/wonder');
+        $tx->replaceFile('yiipress.lock', "{}\n");
+
+        try {
+            $tx->commit();
+            self::fail('No exception thrown.');
+        } catch (InstallException $exception) {
+            self::assertSame('filesystem_failed', $exception->errorCode);
+        }
+
+        self::assertSame("{\"old\": true}\n", file_get_contents($this->root . '/yiipress.lock'));
+        self::assertFalse(Recovery::pending($this->root));
+    }
+
+    public function testRetiringLinkIsRefused(): void
+    {
+        mkdir($this->root . '/elsewhere');
+        file_put_contents($this->root . '/elsewhere/mine.php', 'mine');
+        mkdir($this->root . '/themes');
+        symlink($this->root . '/elsewhere', $this->root . '/themes/wonder');
+        $tx = Transaction::begin($this->root);
+        $tx->retireDirectory('themes/wonder');
+
+        try {
+            $tx->commit();
+            self::fail('No exception thrown.');
+        } catch (InstallException $exception) {
+            self::assertSame('filesystem_failed', $exception->errorCode);
+        }
+
+        self::assertTrue(is_link($this->root . '/themes/wonder'));
+        self::assertSame('mine', file_get_contents($this->root . '/elsewhere/mine.php'));
+    }
+
+    public function testRetiringOtherThanPackageDirectoryIsRefused(): void
+    {
+        $tx = Transaction::begin($this->root);
+
+        $this->expectExceptionObject(new InstallException(
+            'filesystem_failed',
+            'An extension operation cannot change "content".',
+        ));
+
+        $tx->retireDirectory('content');
+    }
+
+    /**
+     * @return iterable<string, array{bool, bool}>
+     */
+    public static function killedUpdateProvider(): iterable
+    {
+        yield 'killed before retiring' => [false, false];
+        yield 'killed after retiring' => [true, false];
+        yield 'killed after the replacement was in place' => [true, true];
+    }
+
+    #[DataProvider('killedUpdateProvider')]
+    public function testRecoveryPutsBackPackageOfKilledUpdate(bool $retired, bool $replaced): void
+    {
+        $this->simulateKilledUpdate($retired, $replaced);
+
+        $message = new Recovery()->recover($this->root);
+
+        self::assertSame('The interrupted update was undone.', $message);
+        $this->assertOldPackageInPlace();
+        self::assertFalse(Recovery::pending($this->root));
+    }
+
+    public function testRecoveryKeepsWhatAppearedAtRetiredPath(): void
+    {
+        $this->simulateKilledUpdate(true, false);
+        mkdir($this->root . '/themes/wonder');
+        file_put_contents($this->root . '/themes/wonder/mine.php', 'mine');
+
+        try {
+            new Recovery()->recover($this->root);
+            self::fail('No exception thrown.');
+        } catch (InstallException $exception) {
+            self::assertSame('recovery_failed', $exception->errorCode);
+        }
+
+        self::assertSame('mine', file_get_contents($this->root . '/themes/wonder/mine.php'));
+        self::assertTrue(Recovery::pending($this->root));
+    }
+
+    public function testRecoveryCleansUpCommittedRemoval(): void
+    {
+        $this->installOldPackage();
+        $tx = Transaction::begin($this->root);
+        $backup = '.yiipress/backup/' . $tx->tx . '/0';
+        new Journal($tx->tx, 'remove', Journal::COMMITTED, [
+            ['kind' => 'retire_dir', 'from' => 'themes/wonder', 'backup' => $backup],
+        ])->write(new StatePaths($this->root));
+        mkdir(dirname($this->root . '/' . $backup), 0o755, true);
+        rename($this->root . '/themes/wonder', $this->root . '/' . $backup);
+
+        new Recovery()->recover($this->root);
+
+        self::assertFalse(file_exists($this->root . '/themes/wonder'));
+        self::assertFalse(is_dir($this->root . '/.yiipress/backup/' . $tx->tx));
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>}>
+     */
+    public static function malformedRetireProvider(): iterable
+    {
+        yield 'backup outside the transaction' => [['from' => 'themes/wonder', 'backup' => 'themes/other']];
+        yield 'not a package directory' => [['from' => 'content', 'backup' => '.yiipress/backup/0123456789abcdef/0']];
+        yield 'no backup' => [['from' => 'themes/wonder']];
+    }
+
+    /**
+     * @param array<string, mixed> $step
+     */
+    #[DataProvider('malformedRetireProvider')]
+    public function testRecoveryRefusesMalformedRetireStep(array $step): void
+    {
+        mkdir($this->root . '/.yiipress');
+        file_put_contents($this->root . '/.yiipress/journal.json', json_encode([
+            'journal' => 1,
+            'tx' => '0123456789abcdef',
+            'operation' => 'remove',
+            'state' => Journal::PREPARED,
+            'steps' => [['kind' => 'retire_dir'] + $step],
+        ]));
+
+        try {
+            new Recovery()->recover($this->root);
+            self::fail('No exception thrown.');
+        } catch (InstallException $exception) {
+            self::assertSame('recovery_failed', $exception->errorCode);
+        }
     }
 
     public function testRecoveryRemovesFileAddedByKilledTransaction(): void
@@ -289,6 +488,50 @@ final class TransactionTest extends TestCase
         file_put_contents($tx->stagingDirectory() . '/package/assets/style.css', 'body{}');
 
         return DirectoryHashes::of($tx->stagingDirectory() . '/package');
+    }
+
+    private function installOldPackage(): void
+    {
+        mkdir($this->root . '/themes/wonder', 0o755, true);
+        file_put_contents($this->root . '/themes/wonder/old.php', 'old');
+        file_put_contents($this->root . '/yiipress.lock', "{\"old\": true}\n");
+    }
+
+    private function assertOldPackageInPlace(): void
+    {
+        self::assertSame('old', file_get_contents($this->root . '/themes/wonder/old.php'));
+        self::assertFileDoesNotExist($this->root . '/themes/wonder/entry.php');
+        self::assertSame("{\"old\": true}\n", file_get_contents($this->root . '/yiipress.lock'));
+    }
+
+    /**
+     * Leaves the project as an update killed before retiring the old package, after it, or after the new package
+     * was moved into place.
+     */
+    private function simulateKilledUpdate(bool $retired, bool $replaced): void
+    {
+        $this->installOldPackage();
+        $tx = Transaction::begin($this->root);
+        $hashes = $this->stagePackage($tx);
+        $backup = '.yiipress/backup/' . $tx->tx . '/0';
+        mkdir($this->root . '/.yiipress/backup/' . $tx->tx, 0o755, true);
+        new Journal($tx->tx, 'update', Journal::PREPARED, [
+            ['kind' => 'retire_dir', 'from' => 'themes/wonder', 'backup' => $backup],
+            ['kind' => 'move_dir', 'from' => $tx->stagingPath('package'), 'to' => 'themes/wonder', 'hashes' => $hashes],
+            [
+                'kind' => 'replace_file',
+                'path' => 'yiipress.lock',
+                'staged' => $tx->stagingPath('files/2'),
+                'backup' => '.yiipress/backup/' . $tx->tx . '/2',
+            ],
+        ])->write(new StatePaths($this->root));
+        file_put_contents($this->root . '/.yiipress/backup/' . $tx->tx . '/2', "{\"old\": true}\n");
+        if ($retired) {
+            rename($this->root . '/themes/wonder', $this->root . '/' . $backup);
+        }
+        if ($replaced) {
+            rename($tx->stagingDirectory() . '/package', $this->root . '/themes/wonder');
+        }
     }
 
     /**

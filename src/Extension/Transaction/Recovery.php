@@ -96,13 +96,22 @@ final class Recovery
                 throw self::failed(sprintf('"%s" resolves to a location outside the project.', Journal::target($step)));
             }
         }
+        $notRetired = self::notRetired($paths, $journal);
         foreach (array_reverse($journal->steps) as $step) {
+            if ($step['kind'] === 'move_dir' && isset($notRetired[$step['to']])) {
+                // The directory there is the one the operation was going to retire, so the move never happened.
+                continue;
+            }
             if ($step['kind'] === 'move_dir') {
                 $this->undoMove($paths, $journal->tx, $step['to'], $step['hashes']);
                 continue;
             }
             if ($step['kind'] === 'add_file') {
                 self::undoAdd($paths, $step['to'], $step['hash']);
+                continue;
+            }
+            if ($step['kind'] === 'retire_dir') {
+                self::undoRetire($paths, $step['from'], $step['backup']);
                 continue;
             }
             $target = $paths->absolute($step['path']);
@@ -119,6 +128,24 @@ final class Recovery
             AtomicFile::write($target, $contents);
         }
         self::cleanUp($paths, $journal->tx);
+    }
+
+    /**
+     * @return array<string, true> Directories of `retire_dir` steps that were not applied: their backup is absent.
+     */
+    private static function notRetired(StatePaths $paths, Journal $journal): array
+    {
+        $notRetired = [];
+        foreach ($journal->steps as $step) {
+            if ($step['kind'] === 'retire_dir') {
+                $backup = $paths->absolute($step['backup']);
+                if (!file_exists($backup) && !is_link($backup)) {
+                    $notRetired[$step['from']] = true;
+                }
+            }
+        }
+
+        return $notRetired;
     }
 
     public static function cleanUp(StatePaths $paths, string $tx): void
@@ -145,6 +172,30 @@ final class Recovery
         }
         if (!@unlink($target)) {
             throw self::failed(sprintf('Could not delete "%s".', $to));
+        }
+    }
+
+    /**
+     * Moves a retired directory back, unless it was never moved or something else took its place.
+     */
+    private static function undoRetire(StatePaths $paths, string $from, string $backup): void
+    {
+        $source = $paths->absolute($backup);
+        if (!file_exists($source) && !is_link($source)) {
+            return;
+        }
+        $target = $paths->absolute($from);
+        if (file_exists($target) || is_link($target)) {
+            throw self::failed(sprintf(
+                '"%s" appeared where the interrupted operation took the installed package from; '
+                . 'the package is in "%s".',
+                $from,
+                $backup,
+            ));
+        }
+        StatePaths::makeDirectory(dirname($target));
+        if (!@rename($source, $target)) {
+            throw self::failed(sprintf('Could not move "%s" back to "%s".', $backup, $from));
         }
     }
 

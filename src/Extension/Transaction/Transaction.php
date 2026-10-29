@@ -14,6 +14,7 @@ use function count;
 use function dirname;
 use function file_exists;
 use function file_put_contents;
+use function is_dir;
 use function is_link;
 use function random_bytes;
 use function rename;
@@ -88,6 +89,18 @@ final class Transaction
     {
         self::checkTarget($to, JournalPaths::isPackageFileTarget($to));
         $this->steps[] = ['kind' => 'add_file', 'from' => $from, 'to' => $to, 'hash' => $hash];
+    }
+
+    /**
+     * Takes an installed directory out of the project: commit deletes it, a failure or recovery puts it back.
+     *
+     * @param string $path Project-relative directory of an installed package; must be a directory, not a link.
+     */
+    public function retireDirectory(string $path): void
+    {
+        self::checkTarget($path, JournalPaths::isDirectoryTarget($path));
+        $backup = $this->paths->backup($this->tx) . '/' . count($this->steps);
+        $this->steps[] = ['kind' => 'retire_dir', 'from' => $path, 'backup' => $backup];
     }
 
     public function replaceFile(string $path, string $contents): void
@@ -180,9 +193,18 @@ final class Transaction
      */
     private function apply(array $step): void
     {
-        [$from, $to] = $step['kind'] === 'replace_file' ? [$step['staged'], $step['path']] : [$step['from'], $step['to']];
+        [$from, $to] = match ($step['kind']) {
+            'replace_file' => [$step['staged'], $step['path']],
+            'retire_dir' => [$step['from'], $step['backup']],
+            default => [$step['from'], $step['to']],
+        };
         $target = $this->paths->absolute($to);
-        if ($step['kind'] !== 'replace_file' && (file_exists($target) || is_link($target))) {
+        if ($step['kind'] === 'retire_dir') {
+            $source = $this->paths->absolute($from);
+            if (is_link($source) || !is_dir($source)) {
+                throw new InstallException('filesystem_failed', sprintf('"%s" is not a directory.', $from));
+            }
+        } elseif ($step['kind'] !== 'replace_file' && (file_exists($target) || is_link($target))) {
             throw new InstallException('destination_exists', sprintf('"%s" appeared during the installation.', $to));
         }
         StatePaths::makeDirectory(dirname($target));

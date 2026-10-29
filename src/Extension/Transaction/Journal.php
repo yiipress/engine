@@ -25,13 +25,15 @@ use const JSON_UNESCAPED_UNICODE;
  * `.yiipress/journal.json`: the steps of a transaction, written before the first change to the project.
  *
  * Steps are `move_dir` (`from`, `to`, `hashes` of the moved files), `add_file` (`from`, `to`, `hash` of a file put
- * into an existing directory) and `replace_file` (`path`, `staged` new contents, `backup` of the old file or `null`
- * when there was none). Paths are relative to the project root.
+ * into an existing directory), `retire_dir` (`from`, an installed directory moved to `backup`, which commit deletes and
+ * undo moves back) and `replace_file` (`path`, `staged` new contents, `backup` of the old file or `null` when there was
+ * none). Paths are relative to the project root.
  *
  * @phpstan-type MoveDirStep array{kind: 'move_dir', from: string, to: string, hashes: array<string, string>}
  * @phpstan-type AddFileStep array{kind: 'add_file', from: string, to: string, hash: string}
+ * @phpstan-type RetireDirStep array{kind: 'retire_dir', from: string, backup: string}
  * @phpstan-type ReplaceFileStep array{kind: 'replace_file', path: string, staged: string, backup: string|null}
- * @phpstan-type Step MoveDirStep|AddFileStep|ReplaceFileStep
+ * @phpstan-type Step MoveDirStep|AddFileStep|RetireDirStep|ReplaceFileStep
  */
 final readonly class Journal
 {
@@ -60,7 +62,11 @@ final readonly class Journal
      */
     public static function target(array $step): string
     {
-        return $step['kind'] === 'replace_file' ? $step['path'] : $step['to'];
+        return match ($step['kind']) {
+            'replace_file' => $step['path'],
+            'retire_dir' => $step['from'],
+            default => $step['to'],
+        };
     }
 
     public function write(StatePaths $paths): void
@@ -136,6 +142,13 @@ final readonly class Journal
                 'from' => self::path($step['from'] ?? null, $paths, $isTransactionPath),
                 'to' => self::path($step['to'] ?? null, $paths, JournalPaths::isPackageFileTarget(...)),
                 'hash' => $step['hash'],
+            ];
+        }
+        if (($step['kind'] ?? null) === 'retire_dir') {
+            return [
+                'kind' => 'retire_dir',
+                'from' => self::path($step['from'] ?? null, $paths, JournalPaths::isDirectoryTarget(...)),
+                'backup' => self::path($step['backup'] ?? null, $paths, $isTransactionPath),
             ];
         }
         if (($step['kind'] ?? null) === 'replace_file') {
