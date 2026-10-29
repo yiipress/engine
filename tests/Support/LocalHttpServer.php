@@ -21,14 +21,7 @@ use const PHP_BINARY;
  */
 final class LocalHttpServer
 {
-    /** @var resource */
-    private $process;
-
-    private function __construct(public readonly string $baseUrl, mixed $process)
-    {
-        /** @var resource $process */
-        $this->process = $process;
-    }
+    private function __construct(public readonly string $baseUrl, private mixed $process) {}
 
     public static function start(): self
     {

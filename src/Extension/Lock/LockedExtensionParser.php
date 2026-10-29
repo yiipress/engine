@@ -169,7 +169,7 @@ final class LockedExtensionParser
      */
     private static function rejectUnknown(array $data, array $known, string $prefix): void
     {
-        $unknown = array_diff(array_map('strval', array_keys($data)), $known);
+        $unknown = array_diff(array_map(strval(...), array_keys($data)), $known);
         if ($unknown !== []) {
             throw self::invalid($prefix . implode(', ', $unknown), 'is not a known field');
         }

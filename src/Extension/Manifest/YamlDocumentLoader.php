@@ -103,12 +103,6 @@ final class YamlDocumentLoader
         if (!is_array($value)) {
             return true;
         }
-        foreach ($value as $item) {
-            if (!self::withinNodeLimit($item, $remaining)) {
-                return false;
-            }
-        }
-
-        return true;
+        return array_all($value, fn($item) => self::withinNodeLimit($item, $remaining));
     }
 }

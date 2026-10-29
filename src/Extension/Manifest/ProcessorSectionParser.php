@@ -99,7 +99,7 @@ final class ProcessorSectionParser
         }
         $fields->unique($values, $field);
 
-        return array_values(array_map(static fn(string $value): ProcessorStage => ProcessorStage::from($value), $values));
+        return array_values(array_map(ProcessorStage::from(...), $values));
     }
 
     /**

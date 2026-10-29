@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiPress\Extension\Processor;
 
-final readonly class ProcessorReference
+final readonly class ProcessorReference implements \Stringable
 {
     /**
      * @param string $pipeline `content` or `feed`.

@@ -25,13 +25,13 @@ use const DIRECTORY_SEPARATOR;
  *
  * Package code is never included or executed: manifest paths are only checked with `is_file()` and `realpath()`.
  */
-final class ManifestReader
+final readonly class ManifestReader
 {
     public const string FILE_NAME = 'extension.yaml';
     public const string PACKAGE_DIR = 'package';
 
     public function __construct(
-        private readonly ManifestParser $parser = new ManifestParser(),
+        private ManifestParser $parser = new ManifestParser(),
     ) {}
 
     /**

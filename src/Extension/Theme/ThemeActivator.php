@@ -19,7 +19,6 @@ use function str_contains;
 use function str_ends_with;
 use function str_starts_with;
 use function strlen;
-use function strpos;
 use function substr;
 use function trim;
 use function yaml_parse;
@@ -127,7 +126,7 @@ final class ThemeActivator
         if (preg_match($pattern, rtrim($rest, " \t"), $matches) !== 1) {
             throw self::unsupported(sprintf('the value of "%s" spans more than one line', rtrim($line)));
         }
-        if ($rest[0] !== '"' && $rest[0] !== "'" && strpos($matches[1], ': ') !== false) {
+        if ($rest[0] !== '"' && $rest[0] !== "'" && str_contains($matches[1], ': ')) {
             throw self::unsupported(sprintf('line "%s" is not a single value', rtrim($line)));
         }
 
@@ -148,9 +147,7 @@ final class ThemeActivator
     {
         $before = $old === '' ? [] : @yaml_parse($old);
         $after = @yaml_parse($new);
-        if ($before === null) {
-            $before = [];
-        }
+        $before ??= [];
         if (!is_array($before) || !is_array($after) || ($after['theme'] ?? null) !== $themeName) {
             throw self::unsupported('the result does not set theme as expected');
         }
