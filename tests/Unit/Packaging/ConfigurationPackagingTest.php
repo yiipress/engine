@@ -157,6 +157,60 @@ final class ConfigurationPackagingTest extends TestCase
     }
 
     #[Test]
+    public function macosAndWindowsBinariesBuildAndVerifyZlib(): void
+    {
+        $root = dirname(__DIR__, 3);
+        $macosScript = file_get_contents($root . '/build/package-macos.sh');
+        $windowsScript = file_get_contents($root . '/build/package-windows.ps1');
+
+        self::assertIsString($macosScript);
+        self::assertIsString($windowsScript);
+        self::assertMatchesRegularExpression('/STATIC_PHP_EXTENSIONS:-[a-z,]*\bzlib\b/', $macosScript);
+        self::assertMatchesRegularExpression('/StaticPhpExtensions = "[a-z,]*\bzlib\b/', $windowsScript);
+        self::assertStringContainsString('build/static-php/check-extensions.php', $macosScript);
+        self::assertStringContainsString('build/static-php/check-extensions.php', $windowsScript);
+        self::assertMatchesRegularExpression('/"\$CHECK_PATH" [a-z,]*\bzlib\b/', $macosScript);
+        self::assertMatchesRegularExpression('/\$checkPath" @\("[a-z,]*\bzlib\b/', $windowsScript);
+    }
+
+    #[Test]
+    public function extensionCheckPassesWhenEveryExtensionIsLoaded(): void
+    {
+        [$exitCode] = $this->runExtensionCheck('zlib,json');
+
+        self::assertSame(0, $exitCode);
+    }
+
+    #[Test]
+    public function extensionCheckFailsAndNamesMissingExtension(): void
+    {
+        [$exitCode, $output] = $this->runExtensionCheck('zlib,yiipress_missing_extension');
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('yiipress_missing_extension', $output);
+        self::assertStringNotContainsString('zlib', $output);
+    }
+
+    /**
+     * @return array{int, string}
+     */
+    private function runExtensionCheck(string $extensions): array
+    {
+        /** @var list<string> $output */
+        $output = [];
+        $exitCode = -1;
+        exec(
+            escapeshellarg(PHP_BINARY) . ' '
+            . escapeshellarg(dirname(__DIR__, 3) . '/build/static-php/check-extensions.php') . ' '
+            . escapeshellarg($extensions) . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        return [$exitCode, implode("\n", $output)];
+    }
+
+    #[Test]
     public function distrolessImageCopiesOnlyStaticBinary(): void
     {
         $dockerfile = file_get_contents(dirname(__DIR__, 3) . '/docker/Dockerfile');
