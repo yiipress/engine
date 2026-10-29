@@ -14,6 +14,7 @@ use YiiPress\Extension\Transaction\Transaction;
 use function dirname;
 use function file_get_contents;
 use function file_put_contents;
+use function hash;
 use function json_encode;
 use function mkdir;
 use function symlink;
@@ -43,6 +44,8 @@ final class JournalPathsTest extends TestCase
         file_put_contents($this->outside . '/yiipress.lock', 'precious');
         file_put_contents($this->root . '/.yiipress/backup/' . self::TX . '/1', 'attacker');
         symlink($this->outside, $this->root . '/link');
+        mkdir($this->root . '/themes/wonder', 0o755, true);
+        symlink($this->outside, $this->root . '/themes/wonder/link');
     }
 
     protected function tearDown(): void
@@ -71,6 +74,15 @@ final class JournalPathsTest extends TestCase
         ];
         yield 'directory outside themes' => [
             ['kind' => 'move_dir', 'from' => '.yiipress/staging/' . self::TX . '/root/package', 'to' => 'link', 'hashes' => []],
+        ];
+        yield 'added file outside themes' => [
+            ['kind' => 'add_file', 'from' => $staged, 'to' => 'index.php', 'hash' => ''],
+        ];
+        yield 'added file through symlinked parent' => [
+            ['kind' => 'add_file', 'from' => $staged, 'to' => 'themes/wonder/link/config.yaml', 'hash' => hash('sha256', 'precious')],
+        ];
+        yield 'added file staged outside the transaction' => [
+            ['kind' => 'add_file', 'from' => 'link/config.yaml', 'to' => 'themes/wonder/config.yaml', 'hash' => ''],
         ];
     }
 

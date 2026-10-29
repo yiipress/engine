@@ -26,10 +26,12 @@ use function strlen;
  * Steps are only recorded until {@see commit()}; it backs up the files to replace, writes the journal, then
  * applies the steps. A failure undoes the applied steps at once; a killed process leaves the journal for
  * {@see Recovery}. The caller holds the {@see MutationLock}.
+ *
+ * @phpstan-import-type Step from Journal
  */
 final class Transaction
 {
-    /** @var list<array{kind: 'move_dir', from: string, to: string, hashes: array<string, string>}|array{kind: 'replace_file', path: string, staged: string, backup: string|null}> */
+    /** @var list<Step> */
     private array $steps = [];
     private bool $done = false;
 
@@ -77,6 +79,17 @@ final class Transaction
         $this->steps[] = ['kind' => 'move_dir', 'from' => $from, 'to' => $to, 'hashes' => $hashes];
     }
 
+    /**
+     * @param string $from Project-relative file, normally in staging.
+     * @param string $to Project-relative file inside an installed package; must not exist.
+     * @param string $hash SHA-256 of the file; recovery deletes it only while it still matches.
+     */
+    public function addFile(string $from, string $to, string $hash): void
+    {
+        self::checkTarget($to, JournalPaths::isPackageFileTarget($to));
+        $this->steps[] = ['kind' => 'add_file', 'from' => $from, 'to' => $to, 'hash' => $hash];
+    }
+
     public function replaceFile(string $path, string $contents): void
     {
         self::checkTarget($path, JournalPaths::isFileTarget($path));
@@ -92,11 +105,10 @@ final class Transaction
     public function commit(): void
     {
         foreach ($this->steps as $step) {
-            $target = $step['kind'] === 'move_dir' ? $step['to'] : $step['path'];
-            if (!JournalPaths::staysInside($target, $this->paths)) {
+            if (!JournalPaths::staysInside(Journal::target($step), $this->paths)) {
                 throw new InstallException('filesystem_failed', sprintf(
                     '"%s" resolves to a location outside the project; nothing was changed.',
-                    $target,
+                    Journal::target($step),
                 ));
             }
         }
@@ -125,7 +137,7 @@ final class Transaction
     {
         if (!$allowed) {
             throw new InstallException('filesystem_failed', sprintf(
-                'An extension installation cannot change "%s".',
+                'An extension operation cannot change "%s".',
                 $path,
             ));
         }
@@ -143,7 +155,7 @@ final class Transaction
     }
 
     /**
-     * @return list<array{kind: 'move_dir', from: string, to: string, hashes: array<string, string>}|array{kind: 'replace_file', path: string, staged: string, backup: string|null}>
+     * @return list<Step>
      */
     private function backUp(): array
     {
@@ -164,13 +176,13 @@ final class Transaction
     }
 
     /**
-     * @param array{kind: 'move_dir', from: string, to: string, hashes: array<string, string>}|array{kind: 'replace_file', path: string, staged: string, backup: string|null} $step
+     * @param Step $step
      */
     private function apply(array $step): void
     {
-        [$from, $to] = $step['kind'] === 'move_dir' ? [$step['from'], $step['to']] : [$step['staged'], $step['path']];
+        [$from, $to] = $step['kind'] === 'replace_file' ? [$step['staged'], $step['path']] : [$step['from'], $step['to']];
         $target = $this->paths->absolute($to);
-        if ($step['kind'] === 'move_dir' && (file_exists($target) || is_link($target))) {
+        if ($step['kind'] !== 'replace_file' && (file_exists($target) || is_link($target))) {
             throw new InstallException('destination_exists', sprintf('"%s" appeared during the installation.', $to));
         }
         StatePaths::makeDirectory(dirname($target));

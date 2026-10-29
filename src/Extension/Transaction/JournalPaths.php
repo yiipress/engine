@@ -21,6 +21,8 @@ final class JournalPaths
 {
     /** A theme directory; later extension types add their own. */
     private const string DIRECTORY_PATTERN = '~^themes/[a-z0-9]+(?:-[a-z0-9]+)*$~D';
+    /** A file inside a theme directory. */
+    private const string PACKAGE_FILE_PATTERN = '~^themes/[a-z0-9]+(?:-[a-z0-9]+)*/.+$~sD';
     /** `yiipress.lock` in the root, or `config.yaml` in the root or a content directory. */
     private const string FILE_PATTERN = '~^(?:yiipress\.lock|(?:[^/]+/)*config\.yaml)$~D';
 
@@ -32,6 +34,14 @@ final class JournalPaths
     public static function isDirectoryTarget(string $path): bool
     {
         return self::isPortable($path) && preg_match(self::DIRECTORY_PATTERN, $path) === 1;
+    }
+
+    /**
+     * A file inside a theme directory, which a restore puts back when it is missing.
+     */
+    public static function isPackageFileTarget(string $path): bool
+    {
+        return self::isPortable($path) && preg_match(self::PACKAGE_FILE_PATTERN, $path) === 1;
     }
 
     public static function isFileTarget(string $path): bool

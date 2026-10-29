@@ -24,8 +24,14 @@ use const JSON_UNESCAPED_UNICODE;
 /**
  * `.yiipress/journal.json`: the steps of a transaction, written before the first change to the project.
  *
- * Steps are `move_dir` (`from`, `to`, `hashes` of the moved files) and `replace_file` (`path`, `staged` new
- * contents, `backup` of the old file or `null` when there was none). Paths are relative to the project root.
+ * Steps are `move_dir` (`from`, `to`, `hashes` of the moved files), `add_file` (`from`, `to`, `hash` of a file put
+ * into an existing directory) and `replace_file` (`path`, `staged` new contents, `backup` of the old file or `null`
+ * when there was none). Paths are relative to the project root.
+ *
+ * @phpstan-type MoveDirStep array{kind: 'move_dir', from: string, to: string, hashes: array<string, string>}
+ * @phpstan-type AddFileStep array{kind: 'add_file', from: string, to: string, hash: string}
+ * @phpstan-type ReplaceFileStep array{kind: 'replace_file', path: string, staged: string, backup: string|null}
+ * @phpstan-type Step MoveDirStep|AddFileStep|ReplaceFileStep
  */
 final readonly class Journal
 {
@@ -33,7 +39,7 @@ final readonly class Journal
     public const string COMMITTED = 'committed';
 
     /**
-     * @param list<array{kind: 'move_dir', from: string, to: string, hashes: array<string, string>}|array{kind: 'replace_file', path: string, staged: string, backup: string|null}> $steps
+     * @param list<Step> $steps
      */
     public function __construct(
         public string $tx,
@@ -45,6 +51,16 @@ final readonly class Journal
     public function withState(string $state): self
     {
         return new self($this->tx, $this->operation, $state, $this->steps);
+    }
+
+    /**
+     * The project path a step changes.
+     *
+     * @param Step $step
+     */
+    public static function target(array $step): string
+    {
+        return $step['kind'] === 'replace_file' ? $step['path'] : $step['to'];
     }
 
     public function write(StatePaths $paths): void
@@ -90,7 +106,7 @@ final readonly class Journal
     }
 
     /**
-     * @return array{kind: 'move_dir', from: string, to: string, hashes: array<string, string>}|array{kind: 'replace_file', path: string, staged: string, backup: string|null}
+     * @return Step
      */
     private static function step(mixed $step, string $tx, StatePaths $paths): array
     {
@@ -112,6 +128,14 @@ final readonly class Journal
                 'from' => self::path($step['from'] ?? null, $paths, $isTransactionPath),
                 'to' => self::path($step['to'] ?? null, $paths, JournalPaths::isDirectoryTarget(...)),
                 'hashes' => $hashes,
+            ];
+        }
+        if (($step['kind'] ?? null) === 'add_file' && is_string($step['hash'] ?? null)) {
+            return [
+                'kind' => 'add_file',
+                'from' => self::path($step['from'] ?? null, $paths, $isTransactionPath),
+                'to' => self::path($step['to'] ?? null, $paths, JournalPaths::isPackageFileTarget(...)),
+                'hash' => $step['hash'],
             ];
         }
         if (($step['kind'] ?? null) === 'replace_file') {

@@ -19,6 +19,7 @@ use function file_exists;
 use function file_get_contents;
 use function file_put_contents;
 use function glob;
+use function hash;
 use function is_dir;
 use function mkdir;
 use function rename;
@@ -98,6 +99,67 @@ final class TransactionTest extends TestCase
         }
 
         self::assertSame('mine', file_get_contents($this->root . '/themes/wonder/mine.php'));
+    }
+
+    public function testCommitAddsMissingFileToExistingDirectory(): void
+    {
+        mkdir($this->root . '/themes/wonder', 0o755, true);
+        file_put_contents($this->root . '/themes/wonder/entry.php', '<?php');
+        $tx = Transaction::begin($this->root);
+        $this->stagePackage($tx);
+
+        $tx->addFile($tx->stagingPath('package/assets/style.css'), 'themes/wonder/assets/style.css', hash('sha256', 'body{}'));
+        $tx->commit();
+
+        self::assertSame('body{}', file_get_contents($this->root . '/themes/wonder/assets/style.css'));
+        self::assertSame('<?php', file_get_contents($this->root . '/themes/wonder/entry.php'));
+        self::assertFalse(Recovery::pending($this->root));
+    }
+
+    public function testAddedFileThatAppearsIsNotTouched(): void
+    {
+        mkdir($this->root . '/themes/wonder', 0o755, true);
+        $tx = Transaction::begin($this->root);
+        $this->stagePackage($tx);
+        $tx->addFile($tx->stagingPath('package/entry.php'), 'themes/wonder/entry.php', hash('sha256', '<?php'));
+        file_put_contents($this->root . '/themes/wonder/entry.php', 'mine');
+
+        try {
+            $tx->commit();
+            self::fail('No exception thrown.');
+        } catch (InstallException $exception) {
+            self::assertSame('destination_exists', $exception->errorCode);
+        }
+
+        self::assertSame('mine', file_get_contents($this->root . '/themes/wonder/entry.php'));
+    }
+
+    public function testRecoveryRemovesFileAddedByKilledTransaction(): void
+    {
+        $this->simulateKilledAdd();
+
+        $message = new Recovery()->recover($this->root);
+
+        self::assertSame('The interrupted restore was undone.', $message);
+        self::assertFileDoesNotExist($this->root . '/themes/wonder/entry.php');
+        self::assertSame('kept', file_get_contents($this->root . '/themes/wonder/kept.php'));
+        self::assertFalse(Recovery::pending($this->root));
+    }
+
+    public function testRecoveryKeepsChangedAddedFile(): void
+    {
+        $this->simulateKilledAdd();
+        file_put_contents($this->root . '/themes/wonder/entry.php', 'edited');
+
+        try {
+            new Recovery()->recover($this->root);
+            self::fail('No exception thrown.');
+        } catch (InstallException $exception) {
+            self::assertSame('recovery_failed', $exception->errorCode);
+        }
+
+        self::assertSame('edited', file_get_contents($this->root . '/themes/wonder/entry.php'));
+        self::assertTrue(Recovery::pending($this->root));
     }
 
     public function testRecoveryUndoesKilledTransaction(): void
@@ -223,6 +285,24 @@ final class TransactionTest extends TestCase
         file_put_contents($tx->stagingDirectory() . '/package/assets/style.css', 'body{}');
 
         return DirectoryHashes::of($tx->stagingDirectory() . '/package');
+    }
+
+    /**
+     * Leaves the project as a restore killed after it put a missing file into an installed theme.
+     */
+    private function simulateKilledAdd(): void
+    {
+        mkdir($this->root . '/themes/wonder', 0o755, true);
+        file_put_contents($this->root . '/themes/wonder/kept.php', 'kept');
+        $tx = Transaction::begin($this->root);
+        $this->stagePackage($tx);
+        new Journal($tx->tx, 'restore', Journal::PREPARED, [[
+            'kind' => 'add_file',
+            'from' => $tx->stagingPath('package/entry.php'),
+            'to' => 'themes/wonder/entry.php',
+            'hash' => hash('sha256', '<?php'),
+        ]])->write(new StatePaths($this->root));
+        rename($tx->stagingDirectory() . '/package/entry.php', $this->root . '/themes/wonder/entry.php');
     }
 
     /**

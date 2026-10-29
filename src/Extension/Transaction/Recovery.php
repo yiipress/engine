@@ -14,6 +14,7 @@ use function bin2hex;
 use function dirname;
 use function file_exists;
 use function file_get_contents;
+use function hash_file;
 use function is_dir;
 use function is_file;
 use function is_link;
@@ -91,14 +92,17 @@ final class Recovery
     public function undo(StatePaths $paths, Journal $journal): void
     {
         foreach ($journal->steps as $step) {
-            $target = $step['kind'] === 'move_dir' ? $step['to'] : $step['path'];
-            if (!JournalPaths::staysInside($target, $paths)) {
-                throw self::failed(sprintf('"%s" resolves to a location outside the project.', $target));
+            if (!JournalPaths::staysInside(Journal::target($step), $paths)) {
+                throw self::failed(sprintf('"%s" resolves to a location outside the project.', Journal::target($step)));
             }
         }
         foreach (array_reverse($journal->steps) as $step) {
             if ($step['kind'] === 'move_dir') {
                 $this->undoMove($paths, $journal->tx, $step['to'], $step['hashes']);
+                continue;
+            }
+            if ($step['kind'] === 'add_file') {
+                self::undoAdd($paths, $step['to'], $step['hash']);
                 continue;
             }
             $target = $paths->absolute($step['path']);
@@ -125,6 +129,23 @@ final class Recovery
         }
         self::removeQuietly($paths->absolute($paths->staging($tx)));
         self::removeQuietly($paths->absolute($paths->backup($tx)));
+    }
+
+    private static function undoAdd(StatePaths $paths, string $to, string $hash): void
+    {
+        $target = $paths->absolute($to);
+        if (!file_exists($target) && !is_link($target)) {
+            return;
+        }
+        if (is_link($target) || !is_file($target) || @hash_file('sha256', $target) !== $hash) {
+            throw self::failed(sprintf(
+                '"%s" differs from what the interrupted operation added, so it was not deleted.',
+                $to,
+            ));
+        }
+        if (!@unlink($target)) {
+            throw self::failed(sprintf('Could not delete "%s".', $to));
+        }
     }
 
     /**
