@@ -408,6 +408,24 @@ PHP,
         assertFalse(is_file($outputDir . '/blog/same/index.html'));
     }
 
+    public function testBuildAppliesMarkdownOptionsFromSiteConfig(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'index.md' => "---\ntitle: Home\n---\n\nfirst\nsecond\n",
+        ]);
+        file_put_contents(
+            $contentDir . '/config.yaml',
+            "markdown:\n  hard_soft_breaks: false\n",
+            FILE_APPEND,
+        );
+
+        $this->runBuild($contentDir, '--workers=1 --no-cache');
+
+        $html = file_get_contents($this->outputDir . '/index/index.html');
+        assertNotFalse($html);
+        assertMatchesRegularExpression('~<p>first\s+second</p>~', $html);
+    }
+
     public function testBuildOutputContainsRenderedHtml(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';
