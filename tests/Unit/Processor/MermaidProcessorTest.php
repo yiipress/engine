@@ -87,31 +87,40 @@ final class MermaidProcessorTest extends TestCase
         );
     }
 
-    public function testDecodesHtmlEntities(): void
+    public function testKeepsDiagramSourceHtmlEscaped(): void
     {
         $input = '<pre><code class="language-mermaid">graph TD; A--&gt;B;&amp;C</code></pre>';
 
         $result = $this->processor->process($input, $this->createEntry());
 
-        $this->assertStringContainsString('A-->B;&C', $result);
+        assertSame('<div class="mermaid" tabindex="0">graph TD; A--&gt;B;&amp;C</div>', $result);
     }
 
-    public function testHeadAssetsReturnsHtmlWhenMermaidPresent(): void
+    public function testKeepsLineBreakTagsInLabels(): void
+    {
+        $input = '<pre><code class="language-mermaid">flowchart LR
+    content["content/&lt;br&gt;Markdown"] --&gt; parse</code></pre>';
+
+        $result = $this->processor->process($input, $this->createEntry());
+
+        $this->assertStringContainsString('content["content/&lt;br&gt;Markdown"]', $result);
+    }
+
+    public function testHeadAssetsLoadsPinnedPeleWhenMermaidPresent(): void
     {
         $content = '<div class="mermaid">graph TD; A-->B;</div>';
 
         $result = $this->processor->headAssets($content);
 
-        $this->assertStringContainsString('mermaid.min.js', $result);
-        $this->assertStringContainsString('mermaid.css', $result);
-        $this->assertStringContainsString('initializeMermaid', $result);
-        $this->assertStringContainsString('useMaxWidth: false', $result);
-        $this->assertStringContainsString('enhanceMermaidDiagrams', $result);
-        $this->assertStringContainsString('mermaid-overflowing', $result);
-        $this->assertStringContainsString('centerMermaidDiagram', $result);
-        $this->assertStringContainsString('centerMermaidDiagramAfterLayout', $result);
-        $this->assertStringContainsString('collapseMermaidDiagram', $result);
-        $this->assertStringContainsString('ensureMermaidInteractionTracking', $result);
+        $this->assertStringContainsString(
+            '<script defer src="https://cdn.jsdelivr.net/npm/pele@1.12.0/dist/pele.global.js"'
+            . ' integrity="sha384-c+QpxCAcAD72seekPP6lAUNHjqe/wUv+S2pk2yBo4ECNKMxym7WFtKKoR5xMtyhz"'
+            . ' crossorigin="anonymous"></script>',
+            $result,
+        );
+        $this->assertStringContainsString('<link rel="stylesheet" href="assets/plugins/mermaid.css">', $result);
+        $this->assertStringContainsString('pele.mount(diagram, diagram.textContent);', $result);
+        $this->assertStringNotContainsString('mermaid.min.js', $result);
     }
 
     public function testHeadAssetsReturnsEmptyStringWhenNoMermaid(): void
@@ -131,9 +140,10 @@ final class MermaidProcessorTest extends TestCase
 
         $result = $this->processor->process($input, $this->createEntry());
 
-        $this->assertStringNotContainsString('<script>', $result);
-        $this->assertStringNotContainsString('</script>', $result);
-        $this->assertStringContainsString('<div class="mermaid" tabindex="0">', $result);
+        assertSame(
+            '<div class="mermaid" tabindex="0">&lt;script&gt;alert(\'xss\')&lt;/script&gt;</div>',
+            $result,
+        );
     }
 
     public function testAssetFilesReturnsMermaidCss(): void
@@ -147,12 +157,11 @@ final class MermaidProcessorTest extends TestCase
 
         $css = file_get_contents($sourceFile);
         $this->assertNotFalse($css);
-        $this->assertStringContainsString('--mermaid-expanded-width: calc(100vw - 2rem);', $css);
-        $this->assertStringContainsString('.mermaid.mermaid-overflowing.is-expanded', $css);
-        $this->assertStringContainsString('.mermaid.mermaid-overflowing:focus-visible', $css);
-        $this->assertStringContainsString('margin-inline: auto;', $css);
+        $this->assertStringContainsString('--pele-bg: var(--c-bg, #fff);', $css);
+        $this->assertStringContainsString('--pele-fg: var(--c-text, #1a1a1a);', $css);
+        $this->assertStringContainsString('--pele-font: var(--font-sans, sans-serif);', $css);
+        $this->assertStringNotContainsString('[data-theme="dark"]', $css);
     }
-
 
     private function createEntry(): Entry
     {
