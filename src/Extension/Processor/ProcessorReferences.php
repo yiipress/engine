@@ -15,15 +15,16 @@ use function explode;
 use function implode;
 use function is_file;
 use function realpath;
-use function rtrim;
 use function sprintf;
-use function str_ends_with;
 use function str_starts_with;
+use function strlen;
+use function substr;
 
 /**
  * Finds the processor paths of `config.yaml` that point into a package directory, so the package is not removed
  * while the build loads it. Paths resolve as the build resolves them, through symbolic links too; discovered
- * `processors/*.php` count when they are links into the package. Files that `require` package files are not found.
+ * `processors/*.php` count, as run before Markdown, when they are links into the package. Files that `require`
+ * package files are not found.
  */
 final readonly class ProcessorReferences
 {
@@ -32,7 +33,7 @@ final readonly class ProcessorReferences
     /**
      * @param string $contentDir Absolute content directory, the one holding `config.yaml`.
      * @param string $packageDir Absolute package directory.
-     * @return list<string> The references as `<pipeline>.<stage>: <path>` or `<path> (discovered)`.
+     * @return list<ProcessorReference>
      *
      * @throws InstallException `content_unreadable` when `config.yaml` cannot be parsed.
      */
@@ -53,30 +54,38 @@ final readonly class ProcessorReferences
                     $packageDir,
                     $exception->getMessage(),
                 ),
-                solution: 'Fix config.yaml so that the build reads it, then run remove:processor again.',
+                solution: 'Fix config.yaml so that the build reads it, then run the command again.',
                 previous: $exception,
             );
         }
 
         $references = [];
         $lists = [
-            'content.before_markdown' => $config->contentBeforeMarkdown,
-            'content.after_markdown' => $config->contentAfterMarkdown,
-            'feed.before_markdown' => $config->feedBeforeMarkdown,
-            'feed.after_markdown' => $config->feedAfterMarkdown,
+            ['content', 'before_markdown', $config->contentBeforeMarkdown],
+            ['content', 'after_markdown', $config->contentAfterMarkdown],
+            ['feed', 'before_markdown', $config->feedBeforeMarkdown],
+            ['feed', 'after_markdown', $config->feedAfterMarkdown],
         ];
-        foreach ($lists as $list => $paths) {
+        foreach ($lists as [$pipeline, $stage, $paths]) {
             foreach ($paths as $path) {
                 $absolute = str_starts_with($path, '/') ? $path : $contentDir . '/' . $path;
-                if (self::isInside($absolute, $packageDir)) {
-                    $references[] = $list . ': ' . $path;
+                $packagePath = self::packagePath($absolute, $packageDir);
+                if ($packagePath !== null) {
+                    $references[] = new ProcessorReference($pipeline, $stage, $path, $packagePath);
                 }
             }
         }
         if ($config->discover) {
             foreach (new ProjectProcessorLoader($contentDir, $configFile)->discoveredPaths() as $path) {
-                if (self::isInside($path, $packageDir)) {
-                    $references[] = 'processors/' . basename($path) . ' (discovered)';
+                $packagePath = self::packagePath($path, $packageDir);
+                if ($packagePath !== null) {
+                    $references[] = new ProcessorReference(
+                        'content',
+                        'before_markdown',
+                        'processors/' . basename($path),
+                        $packagePath,
+                        discovered: true,
+                    );
                 }
             }
         }
@@ -85,16 +94,24 @@ final readonly class ProcessorReferences
     }
 
     /**
-     * Whether the path, as written or with its links resolved, lies in the package directory.
+     * Where the path, as written or with its links resolved, lies in the package directory.
+     *
+     * @return string|null Relative to the package directory; `null` when it is outside.
      */
-    private static function isInside(string $path, string $packageDir): bool
+    private static function packagePath(string $path, string $packageDir): ?string
     {
-        $package = rtrim($packageDir, '/') . '/';
+        $package = self::normalise($packageDir) . '/';
+        $lexical = self::normalise($path);
+        if (str_starts_with($lexical, $package)) {
+            return substr($lexical, strlen($package));
+        }
         $realPackage = realpath($packageDir);
         $realPath = realpath($path);
+        if ($realPath !== false && $realPackage !== false && str_starts_with($realPath, $realPackage . '/')) {
+            return substr($realPath, strlen($realPackage) + 1);
+        }
 
-        return str_starts_with(self::normalise($path), self::normalise($package))
-            || ($realPath !== false && $realPackage !== false && str_starts_with($realPath, $realPackage . '/'));
+        return null;
     }
 
     /**
@@ -114,6 +131,6 @@ final readonly class ProcessorReferences
             $segments[] = $segment;
         }
 
-        return '/' . implode('/', $segments) . (str_ends_with($path, '/') ? '/' : '');
+        return '/' . implode('/', $segments);
     }
 }

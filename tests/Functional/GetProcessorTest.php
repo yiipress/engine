@@ -12,6 +12,8 @@ use YiiPress\Build\Theme;
 use YiiPress\Build\ThemeRegistry;
 use YiiPress\Console\BuildCommand;
 use YiiPress\Console\GetProcessorCommand;
+use YiiPress\Console\RemoveProcessorCommand;
+use YiiPress\Console\UpdateProcessorCommand;
 use YiiPress\Extension\EngineVersion;
 use YiiPress\Extension\Lock\LockFile;
 use YiiPress\Extension\Platform;
@@ -90,6 +92,47 @@ final class GetProcessorTest extends TestCase
         self::assertNotFalse($local, $html);
         self::assertNotFalse($package, $html);
         self::assertLessThan($package, $local, 'Discovered processors run first.');
+    }
+
+    public function testUpdateKeepsItEnabledAndRemovalWaitsUntilItIsDisabled(): void
+    {
+        $v2 = [
+            'toc.php' => self::PACKAGE['toc.php'],
+            'lib/mark.php' => "<?php\nreturn static fn(string \$content): string => \$content . \"\\n\\nPACKAGE-V2\\n\";\n",
+        ];
+        $http = ProcessorFixture::http([
+            'v1.0.0' => ProcessorFixture::release('1.0.0', self::PACKAGE),
+            'v1.1.0' => ProcessorFixture::release('1.1.0', $v2),
+        ]);
+        $display = $this->get($http, ['--version' => '1.0.0']);
+        $enabled = self::CONFIG . self::snippet($display);
+        file_put_contents($this->root . '/content/config.yaml', $enabled);
+
+        $update = new CommandTester(new UpdateProcessorCommand(
+            $this->root,
+            $http,
+            EngineVersion::fromBuild('0.1.13'),
+            new Platform('linux', 'amd64'),
+        ));
+        $update->execute(['id' => 'acme/toc']);
+        self::assertSame(ExitCode::OK, $update->getStatusCode(), $update->getDisplay());
+        self::assertStringContainsString('Updated acme/toc from 1.0.0 to 1.1.0', $update->getDisplay());
+        self::assertSame($enabled, file_get_contents($this->root . '/content/config.yaml'));
+        $html = $this->build('updated');
+        self::assertStringContainsString('PACKAGE-V2', $html);
+        self::assertStringNotContainsString('PACKAGE-MARK', $html);
+
+        $remove = new CommandTester(new RemoveProcessorCommand($this->root));
+        $remove->execute(['id' => 'acme/toc']);
+        self::assertNotSame(ExitCode::OK, $remove->getStatusCode());
+        self::assertStringContainsString('is still enabled in content/config.yaml', $remove->getDisplay());
+        self::assertFileExists($this->root . '/content/extensions/processors/acme/toc/toc.php');
+
+        file_put_contents($this->root . '/content/config.yaml', self::CONFIG);
+        $remove->execute(['id' => 'acme/toc']);
+        self::assertSame(ExitCode::OK, $remove->getStatusCode(), $remove->getDisplay());
+        self::assertFileDoesNotExist($this->root . '/content/extensions/processors/acme/toc');
+        self::assertStringContainsString('LOCAL-MARK', $this->build('removed'));
     }
 
     public function testCustomContentDirectory(): void

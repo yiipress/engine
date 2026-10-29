@@ -49,6 +49,14 @@ final readonly class ExtensionUpdater
         return new self($source, new ThemeLifecycleRules(), $stager, $recovery);
     }
 
+    public static function forProcessor(
+        GitHubReleaseSource $source,
+        ?PackageStager $stager = null,
+        Recovery $recovery = new Recovery(),
+    ): self {
+        return new self($source, new ProcessorLifecycleRules(), $stager, $recovery);
+    }
+
     /**
      * @param string|null $version Exact `X.Y.Z`; `null` takes the newest compatible release when it is newer.
      *

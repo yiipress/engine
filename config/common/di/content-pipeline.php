@@ -17,6 +17,7 @@ use YiiPress\Console\RecoverExtensionsCommand;
 use YiiPress\Console\RemoveProcessorCommand;
 use YiiPress\Console\RemoveThemeCommand;
 use YiiPress\Console\RestoreExtensionsCommand;
+use YiiPress\Console\UpdateProcessorCommand;
 use YiiPress\Console\UpdateThemeCommand;
 use YiiPress\Console\WorkerCommand;
 use YiiPress\Extension\Http\AvailableHttpClient;
@@ -126,6 +127,12 @@ return [
         ],
     ],
     RestoreExtensionsCommand::class => [
+        '__construct()' => [
+            'rootPath' => $workingDirectory,
+            'http' => Reference::to(AvailableHttpClient::class),
+        ],
+    ],
+    UpdateProcessorCommand::class => [
         '__construct()' => [
             'rootPath' => $workingDirectory,
             'http' => Reference::to(AvailableHttpClient::class),

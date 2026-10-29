@@ -23,5 +23,6 @@ return [
     'restore:extensions' => Console\RestoreExtensionsCommand::class,
     'serve' => Console\ServeCommand::class,
     'self-update' => Console\SelfUpdateCommand::class,
+    'update:processor' => Console\UpdateProcessorCommand::class,
     'update:theme' => Console\UpdateThemeCommand::class,
 ];

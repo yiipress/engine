@@ -7,8 +7,10 @@ namespace YiiPress\Tests\Unit\Extension\Processor;
 use PHPUnit\Framework\TestCase;
 use YiiPress\Build\DirectoryRemover;
 use YiiPress\Extension\Install\InstallException;
+use YiiPress\Extension\Processor\ProcessorReference;
 use YiiPress\Extension\Processor\ProcessorReferences;
 
+use function array_map;
 use function file_put_contents;
 use function mkdir;
 use function symlink;
@@ -83,6 +85,25 @@ final class ProcessorReferencesTest extends TestCase
         ], $this->find());
     }
 
+    public function testGivesStageAndFileInPackage(): void
+    {
+        symlink($this->package, $this->content . '/toc');
+        file_put_contents($this->content . '/config.yaml', self::CONFIG . <<<'YAML'
+            processors:
+              feed:
+                after_markdown: [extensions/processors/acme/./toc/sub/../toc.php, toc/toc.php]
+            YAML);
+
+        $references = new ProcessorReferences()->find($this->content, $this->package);
+
+        self::assertCount(2, $references);
+        foreach ($references as $reference) {
+            self::assertSame('feed', $reference->pipeline);
+            self::assertSame('after_markdown', $reference->stage);
+            self::assertSame('toc.php', $reference->packagePath);
+        }
+    }
+
     public function testNothingWithoutConfigOrWithDiscoveryOnly(): void
     {
         self::assertSame([], $this->find());
@@ -109,6 +130,9 @@ final class ProcessorReferencesTest extends TestCase
      */
     private function find(): array
     {
-        return new ProcessorReferences()->find($this->content, $this->package);
+        return array_map(
+            static fn(ProcessorReference $reference): string => (string) $reference,
+            new ProcessorReferences()->find($this->content, $this->package),
+        );
     }
 }
