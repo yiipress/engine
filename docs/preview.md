@@ -28,6 +28,6 @@ How it works:
 
 1. `DevHtmlInjector` injects a small JavaScript snippet before `</body>` in every served HTML response.
 2. The snippet opens an SSE (Server-Sent Events) connection to `/_live-reload`.
-3. The ReactPHP server handles this endpoint directly and attaches all EventSource clients in the same worker to a shared inotify read stream. `InotifyWatches` watches every directory under `content/` and `themes/`, including directories created while `serve` runs.
+3. The ReactPHP server handles this endpoint directly and attaches all EventSource clients in the same worker to a shared inotify read stream. `InotifyWatches` watches every directory under `content/` and, if it exists when `serve` starts, `themes/`, including directories created inside them while `serve` runs.
 4. When a change is detected, `SiteBuildRunner` triggers a normal build, so live reload benefits from the same incremental build pipeline as manual builds. Rebuilds are serialized with a lock so multiple preview workers do not write the same output concurrently.
 5. After a successful build, the server sends a `reload` event and the browser refreshes. If the build fails, the page is not reloaded and the build output is shown in a fixed on-page error panel.
