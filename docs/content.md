@@ -177,6 +177,8 @@ At build time, `.md` paths are resolved to the actual permalinks. Relative paths
 
 If a `.md` path does not match any known content file, the link is left unchanged.
 
+Root-relative links and image paths such as `[about](/about/)` or `![logo](/assets/logo.svg)` are YiiPress site-root paths. In rendered pages, `href` and `src` values that start with a single `/` (in Markdown links and raw HTML alike) are rewritten relative to the current page, the same way the `$url()` template helper does, so they keep working when `base_url` has a deployment path such as `https://user.github.io/project/`. In feeds they become absolute URLs under `base_url`. Protocol-relative (`//cdn.example.com/…`) and absolute URLs are left unchanged.
+
 ### Permalinks
 
 Permalink patterns support the following placeholders:

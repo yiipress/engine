@@ -408,6 +408,37 @@ PHP,
         assertFalse(is_file($outputDir . '/blog/same/index.html'));
     }
 
+    public function testBuildRebasesRootRelativeMarkdownLinksForBaseUrlWithPath(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'index.md' => "---\ntitle: Home\n---\n\nSee [withdrawn](/withdrawn/) and ![logo](/assets/logo.svg).\n",
+            'withdrawn.md' => "---\ntitle: Withdrawn\n---\n\nGone.\n",
+            'assets/logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+            'blog/_collection.yaml' => "title: Blog\npermalink: /blog/:slug/\nfeed: true\n",
+            'blog/2024-01-01-post.md' => "---\ntitle: Post\n---\n\nSee [withdrawn](/withdrawn/).\n",
+        ]);
+        file_put_contents(
+            $contentDir . '/config.yaml',
+            "title: Test Site\nbase_url: https://example.github.io/site/\nlanguages: [en]\nassets:\n  fingerprint: false\n",
+        );
+
+        $this->runBuild($contentDir, '--workers=1 --no-cache');
+
+        $html = file_get_contents($this->outputDir . '/index/index.html');
+        assertNotFalse($html);
+        assertStringContainsString('href="../withdrawn/"', $html);
+        assertStringContainsString('src="../assets/logo.svg"', $html);
+        assertStringNotContainsString('href="/withdrawn/"', $html);
+
+        $post = file_get_contents($this->outputDir . '/blog/post/index.html');
+        assertNotFalse($post);
+        assertStringContainsString('href="../../withdrawn/"', $post);
+
+        $feed = file_get_contents($this->outputDir . '/blog/feed.xml');
+        assertNotFalse($feed);
+        assertStringContainsString('href=&quot;https://example.github.io/site/withdrawn/&quot;', $feed);
+    }
+
     public function testBuildOutputContainsRenderedHtml(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';
