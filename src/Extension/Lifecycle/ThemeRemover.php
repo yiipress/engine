@@ -20,8 +20,9 @@ use function strlen;
 use function substr;
 
 /**
- * Removes an installed theme: its recorded directory and its lock entry, in one transaction. Refuses while the theme
- * has local changes or the site or its content selects it; it never edits content to switch themes.
+ * Removes an installed theme: its recorded directory and its lock entry, in one transaction. Refuses while the site
+ * or its content selects the theme, then while it has local changes; it never edits content to switch themes. When
+ * the whole directory is already gone, only the lock entry is dropped (owner's decision on #256, 2026-10-29).
  */
 final readonly class ThemeRemover
 {
@@ -41,12 +42,15 @@ final readonly class ThemeRemover
         try {
             $recovered = $this->recovery->recover($projectRoot);
             $lockFile = LockFile::read($projectRoot . '/' . LockFile::FILE_NAME);
-            $locked = InstalledTheme::unchanged($projectRoot, $lockFile, $id, 'remove:theme');
+            $locked = InstalledTheme::find($lockFile, $id);
             $this->checkUnused($projectRoot, (string) $locked->name, $contentDir);
+            $present = InstalledTheme::unchangedOrGone($projectRoot, $locked, (string) $id);
 
             $transaction = Transaction::begin($projectRoot, 'remove');
             try {
-                $transaction->retireDirectory($locked->destination);
+                if ($present) {
+                    $transaction->retireDirectory($locked->destination);
+                }
                 $transaction->replaceFile(LockFile::FILE_NAME, $lockFile->withoutExtension($id)->toJson());
                 $transaction->commit();
             } finally {
@@ -56,7 +60,7 @@ final readonly class ThemeRemover
             $mutationLock->release();
         }
 
-        return new RemoveResult($locked, $recovered);
+        return new RemoveResult($locked, $present, $recovered);
     }
 
     private function checkUnused(string $projectRoot, string $name, string $contentDir): void

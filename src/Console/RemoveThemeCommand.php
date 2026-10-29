@@ -50,7 +50,9 @@ final class RemoveThemeCommand extends Command
             $output->writeln($result->recovered);
         }
         $output->writeln(sprintf(
-            'Removed %s %s: deleted %s and its entry in yiipress.lock.',
+            $result->deletedDirectory
+                ? 'Removed %s %s: deleted %s and its entry in yiipress.lock.'
+                : 'Removed %s %s: %s was already gone; deleted its entry in yiipress.lock.',
             $id,
             $result->removed->version,
             $result->removed->destination,

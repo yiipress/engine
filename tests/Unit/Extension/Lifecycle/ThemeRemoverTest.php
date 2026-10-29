@@ -28,6 +28,7 @@ use function is_dir;
 use function mkdir;
 use function sys_get_temp_dir;
 use function uniqid;
+use function unlink;
 
 use const GLOB_BRACE;
 
@@ -118,6 +119,63 @@ final class ThemeRemoverTest extends TestCase
         self::assertSame('mine', file_get_contents($this->root . '/themes/wonder/mine.php'));
     }
 
+    public function testDropsLockEntryWhenWholeDirectoryIsGone(): void
+    {
+        $this->install(activate: false);
+        DirectoryRemover::remove($this->root . '/themes/wonder');
+
+        $result = $this->remove();
+
+        self::assertFalse($result->deletedDirectory);
+        self::assertNull(LockFile::read($this->root . '/yiipress.lock')->get($this->id()));
+        self::assertTrue(is_dir($this->root . '/themes'));
+        self::assertFileDoesNotExist($this->root . '/.yiipress/journal.json');
+    }
+
+    public function testDeletesDirectoryOfIntactTheme(): void
+    {
+        $this->install(activate: false);
+
+        self::assertTrue($this->remove()->deletedDirectory);
+    }
+
+    public function testRefusesPartlyDeletedTheme(): void
+    {
+        $this->install(activate: false);
+        unlink($this->root . '/themes/wonder/entry.php');
+
+        $this->removeFails('local_changes');
+
+        self::assertFileExists($this->root . '/themes/wonder/assets/style.css');
+    }
+
+    public function testRefusesFileInPlaceOfGoneDirectory(): void
+    {
+        $this->install(activate: false);
+        DirectoryRemover::remove($this->root . '/themes/wonder');
+        file_put_contents($this->root . '/themes/wonder', 'mine');
+
+        $this->removeFails('local_changes');
+
+        self::assertSame('mine', file_get_contents($this->root . '/themes/wonder'));
+    }
+
+    public function testRefusesGoneThemeThatIsStillSelected(): void
+    {
+        $this->install(activate: true);
+        DirectoryRemover::remove($this->root . '/themes/wonder');
+
+        $this->removeFails('theme_in_use');
+    }
+
+    public function testReferencesAreCheckedBeforeLocalChanges(): void
+    {
+        $this->install(activate: true);
+        file_put_contents($this->root . '/themes/wonder/mine.php', 'mine');
+
+        $this->removeFails('theme_in_use');
+    }
+
     public function testRefusesThemeThatIsNotInstalled(): void
     {
         $this->removeFails('not_installed');
@@ -167,9 +225,6 @@ final class ThemeRemoverTest extends TestCase
             self::assertSame($code, $exception->errorCode, $exception->getMessage());
             self::assertSame($lock, @file_get_contents($this->root . '/yiipress.lock'));
             self::assertSame($config, file_get_contents($this->root . '/content/config.yaml'));
-            if ($lock !== false) {
-                self::assertTrue(is_dir($this->root . '/themes/wonder'));
-            }
             self::assertSame([], glob($this->root . '/.yiipress/{staging,backup}/*', GLOB_BRACE));
 
             return $exception;

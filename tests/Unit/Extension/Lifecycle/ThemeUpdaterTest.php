@@ -137,6 +137,16 @@ final class ThemeUpdaterTest extends TestCase
         self::assertStringContainsString('restore:extensions', (string) $exception->getSolution());
     }
 
+    public function testRefusesThemeWhoseDirectoryIsGone(): void
+    {
+        $this->installVersion('1.0.0');
+        DirectoryRemover::remove($this->root . '/themes/wonder');
+
+        $exception = $this->updateFails('local_changes', $this->http());
+
+        self::assertStringContainsString('the directory is missing', $exception->getMessage());
+    }
+
     public function testRefusesThemeThatIsNotInstalled(): void
     {
         $this->updateFails('not_installed', $this->http());

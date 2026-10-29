@@ -61,6 +61,20 @@ final class RemoveThemeCommandTest extends TestCase
         self::assertDirectoryDoesNotExist($this->root . '/themes/wonder');
     }
 
+    public function testReportsRemovalOfGoneDirectory(): void
+    {
+        DirectoryRemover::remove($this->root . '/themes/wonder');
+
+        $tester = new CommandTester(new RemoveThemeCommand($this->root));
+        $exitCode = $tester->execute(['id' => WonderFixture::ID, '--content-dir' => 'site']);
+
+        self::assertSame(ExitCode::OK, $exitCode, $tester->getDisplay());
+        self::assertSame(
+            "Removed yiipress/wonder 1.0.0: themes/wonder was already gone; deleted its entry in yiipress.lock.\n",
+            $tester->getDisplay(),
+        );
+    }
+
     public function testThemeInUseIsDataErrorWithInstructions(): void
     {
         file_put_contents($this->root . '/site/config.yaml', "title: Blog\nlanguages: [en]\ntheme: wonder\n");
