@@ -268,7 +268,8 @@ Both commands, before any download or change:
    `themes/<name>` (`lock_invalid`).
 3. Compare the destination with `files` as restore does (`Restore\InstalledPackage`): a changed, added or deleted
    file, a missing directory or something in its place is `local_changes`, listing them. The solution points to
-   `restore:extensions` when files are only missing.
+   `restore:extensions` when files are only missing. Removal runs its reference check (removal step 4) before this
+   one, and accepts a directory that is gone entirely (see removal step 5).
 
 Update:
 
@@ -289,7 +290,10 @@ Removal:
    fallbacks cannot name an installed theme (`fallback` is `minimal` or `none`), so there is nothing else to check;
    references from custom PHP are not detected (documented).
 5. One transaction (`operation: "remove"`): `retire_dir` of the destination, `replace_file` of `yiipress.lock`
-   without the entry.
+   without the entry. When nothing is at the destination (no directory, file or link, in any letter case), only the
+   `replace_file`: the entry is dropped and the command succeeds. Owner's decision, 2026-10-29 (#256 rev 66): a
+   theme deleted by hand needs no restore before removal; a partly deleted, changed or added file set is still
+   `local_changes`, and a theme that is still selected is still `theme_in_use`.
 
 A failure or kill at any point leaves, after recovery, the old directory and the old lock, or (once committed) the
 new state; never a mix.
@@ -324,7 +328,7 @@ All `final`; value objects `readonly`. Names may be adjusted by the developer if
 | `Restore\PackageRestorer` | shared | `restore(string $projectRoot, EngineVersion, Platform): RestoreResult`; throws `RestoreRefusedException` with every problem |
 | `Install\PackageStager` | shared | `stage(Transaction, InstallRequest, SelectedRelease): StagedPackage` (download, extract, manifest and compatibility checks); `StagedPackage::locked(string $destination, ?string $name): LockedExtension` |
 | `Theme\LockedThemeDestination` | theme | `static problem(string $id, LockedExtension): ?InstallException` (`themes/<name>` rule) |
-| `Lifecycle\InstalledTheme` | theme | `static unchanged(string $projectRoot, LockFile, ExtensionId, string $command): LockedExtension` (steps 2–3 of «Update and removal») |
+| `Lifecycle\InstalledTheme` | theme | `static find(LockFile, ExtensionId): LockedExtension` (step 2), `static unchanged(string $projectRoot, LockFile, ExtensionId, string $command): LockedExtension` (steps 2–3), `static unchangedOrGone(string $projectRoot, LockedExtension, string $id): bool` (step 3 for removal) |
 | `Lifecycle\ThemeUpdater` | theme | `update(string $projectRoot, ExtensionId, ?string $version, EngineVersion, Platform): UpdateResult` |
 | `Lifecycle\ThemeRemover`, `Lifecycle\ThemeReferences` | theme | `remove(string $projectRoot, ExtensionId, string $contentDir): RemoveResult`; `find(string $themeName, string $contentDir): list<string>` |
 | `Console\GetThemeCommand`, `Console\RecoverExtensionsCommand`, `Console\RestoreExtensionsCommand`, `Console\UpdateThemeCommand`, `Console\RemoveThemeCommand` | console | `get:theme`, `recover:extensions`, `restore:extensions`, `update:theme`, `remove:theme`, registered in `config/console/commands.php` |
@@ -372,7 +376,7 @@ Namespaces are under `YiiPress\Extension\` (directory `src/Extension/`), except 
 | `id_invalid` | Update, remove: the argument is not a `vendor/name` ID (exit 64). |
 | `not_installed` | Update, remove: no lock entry with that ID. |
 | `extension_not_theme` | Update, remove: the lock entry is another type. |
-| `local_changes` | Update, remove: installed files were changed, added or deleted. |
+| `local_changes` | Update, remove: installed files were changed, added or deleted (update also: the directory is gone). |
 | `theme_in_use` | Remove: `config.yaml` or an entry selects the theme. |
 | `content_unreadable` | Remove: `config.yaml` or an entry cannot be parsed. |
 | `mutation_locked` | Another extension command runs in this project. |

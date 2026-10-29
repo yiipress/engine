@@ -425,13 +425,21 @@ yiipress remove:theme yiipress/wonder --content-dir=site
 ```
 
 Removal deletes only the directory recorded in `yiipress.lock` and the theme's entry there, in one transaction. It
-refuses, and changes nothing, when:
+refuses, and changes nothing, when (checked in this order):
 
-- the theme has local changes, as for an update;
 - the site still selects it: `theme` in `config.yaml` (`--content-dir` names its directory, `content` by default);
 - an entry or a standalone page selects it in its front matter (`theme: wonder`);
 - the content cannot be read, for example an entry with broken front matter: YiiPress cannot tell whether that
-  entry selects the theme. Fix the content so that `build` reads it, then remove the theme.
+  entry selects the theme. Fix the content so that `build` reads it, then remove the theme;
+- the theme has local changes, as for an update.
+
+If the theme's whole directory is already gone (deleted by hand), removal only drops its entry from
+`yiipress.lock`; there is no need to restore it first. A directory with only some files deleted, or with changed or
+added files, still counts as local changes.
+
+```text
+Removed yiipress/wonder 1.0.0: themes/wonder was already gone; deleted its entry in yiipress.lock.
+```
 
 ```text
 Theme "wonder" is still selected by content/config.yaml, content/blog/launch.md.
@@ -452,7 +460,7 @@ below, `69` for network errors, `75` while another extension command runs or an 
 | `id_invalid` | The argument is not a `vendor/name` ID. |
 | `not_installed` | `yiipress.lock` has no entry with that ID. |
 | `extension_not_theme` | The entry is another extension type. |
-| `local_changes` | Files of the installed theme were changed, added or deleted; the message lists them. |
+| `local_changes` | Files of the installed theme were changed, added or deleted (for update, also when its whole directory is gone); the message lists them. |
 | `lock_invalid` | The entry's destination is not `themes/<name>`. |
 | `manifest_mismatch` | Update: the selected release of the recorded repository is another extension. |
 | `release_not_found`, `release_incompatible`, `no_compatible_release` | Update: as for `get:theme --version`. |
