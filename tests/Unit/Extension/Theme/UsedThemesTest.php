@@ -84,6 +84,21 @@ final class UsedThemesTest extends TestCase
         self::assertSame(['wonder'], $used);
     }
 
+    public function testEditInTheSecondOfTheScanIsSeenWhenLocalClockRunsAheadOfFileTimes(): void
+    {
+        $fileSecond = time();
+        $this->writeEntry('blog/first.md', 'aaaaaa');
+        touch($this->contentDir . '/blog/first.md', $fileSecond);
+        $skewed = new UsedThemes($this->cacheFile, static fn(): int => $fileSecond + 3);
+        $skewed->find(['aaaaaa', 'wonder'], $this->contentDir);
+        $this->writeEntry('blog/first.md', 'wonder');
+        touch($this->contentDir . '/blog/first.md', $fileSecond);
+
+        $used = $skewed->find(['aaaaaa', 'wonder'], $this->contentDir);
+
+        self::assertSame(['wonder'], $used);
+    }
+
     public function testAddedEntryIsScannedAgain(): void
     {
         $this->laterScan()->find(['spare'], $this->contentDir);
@@ -114,11 +129,11 @@ final class UsedThemesTest extends TestCase
     }
 
     /**
-     * A scan that runs a minute after the files were written, so their times can be trusted.
+     * A scan that runs long enough after the files were written that their times can be trusted.
      */
     private function laterScan(): UsedThemes
     {
-        return new UsedThemes($this->cacheFile, static fn(): int => time() + 60);
+        return new UsedThemes($this->cacheFile, static fn(): int => time() + UsedThemes::CLOCK_SKEW_SECONDS + 1);
     }
 
     private function writeEntry(string $path, string $theme): void

@@ -261,7 +261,8 @@ be read, `build` prints a warning and treats installed themes like any other pro
 
 To learn which entries select an installed theme that is not the site theme, `build` reads the front
 matter of every entry. It keeps the result in the build cache (`yiipress clean` removes it) and reads the entries
-again only when a Markdown file or `_collection.yaml` was added, removed or changed since.
+again only when a Markdown file or `_collection.yaml` was added, removed or changed since, or when one changed less
+than two minutes before the build (file times on a network share or a virtual machine's volume may lag the clock).
 
 ### Requirements
 

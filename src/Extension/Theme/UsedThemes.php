@@ -48,11 +48,17 @@ use const SORT_STRING;
  *
  * Parsing every entry is the costly part, so the themes found are cached together with a fingerprint of the
  * content: the path, size, modification and change times and inode of every Markdown file and `_collection.yaml`,
- * so unchanged content is answered from `stat()` alone. As in git, a file modified or changed no earlier than the
- * second the scan started cannot be told apart by its times and makes the cache miss.
+ * so unchanged content is answered from `stat()` alone. As in git's racy rule, a file whose times are too close to
+ * the scan cannot be told apart by them and makes the cache miss. File times come from the clock of the content's
+ * filesystem, which may run behind the local one (a network share, a volume of a virtual machine), so "too close"
+ * means up to {@see CLOCK_SKEW_SECONDS} before the local time of the scan.
  */
 final readonly class UsedThemes
 {
+    /**
+     * How far the local clock may run ahead of the content's filesystem clock without missing an edit.
+     */
+    public const int CLOCK_SKEW_SECONDS = 120;
     private const int VERSION = 1;
     private const array SKIPPED_DIRECTORIES = ['assets', 'authors', 'data'];
 
@@ -169,7 +175,7 @@ final readonly class UsedThemes
             || ($cache['version'] ?? null) !== self::VERSION
             || ($cache['fingerprint'] ?? null) !== $fingerprint
             || !is_int($cache['scannedAt'] ?? null)
-            || $newestModification >= $cache['scannedAt']
+            || $newestModification >= $cache['scannedAt'] - self::CLOCK_SKEW_SECONDS
             || !is_array($cache['themes'] ?? null)
         ) {
             return null;
