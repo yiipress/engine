@@ -8,9 +8,9 @@ use YiiPress\Build\WorkerExecutable;
 use YiiPress\Environment;
 use YiiPress\RuntimePaths;
 use YiiPress\Web\DevServer\DevHtmlInjector;
+use YiiPress\Web\LiveReload\InotifyWatches;
 use YiiPress\Web\LiveReload\SiteBuildResult;
 use YiiPress\Web\LiveReload\SiteBuildRunner;
-use FilesystemIterator;
 use HttpSoft\Message\ServerRequest;
 use HttpSoft\Message\Stream;
 use InvalidArgumentException;
@@ -20,10 +20,7 @@ use React\EventLoop\TimerInterface;
 use React\Socket\ConnectionInterface;
 use React\Socket\SocketServer;
 use React\Stream\ReadableResourceStream;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 use RuntimeException;
-use SplFileInfo;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Completion\CompletionInput;
@@ -512,18 +509,17 @@ final class ServeCommand extends Command
 
         stream_set_blocking($stream, false);
 
-        foreach ($this->liveReloadWatchedDirectories() as $directory) {
-            @inotify_add_watch($stream, $directory, $this->liveReloadNativeWatchMask());
-        }
-
+        $watches = new InotifyWatches($stream, [$this->contentDir(), $this->workingDirectory() . '/themes']);
+        $watches->addAll();
         $this->liveReloadStream = $stream;
 
-        Loop::addReadStream($stream, function () use ($stream): void {
+        Loop::addReadStream($stream, function () use ($stream, $watches): void {
             $events = inotify_read($stream);
             if (!is_array($events) || $events === []) {
                 return;
             }
 
+            $watches->update($events);
             $this->processLiveReloadChange();
         });
     }
@@ -703,48 +699,6 @@ final class ServeCommand extends Command
         }
 
         return null;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function liveReloadWatchedDirectories(): array
-    {
-        $directories = [];
-
-        foreach ([$this->contentDir(), $this->workingDirectory() . '/themes'] as $directory) {
-            if (!is_dir($directory)) {
-                continue;
-            }
-
-            $directories[] = $directory;
-            $iterator = new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
-                RecursiveIteratorIterator::SELF_FIRST,
-            );
-
-            foreach ($iterator as $item) {
-                /** @var SplFileInfo $item */
-                if ($item->isDir()) {
-                    $directories[] = $item->getPathname();
-                }
-            }
-        }
-
-        return $directories;
-    }
-
-    private function liveReloadNativeWatchMask(): int
-    {
-        return constant('IN_ATTRIB')
-            | constant('IN_CLOSE_WRITE')
-            | constant('IN_CREATE')
-            | constant('IN_DELETE')
-            | constant('IN_DELETE_SELF')
-            | constant('IN_MODIFY')
-            | constant('IN_MOVE_SELF')
-            | constant('IN_MOVED_FROM')
-            | constant('IN_MOVED_TO');
     }
 
     private function createRequest(string $rawRequest, string $address): ?ServerRequest
