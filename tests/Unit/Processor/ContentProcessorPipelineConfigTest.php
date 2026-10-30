@@ -11,6 +11,7 @@ use YiiPress\Processor\LatexMath\LatexMathProcessor;
 use YiiPress\Processor\MarkdownProcessor;
 use YiiPress\Processor\OEmbed\OEmbedProcessor;
 use YiiPress\Processor\Question\QuestionProcessor;
+use YiiPress\Processor\RootRelativeLinkProcessor;
 use YiiPress\Processor\Shortcode\CodeGroupProcessor;
 use YiiPress\Processor\SyntaxHighlightProcessor;
 use Yiisoft\Definitions\Reference;
@@ -73,6 +74,10 @@ final class ContentProcessorPipelineConfigTest extends TestCase
                 $markdownPosition + 1,
             ],
             $oEmbedPositions,
+        );
+        self::assertSame(
+            $markdownPosition + 2,
+            array_search(RootRelativeLinkProcessor::class, $registeredProcessorIds, true),
         );
 
         $pipeline = new ContentProcessorPipeline(new LatexMathProcessor());
