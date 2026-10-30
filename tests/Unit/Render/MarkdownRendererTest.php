@@ -165,4 +165,15 @@ MARKDOWN);
             $enabledHtml,
         );
     }
+
+    public function testKeepsSoftBreaksWhenHardSoftBreaksIsDisabled(): void
+    {
+        $markdown = "first\nsecond\n";
+
+        $disabledHtml = new MarkdownRenderer(new MarkdownConfig(hardSoftBreaks: false))->render($markdown);
+        $enabledHtml = new MarkdownRenderer(new MarkdownConfig(hardSoftBreaks: true))->render($markdown);
+
+        assertSame("<p>first\nsecond</p>\n", $disabledHtml);
+        assertSame("<p>first<br />\nsecond</p>\n", $enabledHtml);
+    }
 }
