@@ -121,17 +121,18 @@ CMD ["./yii", "serve", "0.0.0.0", "--port=19777", "--workers=1"]
 FROM app-base AS phar-builder
 ARG COMPOSER_ROOT_VERSION=dev-master
 ARG YIIPRESS_COMMIT
+ARG YIIPRESS_BASE_VERSION
 ENV APP_ENV=prod
 COPY --from=composer /composer /usr/bin/composer
 WORKDIR /app
 COPY config /app/config
 COPY src /app/src
 COPY themes /app/themes
-COPY build/package-phar.php build/PharArchiveFilter.php build/PharArchiveValidator.php build/PhpDocStripper.php /app/build/
+COPY build/package-phar.php build/ApplicationInfoStamper.php build/PharArchiveFilter.php build/PharArchiveValidator.php build/PhpDocStripper.php /app/build/
 COPY yii composer.json composer.lock /app/
 RUN --mount=type=cache,target=/tmp/composer-cache \
     COMPOSER_CACHE_DIR=/tmp/composer-cache COMPOSER_ROOT_VERSION="${COMPOSER_ROOT_VERSION}" composer install --no-dev --no-progress --no-interaction --classmap-authoritative && \
-    YIIPRESS_COMMIT="${YIIPRESS_COMMIT}" php -d phar.readonly=0 build/package-phar.php dist/yiipress.phar
+    YIIPRESS_COMMIT="${YIIPRESS_COMMIT}" YIIPRESS_BASE_VERSION="${YIIPRESS_BASE_VERSION}" php -d phar.readonly=0 build/package-phar.php dist/yiipress.phar
 
 FROM app-base AS static-package
 ARG PHP_VERSION=8.5

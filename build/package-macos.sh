@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PHP_VERSION="${PHP_VERSION:-8.5}"
 STATIC_PHP_CLI_REF="${STATIC_PHP_CLI_REF:-5b5861c366a0d94bc84002db7b3f46144b388fbb}"
-STATIC_PHP_EXTENSIONS="${STATIC_PHP_EXTENSIONS:-ctype,dom,filter,highlighter,mdparser,mbstring,opcache,pcntl,phar,xmlwriter,yaml}"
+STATIC_PHP_EXTENSIONS="${STATIC_PHP_EXTENSIONS:-ctype,dom,filter,highlighter,mdparser,mbstring,opcache,pcntl,phar,xmlwriter,yaml,zlib}"
 
 detect_arch() {
     case "$(uname -m)" in
@@ -74,6 +74,7 @@ MDPARSER_PATH="${WORK_PATH}/mdparser"
 HIGHLIGHTER_PATH="${WORK_PATH}/yiipress-highlighter"
 PHAR_PATH="${WORK_PATH}/yiipress.phar"
 BIN_PATH="${DIST_PATH}/yiipress"
+CHECK_PATH="${WORK_PATH}/check-extensions"
 
 invoke() {
     "$@"
@@ -156,6 +157,7 @@ for directory in config src themes; do
 done
 mkdir -p "${APP_PATH}/build"
 cp "${ROOT}/build/package-phar.php" "${APP_PATH}/build/package-phar.php"
+cp "${ROOT}/build/ApplicationInfoStamper.php" "${APP_PATH}/build/ApplicationInfoStamper.php"
 cp "${ROOT}/build/PharArchiveFilter.php" "${APP_PATH}/build/PharArchiveFilter.php"
 cp "${ROOT}/build/PharArchiveValidator.php" "${APP_PATH}/build/PharArchiveValidator.php"
 cp "${ROOT}/build/PhpDocStripper.php" "${APP_PATH}/build/PhpDocStripper.php"
@@ -230,7 +232,11 @@ if ! invoke php bin/spc build \
     exit 1
 fi
 invoke php bin/spc micro:combine "$PHAR_PATH" -O "$BIN_PATH"
+invoke php bin/spc micro:combine "${ROOT}/build/static-php/check-extensions.php" -O "$CHECK_PATH"
 popd >/dev/null
+
+chmod +x "$CHECK_PATH"
+invoke "$CHECK_PATH" zlib,hash,json,filter
 
 chmod +x "$BIN_PATH"
 PACK_PATH="${WORK_PATH}/wrappe-input"

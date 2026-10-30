@@ -340,6 +340,8 @@ processors:
 
 Use `before_markdown` for processors that transform Markdown syntax. Use `after_markdown` for processors that transform rendered HTML. Processor paths are resolved from the content directory and must stay inside it. If the `processors` config key is omitted, YiiPress discovers `content/processors/*.php`; if `processors` contains a list or structured config, YiiPress uses only those files. Set `processors: false` to disable project processors.
 
+Processors shared as packages are installed with [`get:processor`](extensions.md#installing-a-processor) into `content/extensions/processors/<vendor>/<name>/` and enabled by listing their entry points here, for example `extensions/processors/acme/toc/toc.php`. Installing one never changes this setting; see [Enabling an installed processor](extensions.md#enabling-an-installed-processor) for keeping discovered processors when you start listing them.
+
 ### TweetProcessor
 
 Expands tweet shortcodes into Twitter embed HTML before markdown processing.

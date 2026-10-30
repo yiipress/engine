@@ -7,11 +7,20 @@ use YiiPress\Build\ThemeRegistry;
 use YiiPress\Console\BuildCommand;
 use YiiPress\Console\CheckCommand;
 use YiiPress\Console\CleanCommand;
+use YiiPress\Console\GetProcessorCommand;
+use YiiPress\Console\GetThemeCommand;
 use YiiPress\Console\InitContentCommand;
 use YiiPress\Console\InitPluginCommand;
 use YiiPress\Console\InitThemeCommand;
 use YiiPress\Console\NewCommand;
+use YiiPress\Console\RecoverExtensionsCommand;
+use YiiPress\Console\RemoveProcessorCommand;
+use YiiPress\Console\RemoveThemeCommand;
+use YiiPress\Console\RestoreExtensionsCommand;
+use YiiPress\Console\UpdateProcessorCommand;
+use YiiPress\Console\UpdateThemeCommand;
 use YiiPress\Console\WorkerCommand;
+use YiiPress\Extension\Http\AvailableHttpClient;
 use YiiPress\Processor\ContentProcessorPipeline;
 use YiiPress\Processor\LatexMath\LatexMathProcessor;
 use YiiPress\Processor\Mermaid\MermaidProcessor;
@@ -96,6 +105,51 @@ return [
         ],
     ],
     CheckCommand::class => [
+        '__construct()' => [
+            'rootPath' => $workingDirectory,
+        ],
+    ],
+    GetProcessorCommand::class => [
+        '__construct()' => [
+            'rootPath' => $workingDirectory,
+            'http' => Reference::to(AvailableHttpClient::class),
+        ],
+    ],
+    GetThemeCommand::class => [
+        '__construct()' => [
+            'rootPath' => $workingDirectory,
+            'http' => Reference::to(AvailableHttpClient::class),
+        ],
+    ],
+    RecoverExtensionsCommand::class => [
+        '__construct()' => [
+            'rootPath' => $workingDirectory,
+        ],
+    ],
+    RestoreExtensionsCommand::class => [
+        '__construct()' => [
+            'rootPath' => $workingDirectory,
+            'http' => Reference::to(AvailableHttpClient::class),
+        ],
+    ],
+    UpdateProcessorCommand::class => [
+        '__construct()' => [
+            'rootPath' => $workingDirectory,
+            'http' => Reference::to(AvailableHttpClient::class),
+        ],
+    ],
+    UpdateThemeCommand::class => [
+        '__construct()' => [
+            'rootPath' => $workingDirectory,
+            'http' => Reference::to(AvailableHttpClient::class),
+        ],
+    ],
+    RemoveProcessorCommand::class => [
+        '__construct()' => [
+            'rootPath' => $workingDirectory,
+        ],
+    ],
+    RemoveThemeCommand::class => [
         '__construct()' => [
             'rootPath' => $workingDirectory,
         ],

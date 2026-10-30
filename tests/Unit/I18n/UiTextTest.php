@@ -142,6 +142,28 @@ final class UiTextTest extends TestCase
         assertSame('DE', $ui->languageName('de-DE'));
     }
 
+    public function testSameThemeNameWithAnotherFallbackGetsItsOwnCatalog(): void
+    {
+        $theme = sys_get_temp_dir() . '/yiipress-ui-text-fallback-' . uniqid();
+        mkdir($theme);
+        try {
+            $none = new ThemeRegistry();
+            $none->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
+            $none->register(new Theme('fallback-test', $theme, [Theme::LOCAL]));
+            $minimal = new ThemeRegistry();
+            $minimal->register(new Theme('minimal', dirname(__DIR__, 3) . '/themes/minimal'));
+            $minimal->register(new Theme('fallback-test', $theme, [Theme::BUNDLED, Theme::LOCAL]));
+
+            $withoutFallback = UiText::forTheme('en', new TemplateResolver($none), 'fallback-test');
+            $withFallback = UiText::forTheme('en', new TemplateResolver($minimal), 'fallback-test');
+
+            assertSame('archive', $withoutFallback->get('archive'));
+            assertSame('Archive', $withFallback->get('archive'));
+        } finally {
+            rmdir($theme);
+        }
+    }
+
     private function createTemplateResolver(): TemplateResolver
     {
         $registry = new ThemeRegistry();

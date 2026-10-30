@@ -20,6 +20,7 @@ does not expose the operating-system architecture, the installer uses Windows' n
 The shell installer prints the exact resolved release version before downloading its archive.
 The installed binary reports that same release tag with `yiipress --version`.
 Development and nightly artifacts report the full commit SHA from which they were built, even when cached Composer metadata contains an older stable version.
+They also record the latest release tag the commit is built on, so extension compatibility checks treat a nightly as that release (see [Extensions](extensions.md)).
 The shell installer uses `/usr/local/bin/yiipress`; the PowerShell installer uses the current user's local application directory
 and adds it to the user `PATH`. Re-run the same command to update an existing installation. To use another directory or a fixed
 release, set environment variables before invoking the installer. For example, with the shell installer:
@@ -68,6 +69,12 @@ make package-distroless-push
 - `make package-phar` builds `dist/phar/yiipress.phar` separately for environments that already have PHP 8.5 and required extensions. Set `PACKAGE_PHAR_DIST=...` to override the output directory.
 - `make package-distroless` builds a local `${IMAGE}-static:${IMAGE_TAG}` image from the `distroless` Docker target. The image copies only the static `yiipress` binary into a distroless base and runs it as the entrypoint.
 - `make package-distroless-push` builds and pushes the same image.
+
+Package targets stamp the build commit (`YIIPRESS_COMMIT`, default `git rev-parse HEAD`) and the release it is built on
+(`YIIPRESS_BASE_VERSION`, default the latest `X.Y.Z` tag from `git describe`, ignoring `nightly-*` tags) into the PHAR.
+An empty `YIIPRESS_COMMIT=` builds a release package, which reports the Composer package version instead.
+`YIIPRESS_BASE_VERSION` must be a plain `X.Y.Z` version; the build fails on anything else. In a clone without tags it
+stays empty, and extension compatibility checks report the version as unknown.
 
 ## Dockerfiles
 

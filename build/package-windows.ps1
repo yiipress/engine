@@ -2,7 +2,7 @@ param(
     [string] $DistDir = "dist/windows-amd64",
     [string] $PhpVersion = "8.5",
     [string] $StaticPhpCliRef = "5b5861c366a0d94bc84002db7b3f46144b388fbb",
-    [string] $StaticPhpExtensions = "ctype,dom,filter,highlighter,mdparser,mbstring,opcache,phar,xmlwriter,yaml"
+    [string] $StaticPhpExtensions = "ctype,dom,filter,highlighter,mdparser,mbstring,opcache,phar,xmlwriter,yaml,zlib"
 )
 
 $ErrorActionPreference = "Stop"
@@ -17,6 +17,7 @@ $mdparserPath = Join-Path $workPath "mdparser"
 $highlighterPath = Join-Path $workPath "yiipress-highlighter"
 $pharPath = Join-Path $workPath "yiipress.phar"
 $exePath = Join-Path $distPath "yiipress.exe"
+$checkPath = Join-Path $workPath "check-extensions.exe"
 
 function Invoke-NativeCommand {
     param(
@@ -120,6 +121,7 @@ foreach ($directory in @("config", "src", "themes")) {
 }
 New-Item -ItemType Directory -Force -Path (Join-Path $appPath "build") | Out-Null
 Copy-Item (Join-Path $root "build/package-phar.php") (Join-Path $appPath "build/package-phar.php") -Force
+Copy-Item (Join-Path $root "build/ApplicationInfoStamper.php") (Join-Path $appPath "build/ApplicationInfoStamper.php") -Force
 Copy-Item (Join-Path $root "build/PharArchiveFilter.php") (Join-Path $appPath "build/PharArchiveFilter.php") -Force
 Copy-Item (Join-Path $root "build/PharArchiveValidator.php") (Join-Path $appPath "build/PharArchiveValidator.php") -Force
 Copy-Item (Join-Path $root "build/PhpDocStripper.php") (Join-Path $appPath "build/PhpDocStripper.php") -Force
@@ -237,8 +239,17 @@ try {
         throw
     }
     Invoke-NativeCommand "php" @("bin/spc", "micro:combine", $pharPath, "-O", $exePath)
+    Invoke-NativeCommand "php" @(
+        "bin/spc",
+        "micro:combine",
+        (Join-Path $root "build/static-php/check-extensions.php"),
+        "-O",
+        $checkPath
+    )
 } finally {
     Pop-Location
 }
+
+Invoke-NativeCommand "$checkPath" @("zlib,hash,json,filter")
 
 Write-Output "Built $exePath"

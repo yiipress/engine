@@ -15,9 +15,7 @@ use YiiPress\Build\FeedWorkerJob;
 use YiiPress\Build\FeedWriter;
 use YiiPress\Build\PageTemplateRenderer;
 use YiiPress\Build\ParallelEntryWriter;
-use YiiPress\Build\ProjectThemeDiscovery;
 use YiiPress\Build\TemplateResolver;
-use YiiPress\Build\Theme;
 use YiiPress\Build\ThemeRegistry;
 use YiiPress\Content\Model\SiteConfig;
 use YiiPress\Processor\ContentProcessorPipeline;
@@ -32,7 +30,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 use function count;
 use function file_get_contents;
 use function file_put_contents;
-use function is_dir;
 use function unserialize;
 
 #[AsCommand(name: 'worker', description: 'Runs an internal portable worker job', hidden: true)]
@@ -152,11 +149,7 @@ final class WorkerCommand extends Command
 
     private function registerThemes(string $contentDir): void
     {
-        new ProjectThemeDiscovery()->register($this->themeRegistry, $this->rootPath . '/themes');
-        $localTemplatesDir = $contentDir . '/templates';
-        if (is_dir($localTemplatesDir)) {
-            $this->themeRegistry->register(new Theme('local', $localTemplatesDir));
-        }
+        ExtensionState::registerThemes($this->themeRegistry, $this->rootPath, $contentDir);
     }
 
     private function configureProcessors(string $contentDir, SiteConfig $siteConfig): void
