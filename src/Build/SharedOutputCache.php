@@ -13,7 +13,8 @@ use YiiPress\Content\Model\Entry;
 /** Dependency fingerprints for shared outputs, committed only after a successful build. */
 final class SharedOutputCache
 {
-    private const int VERSION = 1;
+    // Rebuild older output trees that may contain published project processor sources.
+    private const int VERSION = 2;
     /** @var array<string, string> */
     private array $previous = [];
     /** @var array<string, string> */

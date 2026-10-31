@@ -125,6 +125,18 @@ final class ContentAssetCopierTest extends TestCase
         assertSame(0, $copied);
     }
 
+    public function testSkipsProjectProcessorsDirectory(): void
+    {
+        mkdir($this->contentDir . '/processors/lib', 0o755, true);
+        file_put_contents($this->contentDir . '/processors/badge-labels.php', '<?php');
+        file_put_contents($this->contentDir . '/processors/lib/helper.php', '<?php');
+        file_put_contents($this->contentDir . '/processors/lib/words.json', '[]');
+        mkdir($this->contentDir . '/blog/processors', 0o755, true);
+        file_put_contents($this->contentDir . '/blog/processors/kept.png', 'png');
+
+        assertSame(['blog/processors/kept.png'], new ContentAssetCopier()->collect($this->contentDir));
+    }
+
     public function testSkipsAuthorsDirectory(): void
     {
         file_put_contents($this->contentDir . '/authors/photo.jpg', 'binary');
