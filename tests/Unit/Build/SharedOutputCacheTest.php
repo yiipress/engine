@@ -103,8 +103,8 @@ final class SharedOutputCacheTest extends TestCase
 
     public function testCorruptInventoryIsDiscardedWithoutFollowingItsPaths(): void
     {
-        foreach (['not json', '{"version":1,"scope":"x","outputs":{"../outside":"hash"}}',
-            '{"version":1,"scope":"x","outputs":{},"groups":{"sitemap":["missing"]}}'] as $contents) {
+        foreach (['not json', '{"version":2,"scope":"x","outputs":{"../outside":"hash"}}',
+            '{"version":2,"scope":"x","outputs":{},"groups":{"sitemap":["missing"]}}'] as $contents) {
             file_put_contents($this->path, $contents);
             self::assertFalse(new SharedOutputCache($this->path, $this->directory)->valid());
         }
