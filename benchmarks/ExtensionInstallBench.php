@@ -18,6 +18,7 @@ use YiiPress\Extension\ExtensionId;
 use YiiPress\Extension\ExtensionType;
 use YiiPress\Extension\Lock\LockedExtension;
 use YiiPress\Extension\Lock\LockFile;
+use YiiPress\Extension\Manifest\ThemeFallback;
 use YiiPress\Tests\Support\TarGzBuilder;
 
 use function hash;
@@ -94,6 +95,7 @@ final class ExtensionInstallBench
                     123456,
                     'themes/' . $name,
                     $name,
+                    ThemeFallback::Minimal,
                     hash('sha256', $name . '.yaml'),
                     $files,
                 ),

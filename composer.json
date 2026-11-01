@@ -43,6 +43,7 @@
         "ext-pcntl": "*",
         "ext-xmlwriter": "*",
         "ext-yaml": "*",
+        "ext-zlib": "*",
         "composer/semver": "^3.5.2",
         "httpsoft/http-message": "^1.1.6",
         "psr/container": "^2.0.2",

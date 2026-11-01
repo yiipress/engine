@@ -104,21 +104,25 @@ final class UiText
         $normalizedDefaultLanguage = self::normalizeLanguage($defaultLanguage);
         $catalogs = [
             'en' => self::resolveCatalog('en', 'en', $templateResolver, $themeName, 'en'),
-            $normalizedDefaultLanguage => self::resolveCatalog(
+        ];
+        $catalogs[$normalizedDefaultLanguage] = $normalizedDefaultLanguage === 'en'
+            ? $catalogs['en']
+            : self::resolveCatalog(
                 $defaultLanguage,
                 $normalizedDefaultLanguage,
                 $templateResolver,
                 $themeName,
                 $normalizedDefaultLanguage,
-            ),
-            $normalizedLanguage => self::resolveCatalog(
+            );
+        $catalogs[$normalizedLanguage] = $normalizedLanguage === $normalizedDefaultLanguage
+            ? $catalogs[$normalizedDefaultLanguage]
+            : self::resolveCatalog(
                 $language,
                 $normalizedLanguage,
                 $templateResolver,
                 $themeName,
                 $normalizedDefaultLanguage,
-            ),
-        ];
+            );
 
         return new self($normalizedLanguage, $normalizedDefaultLanguage, $catalogs);
     }

@@ -62,7 +62,8 @@ or a database on the machine that builds or previews the site.
 - For container workflows: Docker, using the published binary-only YiiPress image.
 - For engine development from source: Docker and Docker Compose.
 
-Source installs require PHP 8.5 and native extensions. Prefer the binary unless you are developing the engine itself.
+Source installs require PHP 8.5 and native extensions, including zlib for extension archives.
+Prefer the binary unless you are developing the engine itself.
 
 ## Installation
 

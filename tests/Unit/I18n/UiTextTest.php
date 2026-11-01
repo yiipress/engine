@@ -65,6 +65,20 @@ final class UiTextTest extends TestCase
         assertSame('Теги', $ui->taxonomyLabel('tags'));
     }
 
+    public function testRequestedLanguageCanMatchNormalizedDefaultLanguage(): void
+    {
+        $ui = UiText::forTheme('RU_ru', $this->createTemplateResolver(), 'minimal', 'ru-RU');
+
+        assertSame('Поиск', $ui->get('search'));
+    }
+
+    public function testRequestedEnglishTakesPrecedenceOverNonEnglishDefault(): void
+    {
+        $ui = UiText::forTheme('en', $this->createTemplateResolver(), 'minimal', 'ru');
+
+        assertSame('Search', $ui->get('search'));
+    }
+
     public function testCastsNumericTranslationValueToString(): void
     {
         $themePath = sys_get_temp_dir() . '/yiipress-ui-text-numeric-' . uniqid();
