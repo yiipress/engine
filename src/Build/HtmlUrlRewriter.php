@@ -14,7 +14,7 @@ use function strtolower;
 final readonly class HtmlUrlRewriter
 {
     private const string TAG_PATTERN = '~<!--.*?(?:-->|$)(*SKIP)(*F)|'
-        . '(<(?:(script|style|textarea|title)\b|[a-z][a-z0-9:-]*\b)'
+        . '(<(?:(script|style|textarea|title)(?=[\s/>])|[a-z][a-z0-9:-]*(?=[\s/>]))'
         . '(?:[^"\'<>]|"[^"]*"|\'[^\']*\')*>)(?(2)(.*?(?:</\2\s*>|$)))~is';
 
     private const string ATTRIBUTE_PATTERN = '~(\s+)([a-z_:][a-z0-9_.:-]*)(\s*=\s*)'

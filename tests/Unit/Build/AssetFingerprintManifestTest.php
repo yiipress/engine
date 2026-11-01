@@ -186,6 +186,10 @@ final class AssetFingerprintManifestTest extends TestCase
         yield 'uppercase spaced' => ['<img SRC = ../assets/logo.svg>', '<img SRC = ../%s>'];
         yield 'query and fragment' => ['<img src=../assets/logo.svg?q=1#part>', '<img src=../%s?q=1#part>'];
         yield 'quoted boundary' => ['<img title="a > b" src=../assets/logo.svg>', '<img title="a > b" src=../%s>'];
+        yield 'custom element boundary' => [
+            '<script-demo></script-demo><img src=../assets/logo.svg>',
+            '<script-demo></script-demo><img src=../%s>',
+        ];
         yield 'data attribute' => [
             '<div data-src="../assets/logo.svg"></div>',
             '<div data-src="../assets/logo.svg"></div>',

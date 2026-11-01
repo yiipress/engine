@@ -109,6 +109,26 @@ final class RootRelativeLinkProcessorTest extends TestCase
             '../',
             '<a href=../about/ src="../image.png">about</a>',
         ];
+        yield 'script-prefixed custom element' => [
+            '<script-demo></script-demo><a href=/about/>about</a>',
+            '../',
+            '<script-demo></script-demo><a href=../about/>about</a>',
+        ];
+        yield 'style-prefixed custom element' => [
+            '<style-guide><a href="/about/">about</a></style-guide>',
+            '../',
+            '<style-guide><a href="../about/">about</a></style-guide>',
+        ];
+        yield 'textarea-prefixed custom element' => [
+            '<textarea-widget><img src=/image.png></textarea-widget>',
+            '../',
+            '<textarea-widget><img src=../image.png></textarea-widget>',
+        ];
+        yield 'title-prefixed custom element' => [
+            '<title-card><a href=/about/>about</a></title-card>',
+            '../',
+            '<title-card><a href=../about/>about</a></title-card>',
+        ];
     }
 
     #[DataProvider('linkProvider')]
