@@ -83,6 +83,11 @@ final class ContentAssetCopier
                 continue;
             }
 
+            // Project processors are PHP source, never published.
+            if (str_starts_with($relativePath, 'processors/')) {
+                continue;
+            }
+
             $assets[$item->getPathname()] = $relativePath;
         }
 

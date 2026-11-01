@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiPress\Tests\Unit\Console;
 
+use YiiPress\Build\BuildManifest;
 use YiiPress\Build\TemplateResolver;
 use YiiPress\Build\Theme;
 use YiiPress\Build\ThemeRegistry;
@@ -1309,6 +1310,48 @@ PHP,
         if (is_file($manifestPath)) {
             unlink($manifestPath);
         }
+    }
+
+    public function testBuildRemovesProcessorOutputsFromLegacyCache(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'about.md' => "---\ntitle: About\n---\n\nAbout.\n",
+            'processors/badge.php' => '<?php return static fn(string $content): string => $content;',
+            'processors/lib/words.json' => '{"label":"Stable"}',
+        ]);
+        $this->runBuild($contentDir);
+
+        // Recreate the output inventory written before processors/ was excluded from assets.
+        $manifest = new BuildManifest($this->manifestPath());
+        $manifest->load();
+        mkdir($this->outputDir . '/processors/lib', 0o755, true);
+        $legacyOutputs = [];
+        $legacyPaths = ['badge.php' => 'badge.0123456789ab.php', 'lib/words.json' => 'lib/words.0123456789ab.json'];
+        foreach ($legacyPaths as $relativePath => $outputPath) {
+            $source = $contentDir . '/processors/' . $relativePath;
+            $target = $this->outputDir . '/processors/' . $outputPath;
+            copy($source, $target);
+            $manifest->record($source, [$target]);
+            $legacyOutputs[] = $target;
+        }
+        $manifest->save();
+        $sharedOutputPath = RuntimePaths::cachePath(dirname(__DIR__, 3))
+            . '/shared-output-' . hash('xxh128', $this->outputDir) . '.json';
+        $cache = json_decode((string) file_get_contents($sharedOutputPath), true, 512, JSON_THROW_ON_ERROR);
+        $cache['version'] = 1;
+        file_put_contents($sharedOutputPath, json_encode($cache, JSON_THROW_ON_ERROR));
+
+        $result = $this->runBuildResult($contentDir);
+
+        assertSame(0, $result['exitCode'], $result['output']);
+        foreach ($legacyOutputs as $legacyOutput) {
+            self::assertFileDoesNotExist($legacyOutput);
+        }
+        assertFileExists($contentDir . '/processors/badge.php');
+        assertFileExists($this->outputDir . '/about/index.html');
+        $unchanged = $this->runBuildResult($contentDir);
+        assertSame(0, $unchanged['exitCode'], $unchanged['output']);
+        assertStringContainsString('No changes detected', $unchanged['output']);
     }
 
     public function testNewAssetDirectoryIsDetectedAfterUnchangedBuild(): void
