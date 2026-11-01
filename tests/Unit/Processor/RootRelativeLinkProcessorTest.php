@@ -89,6 +89,26 @@ final class RootRelativeLinkProcessorTest extends TestCase
             '../',
             "<a href=../docs/?q=1#part\tclass=link>docs</a>",
         ];
+        yield 'greater-than sign in preceding quoted attribute' => [
+            '<a title="a > b" href="/about/">about</a>',
+            '../',
+            '<a title="a > b" href="../about/">about</a>',
+        ];
+        yield 'href text inside another attribute' => [
+            '<a title="example href=/other/" href=/about/>about</a>',
+            '../',
+            '<a title="example href=/other/" href=../about/>about</a>',
+        ];
+        yield 'script source with untouched script body' => [
+            '<script src=/app.js>const sample = "<a href=/about/>";</script>',
+            '../',
+            '<script src=../app.js>const sample = "<a href=/about/>";</script>',
+        ];
+        yield 'multiple attributes on one tag' => [
+            '<a href=/about/ src="/image.png">about</a>',
+            '../',
+            '<a href=../about/ src="../image.png">about</a>',
+        ];
     }
 
     #[DataProvider('linkProvider')]
@@ -122,6 +142,10 @@ final class RootRelativeLinkProcessorTest extends TestCase
         yield 'unquoted relative' => ['<a href=../about/>about</a>'];
         yield 'unquoted data attribute' => ['<div data-href=/about/></div>'];
         yield 'unquoted code text' => ['<code>href=/about/</code>'];
+        yield 'script text' => ['<script>const sample = "<a href=/about/>";</script>'];
+        yield 'comment text' => ['<!-- <a href=/about/> -->'];
+        yield 'textarea text' => ['<textarea><a href=/about/></textarea>'];
+        yield 'unquoted data attribute and plain text' => ['<p data-href=/about/>src=/image.png</p>'];
     }
 
     #[DataProvider('untouchedProvider')]

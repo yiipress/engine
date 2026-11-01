@@ -481,7 +481,10 @@ PHP,
     {
         $contentDir = $this->createMinimalContent([
             'about.md' => "---\ntitle: About\n---\n\n"
-                . '<a href=/withdrawn/>withdrawn</a> <img src = /assets/logo.svg alt=logo>',
+                . '<a title="a > b" href=/withdrawn/>withdrawn</a> <img src = /assets/logo.svg alt=logo>',
+            'blog/_collection.yaml' => "title: Blog\npermalink: /blog/:slug/\nfeed: true\n",
+            'blog/post.md' => "---\ntitle: Post\ndate: 2024-01-01\n---\n\n"
+                . '<a href=/withdrawn/>withdrawn</a> <img src=/assets/logo.svg>',
             'assets/logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
         ]);
         file_put_contents(
@@ -493,8 +496,14 @@ PHP,
 
         $html = file_get_contents($this->outputDir . '/about/index.html');
         assertNotFalse($html);
+        assertStringContainsString('title="a > b"', $html);
         assertStringContainsString('href=../withdrawn/', $html);
         assertStringContainsString('src = ../assets/logo.svg alt=logo', $html);
+
+        $feed = file_get_contents($this->outputDir . '/blog/feed.xml');
+        assertNotFalse($feed);
+        assertStringContainsString('href=https://example.github.io/site/withdrawn/', $feed);
+        assertStringContainsString('src=https://example.github.io/site/assets/logo.svg', $feed);
     }
 
     public function testBuildOutputContainsRenderedHtml(): void
