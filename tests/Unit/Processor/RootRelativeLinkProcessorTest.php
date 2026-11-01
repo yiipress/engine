@@ -143,6 +143,7 @@ final class RootRelativeLinkProcessorTest extends TestCase
         yield 'unquoted data attribute' => ['<div data-href=/about/></div>'];
         yield 'unquoted code text' => ['<code>href=/about/</code>'];
         yield 'script text' => ['<script>const sample = "<a href=/about/>";</script>'];
+        yield 'style text' => ['<style>.sample::after { content: "<a href=/about/>"; }</style>'];
         yield 'comment text' => ['<!-- <a href=/about/> -->'];
         yield 'textarea text' => ['<textarea><a href=/about/></textarea>'];
         yield 'unquoted data attribute and plain text' => ['<p data-href=/about/>src=/image.png</p>'];

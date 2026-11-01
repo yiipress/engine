@@ -506,6 +506,31 @@ PHP,
         assertStringContainsString('src=https://example.github.io/site/assets/logo.svg', $feed);
     }
 
+    public function testBuildFingerprintsRawHtmlImagesWithUnquotedAndSpacedAttributes(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'about.md' => "---\ntitle: About\n---\n\n"
+                . '<img src=/assets/logo.svg alt=unquoted> <img src = "/assets/logo.svg" alt=spaced>',
+            'assets/logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+        ]);
+        file_put_contents(
+            $contentDir . '/config.yaml',
+            "title: Test Site\nbase_url: https://example.github.io/site/\nlanguages: [en]\n",
+        );
+
+        $this->runBuild($contentDir, '--workers=1 --no-cache');
+
+        $assets = glob($this->outputDir . '/assets/logo.*.svg');
+        assertNotFalse($assets);
+        self::assertCount(1, $assets);
+        $filename = basename($assets[0]);
+        $html = file_get_contents($this->outputDir . '/about/index.html');
+        assertNotFalse($html);
+        assertStringContainsString('src=../assets/' . $filename . ' alt=unquoted', $html);
+        assertStringContainsString('src = "../assets/' . $filename . '" alt=spaced', $html);
+        assertFileExists($this->outputDir . '/about/../assets/' . $filename);
+    }
+
     public function testBuildOutputContainsRenderedHtml(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';

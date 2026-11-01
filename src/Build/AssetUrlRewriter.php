@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace YiiPress\Build;
 
-use function preg_replace_callback;
 use function str_contains;
 use function str_starts_with;
 use function strlen;
@@ -14,6 +13,7 @@ final readonly class AssetUrlRewriter
 {
     public function __construct(
         private AssetFingerprintManifest $manifest,
+        private HtmlUrlRewriter $htmlUrlRewriter = new HtmlUrlRewriter(),
     ) {}
 
     public function rewrite(string $html, string $rootPath = ''): string
@@ -22,16 +22,15 @@ final readonly class AssetUrlRewriter
             $html === ''
             || $this->manifest->isEmpty()
             || !$this->manifest->containsLogicalPath($html)
-            || (!str_contains($html, 'href=') && !str_contains($html, 'src='))
+            || !str_contains($html, '=')
         ) {
             return $html;
         }
 
-        return preg_replace_callback(
-            '/\b(href|src)=(["\'])([^"\']+)\2/i',
-            fn(array $matches): string => $matches[1] . '=' . $matches[2] . $this->rewriteUrl($matches[3], $rootPath) . $matches[2],
+        return $this->htmlUrlRewriter->rewrite(
             $html,
-        ) ?? $html;
+            fn(string $url): string => $this->rewriteUrl($url, $rootPath),
+        );
     }
 
     private function rewriteUrl(string $url, string $rootPath): string

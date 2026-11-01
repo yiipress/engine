@@ -7,6 +7,7 @@ namespace YiiPress\Tests\Unit\Build;
 use YiiPress\Build\AssetFingerprintManifest;
 use YiiPress\Build\AssetUrlRewriter;
 use FilesystemIterator;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -173,6 +174,55 @@ final class AssetFingerprintManifestTest extends TestCase
         $html = '<link href="../../' . $fingerprinted . '">';
 
         assertSame($html, $rewriter->rewrite($html, '../../'));
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function rawHtmlProvider(): iterable
+    {
+        yield 'unquoted' => ['<img src=../assets/logo.svg>', '<img src=../%s>'];
+        yield 'spaced quoted' => ['<img src = "../assets/logo.svg">', '<img src = "../%s">'];
+        yield 'uppercase spaced' => ['<img SRC = ../assets/logo.svg>', '<img SRC = ../%s>'];
+        yield 'query and fragment' => ['<img src=../assets/logo.svg?q=1#part>', '<img src=../%s?q=1#part>'];
+        yield 'quoted boundary' => ['<img title="a > b" src=../assets/logo.svg>', '<img title="a > b" src=../%s>'];
+        yield 'data attribute' => [
+            '<div data-src="../assets/logo.svg"></div>',
+            '<div data-src="../assets/logo.svg"></div>',
+        ];
+        yield 'attribute text' => [
+            '<div title="src=../assets/logo.svg"></div>',
+            '<div title="src=../assets/logo.svg"></div>',
+        ];
+        yield 'script text' => [
+            '<script>let x = \'<img src="../assets/logo.svg">\';</script>',
+            '<script>let x = \'<img src="../assets/logo.svg">\';</script>',
+        ];
+        yield 'comment text' => [
+            '<!-- <img src="../assets/logo.svg"> -->',
+            '<!-- <img src="../assets/logo.svg"> -->',
+        ];
+        yield 'protocol-relative' => [
+            '<img src=//cdn.example.com/assets/logo.svg>',
+            '<img src=//cdn.example.com/assets/logo.svg>',
+        ];
+        yield 'external' => [
+            '<img src=https://example.com/assets/logo.svg>',
+            '<img src=https://example.com/assets/logo.svg>',
+        ];
+    }
+
+    #[DataProvider('rawHtmlProvider')]
+    public function testRewriterPreservesRawHtmlBoundaries(string $html, string $expected): void
+    {
+        $source = $this->tempDir . '/logo.svg';
+        file_put_contents($source, 'svg');
+        $manifest = new AssetFingerprintManifest();
+        $fingerprinted = $manifest->register('assets/logo.svg', $source);
+
+        $actual = new AssetUrlRewriter($manifest)->rewrite($html, '../');
+
+        assertSame(str_replace('%s', $fingerprinted, $expected), $actual);
     }
 
     private function removeDir(string $path): void
