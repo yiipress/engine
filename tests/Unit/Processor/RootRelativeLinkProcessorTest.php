@@ -69,6 +69,26 @@ final class RootRelativeLinkProcessorTest extends TestCase
             '../../',
             "<img SRC\t\n=\r\n\f\t\"../../assets/logo.svg\">",
         ];
+        yield 'unquoted href' => [
+            '<a href=/about/>about</a>',
+            '../',
+            '<a href=../about/>about</a>',
+        ];
+        yield 'unquoted src with whitespace and following attribute' => [
+            '<img SRC = /assets/logo.svg alt="logo">',
+            '../../',
+            '<img SRC = ../../assets/logo.svg alt="logo">',
+        ];
+        yield 'unquoted site root in feed' => [
+            '<a href=/>home</a>',
+            'https://example.com/site/',
+            '<a href=https://example.com/site/>home</a>',
+        ];
+        yield 'unquoted query and fragment' => [
+            "<a href=/docs/?q=1#part\tclass=link>docs</a>",
+            '../',
+            "<a href=../docs/?q=1#part\tclass=link>docs</a>",
+        ];
     }
 
     #[DataProvider('linkProvider')]
@@ -97,6 +117,11 @@ final class RootRelativeLinkProcessorTest extends TestCase
         yield 'spaced protocol-relative' => ['<img src = "//cdn.example.com/x.png">'];
         yield 'spaced absolute' => ['<a href = "https://example.com/withdrawn/">x</a>'];
         yield 'spaced data attribute' => ['<div data-href = "/withdrawn/"></div>'];
+        yield 'unquoted protocol-relative' => ['<img src = //cdn.example.com/x.png>'];
+        yield 'unquoted absolute' => ['<a href=https://example.com/about/>about</a>'];
+        yield 'unquoted relative' => ['<a href=../about/>about</a>'];
+        yield 'unquoted data attribute' => ['<div data-href=/about/></div>'];
+        yield 'unquoted code text' => ['<code>href=/about/</code>'];
     }
 
     #[DataProvider('untouchedProvider')]
