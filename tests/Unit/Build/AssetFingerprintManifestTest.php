@@ -136,6 +136,33 @@ final class AssetFingerprintManifestTest extends TestCase
         assertSame('<img src="../../' . $fingerprinted . '">', $html);
     }
 
+    public function testRewriterFingerprintsOnlyMatchingAbsoluteSiteUrls(): void
+    {
+        $source = $this->tempDir . '/photo.jpg';
+        file_put_contents($source, 'jpg');
+        $manifest = new AssetFingerprintManifest();
+        $fingerprinted = $manifest->register('assets/photo.jpg', $source);
+        $rootPath = 'https://example.com/site/';
+        $html = '<img src="https://example.com/site/assets/photo.jpg?q=1#part">'
+            . '<img src=https://example.com/site/assets/photo.jpg>'
+            . '<img src=https://cdn.example.com/site/assets/photo.jpg>'
+            . '<img src=https://example.com/site-other/assets/photo.jpg>'
+            . '<img src=http://example.com/site/assets/photo.jpg>'
+            . '<img src=//example.com/site/assets/photo.jpg>';
+
+        $rewritten = new AssetUrlRewriter($manifest)->rewrite($html, $rootPath);
+
+        assertSame(
+            '<img src="' . $rootPath . $fingerprinted . '?q=1#part">'
+                . '<img src=' . $rootPath . $fingerprinted . '>'
+                . '<img src=https://cdn.example.com/site/assets/photo.jpg>'
+                . '<img src=https://example.com/site-other/assets/photo.jpg>'
+                . '<img src=http://example.com/site/assets/photo.jpg>'
+                . '<img src=//example.com/site/assets/photo.jpg>',
+            $rewritten,
+        );
+    }
+
     public function testRewriterPrefixesUnqualifiedAssetUrlsWithRootPath(): void
     {
         $source = $this->tempDir . '/mermaid.css';
@@ -214,6 +241,17 @@ final class AssetFingerprintManifestTest extends TestCase
             '<img src=https://example.com/assets/logo.svg>',
             '<img src=https://example.com/assets/logo.svg>',
         ];
+        yield 'CDATA text and real image' => [
+            '<svg><![CDATA[<img src=../assets/logo.svg>]]></svg><img src=../assets/logo.svg>',
+            '<svg><![CDATA[<img src=../assets/logo.svg>]]></svg><img src=../%s>',
+        ];
+        foreach (['script', 'style', 'textarea', 'title', 'xmp', 'iframe', 'noembed', 'noframes'] as $tag) {
+            $raw = '<' . $tag . '><img src=../assets/logo.svg></' . $tag . ' data-x="a>b">';
+            yield $tag . ' attributed closing tag' => [
+                $raw . '<img src=../assets/logo.svg>',
+                $raw . '<img src=../%s>',
+            ];
+        }
     }
 
     #[DataProvider('rawHtmlProvider')]

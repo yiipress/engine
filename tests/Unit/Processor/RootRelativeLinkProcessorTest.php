@@ -129,6 +129,21 @@ final class RootRelativeLinkProcessorTest extends TestCase
             '../',
             '<title-card><a href=../about/>about</a></title-card>',
         ];
+        foreach (['script', 'style', 'textarea', 'title', 'xmp', 'iframe', 'noembed', 'noframes'] as $tag) {
+            foreach ([' data-x=1', ' data-x="a>b"', " data-x='a>b'", '/'] as $attributes) {
+                $raw = '<' . $tag . '><a href=/literal/></' . $tag . $attributes . '>';
+                yield $tag . ' closing tag' . $attributes => [
+                    $raw . '<a href=/about/>about</a>',
+                    '../',
+                    $raw . '<a href=../about/>about</a>',
+                ];
+            }
+        }
+        yield 'CDATA followed by real link' => [
+            '<svg><![CDATA[<a href="/literal/">]]></svg><a href=/about/>about</a>',
+            '../',
+            '<svg><![CDATA[<a href="/literal/">]]></svg><a href=../about/>about</a>',
+        ];
     }
 
     #[DataProvider('linkProvider')]
@@ -166,6 +181,11 @@ final class RootRelativeLinkProcessorTest extends TestCase
         yield 'style text' => ['<style>.sample::after { content: "<a href=/about/>"; }</style>'];
         yield 'comment text' => ['<!-- <a href=/about/> -->'];
         yield 'textarea text' => ['<textarea><a href=/about/></textarea>'];
+        yield 'CDATA text' => ['<svg><text><![CDATA[<a href="/about/">]]></text></svg>'];
+        yield 'unclosed CDATA' => ['<svg><![CDATA[<a href=/about/>'];
+        foreach (['xmp', 'iframe', 'noembed', 'noframes'] as $tag) {
+            yield $tag . ' text' => ['<' . $tag . '><a href=/about/></' . $tag . '>'];
+        }
         yield 'unquoted data attribute and plain text' => ['<p data-href=/about/>src=/image.png</p>'];
     }
 

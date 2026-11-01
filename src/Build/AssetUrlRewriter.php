@@ -41,7 +41,8 @@ final readonly class AssetUrlRewriter
             || str_starts_with($url, 'data:')
             || str_starts_with($url, 'mailto:')
             || str_starts_with($url, 'javascript:')
-            || str_contains($url, '://')
+            || (str_contains($url, '://')
+                && !(str_contains($rootPath, '://') && str_starts_with($url, $rootPath)))
             || str_starts_with($url, '//')
         ) {
             return $url;

@@ -28,6 +28,7 @@ final readonly class FeedWriter
     public function __construct(
         private ContentProcessorPipeline $feedPipeline,
         private array $authors,
+        private ?AssetFingerprintManifest $assetManifest = null,
     ) {}
 
     /**
@@ -58,7 +59,7 @@ final readonly class FeedWriter
         $entries = $feedTask['entries'];
         $collectionName = $feedTask['collectionName'];
 
-        $feedGenerator = new FeedGenerator($this->feedPipeline, $this->authors);
+        $feedGenerator = new FeedGenerator($this->feedPipeline, $this->authors, $this->assetManifest);
 
         if ($noWrite) {
             $feedGenerator->generateAtom($siteConfig, $collection, $entries);

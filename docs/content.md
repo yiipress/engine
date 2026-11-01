@@ -406,7 +406,9 @@ Reference assets from markdown using site-root paths:
 All `assets/` directories are copied to the build output preserving their path structure.
 When asset fingerprinting is enabled, these root-relative asset paths are rewritten relative to each
 generated page, which keeps them valid for deployments under a subdirectory such as GitHub Pages
-project sites.
+project sites. Atom, RSS and JSON feeds use absolute URLs with the same fingerprinted filenames.
+URL rewriting preserves comments, CDATA sections and literal text inside `script`, `style`,
+`textarea`, `title`, `xmp`, `iframe`, `noembed` and `noframes` elements.
 
 The project-level `assets/` directory (outside `content/`) is for build-time assets
 (CSS, JS) processed by the asset pipeline. Content assets are separate and copied as-is.

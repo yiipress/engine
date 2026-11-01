@@ -13,9 +13,10 @@ use function strtolower;
 /** Rewrites href/src values while preserving HTML syntax and raw text. */
 final readonly class HtmlUrlRewriter
 {
-    private const string TAG_PATTERN = '~<!--.*?(?:-->|$)(*SKIP)(*F)|'
-        . '(<(?:(script|style|textarea|title)(?=[\s/>])|[a-z][a-z0-9:-]*(?=[\s/>]))'
-        . '(?:[^"\'<>]|"[^"]*"|\'[^\']*\')*>)(?(2)(.*?(?:</\2\s*>|$)))~is';
+    private const string TAG_PATTERN = '~(?:<!--.*?(?:-->|$)|<!\[CDATA\[.*?(?:\]\]>|$))(*SKIP)(*F)|'
+        . '(<(?:(script|style|textarea|title|xmp|iframe|noembed|noframes)(?=[\s/>])|[a-z][a-z0-9:-]*(?=[\s/>]))'
+        . '(?:[^"\'<>]|"[^"]*"|\'[^\']*\')*>)'
+        . '(?(2)(.*?(?:</\2(?=[\s/>])(?:[^"\'>]|"[^"]*"|\'[^\']*\')*>|$)))~is';
 
     private const string ATTRIBUTE_PATTERN = '~(\s+)([a-z_:][a-z0-9_.:-]*)(\s*=\s*)'
         . '(?:(["\'])(.*?)\4|([^\s"\'`=<>]+))~is';
