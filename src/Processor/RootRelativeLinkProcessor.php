@@ -16,7 +16,7 @@ use function str_contains;
  */
 final class RootRelativeLinkProcessor implements ContentProcessorInterface, RootPathAwareProcessorInterface
 {
-    private const string PATTERN = '~(<[a-z][^>]*?\s(?:href|src)=)(["\'])/(?!/)([^"\']*)\2~i';
+    private const string PATTERN = '~(<[a-z][^>]*?\s(?:href|src)\s*=\s*)(["\'])/(?!/)([^"\']*)\2~i';
 
     public function __construct(
         private string $rootPath = './',
@@ -29,7 +29,7 @@ final class RootRelativeLinkProcessor implements ContentProcessorInterface, Root
 
     public function process(string $content, Entry $entry): string
     {
-        if (!str_contains($content, '="/') && !str_contains($content, "='/")) {
+        if (!str_contains($content, '"/') && !str_contains($content, "'/")) {
             return $content;
         }
 

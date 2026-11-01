@@ -457,6 +457,26 @@ PHP,
         assertStringContainsString('href=&quot;https://example.github.io/site/withdrawn/&quot;', $feed);
     }
 
+    public function testBuildRebasesRawHtmlLinksWithWhitespaceAroundEquals(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'about.md' => "---\ntitle: About\n---\n\n"
+                . '<a href = "/withdrawn/">withdrawn</a> <img src = "/assets/logo.svg">',
+            'assets/logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+        ]);
+        file_put_contents(
+            $contentDir . '/config.yaml',
+            "title: Test Site\nbase_url: https://example.github.io/site/\nlanguages: [en]\nassets:\n  fingerprint: false\n",
+        );
+
+        $this->runBuild($contentDir, '--workers=1 --no-cache');
+
+        $html = file_get_contents($this->outputDir . '/about/index.html');
+        assertNotFalse($html);
+        assertStringContainsString('href = "../withdrawn/"', $html);
+        assertStringContainsString('src = "../assets/logo.svg"', $html);
+    }
+
     public function testBuildOutputContainsRenderedHtml(): void
     {
         $yii = dirname(__DIR__, 3) . '/yii';

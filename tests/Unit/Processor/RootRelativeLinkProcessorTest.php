@@ -49,6 +49,26 @@ final class RootRelativeLinkProcessorTest extends TestCase
             '../',
             '<a HREF="../withdrawn/">x</a>',
         ];
+        yield 'whitespace before equals' => [
+            '<a href ="/withdrawn/">x</a>',
+            '../',
+            '<a href ="../withdrawn/">x</a>',
+        ];
+        yield 'whitespace after equals' => [
+            '<img src= "/assets/logo.svg">',
+            '../',
+            '<img src= "../assets/logo.svg">',
+        ];
+        yield 'whitespace around equals' => [
+            "<a href = '/withdrawn/'>x</a>",
+            'https://example.com/site/',
+            "<a href = 'https://example.com/site/withdrawn/'>x</a>",
+        ];
+        yield 'line breaks and tabs around equals' => [
+            "<img SRC\t\n=\r\n\f\t\"/assets/logo.svg\">",
+            '../../',
+            "<img SRC\t\n=\r\n\f\t\"../../assets/logo.svg\">",
+        ];
     }
 
     #[DataProvider('linkProvider')]
@@ -74,6 +94,9 @@ final class RootRelativeLinkProcessorTest extends TestCase
         yield 'code text' => ['<code>href="/withdrawn/"</code>'];
         yield 'data attribute' => ['<div data-href="/withdrawn/"></div>'];
         yield 'plain text' => ['<p>Go to /withdrawn/ now</p>'];
+        yield 'spaced protocol-relative' => ['<img src = "//cdn.example.com/x.png">'];
+        yield 'spaced absolute' => ['<a href = "https://example.com/withdrawn/">x</a>'];
+        yield 'spaced data attribute' => ['<div data-href = "/withdrawn/"></div>'];
     }
 
     #[DataProvider('untouchedProvider')]
