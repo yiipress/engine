@@ -146,6 +146,8 @@ final class AssetFingerprintManifestTest extends TestCase
         $html = '<img src="https://example.com/site/assets/photo.jpg?q=1#part">'
             . '<img src=https://example.com/site/assets/photo.jpg>'
             . '<img src=https://cdn.example.com/site/assets/photo.jpg>'
+            . '<img src=https://example.com.evil.test/site/assets/photo.jpg>'
+            . '<img src=https://example.com:8443/site/assets/photo.jpg>'
             . '<img src=https://example.com/site-other/assets/photo.jpg>'
             . '<img src=http://example.com/site/assets/photo.jpg>'
             . '<img src=//example.com/site/assets/photo.jpg>';
@@ -156,6 +158,8 @@ final class AssetFingerprintManifestTest extends TestCase
             '<img src="' . $rootPath . $fingerprinted . '?q=1#part">'
                 . '<img src=' . $rootPath . $fingerprinted . '>'
                 . '<img src=https://cdn.example.com/site/assets/photo.jpg>'
+                . '<img src=https://example.com.evil.test/site/assets/photo.jpg>'
+                . '<img src=https://example.com:8443/site/assets/photo.jpg>'
                 . '<img src=https://example.com/site-other/assets/photo.jpg>'
                 . '<img src=http://example.com/site/assets/photo.jpg>'
                 . '<img src=//example.com/site/assets/photo.jpg>',

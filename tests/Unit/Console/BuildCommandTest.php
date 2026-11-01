@@ -544,7 +544,7 @@ PHP,
             'blog/_collection.yaml' => "title: Blog\npermalink: /blog/:slug/\nfeed: true\n",
             'blog/post.md' => "---\ntitle: Post\ndate: 2024-01-01\n---\n\n"
                 . "![logo](/assets/logo.svg)\n\n<div><img src=/assets/logo.svg>"
-                . ' <img src="/assets/logo.svg?q=1#part">'
+                . ' <img src="/assets/logo.svg?q=1&amp;x=2#part">'
                 . ' <img src="https://cdn.example.com/assets/logo.svg"></div>',
             'assets/logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
         ]);
@@ -567,7 +567,8 @@ PHP,
                     $feed = json_decode($feed, true, 512, JSON_THROW_ON_ERROR)['items'][0]['content_html'];
                 }
                 assertStringContainsString($url, $feed);
-                assertStringContainsString($url . '?q=1#part', $feed);
+                $query = $filename === 'feed.json' ? '?q=1&amp;x=2#part' : '?q=1&amp;amp;x=2#part';
+                assertStringContainsString($url . $query, $feed);
                 assertStringNotContainsString('https://example.github.io/site/assets/logo.svg', $feed);
                 assertStringContainsString('https://cdn.example.com/assets/logo.svg', $feed);
             }
@@ -612,6 +613,45 @@ PHP,
             assertNotFalse($feed);
             assertStringContainsString($assetPath, $feed);
             assertStringNotContainsString('/assets/logo.svg', $feed);
+        }
+    }
+
+    public function testBuildUpdatesCachedFeedImagesAfterAssetChanges(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'blog/_collection.yaml' => "title: Blog\npermalink: /blog/:slug/\nfeed: true\n",
+            'blog/post.md' => "---\ntitle: Post\ndate: 2024-01-01\n---\n\n![logo](/assets/logo.svg)",
+            'assets/logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+        ]);
+        file_put_contents(
+            $contentDir . '/config.yaml',
+            "title: Test Site\nbase_url: https://example.com/site/\nlanguages: [en]\n",
+        );
+        $this->runBuild($contentDir, '--workers=1');
+        $oldAssets = glob($this->outputDir . '/assets/logo.*.svg');
+        assertNotFalse($oldAssets);
+        self::assertCount(1, $oldAssets);
+        $unchanged = $this->runBuildResult($contentDir, '--workers=1');
+        assertSame(0, $unchanged['exitCode'], $unchanged['output']);
+        assertStringContainsString('No changes detected, nothing to build.', $unchanged['output']);
+        file_put_contents($contentDir . '/assets/logo.svg', '<svg xmlns="http://www.w3.org/2000/svg"><title>New</title></svg>');
+
+        $this->runBuild($contentDir, '--workers=1');
+
+        $assets = glob($this->outputDir . '/assets/logo.*.svg');
+        assertNotFalse($assets);
+        self::assertCount(1, $assets);
+        self::assertNotSame(basename($oldAssets[0]), basename($assets[0]));
+        foreach (['blog/', ''] as $prefix) {
+            foreach (['feed.xml', 'rss.xml', 'feed.json'] as $filename) {
+                $feed = file_get_contents($this->outputDir . '/' . $prefix . $filename);
+                assertNotFalse($feed);
+                if ($filename === 'feed.json') {
+                    $feed = json_decode($feed, true, 512, JSON_THROW_ON_ERROR)['items'][0]['content_html'];
+                }
+                assertStringContainsString('https://example.com/site/assets/' . basename($assets[0]), $feed);
+                assertStringNotContainsString(basename($oldAssets[0]), $feed);
+            }
         }
     }
 
