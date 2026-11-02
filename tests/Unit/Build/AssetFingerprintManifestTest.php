@@ -136,15 +136,24 @@ final class AssetFingerprintManifestTest extends TestCase
         assertSame('<img src="../../' . $fingerprinted . '">', $html);
     }
 
-    public function testRewriterFingerprintsOnlyMatchingAbsoluteSiteUrls(): void
+    /** @return iterable<string, array{string}> */
+    public static function absoluteRootProvider(): iterable
+    {
+        yield 'lowercase root' => ['https://example.com/site/'];
+        yield 'uppercase scheme and host' => ['HTTPS://EXAMPLE.COM/site/'];
+    }
+
+    #[DataProvider('absoluteRootProvider')]
+    public function testRewriterFingerprintsOnlyMatchingAbsoluteSiteUrls(string $rootPath): void
     {
         $source = $this->tempDir . '/photo.jpg';
         file_put_contents($source, 'jpg');
         $manifest = new AssetFingerprintManifest();
         $fingerprinted = $manifest->register('assets/photo.jpg', $source);
-        $rootPath = 'https://example.com/site/';
         $html = '<img src="https://example.com/site/assets/photo.jpg?q=1#part">'
             . '<img src=https://example.com/site/assets/photo.jpg>'
+            . '<img src=HTTPS://EXAMPLE.COM/site/assets/photo.jpg?q=1#part>'
+            . '<img src=https://example.com/Site/assets/photo.jpg>'
             . '<img src=https://cdn.example.com/site/assets/photo.jpg>'
             . '<img src=https://example.com.evil.test/site/assets/photo.jpg>'
             . '<img src=https://example.com:8443/site/assets/photo.jpg>'
@@ -157,6 +166,8 @@ final class AssetFingerprintManifestTest extends TestCase
         assertSame(
             '<img src="' . $rootPath . $fingerprinted . '?q=1#part">'
                 . '<img src=' . $rootPath . $fingerprinted . '>'
+                . '<img src=' . $rootPath . $fingerprinted . '?q=1#part>'
+                . '<img src=https://example.com/Site/assets/photo.jpg>'
                 . '<img src=https://cdn.example.com/site/assets/photo.jpg>'
                 . '<img src=https://example.com.evil.test/site/assets/photo.jpg>'
                 . '<img src=https://example.com:8443/site/assets/photo.jpg>'

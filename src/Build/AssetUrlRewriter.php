@@ -7,6 +7,8 @@ namespace YiiPress\Build;
 use function str_contains;
 use function str_starts_with;
 use function strlen;
+use function strpos;
+use function strncasecmp;
 use function substr;
 
 final readonly class AssetUrlRewriter
@@ -42,7 +44,7 @@ final readonly class AssetUrlRewriter
             || str_starts_with($url, 'mailto:')
             || str_starts_with($url, 'javascript:')
             || (str_contains($url, '://')
-                && !(str_contains($rootPath, '://') && str_starts_with($url, $rootPath)))
+                && !(str_contains($rootPath, '://') && $this->hasRootPrefix($url, $rootPath)))
             || str_starts_with($url, '//')
         ) {
             return $url;
@@ -93,10 +95,32 @@ final readonly class AssetUrlRewriter
             return ['', AssetFingerprintManifest::normalizePath($path)];
         }
 
-        if ($rootPath !== '' && $rootPath !== '/' && str_starts_with($path, $rootPath)) {
+        if ($rootPath !== '' && $rootPath !== '/' && $this->hasRootPrefix($path, $rootPath)) {
             return [$rootPath, substr($path, strlen($rootPath))];
         }
 
         return ['', $path];
+    }
+
+    private function hasRootPrefix(string $url, string $rootPath): bool
+    {
+        $schemeEnd = strpos($rootPath, '://');
+        if ($schemeEnd === false) {
+            return str_starts_with($url, $rootPath);
+        }
+
+        $urlSchemeEnd = strpos($url, '://');
+        if ($urlSchemeEnd === false) {
+            return false;
+        }
+
+        $rootOriginEnd = strpos($rootPath, '/', $schemeEnd + 3);
+        $urlOriginEnd = strpos($url, '/', $urlSchemeEnd + 3);
+        $originLength = $rootOriginEnd === false ? strlen($rootPath) : $rootOriginEnd;
+        $urlOriginLength = $urlOriginEnd === false ? strlen($url) : $urlOriginEnd;
+
+        return $originLength === $urlOriginLength
+            && strncasecmp($url, $rootPath, $originLength) === 0
+            && str_starts_with(substr($url, $originLength), substr($rootPath, $originLength));
     }
 }

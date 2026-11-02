@@ -581,6 +581,10 @@ PHP,
             'blog/post.md' => "---\ntitle: Post\ndate: 2024-01-01\n---\n\n![logo](/assets/logo.svg)",
             'assets/logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
         ]);
+        file_put_contents(
+            $contentDir . '/config.yaml',
+            "title: Test Site\nbase_url: https://example.com/site/\nlanguages: [en]\n",
+        );
         $manifest = new AssetFingerprintManifest();
         $assetPath = $manifest->register('assets/logo.svg', $contentDir . '/assets/logo.svg');
         $config = new SiteConfigParser()->parse($contentDir . '/config.yaml');
@@ -611,8 +615,52 @@ PHP,
         foreach (['feed.xml', 'rss.xml', 'feed.json'] as $filename) {
             $feed = file_get_contents($this->outputDir . '/blog/' . $filename);
             assertNotFalse($feed);
-            assertStringContainsString($assetPath, $feed);
+            if ($filename === 'feed.json') {
+                $feed = json_decode($feed, true, 512, JSON_THROW_ON_ERROR)['items'][0]['content_html'];
+            }
+            assertStringContainsString('https://example.com/site/' . $assetPath, $feed);
             assertStringNotContainsString('/assets/logo.svg', $feed);
+        }
+    }
+
+    public function testParallelBuildFingerprintsFeedImages(): void
+    {
+        $files = [
+            'assets/logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+        ];
+        foreach (['blog', 'news'] as $collection) {
+            $files[$collection . '/_collection.yaml'] = "title: $collection\npermalink: /$collection/:slug/\n"
+                . "feed: true\nfeed_limit: 0\n";
+            for ($i = 0; $i < 500; $i++) {
+                $files[$collection . '/post-' . $i . '.md'] = "---\ntitle: Post $i\ndate: 2024-01-01\n---\n\n"
+                    . '![logo](/assets/logo.svg)';
+            }
+        }
+        $contentDir = $this->createMinimalContent($files);
+        file_put_contents(
+            $contentDir . '/config.yaml',
+            "title: Test Site\nbase_url: https://example.com/site/\nlanguages: [en]\n",
+        );
+
+        $result = $this->runBuildResult($contentDir, '--workers=2 --no-cache');
+
+        assertSame(0, $result['exitCode'], $result['output']);
+        assertStringContainsString('2 workers', $result['output']);
+        $assets = glob($this->outputDir . '/assets/logo.*.svg');
+        assertNotFalse($assets);
+        self::assertCount(1, $assets);
+        foreach (['blog', 'news'] as $collection) {
+            foreach (['feed.xml', 'rss.xml', 'feed.json'] as $filename) {
+                $feed = file_get_contents($this->outputDir . '/' . $collection . '/' . $filename);
+                assertNotFalse($feed);
+                if ($filename === 'feed.json') {
+                    $document = json_decode($feed, true, 512, JSON_THROW_ON_ERROR);
+                    self::assertCount(500, $document['items']);
+                    $feed = $document['items'][0]['content_html'];
+                }
+                assertStringContainsString('https://example.com/site/assets/' . basename($assets[0]), $feed);
+                assertStringNotContainsString('https://example.com/site/assets/logo.svg', $feed);
+            }
         }
     }
 

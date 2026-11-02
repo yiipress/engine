@@ -407,6 +407,8 @@ All `assets/` directories are copied to the build output preserving their path s
 When asset fingerprinting is enabled, these root-relative asset paths are rewritten relative to each
 generated page, which keeps them valid for deployments under a subdirectory such as GitHub Pages
 project sites. Atom, RSS and JSON feeds use absolute URLs with the same fingerprinted filenames.
+Absolute asset URLs match the configured site's scheme and host without regard to case, while paths remain
+case-sensitive and must stay within the configured base path.
 URL rewriting preserves comments, CDATA sections and literal text inside `script`, `style`,
 `textarea`, `title`, `xmp`, `iframe`, `noembed` and `noframes` elements.
 
