@@ -71,10 +71,9 @@ final readonly class AssetUrlRewriter
                 || $this->containsAbsoluteDotPath($html, $rootPath);
         }
 
-        static $covers = null;
-        /** @var WeakMap<AssetFingerprintManifest, array{signature: ?string, pattern: ?string}> $cache */
-        $cache = $covers ??= new WeakMap();
-        $cover = $cache[$this->manifest] ?? null;
+        /** @var WeakMap<AssetFingerprintManifest, array{signature: ?string, pattern: ?string}> $covers */
+        static $covers = new WeakMap();
+        $cover = $covers[$this->manifest] ?? null;
         if ($cover !== null && $cover['signature'] === null) {
             return $this->manifest->containsLogicalPath($html) || str_contains($html, '%');
         }
@@ -83,13 +82,13 @@ final readonly class AssetUrlRewriter
             $signature = $this->manifest->signature();
         } catch (JsonException) {
             // Registration cannot remove an invalid UTF-8 key; this identity must keep the literal fallback.
-            $cache[$this->manifest] = ['signature' => null, 'pattern' => null];
+            $covers[$this->manifest] = ['signature' => null, 'pattern' => null];
 
             return $this->manifest->containsLogicalPath($html) || str_contains($html, '%');
         }
         if ($cover === null || $cover['signature'] !== $signature) {
             $cover = ['signature' => $signature, 'pattern' => $this->buildTerminalCover()];
-            $cache[$this->manifest] = $cover;
+            $covers[$this->manifest] = $cover;
         }
         if ($cover['pattern'] !== null) {
             $matched = @preg_match($cover['pattern'], $html);
@@ -97,7 +96,7 @@ final readonly class AssetUrlRewriter
                 return $matched === 1;
             }
             $cover['pattern'] = null;
-            $cache[$this->manifest] = $cover;
+            $covers[$this->manifest] = $cover;
         }
 
         return $this->manifest->containsLogicalPath($html) || str_contains($html, '%');
