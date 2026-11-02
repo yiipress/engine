@@ -4,12 +4,19 @@ declare(strict_types=1);
 
 namespace YiiPress\Build;
 
+use function array_pop;
+use function explode;
+use function implode;
+use function preg_match;
+use function rawurldecode;
+use function rawurlencode;
 use function str_contains;
 use function str_ends_with;
 use function str_starts_with;
 use function strlen;
 use function strpos;
 use function strpbrk;
+use function str_replace;
 use function parse_url;
 use function strcasecmp;
 use function strtolower;
@@ -27,7 +34,11 @@ final readonly class AssetUrlRewriter
         if (
             $html === ''
             || $this->manifest->isEmpty()
-            || !$this->manifest->containsLogicalPath($html)
+            || (
+                !$this->manifest->containsLogicalPath($html)
+                && !str_contains($html, '%')
+                && !str_contains($html, '/.')
+            )
             || !str_contains($html, '=')
         ) {
             return $html;
@@ -49,7 +60,7 @@ final readonly class AssetUrlRewriter
         if (
             str_starts_with($url, '.')
             && str_starts_with($url, $rootPath)
-            && strpbrk($url, ':?#') === false
+            && strpbrk($url, ':?#%') === false
         ) {
             return $rootPath . $this->manifest->resolve(substr($url, strlen($rootPath)));
         }
@@ -72,6 +83,19 @@ final readonly class AssetUrlRewriter
         }
         [$prefix, $logicalPath] = $extracted;
         $resolvedPath = $this->manifest->resolve($logicalPath);
+
+        // Decode only path data, once. Encoded separators must not select a different asset directory.
+        if ($resolvedPath === $logicalPath && str_contains($logicalPath, '%')) {
+            if (preg_match('~%(?:2f|5c)~i', $logicalPath) === 1) {
+                return $url;
+            }
+            $decodedPath = rawurldecode($logicalPath);
+            $resolvedPath = $this->manifest->resolve($decodedPath);
+            if ($resolvedPath === $decodedPath) {
+                return $url;
+            }
+            $resolvedPath = str_replace('%2F', '/', rawurlencode($resolvedPath));
+        }
 
         if ($resolvedPath === $logicalPath) {
             return $url;
@@ -150,10 +174,36 @@ final readonly class AssetUrlRewriter
 
         $basePath = $root['path'] ?? '/';
         $urlPath = $url['path'] ?? '';
+        if (str_contains($urlPath, '/.')) {
+            $urlPath = $this->removeDotSegments($urlPath);
+        }
         if (!str_starts_with($urlPath, $basePath)) {
             return null;
         }
 
         return [$rootPath, substr($urlPath, strlen($basePath))];
+    }
+
+    private function removeDotSegments(string $path): string
+    {
+        $segments = [];
+        foreach (explode('/', $path) as $segment) {
+            if ($segment === '.') {
+                continue;
+            }
+            if ($segment === '..') {
+                // The first empty segment is the absolute path's leading slash.
+                if (count($segments) > 1) {
+                    array_pop($segments);
+                }
+                continue;
+            }
+            $segments[] = $segment;
+        }
+        if (str_ends_with($path, '/.') || str_ends_with($path, '/..')) {
+            $segments[] = '';
+        }
+
+        return implode('/', $segments);
     }
 }

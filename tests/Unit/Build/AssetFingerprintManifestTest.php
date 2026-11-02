@@ -229,6 +229,108 @@ final class AssetFingerprintManifestTest extends TestCase
         assertSame('<link href="../' . $fingerprinted . '">', $html);
     }
 
+    /** @return iterable<string, array{string, bool}> */
+    public static function absoluteDotSegmentProvider(): iterable
+    {
+        yield 'parent segment' => ['https://example.com/site/blog/../assets/photo.jpg', true];
+        yield 'current segment inside asset path' => ['https://example.com/site/assets/./photo.jpg', true];
+        yield 'enter base after normalization' => ['https://example.com/other/../site/assets/photo.jpg', true];
+        yield 'leave base after normalization' => ['https://example.com/site/../assets/photo.jpg', false];
+        yield 'sibling after normalization' => ['https://example.com/site/../site-other/assets/photo.jpg', false];
+        yield 'external origin' => ['https://cdn.example.com/site/blog/../assets/photo.jpg', false];
+        yield 'parents above root' => ['https://example.com/../../site/assets/photo.jpg', true];
+        yield 'empty segment removed by parent' => ['https://example.com/site/blog//../assets/photo.jpg', false];
+    }
+
+    #[DataProvider('absoluteDotSegmentProvider')]
+    public function testRewriterNormalizesAbsoluteDotSegmentsBeforeMatchingBase(string $url, bool $matches): void
+    {
+        $source = $this->tempDir . '/photo.jpg';
+        file_put_contents($source, 'jpg');
+        $manifest = new AssetFingerprintManifest();
+        $fingerprinted = $manifest->register('assets/photo.jpg', $source);
+        $html = '<img src="' . $url . '?q=1#part">';
+
+        $actual = new AssetUrlRewriter($manifest)->rewrite($html, 'https://example.com/site/');
+
+        assertSame($matches ? '<img src="https://example.com/site/' . $fingerprinted . '?q=1#part">' : $html, $actual);
+    }
+
+    /** @return iterable<string, array{string, string, string}> */
+    public static function encodedAssetProvider(): iterable
+    {
+        yield 'space' => ['assets/my photo.jpg', 'assets/my%20photo.jpg', ''];
+        yield 'absolute space' => [
+            'assets/my photo.jpg',
+            'https://example.com/site/assets/my%20photo.jpg',
+            'https://example.com/site/',
+        ];
+        yield 'relative space' => ['assets/my photo.jpg', '../assets/my%20photo.jpg', '../'];
+        yield 'query in filename' => ['assets/my?photo.jpg', '/assets/my%3Fphoto.jpg', '../'];
+        yield 'fragment in filename' => ['assets/my#photo.jpg', '/assets/my%23photo.jpg', '../'];
+        yield 'literal percent' => ['assets/my%20photo.jpg', '/assets/my%2520photo.jpg', '../'];
+        yield 'plus is not space' => ['assets/my+photo.jpg', '/assets/my%2Bphoto.jpg', '../'];
+    }
+
+    #[DataProvider('encodedAssetProvider')]
+    public function testRewriterMatchesEncodedAssetPaths(string $logicalPath, string $url, string $rootPath): void
+    {
+        $source = $this->tempDir . '/photo.jpg';
+        file_put_contents($source, 'jpg');
+        $manifest = new AssetFingerprintManifest();
+        $fingerprinted = $manifest->register($logicalPath, $source);
+        $encoded = str_replace('%2F', '/', rawurlencode($fingerprinted));
+        $html = '<img src="' . $url . '?q=1&amp;x=2#part">';
+
+        $actual = new AssetUrlRewriter($manifest)->rewrite($html, $rootPath);
+
+        assertSame('<img src="' . $rootPath . $encoded . '?q=1&amp;x=2#part">', $actual);
+    }
+
+    public function testRewriterMatchesEncodedRelativeAssetWithoutSuffix(): void
+    {
+        $source = $this->tempDir . '/photo.jpg';
+        file_put_contents($source, 'jpg');
+        $manifest = new AssetFingerprintManifest();
+        $fingerprinted = $manifest->register('assets/my photo.jpg', $source);
+
+        $actual = new AssetUrlRewriter($manifest)->rewrite('<img src="../assets/my%20photo.jpg">', '../');
+
+        assertSame('<img src="../' . str_replace(' ', '%20', $fingerprinted) . '">', $actual);
+    }
+
+    public function testRewriterPreservesEncodedSeparatorsAndUnmatchedUrls(): void
+    {
+        $source = $this->tempDir . '/photo.jpg';
+        file_put_contents($source, 'jpg');
+        $manifest = new AssetFingerprintManifest();
+        $manifest->register('assets/my photo.jpg', $source);
+        $manifest->register('assets/my+photo.jpg', $source);
+        $html = '<img src="/assets%2Fmy%20photo.jpg">'
+            . '<img src="/assets%5cmy%20photo.jpg">'
+            . '<img src="https://cdn.example.com/site/assets/my%20photo.jpg">'
+            . '<img src="https://example.com/site-other/assets/my%20photo.jpg">'
+            . '<img src="/assets/missing%20photo.jpg">'
+            . '<img src="/assets/my%ZZphoto.jpg">';
+
+        $actual = new AssetUrlRewriter($manifest)->rewrite($html, 'https://example.com/site/');
+
+        assertSame($html, $actual);
+    }
+
+    public function testRewriterKeepsExactLiteralManifestMatchBeforeDecoding(): void
+    {
+        $source = $this->tempDir . '/photo.jpg';
+        file_put_contents($source, 'jpg');
+        $manifest = new AssetFingerprintManifest();
+        $manifest->register('assets/my photo.jpg', $source);
+        $literal = $manifest->register('assets/my%20photo.jpg', $source);
+
+        $actual = new AssetUrlRewriter($manifest)->rewrite('<img src="assets/my%20photo.jpg">');
+
+        assertSame('<img src="' . $literal . '">', $actual);
+    }
+
     public function testRewriterSkipsHtmlWithoutAssetReferences(): void
     {
         $manifest = new AssetFingerprintManifest();

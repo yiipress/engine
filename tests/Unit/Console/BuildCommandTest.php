@@ -545,7 +545,7 @@ PHP,
             'blog/post.md' => "---\ntitle: Post\ndate: 2024-01-01\n---\n\n"
                 . "![logo](/assets/logo.svg)\n\n<div><img src=/assets/logo.svg>"
                 . ' <img src="/assets/logo.svg?q=1&amp;x=2#part">'
-                . ' <img src="https://example.github.io:443/site/assets/logo.svg">'
+                . ' <img data-case="explicit-port" src="https://example.github.io:443/site/assets/logo.svg">'
                 . ' <img src="https://cdn.example.com/assets/logo.svg"></div>',
             'assets/logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
         ]);
@@ -572,9 +572,57 @@ PHP,
                 assertStringContainsString($url . $query, $feed);
                 assertStringNotContainsString('https://example.github.io/site/assets/logo.svg', $feed);
                 assertStringNotContainsString('https://example.github.io:443/', $feed);
+                $explicitPortImage = '<img data-case="explicit-port" src="' . $url . '">';
+                assertStringContainsString(
+                    $filename === 'feed.json'
+                        ? $explicitPortImage
+                        : htmlspecialchars($explicitPortImage, ENT_QUOTES | ENT_XML1),
+                    $feed,
+                );
                 assertStringContainsString('https://cdn.example.com/assets/logo.svg', $feed);
             }
         }
+    }
+
+    public function testBuildFingerprintsNormalizedAndEncodedFeedImages(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'blog/_collection.yaml' => "title: Blog\npermalink: /blog/:slug/\nfeed: true\n",
+            'blog/post.md' => "---\ntitle: Post\ndate: 2024-01-01\n---\n\n"
+                . '<img data-case="dot" src="https://example.com/site/assets/./my%20logo.svg">'
+                . '<img data-case="encoded" src="/assets/my%20logo.svg">',
+            'assets/my logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+        ]);
+        file_put_contents(
+            $contentDir . '/config.yaml',
+            "title: Test Site\nbase_url: https://example.com/site/\nlanguages: [en]\n",
+        );
+
+        $this->runBuild($contentDir, '--workers=1 --no-cache');
+
+        $assets = glob($this->outputDir . '/assets/my logo.*.svg');
+        assertNotFalse($assets);
+        self::assertCount(1, $assets);
+        $filename = rawurlencode(basename($assets[0]));
+        foreach (['blog/', ''] as $prefix) {
+            foreach (['feed.xml', 'rss.xml', 'feed.json'] as $feedName) {
+                $feed = file_get_contents($this->outputDir . '/' . $prefix . $feedName);
+                assertNotFalse($feed);
+                if ($feedName === 'feed.json') {
+                    $feed = json_decode($feed, true, 512, JSON_THROW_ON_ERROR)['items'][0]['content_html'];
+                }
+                foreach (['dot', 'encoded'] as $case) {
+                    $image = '<img data-case="' . $case . '" src="https://example.com/site/assets/' . $filename . '">';
+                    assertStringContainsString(
+                        $feedName === 'feed.json' ? $image : htmlspecialchars($image, ENT_QUOTES | ENT_XML1),
+                        $feed,
+                    );
+                }
+            }
+        }
+        $page = file_get_contents($this->outputDir . '/blog/post/index.html');
+        assertNotFalse($page);
+        assertStringContainsString('<img data-case="encoded" src="../../assets/' . $filename . '">', $page);
     }
 
     public function testFeedWorkerFingerprintsImages(): void
