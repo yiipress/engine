@@ -7,8 +7,6 @@ YiiPress is written in PHP, but you can use it without installing PHP or Compose
 You download one executable file. It contains PHP, the YiiPress code, and the extensions needed to build your site.
 The build produces static files that you can publish to a web host.
 
-This post explains the main parts from my talk, “PHP in a binary, using YiiPress as an example.”
-
 ## PHP and the application in one file
 
 YiiPress still runs on the Zend Engine, the engine that executes PHP code.
