@@ -71,8 +71,9 @@ Two expensive text-processing jobs run in native extensions:
 The packaging build links these extensions into the runtime. Users do not have to locate and install separate Markdown
 or highlighting shared libraries. PHP remains responsible for connecting the parts and deciding what work is needed.
 
-During a build, YiiPress first parses YAML configuration and entry front matter. It records body offsets rather than
-loading every Markdown body immediately. The site index resolves URLs, filters drafts and future entries, sorts
+During a build, YiiPress first parses YAML configuration and entry front matter. Entry parsing also reads each body to
+extract inline tags. Entries retain source offsets instead of keeping all Markdown bodies in memory, so rendering can
+load them again when needed. The site index resolves URLs, filters drafts and future entries, sorts
 collections, and connects authors and taxonomies. Rendering loads the bodies it needs, runs content processors,
 converts Markdown, and renders PHP templates. Writers save the resulting pages and supporting output, including
 listings, feeds, sitemap, search data, and copied assets.
