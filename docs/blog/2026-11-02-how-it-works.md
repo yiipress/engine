@@ -1,102 +1,122 @@
 ---
 title: How it works
-summary: Follow a Markdown file through YiiPress, from plain files to a complete static website.
+summary: Inside YiiPress, from an embedded PHP runtime and native extensions to portable workers and static output.
 ---
 
-Welcome to the YiiPress blog. This is where we will share product updates and explain the ideas behind the engine.
-For the first post, let's follow a page from a Markdown file to the website a visitor reads.
+YiiPress is written in PHP, but you can download it as a single executable and use it without installing PHP or Composer.
+How does that fit together? The interesting parts are inside the binary: a PHP runtime, a PHAR archive, native extensions,
+and a build pipeline that leaves ordinary static files behind.
 
-## Start with files
+This post follows the internals covered in my talk, “PHP in a binary, using YiiPress as an example.”
+The aim is to show how the pieces work together and the constraints that shaped them.
 
-YiiPress is a static website engine built with Yii3. You write content in Markdown, keep settings in YAML,
-and build a directory of files that a static host can serve. Visitors do not need a running PHP application
-or a database to read the result.
+## A PHP runtime and an application in one file
 
-A small site might look like this:
+The application still runs on the Zend Engine. Packaging it as an executable does not turn its PHP classes into native
+machine code. Instead, YiiPress combines a PHP runtime with the application it will execute.
 
-```text
-content/
-├── config.yaml
-├── navigation.yaml
-└── blog/
-    ├── _collection.yaml
-    └── hello-world.md
+[static-php-cli](https://static-php.dev/) builds the runtime and its selected extensions.
+Its [micro SAPI](https://micro.static-php.dev/en/index.html) provides an executable stub, `micro.sfx`,
+which can be combined with PHP code or a PHAR archive. A PHAR is PHP's application archive format: it holds the program
+and dependencies in one file, with a startup script called a stub.
+
+The core of YiiPress's Linux packaging path looks like this:
+
+```mermaid
+flowchart TD
+    app["YiiPress code, config, theme and runtime dependencies"] --> phar["yiipress.phar"]
+    php["PHP sources and selected native extensions"] --> spc["static-php-cli"]
+    spc --> micro["micro.sfx"]
+    phar --> combine["spc micro:combine"]
+    micro --> combine
+    combine --> executable["yiipress executable"]
 ```
 
-`config.yaml` holds site settings such as the title and public URL. `navigation.yaml` defines menus.
-The `blog` directory is a collection: a group of entries with shared settings for URLs, sorting, pagination,
-and feeds. Its `_collection.yaml` might contain:
+When the executable starts, the bundled runtime runs the PHAR stub. The stub maps the archive and loads the `yii` entry
+script inside it, which starts the console application. The user runs `yiipress build` or `yiipress serve`;
+PHP and the application's dependencies are already in the package.
 
-```yaml
-title: Blog
-permalink: /blog/:slug/
-sort_by: date
-sort_order: desc
-feed: true
-```
+The same micro-plus-PHAR approach underlies the macOS and Windows builds, with separate platform build scripts.
+An executable is built for its target operating system and architecture; one Linux file is not a universal binary.
 
-Each entry can begin with YAML front matter. Here is `hello-world.md`:
+## Keep the package focused
 
-```markdown
----
-title: Hello world
-date: 2026-11-02
-summary: Our first update.
----
+Bundling a complete development environment would make distribution unnecessarily large. YiiPress narrows both sides
+of the package.
 
-This is our first post, written in **Markdown**.
-```
+On the application side, the PHAR builder includes `config/`, `src/`, `themes/`, runtime Composer dependencies, and the
+`yii` entry script. Development dependencies stay out. The archive filter removes non-runtime files such as dependency
+tests, examples, documentation, and development-tool configuration. Comment stripping preserves metadata that runtime
+code reads through reflection, and the PHAR entries are gzip-compressed.
 
-## Build the site
+On the runtime side, the build selects the extensions the engine needs. Markdown conversion, highlighting, YAML, and
+XML output are examples; there is no need to bundle every extension available to PHP. The Linux build uses musl for
+static linking and applies UPX executable compression. Platform packaging details differ, so the PHAR, executable,
+and compressed download should not be treated as the same size measurement.
 
-With the `yiipress` binary installed, run:
+YiiPress also keeps its application layer focused. It uses plain PHP templates instead of bringing in a view/widget
+stack. Its preview server uses ReactPHP streams, so the package does not need an FPM or Apache SAPI just to offer
+`yiipress serve`.
 
-```shell
-yiipress build
-```
+## PHP coordinates; native code handles the hot paths
 
-The binary includes PHP and the native extensions it needs, so you do not need a separate PHP or Composer
-installation to use it. The build follows four stages:
+Yii3 provides dependency injection, console integration, and the preview application's routing and middleware.
+The content model, index, processors, templates, and writers are composed around those services.
 
-1. **Parse.** Read the configuration and entry metadata. YiiPress records where each Markdown body is stored
-   so it can load the body later, when rendering needs it.
-2. **Index.** Work out URLs, filter drafts and future posts, sort collections, and connect entries to authors,
-   tags, categories, and date archives. This gives the rest of the build a consistent view of the site.
-3. **Render.** Convert Markdown to HTML, run content processors, and place the result in PHP templates.
-   The bundled theme supplies the page layout; you can override templates to change it.
-4. **Write.** Save the pages and supporting files into `output/`.
+Two expensive text-processing jobs run in native extensions:
 
-For the example above, the entry becomes `output/blog/hello-world/index.html`, served at `/blog/hello-world/`.
-The collection also gets a listing, date archives, and feeds. Depending on the site settings and content,
-the build can produce taxonomy pages, author pages, a search index, redirects, and a sitemap.
-Content assets, such as images, are copied into the output too.
+- `ext-mdparser`, from `iliaal/mdparser`, converts Markdown through MD4C, a C parser.
+- `ext-highlighter`, from `yiipress/highlighter`, performs syntax highlighting through syntect, written in Rust.
 
-The Markdown and templates are build inputs. The visitor receives the resulting HTML, CSS, JavaScript,
-and other static files.
+The packaging build links these extensions into the runtime. Users do not have to locate and install separate Markdown
+or highlighting shared libraries. PHP remains responsible for connecting the parts and deciding what work is needed.
 
-## Keep the build work small
+During a build, YiiPress first parses YAML configuration and entry front matter. It records body offsets rather than
+loading every Markdown body immediately. The site index resolves URLs, filters drafts and future entries, sorts
+collections, and connects authors and taxonomies. Rendering loads the bodies it needs, runs content processors,
+converts Markdown, and renders PHP templates. Writers save the resulting pages and supporting output, including
+listings, feeds, sitemap, search data, and copied assets.
 
-The pipeline is designed to avoid unnecessary work. Native extensions handle Markdown conversion and syntax
-highlighting. Incremental builds use cached rendering and dependency information to reuse output when its inputs
-have not changed. Larger builds can distribute rendering work across independent worker processes.
+Incremental builds use source hashes, rendering context, and output dependencies to reuse work when the inputs have not
+changed. This complements the native extensions: faster processing helps, but avoiding unnecessary processing helps too.
 
-These mechanisms support the same goal: let PHP coordinate the build, then serve ordinary files.
-They do not require an application server on the production host.
+## Workers need their own PHAR handles
 
-## Preview, then publish
+Parallel rendering exposed a constraint that is easy to miss in a source checkout. A forked process inherits open file
+descriptors. If parent and child read from the same PHAR descriptor, their shared read position can interfere with
+concurrent autoloading and lead to archive corruption errors such as a CRC32 mismatch.
 
-While writing, run:
+YiiPress's rendering worker pool starts independent processes with `proc_open()` instead. Each process opens its own
+package, reconstructs the required pipeline, receives a rendering job, and writes independent output files.
+This avoids sharing the PHAR's read position and also gives the pool a process model that works on Windows.
+The trade-off is process startup and setup cost, so small batches stay sequential where the engine's thresholds apply.
 
-```shell
-yiipress serve
-```
+## The package and the project have different roots
 
-The preview server rebuilds and serves the generated site, with live reload as you edit content or templates.
-It uses the same build pipeline as `yiipress build`, so you preview the files that the build produces.
+The embedded archive contains the engine, not the user's website. Packaged code reads its own files through package
+paths, while site content, local themes, and output paths are resolved from the project directory where the command runs.
+A read-only installation must not become the place where a build tries to write its cache.
 
-When the site is ready, run `yiipress build` and deploy the contents of `output/` to your static host.
-Set `base_url` in `config.yaml` to the site's public URL so generated canonical links and feeds use the right address.
+For PHAR and binary installations, YiiPress puts runtime cache and incremental manifests under the operating system's
+temporary directory, keyed by the project path. Separate projects get separate cache locations.
+`yiipress clean` removes the relevant build cache as well as the configured output directory.
 
-This blog is built the same way: a collection, a Markdown post, and the existing YiiPress theme.
-To try it yourself, follow the [Quickstart](../quickstart.md). For more detail, read about
-[content and collections](../content.md), [templates](../templates.md), or the [architecture](../architecture.md).
+## What gets deployed
+
+The binary is a tool for building and previewing the site. `yiipress serve` offers live reload over generated output;
+it does not make a PHP application server a requirement for the published website.
+
+Run `yiipress build` and publish the contents of `output/` to a static host. The pages, feeds, styles, scripts, and assets
+are the production site; content and template changes require another build. Set `base_url` to the site's public URL
+so canonical links and feeds use that address.
+
+For workflows that build inside a container, YiiPress also provides a distroless image containing the Linux executable.
+It reuses the packaged runtime rather than installing PHP and Composer in the final image. Docker remains useful for
+engine development, where debugging and build tools belong.
+
+The result is a PHP application that can be distributed like a command-line tool while keeping PHP's libraries,
+composition, and template model. The same approach can be useful for other PHP tools, provided their extensions,
+filesystem assumptions, and process model fit the package.
+
+For the source-level details, see [Engine](../engine.md) and [Binaries, PHAR, Docker](../binaries-phar-docker.md).
+To build a site of your own, start with the [Quickstart](../quickstart.md).

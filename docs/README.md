@@ -43,5 +43,5 @@ Set `YIIPRESS_INSTALL_DIR` to install into another directory.
 
 ## From the blog
 
-Read [How it works](blog/2026-11-02-how-it-works.md) for a tour from Markdown to a static website.
+Read [How it works](blog/2026-11-02-how-it-works.md) for a look inside the PHP binary, native extensions, and static-site build pipeline.
 Visit the [Blog](https://yiipress.yiiframework.com/blog/) for product updates and more about YiiPress.
