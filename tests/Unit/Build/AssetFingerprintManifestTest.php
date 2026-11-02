@@ -184,6 +184,79 @@ final class AssetFingerprintManifestTest extends TestCase
         );
     }
 
+    /** @return iterable<string, array{string}> */
+    public static function relativeRootProvider(): iterable
+    {
+        yield 'empty root' => [''];
+        yield 'current directory' => ['./'];
+        yield 'parent directory' => ['../'];
+        yield 'two parents' => ['../../'];
+        yield 'three parents' => ['../../../'];
+    }
+
+    #[DataProvider('relativeRootProvider')]
+    public function testRewriterPreservesMultiParentLinksAndFingerprintedAssets(string $rootPath): void
+    {
+        $source = $this->tempDir . '/photo.jpg';
+        file_put_contents($source, 'jpg');
+        $manifest = new AssetFingerprintManifest();
+        $fingerprinted = $manifest->register('assets/photo.jpg', $source);
+        $html = '<img src="' . $rootPath . $fingerprinted . '?q=1#part">'
+            . '<a href="../../other/../page/">Page</a>'
+            . '<img src="' . $rootPath . 'assets/./photo.jpg">';
+
+        assertSame($html, new AssetUrlRewriter($manifest)->rewrite($html, $rootPath));
+    }
+
+    #[DataProvider('relativeRootProvider')]
+    public function testRewriterKeepsLiteralAndArbitraryEncodedMatchesWithRelativeRoots(string $rootPath): void
+    {
+        $source = $this->tempDir . '/photo.jpg';
+        file_put_contents($source, 'jpg');
+        $manifest = new AssetFingerprintManifest();
+        $fingerprinted = $manifest->register('assets/photo.jpg', $source);
+        $rewriter = new AssetUrlRewriter($manifest);
+
+        assertSame(
+            '<img src="' . $rootPath . $fingerprinted . '?q=1#part">',
+            $rewriter->rewrite('<img src="' . $rootPath . 'assets/photo.jpg?q=1#part">', $rootPath),
+        );
+        assertSame(
+            '<img src="' . $rootPath . $fingerprinted . '?q=1#part">',
+            $rewriter->rewrite('<img src="' . $rootPath . '%61ssets/ph%6fto.jpg?q=1#part">', $rootPath),
+        );
+    }
+
+    #[DataProvider('absoluteRootProvider')]
+    public function testRewriterNormalizesAbsoluteDotPathWithoutLiteralManifestMatch(string $rootPath): void
+    {
+        $source = $this->tempDir . '/photo.jpg';
+        file_put_contents($source, 'jpg');
+        $manifest = new AssetFingerprintManifest();
+        $fingerprinted = $manifest->register('assets/photo.jpg', $source);
+        $html = '<img src="HTTPS://EXAMPLE.COM:443/site/assets/./photo.jpg?q=1#part">';
+        assertSame(false, $manifest->containsLogicalPath($html));
+
+        assertSame(
+            '<img src="' . rtrim($rootPath, '/') . '/' . $fingerprinted . '?q=1#part">',
+            new AssetUrlRewriter($manifest)->rewrite($html, $rootPath),
+        );
+    }
+
+    public function testRewriterPreservesAbsoluteDotPathsWithoutConfiguredSchemeAndHost(): void
+    {
+        $source = $this->tempDir . '/photo.jpg';
+        file_put_contents($source, 'jpg');
+        $manifest = new AssetFingerprintManifest();
+        $manifest->register('assets/photo.jpg', $source);
+        $html = '<img src="https://example.com/site/assets/./photo.jpg">';
+        $rewriter = new AssetUrlRewriter($manifest);
+
+        assertSame($html, $rewriter->rewrite($html, '//example.com/site/'));
+        assertSame($html, $rewriter->rewrite($html, 'https:///site/'));
+        assertSame($html, $rewriter->rewrite($html, 'https:/site/'));
+    }
+
     /** @return iterable<string, array{string, string, bool}> */
     public static function defaultPortProvider(): iterable
     {
