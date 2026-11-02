@@ -8,15 +8,27 @@ use Closure;
 
 use function in_array;
 use function preg_replace_callback;
+use function str_contains;
 use function strtolower;
 
 /** Rewrites href/src values while preserving HTML syntax and raw text. */
 final readonly class HtmlUrlRewriter
 {
+    private const string RAW_TAG_NAMES = '(?:script|style|textarea|title|xmp|iframe|noembed|noframes)';
+    private const string TAG_CONTENT = '(?:[^"\'<>]++|"[^"]*"|\'[^\']*\')';
+    private const string BEFORE_URL = '(?:[^"\'<>\s]++|"[^"]*"|\'[^\']*\'|\s++(?!(?:href|src)\s*=))*';
+
+    // Match the first URL per tag; \K leaves its prefix outside the PHP replacement.
+    // The final skip branch protects other tags' quoted values and raw-text bodies.
     private const string TAG_PATTERN = '~(?:<!--.*?(?:-->|$)|<!\[CDATA\[.*?(?:\]\]>|$))(*SKIP)(*F)|'
-        . '(<(?:(script|style|textarea|title|xmp|iframe|noembed|noframes)(?=[\s/>])|[a-z][a-z0-9:-]*(?=[\s/>]))'
-        . '(?:[^"\'<>]|"[^"]*"|\'[^\']*\')*>)'
-        . '(?(2)(.*?(?:</\2(?=[\s/>])(?:[^"\'>]|"[^"]*"|\'[^\']*\')*>|$)))~is';
+        . '<(?:(' . self::RAW_TAG_NAMES . ')(?=[\s/>])|[a-z][a-z0-9:-]*(?=[\s/>]))'
+        . self::BEFORE_URL . '\s+(?:href|src)\s*=\s*\K'
+        . '(?:(["\'])(.*?)\2|([^\s"\'`=<>]+))'
+        . '(' . self::TAG_CONTENT . '*>)'
+        . '(?(1)(.*?(?:</\1(?=[\s/>])(?:[^"\'>]|"[^"]*"|\'[^\']*\')*>|$)))'
+        . '|<(?:(' . self::RAW_TAG_NAMES . ')(?=[\s/>])|[a-z][a-z0-9:-]*(?=[\s/>]))'
+        . self::TAG_CONTENT . '*>'
+        . '(?(7).*?(?:</\7(?=[\s/>])(?:[^"\'>]|"[^"]*"|\'[^\']*\')*>|$))(*SKIP)(*F)~is';
 
     private const string ATTRIBUTE_PATTERN = '~(\s+)([a-z_:][a-z0-9_.:-]*)(\s*=\s*)'
         . '(?:(["\'])(.*?)\4|([^\s"\'`=<>]+))~is';
@@ -28,7 +40,15 @@ final readonly class HtmlUrlRewriter
     {
         return preg_replace_callback(
             self::TAG_PATTERN,
-            fn(array $matches): string => $this->rewriteTag($matches[1], $rewriteUrl) . ($matches[3] ?? ''),
+            function (array $matches) use ($rewriteUrl): string {
+                $quote = $matches[2];
+                $path = $quote === '' ? $matches[4] : $matches[3];
+                $tail = $matches[5];
+
+                return $quote . $rewriteUrl($path) . $quote
+                    . (str_contains($tail, '=') ? $this->rewriteTag($tail, $rewriteUrl) : $tail)
+                    . ($matches[6] ?? '');
+            },
             $html,
         ) ?? $html;
     }

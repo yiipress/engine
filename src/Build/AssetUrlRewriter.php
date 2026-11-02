@@ -9,6 +9,7 @@ use function str_ends_with;
 use function str_starts_with;
 use function strlen;
 use function strpos;
+use function strpbrk;
 use function parse_url;
 use function strcasecmp;
 use function strtolower;
@@ -44,6 +45,15 @@ final readonly class AssetUrlRewriter
 
     private function rewriteUrl(string $url, string $rootPath): string
     {
+        // Already-relative template assets need only prefix stripping and manifest lookup.
+        if (
+            str_starts_with($url, '.')
+            && str_starts_with($url, $rootPath)
+            && strpbrk($url, ':?#') === false
+        ) {
+            return $rootPath . $this->manifest->resolve(substr($url, strlen($rootPath)));
+        }
+
         if (
             $url === ''
             || str_starts_with($url, '#')

@@ -265,6 +265,20 @@ final class AssetFingerprintManifestTest extends TestCase
         yield 'uppercase spaced' => ['<img SRC = ../assets/logo.svg>', '<img SRC = ../%s>'];
         yield 'query and fragment' => ['<img src=../assets/logo.svg?q=1#part>', '<img src=../%s?q=1#part>'];
         yield 'quoted boundary' => ['<img title="a > b" src=../assets/logo.svg>', '<img title="a > b" src=../%s>'];
+        yield 'multiple URLs with a literal attribute and body' => [
+            '<a href=../assets/logo.svg src="../assets/logo.svg?q=1#part" title="src=../assets/logo.svg">'
+                . 'href=../assets/logo.svg</a>',
+            '<a href=../%s src="../%s?q=1#part" title="src=../assets/logo.svg">'
+                . 'href=../assets/logo.svg</a>',
+        ];
+        yield 'tag text inside a non-URL attribute' => [
+            '<div title="<img src=../assets/logo.svg>"></div><img src=../assets/logo.svg>',
+            '<div title="<img src=../assets/logo.svg>"></div><img src=../%s>',
+        ];
+        yield 'empty URL before an asset URL' => [
+            '<a href="" src=../assets/logo.svg>asset</a>',
+            '<a href="" src=../%s>asset</a>',
+        ];
         yield 'custom element boundary' => [
             '<script-demo></script-demo><img src=../assets/logo.svg>',
             '<script-demo></script-demo><img src=../%s>',
