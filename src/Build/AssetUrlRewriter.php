@@ -46,10 +46,7 @@ final readonly class AssetUrlRewriter
         if (
             $html === ''
             || $this->manifest->isEmpty()
-            || (
-                !$this->containsAssetCandidate($html, $rootPath)
-                && !$this->containsAbsoluteDotPath($html, $rootPath)
-            )
+            || !$this->containsAssetCandidate($html, $rootPath)
             || !str_contains($html, '=')
         ) {
             return $html;
@@ -69,7 +66,9 @@ final readonly class AssetUrlRewriter
     {
         // Absolute parsing can change control bytes. Preserve the original whole-page admission first.
         if (str_contains($rootPath, '://')) {
-            return $this->manifest->containsLogicalPath($html) || str_contains($html, '%');
+            return $this->manifest->containsLogicalPath($html)
+                || str_contains($html, '%')
+                || $this->containsAbsoluteDotPath($html, $rootPath);
         }
 
         static $covers = null;
