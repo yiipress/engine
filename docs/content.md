@@ -409,6 +409,8 @@ generated page, which keeps them valid for deployments under a subdirectory such
 project sites. Atom, RSS and JSON feeds use absolute URLs with the same fingerprinted filenames.
 Absolute asset URLs match the configured site's scheme and host without regard to case, while paths remain
 case-sensitive and must stay within the configured base path.
+Explicit HTTPS port 443 and HTTP port 80 match their omitted defaults. Absolute base URLs may omit the
+trailing slash; asset URLs still keep the separator and do not match sibling base paths.
 URL rewriting preserves comments, CDATA sections and literal text inside `script`, `style`,
 `textarea`, `title`, `xmp`, `iframe`, `noembed` and `noframes` elements.
 

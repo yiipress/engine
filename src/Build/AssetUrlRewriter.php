@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace YiiPress\Build;
 
 use function str_contains;
+use function str_ends_with;
 use function str_starts_with;
 use function strlen;
 use function strpos;
-use function strncasecmp;
+use function parse_url;
+use function strcasecmp;
+use function strtolower;
 use function substr;
 
 final readonly class AssetUrlRewriter
@@ -29,6 +32,10 @@ final readonly class AssetUrlRewriter
             return $html;
         }
 
+        if (str_contains($rootPath, '://') && !str_ends_with($rootPath, '/')) {
+            $rootPath .= '/';
+        }
+
         return $this->htmlUrlRewriter->rewrite(
             $html,
             fn(string $url): string => $this->rewriteUrl($url, $rootPath),
@@ -43,15 +50,17 @@ final readonly class AssetUrlRewriter
             || str_starts_with($url, 'data:')
             || str_starts_with($url, 'mailto:')
             || str_starts_with($url, 'javascript:')
-            || (str_contains($url, '://')
-                && !(str_contains($rootPath, '://') && $this->hasRootPrefix($url, $rootPath)))
             || str_starts_with($url, '//')
         ) {
             return $url;
         }
 
         [$path, $suffix] = $this->splitSuffix($url);
-        [$prefix, $logicalPath] = $this->extractLogicalPath($path, $rootPath);
+        $extracted = $this->extractLogicalPath($path, $rootPath);
+        if ($extracted === null) {
+            return $url;
+        }
+        [$prefix, $logicalPath] = $extracted;
         $resolvedPath = $this->manifest->resolve($logicalPath);
 
         if ($resolvedPath === $logicalPath) {
@@ -87,40 +96,54 @@ final readonly class AssetUrlRewriter
     }
 
     /**
-     * @return array{0: string, 1: string}
+     * @return array{0: string, 1: string}|null
      */
-    private function extractLogicalPath(string $path, string $rootPath): array
+    private function extractLogicalPath(string $path, string $rootPath): ?array
     {
+        if (str_contains($path, '://')) {
+            return $this->extractAbsolutePath($path, $rootPath);
+        }
+
         if (str_starts_with($path, '/')) {
             return ['', AssetFingerprintManifest::normalizePath($path)];
         }
 
-        if ($rootPath !== '' && $rootPath !== '/' && $this->hasRootPrefix($path, $rootPath)) {
+        if ($rootPath !== '' && $rootPath !== '/' && str_starts_with($path, $rootPath)) {
             return [$rootPath, substr($path, strlen($rootPath))];
         }
 
         return ['', $path];
     }
 
-    private function hasRootPrefix(string $url, string $rootPath): bool
+    /** @return array{0: string, 1: string}|null */
+    private function extractAbsolutePath(string $path, string $rootPath): ?array
     {
-        $schemeEnd = strpos($rootPath, '://');
-        if ($schemeEnd === false) {
-            return str_starts_with($url, $rootPath);
+        $root = parse_url($rootPath);
+        $url = parse_url($path);
+        if ($root === false || $url === false || !isset($root['scheme'], $root['host'], $url['scheme'], $url['host'])) {
+            return null;
         }
 
-        $urlSchemeEnd = strpos($url, '://');
-        if ($urlSchemeEnd === false) {
-            return false;
+        $scheme = strtolower($root['scheme']);
+        $defaultPort = match ($scheme) {
+            'https' => 443,
+            'http' => 80,
+            default => null,
+        };
+        if (
+            $scheme !== strtolower($url['scheme'])
+            || strcasecmp($root['host'], $url['host']) !== 0
+            || ($root['port'] ?? $defaultPort) !== ($url['port'] ?? $defaultPort)
+        ) {
+            return null;
         }
 
-        $rootOriginEnd = strpos($rootPath, '/', $schemeEnd + 3);
-        $urlOriginEnd = strpos($url, '/', $urlSchemeEnd + 3);
-        $originLength = $rootOriginEnd === false ? strlen($rootPath) : $rootOriginEnd;
-        $urlOriginLength = $urlOriginEnd === false ? strlen($url) : $urlOriginEnd;
+        $basePath = $root['path'] ?? '/';
+        $urlPath = $url['path'] ?? '';
+        if (!str_starts_with($urlPath, $basePath)) {
+            return null;
+        }
 
-        return $originLength === $urlOriginLength
-            && strncasecmp($url, $rootPath, $originLength) === 0
-            && str_starts_with(substr($url, $originLength), substr($rootPath, $originLength));
+        return [$rootPath, substr($urlPath, strlen($basePath))];
     }
 }

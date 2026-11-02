@@ -545,6 +545,7 @@ PHP,
             'blog/post.md' => "---\ntitle: Post\ndate: 2024-01-01\n---\n\n"
                 . "![logo](/assets/logo.svg)\n\n<div><img src=/assets/logo.svg>"
                 . ' <img src="/assets/logo.svg?q=1&amp;x=2#part">'
+                . ' <img src="https://example.github.io:443/site/assets/logo.svg">'
                 . ' <img src="https://cdn.example.com/assets/logo.svg"></div>',
             'assets/logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
         ]);
@@ -570,6 +571,7 @@ PHP,
                 $query = $filename === 'feed.json' ? '?q=1&amp;x=2#part' : '?q=1&amp;amp;x=2#part';
                 assertStringContainsString($url . $query, $feed);
                 assertStringNotContainsString('https://example.github.io/site/assets/logo.svg', $feed);
+                assertStringNotContainsString('https://example.github.io:443/', $feed);
                 assertStringContainsString('https://cdn.example.com/assets/logo.svg', $feed);
             }
         }

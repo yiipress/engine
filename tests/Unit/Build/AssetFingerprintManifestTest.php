@@ -141,6 +141,9 @@ final class AssetFingerprintManifestTest extends TestCase
     {
         yield 'lowercase root' => ['https://example.com/site/'];
         yield 'uppercase scheme and host' => ['HTTPS://EXAMPLE.COM/site/'];
+        yield 'root without trailing slash' => ['https://example.com/site'];
+        yield 'uppercase root without trailing slash' => ['HTTPS://EXAMPLE.COM/site'];
+        yield 'explicit default port' => ['https://example.com:443/site/'];
     }
 
     #[DataProvider('absoluteRootProvider')]
@@ -150,6 +153,7 @@ final class AssetFingerprintManifestTest extends TestCase
         file_put_contents($source, 'jpg');
         $manifest = new AssetFingerprintManifest();
         $fingerprinted = $manifest->register('assets/photo.jpg', $source);
+        $expectedRoot = rtrim($rootPath, '/') . '/';
         $html = '<img src="https://example.com/site/assets/photo.jpg?q=1#part">'
             . '<img src=https://example.com/site/assets/photo.jpg>'
             . '<img src=HTTPS://EXAMPLE.COM/site/assets/photo.jpg?q=1#part>'
@@ -158,24 +162,57 @@ final class AssetFingerprintManifestTest extends TestCase
             . '<img src=https://example.com.evil.test/site/assets/photo.jpg>'
             . '<img src=https://example.com:8443/site/assets/photo.jpg>'
             . '<img src=https://example.com/site-other/assets/photo.jpg>'
+            . '<img src=https://example.com/siteassets/photo.jpg>'
             . '<img src=http://example.com/site/assets/photo.jpg>'
             . '<img src=//example.com/site/assets/photo.jpg>';
 
         $rewritten = new AssetUrlRewriter($manifest)->rewrite($html, $rootPath);
 
         assertSame(
-            '<img src="' . $rootPath . $fingerprinted . '?q=1#part">'
-                . '<img src=' . $rootPath . $fingerprinted . '>'
-                . '<img src=' . $rootPath . $fingerprinted . '?q=1#part>'
+            '<img src="' . $expectedRoot . $fingerprinted . '?q=1#part">'
+                . '<img src=' . $expectedRoot . $fingerprinted . '>'
+                . '<img src=' . $expectedRoot . $fingerprinted . '?q=1#part>'
                 . '<img src=https://example.com/Site/assets/photo.jpg>'
                 . '<img src=https://cdn.example.com/site/assets/photo.jpg>'
                 . '<img src=https://example.com.evil.test/site/assets/photo.jpg>'
                 . '<img src=https://example.com:8443/site/assets/photo.jpg>'
                 . '<img src=https://example.com/site-other/assets/photo.jpg>'
+                . '<img src=https://example.com/siteassets/photo.jpg>'
                 . '<img src=http://example.com/site/assets/photo.jpg>'
                 . '<img src=//example.com/site/assets/photo.jpg>',
             $rewritten,
         );
+    }
+
+    /** @return iterable<string, array{string, string, bool}> */
+    public static function defaultPortProvider(): iterable
+    {
+        yield 'HTTPS explicit asset port' => ['https://example.com/site/', 'https://example.com:443/site/', true];
+        yield 'HTTPS explicit root port' => ['https://example.com:443/site/', 'https://example.com/site/', true];
+        yield 'HTTP explicit asset port' => ['http://example.com/site/', 'http://example.com:80/site/', true];
+        yield 'HTTP explicit root port' => ['http://example.com:80/site/', 'http://example.com/site/', true];
+        yield 'mixed case default port' => ['HTTPS://EXAMPLE.COM/site', 'https://example.com:443/site/', true];
+        yield 'same nondefault port' => ['https://example.com:8443/site/', 'https://example.com:8443/site/', true];
+        yield 'different nondefault port' => ['https://example.com/site/', 'https://example.com:8443/site/', false];
+        yield 'nondefault root port' => ['https://example.com:8443/site/', 'https://example.com/site/', false];
+        yield 'different schemes' => ['http://example.com:80/site/', 'https://example.com:443/site/', false];
+    }
+
+    #[DataProvider('defaultPortProvider')]
+    public function testRewriterMatchesDefaultPorts(string $rootPath, string $assetRoot, bool $matches): void
+    {
+        $source = $this->tempDir . '/photo.jpg';
+        file_put_contents($source, 'jpg');
+        $manifest = new AssetFingerprintManifest();
+        $fingerprinted = $manifest->register('assets/photo.jpg', $source);
+        $html = '<img src="' . $assetRoot . 'assets/photo.jpg?q=1#part">';
+
+        $rewritten = new AssetUrlRewriter($manifest)->rewrite($html, $rootPath);
+
+        $expected = $matches
+            ? '<img src="' . rtrim($rootPath, '/') . '/' . $fingerprinted . '?q=1#part">'
+            : $html;
+        assertSame($expected, $rewritten);
     }
 
     public function testRewriterPrefixesUnqualifiedAssetUrlsWithRootPath(): void
