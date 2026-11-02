@@ -40,3 +40,8 @@ Set `YIIPRESS_INSTALL_DIR` to install into another directory.
 - **Complete site output** — entries, pages, feeds, sitemap, search index, taxonomy pages, author pages, redirects, and `404.html`.
 - **Fast builds** — incremental cache, parallel rendering, native Markdown, and native syntax highlighting.
 - **Friendly theming** — start with the bundled theme, then override PHP templates only where needed.
+
+## From the blog
+
+Read [How it works](blog/2026-11-02-how-it-works.md) for a tour from Markdown to a static website.
+Visit the [Blog](https://yiipress.yiiframework.com/blog/) for product updates and more about YiiPress.

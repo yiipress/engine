@@ -1,6 +1,8 @@
 main:
   - title: Documentation
     url: /
+  - title: Blog
+    url: /blog/
   - title: GitHub
     url: https://github.com/yiipress/engine
 sidebar:
