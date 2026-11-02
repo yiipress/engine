@@ -1,0 +1,8 @@
+title: Blog
+description: Product updates and a look inside YiiPress.
+permalink: /blog/:slug/
+sort_by: date
+sort_order: desc
+entries_per_page: 10
+feed: true
+feed_limit: 20
