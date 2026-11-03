@@ -1,6 +1,6 @@
 ---
 permalink: "/"
-title: "YiiPress Documentation"
+title: "YiiPress"
 show_title: false
 ---
 
