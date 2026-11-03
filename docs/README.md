@@ -43,5 +43,5 @@ Set `YIIPRESS_INSTALL_DIR` to install into another directory.
 
 ## From the blog
 
-Read [How it works](blog/2026-11-02-how-it-works.md) to learn how YiiPress packs PHP into one executable and builds your site.
+Read [PHP in a single binary](blog/2026-11-02-how-it-works.md) to learn how YiiPress packs PHP and its application into one executable.
 Visit the [Blog](https://yiipress.yiiframework.com/blog/) for product updates and more about YiiPress.
