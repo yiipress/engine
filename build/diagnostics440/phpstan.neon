@@ -1,0 +1,9 @@
+parameters:
+    level: max
+    paths:
+        - runtime.php
+        - asset-child.php
+        - feed-child.php
+    scanDirectories:
+        - ../../benchmarks
+    tmpDir: /tmp/yiipress440-diagnostic-phpstan

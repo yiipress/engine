@@ -1,78 +1,92 @@
-name: Benchmark Regression
+name: Task 440 attribution diagnostic (not a benchmark gate)
 
 on:
-  pull_request:
-    branches:
-      - master
-    paths: &benchmark-paths
-      - 'src/**'
-      - 'config/**'
-      - 'themes/**'
-      - 'benchmarks/**'
-      - 'composer.json'
-      - 'composer.lock'
-      - 'phpbench.json'
-      - 'Makefile'
-      - 'docker/**'
-      - '.github/workflows/benchmark.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: task440-attribution-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  compare:
+  attribution-only:
+    if: github.ref == 'refs/heads/diagnostics-440-6250c'
     runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      DIAGNOSTIC_IMAGE: yiipress-440-diagnostic:${{ github.run_id }}-${{ github.run_attempt }}
     steps:
-      - name: Checkout pull request
+      - name: Checkout reviewed diagnostic tools
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          path: current
+          path: diagnostic
           persist-credentials: false
 
-      - name: Checkout baseline
+      - name: Checkout actual baseline
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           path: baseline
-          ref: master
+          ref: d835f23ee83d494d151a01d13d683867b0830a3b
           persist-credentials: false
 
-      - name: Use identical CLI benchmark scenarios
-        run: >-
-          cp current/benchmarks/SmallSiteBuildBench.php
-          current/benchmarks/LargeContentBuildBench.php baseline/benchmarks/
+      - name: Checkout published source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: current
+          ref: 6250c776b8dc1cbb8657c01c594f71bb8a547eb1
+          persist-credentials: false
 
-      - name: Install baseline dependencies
-        working-directory: baseline
-        run: make -- composer install --no-progress --no-interaction
+      - name: Prepare collection files and build one common dev image
+        run: |
+          python3 diagnostic/build/diagnostics440/collect.py prepare
+          make -C current -f ../diagnostic/build/diagnostics440/commands.mk diagnostic-image IMAGE="$DIAGNOSTIC_IMAGE"
 
-      - name: Generate baseline benchmark data
+      - name: Install and generate original baseline data
         working-directory: baseline
         run: |
-          make bench-generate
-          make bench-generate-realistic
+          make -- composer install --no-progress --no-interaction DOCKER_COMPOSE_DEV="docker compose -f docker/compose.yml -f docker/dev/compose.yml -f runtime/runner-diagnostics/image.yml"
+          make bench-generate DOCKER_COMPOSE_DEV="docker compose -f docker/compose.yml -f docker/dev/compose.yml -f runtime/runner-diagnostics/image.yml"
+          make bench-generate-realistic DOCKER_COMPOSE_DEV="docker compose -f docker/compose.yml -f docker/dev/compose.yml -f runtime/runner-diagnostics/image.yml"
 
-      - name: Record baseline
-        working-directory: baseline
-        run: make bench-baseline
-
-      - name: Install pull request dependencies
-        working-directory: current
-        run: make -- composer install --no-progress --no-interaction
-
-      - name: Generate pull request benchmark data
+      - name: Install and generate original current data
         working-directory: current
         run: |
-          make bench-generate
-          make bench-generate-realistic
+          make -- composer install --no-progress --no-interaction DOCKER_COMPOSE_DEV="docker compose -f docker/compose.yml -f docker/dev/compose.yml -f runtime/runner-diagnostics/image.yml"
+          make bench-generate DOCKER_COMPOSE_DEV="docker compose -f docker/compose.yml -f docker/dev/compose.yml -f runtime/runner-diagnostics/image.yml"
+          make bench-generate-realistic DOCKER_COMPOSE_DEV="docker compose -f docker/compose.yml -f docker/dev/compose.yml -f runtime/runner-diagnostics/image.yml"
 
-      - name: Copy baseline results
-        run: cp -R baseline/.phpbench current/.phpbench
+      - name: Record and compare refs runtime source and fixtures
+        timeout-minutes: 6
+        run: python3 diagnostic/build/diagnostics440/collect.py identity
 
-      - name: Reject benchmark regressions
-        working-directory: current
-        run: make bench-compare BENCH_ASSERT='mode(variant.time.avg) <= mode(baseline.time.avg) +/- 10%'
+      - name: Baseline Asset12 cold plus 100 steady calls once
+        timeout-minutes: 6
+        run: python3 diagnostic/build/diagnostics440/collect.py collect baseline asset
+
+      - name: Current Asset12 cold plus 100 steady calls once
+        timeout-minutes: 6
+        run: python3 diagnostic/build/diagnostics440/collect.py collect current asset
+
+      - name: Baseline original parallel unlimited Feed once
+        timeout-minutes: 6
+        run: python3 diagnostic/build/diagnostics440/collect.py collect baseline feed
+
+      - name: Current original parallel unlimited Feed once
+        timeout-minutes: 6
+        run: python3 diagnostic/build/diagnostics440/collect.py collect current feed
+
+      - name: Preserve complete or inconclusive evidence manifest
+        if: always()
+        timeout-minutes: 2
+        run: python3 diagnostic/build/diagnostics440/collect.py finalize
+
+      - name: Upload diagnostic evidence including partial failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: task440-attribution-${{ github.run_id }}-${{ github.run_attempt }}
+          path: diagnostic-evidence/
+          retention-days: 7
+          if-no-files-found: error
