@@ -22,12 +22,20 @@ The Linux build combines these parts:
 
 ```mermaid
 flowchart TD
+    accTitle: Assemble the YiiPress executable
+    accDescr: Application files become a PHAR archive. PHP and native extensions become micro.sfx. The two are combined into the executable.
     app["YiiPress code, config, theme and runtime dependencies"] --> phar["yiipress.phar"]
     php["PHP sources and selected native extensions"] --> spc["static-php-cli"]
     spc --> micro["micro.sfx"]
     phar --> combine["spc micro:combine"]
     micro --> combine
     combine --> executable["yiipress executable"]
+    classDef input fill:#dbeafe,stroke:#2563eb,color:#172554
+    classDef tool fill:#ede9fe,stroke:#7c3aed,color:#2e1065
+    classDef output fill:#dcfce7,stroke:#15803d,color:#14532d
+    class app,php input
+    class spc,combine tool
+    class phar,micro,executable output
 ```
 
 When you run the executable, PHP runs the PHAR stub. The stub makes the archive's files available and loads the `yii`
@@ -77,6 +85,24 @@ The site build has four main steps:
 3. **Render.** Read entry bodies, run content processors, convert Markdown to HTML, and render PHP templates.
 4. **Write.** Save pages, listings, feeds, the sitemap, search data, and assets.
 
+```mermaid
+flowchart TD
+    accTitle: From source files to a static site
+    accDescr: Parse reads settings and front matter. Index connects the content. Render reads bodies and calls native text processors. Write saves the static site, reusing valid cached results.
+    source["Markdown and YAML"] --> parse["1. Parse settings and front matter"]
+    parse --> index["2. Index URLs, collections and relations"]
+    index --> render["3. Render bodies and PHP templates"]
+    native["C Markdown parser and Rust highlighter"] -.->|Process text| render
+    cache[("Valid cached results")] -.->|Reuse| render
+    render --> write["4. Write the static site"]
+    classDef input fill:#dbeafe,stroke:#2563eb,color:#172554
+    classDef work fill:#ede9fe,stroke:#7c3aed,color:#2e1065
+    classDef result fill:#dcfce7,stroke:#15803d,color:#14532d
+    class source input
+    class parse,index,render,native work
+    class cache,write result
+```
+
 Incremental builds reuse earlier results when the relevant inputs have not changed.
 YiiPress uses source hashes, rendering settings, and output dependencies to decide what to rebuild.
 Native extensions make text processing faster; the cache avoids repeating work.
@@ -93,6 +119,26 @@ The rendering pool uses `proc_open()` to start independent processes instead. Ea
 sets up the parts needed for rendering, receives a job, and writes separate output files.
 The workers do not share a PHAR read position. This approach also works on Windows.
 
+```mermaid
+flowchart TD
+    accTitle: Each worker has its own PHAR read position
+    accDescr: The parent starts two independent workers with proc_open. Each worker opens its own archive handle and writes separate output files.
+    parent["Parent build process"] -->|proc_open| first["Worker 1"]
+    parent -->|proc_open| second["Worker 2"]
+    first --> archive1[("PHAR handle 1")]
+    second --> archive2[("PHAR handle 2")]
+    archive1 --> output1["Output files for job 1"]
+    archive2 --> output2["Output files for job 2"]
+    classDef process fill:#ede9fe,stroke:#7c3aed,color:#2e1065
+    classDef archive fill:#dbeafe,stroke:#2563eb,color:#172554
+    classDef output fill:#dcfce7,stroke:#15803d,color:#14532d
+    class parent,first,second process
+    class archive1,archive2 archive
+    class output1,output2 output
+```
+
+The two handles read the same packaged code, but each has its own read position.
+
 Starting and setting up processes takes time. YiiPress therefore renders small batches sequentially when they fall below
 its worker thresholds.
 
@@ -107,6 +153,22 @@ For PHAR and binary installations, YiiPress therefore stores its runtime cache a
 operating system's temporary directory. The cache location depends on the project path, so separate projects have
 separate caches. `yiipress clean` removes the project's build cache and the configured output directory.
 
+```mermaid
+flowchart TD
+    accTitle: Keep engine, project and cache in separate places
+    accDescr: The build reads engine files from its package and site files from the project directory. It writes the site's output and uses a project-specific cache in the operating system's temporary directory.
+    package["Package: engine, dependencies and bundled theme"] -->|Read| build["yiipress build"]
+    project["Project directory: content and local themes"] -->|Read| build
+    build -->|Write| output["Project output directory"]
+    build <-->|Reuse and update| cache[("Temporary directory: cache for this project")]
+    classDef input fill:#dbeafe,stroke:#2563eb,color:#172554
+    classDef work fill:#ede9fe,stroke:#7c3aed,color:#2e1065
+    classDef result fill:#dcfce7,stroke:#15803d,color:#14532d
+    class package,project input
+    class build work
+    class output,cache result
+```
+
 ## Publish the generated files
 
 The executable builds the site and runs a local preview. `yiipress serve` serves the generated files and reloads the
@@ -115,6 +177,23 @@ browser when they change. The published website does not need a PHP application 
 Run `yiipress build`, then publish the contents of `output/` to a static host.
 Those pages, feeds, styles, scripts, and assets are the website. Build again after changing content or templates.
 Set `base_url` to the public site URL so canonical links and feeds use the correct address.
+
+```mermaid
+flowchart TD
+    accTitle: Build locally, publish static files
+    accDescr: The executable builds output files. A local preview serves those files, or they can be copied to a static host for visitors. The public host does not run the YiiPress application.
+    build["yiipress build"] --> output["output/: pages, feeds and assets"]
+    output -->|Preview| preview["yiipress serve"]
+    output -->|Publish files| host["Static web host"]
+    preview --> local["Your browser"]
+    host --> visitors["Visitors' browsers"]
+    classDef work fill:#ede9fe,stroke:#7c3aed,color:#2e1065
+    classDef files fill:#dcfce7,stroke:#15803d,color:#14532d
+    classDef destination fill:#dbeafe,stroke:#2563eb,color:#172554
+    class build,preview work
+    class output files
+    class host,local,visitors destination
+```
 
 YiiPress also provides a Linux distroless container image for building sites.
 This is a small image containing the packaged executable, without a separate PHP or Composer installation.
