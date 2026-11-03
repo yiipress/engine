@@ -2,6 +2,8 @@
 title: PHP in a single binary
 summary: How YiiPress combines a PHP runtime and a PHAR application into one executable.
 draft: false
+aliases:
+  - /blog/how-it-works/
 ---
 
 YiiPress is written in PHP, but you can use it without installing PHP or Composer.
