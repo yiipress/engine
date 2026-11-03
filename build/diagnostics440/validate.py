@@ -28,4 +28,5 @@ assert collection == [["baseline", "asset"], ["current", "asset"], ["baseline", 
 assert job["steps"][-1]["if"] == "always()"
 assert job["steps"][-2]["if"] == "always()"
 assert job["steps"][-1]["uses"] == "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9"
+assert job["steps"][-1]["with"]["include-hidden-files"] == "true"
 print("Python AST, YAML structure, dispatch-only scope, finite steps and Bash syntax accepted.")

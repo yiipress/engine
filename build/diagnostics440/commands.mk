@@ -12,11 +12,14 @@ diagnostic-image-id:
 diagnostic-config:
 	$(COMPOSE) config --format json
 
+diagnostic-run-help:
+	$(COMPOSE) run --help
+
 diagnostic-runtime:
-	$(COMPOSE) run --rm --no-build --pull never -e XDEBUG_MODE=off app php runtime/runner-diagnostics/runtime.php
+	$(COMPOSE) run --rm --pull never -e XDEBUG_MODE=off app php runtime/runner-diagnostics/runtime.php
 
 diagnostic-profile:
-	$(COMPOSE) run --rm --no-build --pull never --name $(CONTAINER) -e XDEBUG_MODE=profile -e PHP_INI_SCAN_DIR=/usr/local/etc/php/conf.d:/app/runtime/runner-diagnostics/$(PHASE)-ini app php runtime/runner-diagnostics/$(PHASE)-child.php
+	$(COMPOSE) run --rm --pull never --name $(CONTAINER) -e XDEBUG_MODE=profile -e PHP_INI_SCAN_DIR=/usr/local/etc/php/conf.d:/app/runtime/runner-diagnostics/$(PHASE)-ini app php runtime/runner-diagnostics/$(PHASE)-child.php
 
 diagnostic-stop:
 	docker container rm --force $(CONTAINER)

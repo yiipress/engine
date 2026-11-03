@@ -85,7 +85,7 @@ def prepare():
         require(not git(tree, "status", "--porcelain"), "Source checkout must start clean")
         runtime = runtime_dir(ref)
         runtime.mkdir(parents=True)
-        (runtime / "image.yml").write_text("services:\n  app:\n    image: " + image + "\n")
+        (runtime / "image.yml").write_text("services:\n  app:\n    build: !reset null\n    image: " + image + "\n")
         for name in ["runtime.php", "asset-child.php", "feed-child.php"]:
             shutil.copy2(TOOLS / name, runtime / name)
         for phase in ["asset", "feed"]:
@@ -132,7 +132,8 @@ def identity():
     write(EVIDENCE / "identity.json", records)
     # Future collection resolves the inspected immutable image, rather than a movable tag.
     for ref in REFS:
-        (runtime_dir(ref) / "image.yml").write_text("services:\n  app:\n    image: " + records[ref]["image_id"] + "\n")
+        (runtime_dir(ref) / "image.yml").write_text(
+            "services:\n  app:\n    build: !reset null\n    image: " + records[ref]["image_id"] + "\n")
 
 
 def check_profile(path, phase, parent_profile):

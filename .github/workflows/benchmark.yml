@@ -59,7 +59,10 @@ jobs:
 
       - name: Record and compare refs runtime source and fixtures
         timeout-minutes: 6
-        run: python3 diagnostic/build/diagnostics440/collect.py identity
+        run: |
+          python3 diagnostic/build/diagnostics440/cli_support.py baseline
+          python3 diagnostic/build/diagnostics440/cli_support.py current
+          python3 diagnostic/build/diagnostics440/collect.py identity
 
       - name: Baseline Asset12 cold plus 100 steady calls once
         timeout-minutes: 6
@@ -90,3 +93,4 @@ jobs:
           path: diagnostic-evidence/
           retention-days: 7
           if-no-files-found: error
+          include-hidden-files: true

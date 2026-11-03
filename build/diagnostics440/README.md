@@ -46,3 +46,13 @@ Offline preparation checks use synthetic Cachegrind fixtures and mocked process/
 `diagnostic-lint` uses an already existing image, disabled profiling, a read-only source mount and no network.
 They do not execute the proposed experiment. Independent exact-head review precedes the Lead's provider decision.
 Both actual remote benchmark failures remain open and unattributed regardless of a diagnostic job's status.
+
+The first provider attempt failed before profiling because `compose run` rejected `--no-build`.
+The preparation fix removes that unsupported option. Both image overrides explicitly reset the service's
+`build` definition to null; `--pull never` remains, and the common inspected image ID is unchanged.
+Before identity collection, `cli_support.py` compares the actual Make dry-run commands with the installed
+`compose run --help` options and rejects an effective configuration that still contains a build definition.
+This checks the exact runtime/profile commands without executing them; unsupported flags fail before collection.
+The upload explicitly includes hidden files, so the manifest's `tools/.gitignore` is included instead of silently
+omitted. No environment files are copied into the evidence tree. The original failed artifact remains preserved;
+this fix does not authorize a second dispatch or change the collection budget or profiler targets.
