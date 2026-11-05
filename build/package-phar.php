@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use YiiPress\Build\ApplicationInfoStamper;
 use YiiPress\Build\PharArchiveFilter;
 use YiiPress\Build\PharArchiveValidator;
 use YiiPress\Build\PhpDocStripper;
@@ -12,6 +13,7 @@ if (PHP_SAPI !== 'cli') {
 }
 
 $root = dirname(__DIR__);
+require_once __DIR__ . '/ApplicationInfoStamper.php';
 require_once __DIR__ . '/PharArchiveFilter.php';
 require_once __DIR__ . '/PharArchiveValidator.php';
 require_once __DIR__ . '/PhpDocStripper.php';
@@ -19,6 +21,7 @@ require_once __DIR__ . '/PhpDocStripper.php';
 $target = $argv[1] ?? $root . '/dist/yiipress.phar';
 $targetDirectory = dirname($target);
 $commit = strtolower(getenv('YIIPRESS_COMMIT') ?: '');
+$baseVersion = getenv('YIIPRESS_BASE_VERSION') ?: '';
 
 if ($commit !== '' && preg_match('/^[0-9a-f]{40}$/', $commit) !== 1) {
     fwrite(STDERR, "YIIPRESS_COMMIT must be a full 40-character commit SHA.\n");
@@ -74,14 +77,10 @@ foreach ($includeDirectories as $directory) {
                 fwrite(STDERR, "Failed to read file: {$localPath}\n");
                 exit(1);
             }
-            $contents = str_replace(
-                "public const string COMMIT = '';",
-                "public const string COMMIT = '{$commit}';",
-                $contents,
-                $replacementCount,
-            );
-            if ($replacementCount !== 1) {
-                fwrite(STDERR, "Failed to embed the YiiPress commit in {$localPath}.\n");
+            try {
+                $contents = ApplicationInfoStamper::stamp($contents, $commit, $baseVersion);
+            } catch (RuntimeException $exception) {
+                fwrite(STDERR, $exception->getMessage() . "\n");
                 exit(1);
             }
             $phar->addFromString($localPath, $contents);

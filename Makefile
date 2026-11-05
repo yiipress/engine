@@ -29,10 +29,12 @@ PACKAGE_WINDOWS_DIST ?= dist/windows-amd64
 PACKAGE_PHAR_DIST ?= dist/phar
 PACKAGE_IMAGE ?= ${IMAGE}-static
 YIIPRESS_COMMIT ?= $(shell git rev-parse HEAD)
+YIIPRESS_BASE_VERSION ?= $(shell git describe --tags --abbrev=0 --match '[0-9]*.[0-9]*.[0-9]*' --exclude '*[!0-9.]*' 2>/dev/null)
 BENCH_ASSERT ?=
 MACOS_PACKAGE_ARGS ?=
 WINDOWS_PACKAGE_ARGS ?=
 export YIIPRESS_COMMIT
+export YIIPRESS_BASE_VERSION
 
 .PHONY: build up open down stop clear shell yii composer rector cs-fix test test-coverage test-coverage-clover phpstan infection composer-dependency-analyser bench-generate bench-generate-realistic bench bench-baseline bench-compare bench-profile profile-build php build-docs package package-phar package-linux package-macos package-windows package-distroless package-distroless-push prod-build prod-push prod-deploy help
 
@@ -215,19 +217,19 @@ ifeq ($(PRIMARY_GOAL),package)
 package: ## Build Linux static binary into dist/linux-amd64/
 	@mkdir -p $(PACKAGE_LINUX_DIST)
 	@rm -f $(PACKAGE_LINUX_DIST)/yiipress.phar
-	docker buildx build --file docker/Dockerfile --target package-linux-artifacts --build-arg YIIPRESS_COMMIT=$(YIIPRESS_COMMIT) --platform $(PACKAGE_PLATFORM) --output type=local,dest=$(PACKAGE_LINUX_DIST) .
+	docker buildx build --file docker/Dockerfile --target package-linux-artifacts --build-arg YIIPRESS_COMMIT=$(YIIPRESS_COMMIT) --build-arg YIIPRESS_BASE_VERSION=$(YIIPRESS_BASE_VERSION) --platform $(PACKAGE_PLATFORM) --output type=local,dest=$(PACKAGE_LINUX_DIST) .
 endif
 
 ifeq ($(PRIMARY_GOAL),package-phar)
 package-phar: ## Build YiiPress PHAR into dist/phar/
-	docker buildx build --file docker/Dockerfile --target package-phar-artifacts --build-arg YIIPRESS_COMMIT=$(YIIPRESS_COMMIT) --platform $(PACKAGE_PLATFORM) --output type=local,dest=$(PACKAGE_PHAR_DIST) .
+	docker buildx build --file docker/Dockerfile --target package-phar-artifacts --build-arg YIIPRESS_COMMIT=$(YIIPRESS_COMMIT) --build-arg YIIPRESS_BASE_VERSION=$(YIIPRESS_BASE_VERSION) --platform $(PACKAGE_PLATFORM) --output type=local,dest=$(PACKAGE_PHAR_DIST) .
 endif
 
 ifeq ($(PRIMARY_GOAL),package-linux)
 package-linux: ## Build Linux static binary into dist/linux-amd64/
 	@mkdir -p $(PACKAGE_LINUX_DIST)
 	@rm -f $(PACKAGE_LINUX_DIST)/yiipress.phar
-	docker buildx build --file docker/Dockerfile --target package-linux-artifacts --build-arg YIIPRESS_COMMIT=$(YIIPRESS_COMMIT) --platform $(PACKAGE_PLATFORM) --output type=local,dest=$(PACKAGE_LINUX_DIST) .
+	docker buildx build --file docker/Dockerfile --target package-linux-artifacts --build-arg YIIPRESS_COMMIT=$(YIIPRESS_COMMIT) --build-arg YIIPRESS_BASE_VERSION=$(YIIPRESS_BASE_VERSION) --platform $(PACKAGE_PLATFORM) --output type=local,dest=$(PACKAGE_LINUX_DIST) .
 endif
 
 ifeq ($(PRIMARY_GOAL),package-macos)

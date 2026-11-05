@@ -17,6 +17,7 @@ final class ApplicationInfoTest extends TestCase
         self::assertSame('YiiPress', ApplicationInfo::NAME);
         self::assertMatchesRegularExpression('/^(?:\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?|[0-9a-f]{40}|unknown)$/', ApplicationInfo::version());
         self::assertSame('', ApplicationInfo::COMMIT);
+        self::assertSame('', ApplicationInfo::BASE_VERSION);
         self::assertSame('unknown', ApplicationInfo::VERSION);
         self::assertStringNotContainsString('no-version-set', ApplicationInfo::version());
     }

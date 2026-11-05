@@ -55,6 +55,8 @@ When YiiPress renders a page, it chooses templates in this order:
 
 Within a theme, YiiPress uses the requested file when it exists and falls back to other registered themes when it does not. That means a project theme or local theme can override only `entry.php` and keep every other page type from `minimal`.
 
+Themes installed with [`get:theme`](extensions.md#installing-a-theme) follow a fixed order instead: the theme, then `minimal` (unless its manifest sets `fallback: none`), then `local`. They never take files from another project or installed theme, and are never used as a fallback for another theme. See [Installed themes and template fallback](extensions.md#installed-themes-and-template-fallback).
+
 ### Project themes
 
 Install reusable themes into the project root:
@@ -439,7 +441,7 @@ Partials can include other partials — the `$partial` function is automatically
 
 ### Theme resolution
 
-Partials follow the same theme resolution as templates: the active theme is checked first, then other registered themes as fallback.
+Partials follow the same theme resolution as templates: the active theme is checked first, then its fallback (see [Theme resolution order](#theme-resolution-order)).
 
 ## Template helper functions
 

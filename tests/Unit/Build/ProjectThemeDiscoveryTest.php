@@ -76,6 +76,22 @@ final class ProjectThemeDiscoveryTest extends TestCase
         assertSame($this->rootDir . '/themes/fancy', $registry->get('fancy')->path);
     }
 
+    public function testMarksManagedThemes(): void
+    {
+        mkdir($this->rootDir . '/themes/wonder');
+        mkdir($this->rootDir . '/themes/mine');
+
+        $themes = new ProjectThemeDiscovery()->discover($this->rootDir . '/themes', ['wonder' => ['local']]);
+
+        assertSame(
+            ['mine' => null, 'wonder' => ['local']],
+            array_combine(
+                array_map(static fn(Theme $theme): string => $theme->name, $themes),
+                array_map(static fn(Theme $theme): ?array => $theme->fallback, $themes),
+            ),
+        );
+    }
+
     private function removeDir(string $path): void
     {
         if (!is_dir($path)) {

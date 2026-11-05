@@ -17,6 +17,8 @@ use function strlen;
 final class ContentAssetCopier
 {
     private const array EXCLUDED_EXTENSIONS = ['md', 'yaml', 'yml'];
+    /** Installed extension packages, such as processors: code, never published. */
+    private const string EXTENSIONS_DIR = 'extensions/';
 
     /**
      * @return int number of assets copied
@@ -79,7 +81,7 @@ final class ContentAssetCopier
 
             $relativePath = substr($item->getPathname(), strlen($contentDir) + 1);
 
-            if (str_starts_with($relativePath, 'authors/')) {
+            if (str_starts_with($relativePath, 'authors/') || str_starts_with($relativePath, self::EXTENSIONS_DIR)) {
                 continue;
             }
 

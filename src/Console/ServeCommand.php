@@ -160,7 +160,7 @@ final class ServeCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        return $this->executeReactServer($input, $output);
+        return ExtensionState::stop($this->workingDirectory(), $output) ?? $this->executeReactServer($input, $output);
     }
 
     private function executeReactServer(InputInterface $input, OutputInterface $output): int

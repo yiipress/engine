@@ -17,9 +17,11 @@ use function preg_match;
 final readonly class ProjectThemeDiscovery
 {
     /**
+     * @param array<string, list<string>> $managed Directory name of a theme installed by `get:theme` → its
+     *        {@see Theme::$fallback}.
      * @return list<Theme>
      */
-    public function discover(string $themesDir): array
+    public function discover(string $themesDir, array $managed = []): array
     {
         if (!is_dir($themesDir) || !is_readable($themesDir)) {
             return [];
@@ -39,7 +41,7 @@ final readonly class ProjectThemeDiscovery
                     continue;
                 }
 
-                $themes[$name] = new Theme($name, $item->getPathname());
+                $themes[$name] = new Theme($name, $item->getPathname(), $managed[$name] ?? null);
             }
         } catch (UnexpectedValueException) {
             return [];
@@ -50,10 +52,14 @@ final readonly class ProjectThemeDiscovery
         return array_values($themes);
     }
 
-    public function register(ThemeRegistry $registry, string $themesDir): int
+    /**
+     * @param array<string, list<string>> $managed Directory name of a theme installed by `get:theme` → its
+     *        {@see Theme::$fallback}.
+     */
+    public function register(ThemeRegistry $registry, string $themesDir, array $managed = []): int
     {
         $registered = 0;
-        foreach ($this->discover($themesDir) as $theme) {
+        foreach ($this->discover($themesDir, $managed) as $theme) {
             if ($registry->has($theme->name)) {
                 continue;
             }
