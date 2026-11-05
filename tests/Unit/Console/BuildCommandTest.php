@@ -6,9 +6,16 @@ namespace YiiPress\Tests\Unit\Console;
 
 use YiiPress\Build\BuildManifest;
 use YiiPress\Build\TemplateResolver;
+use YiiPress\Build\AssetFingerprintManifest;
+use YiiPress\Build\FeedWorkerJob;
 use YiiPress\Build\Theme;
 use YiiPress\Build\ThemeRegistry;
 use YiiPress\Console\BuildCommand;
+use YiiPress\Content\Model\Collection;
+use YiiPress\Content\Parser\EntryParser;
+use YiiPress\Content\Parser\FilenameParser;
+use YiiPress\Content\Parser\FrontMatterParser;
+use YiiPress\Content\Parser\SiteConfigParser;
 use YiiPress\Hook\BuildFinishedEvent;
 use YiiPress\Hook\BuildStartedEvent;
 use YiiPress\Processor\ContentProcessorPipeline;
@@ -425,6 +432,326 @@ PHP,
         $html = file_get_contents($this->outputDir . '/index/index.html');
         assertNotFalse($html);
         assertMatchesRegularExpression('~<p>first\s+second</p>~', $html);
+    }
+
+    public function testBuildRebasesRootRelativeMarkdownLinksForBaseUrlWithPath(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'index.md' => "---\ntitle: Home\n---\n\nSee [withdrawn](/withdrawn/) and ![logo](/assets/logo.svg).\n",
+            'withdrawn.md' => "---\ntitle: Withdrawn\n---\n\nGone.\n",
+            'assets/logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+            'blog/_collection.yaml' => "title: Blog\npermalink: /blog/:slug/\nfeed: true\n",
+            'blog/2024-01-01-post.md' => "---\ntitle: Post\n---\n\nSee [withdrawn](/withdrawn/).\n",
+        ]);
+        file_put_contents(
+            $contentDir . '/config.yaml',
+            "title: Test Site\nbase_url: https://example.github.io/site/\nlanguages: [en]\nassets:\n  fingerprint: false\n",
+        );
+
+        $this->runBuild($contentDir, '--workers=1 --no-cache');
+
+        $html = file_get_contents($this->outputDir . '/index/index.html');
+        assertNotFalse($html);
+        assertStringContainsString('href="../withdrawn/"', $html);
+        assertStringContainsString('src="../assets/logo.svg"', $html);
+        assertStringNotContainsString('href="/withdrawn/"', $html);
+
+        $post = file_get_contents($this->outputDir . '/blog/post/index.html');
+        assertNotFalse($post);
+        assertStringContainsString('href="../../withdrawn/"', $post);
+
+        $feed = file_get_contents($this->outputDir . '/blog/feed.xml');
+        assertNotFalse($feed);
+        assertStringContainsString('href=&quot;https://example.github.io/site/withdrawn/&quot;', $feed);
+    }
+
+    public function testBuildRebasesRawHtmlLinksWithWhitespaceAroundEquals(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'about.md' => "---\ntitle: About\n---\n\n"
+                . '<a href = "/withdrawn/">withdrawn</a> <img src = "/assets/logo.svg">',
+            'assets/logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+        ]);
+        file_put_contents(
+            $contentDir . '/config.yaml',
+            "title: Test Site\nbase_url: https://example.github.io/site/\nlanguages: [en]\nassets:\n  fingerprint: false\n",
+        );
+
+        $this->runBuild($contentDir, '--workers=1 --no-cache');
+
+        $html = file_get_contents($this->outputDir . '/about/index.html');
+        assertNotFalse($html);
+        assertStringContainsString('href = "../withdrawn/"', $html);
+        assertStringContainsString('src = "../assets/logo.svg"', $html);
+    }
+
+    public function testBuildRebasesUnquotedRawHtmlLinks(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'about.md' => "---\ntitle: About\n---\n\n"
+                . '<a title="a > b" href=/withdrawn/>withdrawn</a> <img src = /assets/logo.svg alt=logo>',
+            'blog/_collection.yaml' => "title: Blog\npermalink: /blog/:slug/\nfeed: true\n",
+            'blog/post.md' => "---\ntitle: Post\ndate: 2024-01-01\n---\n\n"
+                . '<a href=/withdrawn/>withdrawn</a> <img src=/assets/logo.svg>',
+            'assets/logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+        ]);
+        file_put_contents(
+            $contentDir . '/config.yaml',
+            "title: Test Site\nbase_url: https://example.github.io/site/\nlanguages: [en]\nassets:\n  fingerprint: false\n",
+        );
+
+        $this->runBuild($contentDir, '--workers=1 --no-cache');
+
+        $html = file_get_contents($this->outputDir . '/about/index.html');
+        assertNotFalse($html);
+        assertStringContainsString('title="a > b"', $html);
+        assertStringContainsString('href=../withdrawn/', $html);
+        assertStringContainsString('src = ../assets/logo.svg alt=logo', $html);
+
+        $feed = file_get_contents($this->outputDir . '/blog/feed.xml');
+        assertNotFalse($feed);
+        assertStringContainsString('href=https://example.github.io/site/withdrawn/', $feed);
+        assertStringContainsString('src=https://example.github.io/site/assets/logo.svg', $feed);
+    }
+
+    public function testBuildFingerprintsRawHtmlImagesWithUnquotedAndSpacedAttributes(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'about.md' => "---\ntitle: About\n---\n\n"
+                . '<img src=/assets/logo.svg alt=unquoted> <img src = "/assets/logo.svg" alt=spaced>',
+            'assets/logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+        ]);
+        file_put_contents(
+            $contentDir . '/config.yaml',
+            "title: Test Site\nbase_url: https://example.github.io/site/\nlanguages: [en]\n",
+        );
+
+        $this->runBuild($contentDir, '--workers=1 --no-cache');
+
+        $assets = glob($this->outputDir . '/assets/logo.*.svg');
+        assertNotFalse($assets);
+        self::assertCount(1, $assets);
+        $filename = basename($assets[0]);
+        $html = file_get_contents($this->outputDir . '/about/index.html');
+        assertNotFalse($html);
+        assertStringContainsString('src=../assets/' . $filename . ' alt=unquoted', $html);
+        assertStringContainsString('src = "../assets/' . $filename . '" alt=spaced', $html);
+        assertFileExists($this->outputDir . '/about/../assets/' . $filename);
+    }
+
+    public function testBuildFingerprintsFeedImagesWithDefaultConfiguration(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'blog/_collection.yaml' => "title: Blog\npermalink: /blog/:slug/\nfeed: true\n",
+            'blog/post.md' => "---\ntitle: Post\ndate: 2024-01-01\n---\n\n"
+                . "![logo](/assets/logo.svg)\n\n<div><img src=/assets/logo.svg>"
+                . ' <img src="/assets/logo.svg?q=1&amp;x=2#part">'
+                . ' <img data-case="explicit-port" src="https://example.github.io:443/site/assets/logo.svg">'
+                . ' <img src="https://cdn.example.com/assets/logo.svg"></div>',
+            'assets/logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+        ]);
+        file_put_contents(
+            $contentDir . '/config.yaml',
+            "title: Test Site\nbase_url: https://example.github.io/site/\nlanguages: [en]\n",
+        );
+
+        $this->runBuild($contentDir, '--workers=1 --no-cache');
+
+        $assets = glob($this->outputDir . '/assets/logo.*.svg');
+        assertNotFalse($assets);
+        self::assertCount(1, $assets);
+        $url = 'https://example.github.io/site/assets/' . basename($assets[0]);
+        foreach (['blog/', ''] as $prefix) {
+            foreach (['feed.xml', 'rss.xml', 'feed.json'] as $filename) {
+                $feed = file_get_contents($this->outputDir . '/' . $prefix . $filename);
+                assertNotFalse($feed);
+                if ($filename === 'feed.json') {
+                    $feed = json_decode($feed, true, 512, JSON_THROW_ON_ERROR)['items'][0]['content_html'];
+                }
+                assertStringContainsString($url, $feed);
+                $query = $filename === 'feed.json' ? '?q=1&amp;x=2#part' : '?q=1&amp;amp;x=2#part';
+                assertStringContainsString($url . $query, $feed);
+                assertStringNotContainsString('https://example.github.io/site/assets/logo.svg', $feed);
+                assertStringNotContainsString('https://example.github.io:443/', $feed);
+                $explicitPortImage = '<img data-case="explicit-port" src="' . $url . '">';
+                assertStringContainsString(
+                    $filename === 'feed.json'
+                        ? $explicitPortImage
+                        : htmlspecialchars($explicitPortImage, ENT_QUOTES | ENT_XML1),
+                    $feed,
+                );
+                assertStringContainsString('https://cdn.example.com/assets/logo.svg', $feed);
+            }
+        }
+    }
+
+    public function testBuildFingerprintsNormalizedAndEncodedFeedImages(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'blog/_collection.yaml' => "title: Blog\npermalink: /blog/:slug/\nfeed: true\n",
+            'blog/post.md' => "---\ntitle: Post\ndate: 2024-01-01\n---\n\n"
+                . '<img data-case="dot" src="https://example.com/site/assets/./my%20logo.svg">'
+                . '<img data-case="encoded" src="/assets/my%20logo.svg">',
+            'assets/my logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+        ]);
+        file_put_contents(
+            $contentDir . '/config.yaml',
+            "title: Test Site\nbase_url: https://example.com/site/\nlanguages: [en]\n",
+        );
+
+        $this->runBuild($contentDir, '--workers=1 --no-cache');
+
+        $assets = glob($this->outputDir . '/assets/my logo.*.svg');
+        assertNotFalse($assets);
+        self::assertCount(1, $assets);
+        $filename = rawurlencode(basename($assets[0]));
+        foreach (['blog/', ''] as $prefix) {
+            foreach (['feed.xml', 'rss.xml', 'feed.json'] as $feedName) {
+                $feed = file_get_contents($this->outputDir . '/' . $prefix . $feedName);
+                assertNotFalse($feed);
+                if ($feedName === 'feed.json') {
+                    $feed = json_decode($feed, true, 512, JSON_THROW_ON_ERROR)['items'][0]['content_html'];
+                }
+                foreach (['dot', 'encoded'] as $case) {
+                    $image = '<img data-case="' . $case . '" src="https://example.com/site/assets/' . $filename . '">';
+                    assertStringContainsString(
+                        $feedName === 'feed.json' ? $image : htmlspecialchars($image, ENT_QUOTES | ENT_XML1),
+                        $feed,
+                    );
+                }
+            }
+        }
+        $page = file_get_contents($this->outputDir . '/blog/post/index.html');
+        assertNotFalse($page);
+        assertStringContainsString('<img data-case="encoded" src="../../assets/' . $filename . '">', $page);
+    }
+
+    public function testFeedWorkerFingerprintsImages(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'blog/post.md' => "---\ntitle: Post\ndate: 2024-01-01\n---\n\n![logo](/assets/logo.svg)",
+            'assets/logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+        ]);
+        file_put_contents(
+            $contentDir . '/config.yaml',
+            "title: Test Site\nbase_url: https://example.com/site/\nlanguages: [en]\n",
+        );
+        $manifest = new AssetFingerprintManifest();
+        $assetPath = $manifest->register('assets/logo.svg', $contentDir . '/assets/logo.svg');
+        $config = new SiteConfigParser()->parse($contentDir . '/config.yaml');
+        $entry = new EntryParser(new FrontMatterParser(), new FilenameParser())
+            ->parse($contentDir . '/blog/post.md', 'blog');
+        $collection = new Collection('blog', 'Blog', '', '/blog/:slug/', 'date', 'desc', 10, true, true);
+        $job = new FeedWorkerJob(
+            [['collectionName' => 'blog', 'collection' => $collection, 'entries' => [$entry]]],
+            $config,
+            $this->outputDir,
+            $contentDir,
+            [],
+            false,
+            $manifest,
+        );
+        file_put_contents($contentDir . '/feed-job', serialize($job));
+
+        exec(
+            escapeshellarg(dirname(__DIR__, 3) . '/yii') . ' worker '
+                . escapeshellarg($contentDir . '/feed-job') . ' ' . escapeshellarg($contentDir . '/feed-result')
+                . ' 2>&1',
+            $output,
+            $exitCode,
+        );
+
+        assertSame(0, $exitCode, implode("\n", $output));
+        assertSame('1', file_get_contents($contentDir . '/feed-result'));
+        foreach (['feed.xml', 'rss.xml', 'feed.json'] as $filename) {
+            $feed = file_get_contents($this->outputDir . '/blog/' . $filename);
+            assertNotFalse($feed);
+            if ($filename === 'feed.json') {
+                $feed = json_decode($feed, true, 512, JSON_THROW_ON_ERROR)['items'][0]['content_html'];
+            }
+            assertStringContainsString('https://example.com/site/' . $assetPath, $feed);
+            assertStringNotContainsString('/assets/logo.svg', $feed);
+        }
+    }
+
+    public function testParallelBuildFingerprintsFeedImages(): void
+    {
+        $files = [
+            'assets/logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+        ];
+        foreach (['blog', 'news'] as $collection) {
+            $files[$collection . '/_collection.yaml'] = "title: $collection\npermalink: /$collection/:slug/\n"
+                . "feed: true\nfeed_limit: 0\n";
+            for ($i = 0; $i < 500; $i++) {
+                $files[$collection . '/post-' . $i . '.md'] = "---\ntitle: Post $i\ndate: 2024-01-01\n---\n\n"
+                    . '![logo](/assets/logo.svg)';
+            }
+        }
+        $contentDir = $this->createMinimalContent($files);
+        file_put_contents(
+            $contentDir . '/config.yaml',
+            "title: Test Site\nbase_url: https://example.com/site/\nlanguages: [en]\n",
+        );
+
+        $result = $this->runBuildResult($contentDir, '--workers=2 --no-cache');
+
+        assertSame(0, $result['exitCode'], $result['output']);
+        assertStringContainsString('2 workers', $result['output']);
+        $assets = glob($this->outputDir . '/assets/logo.*.svg');
+        assertNotFalse($assets);
+        self::assertCount(1, $assets);
+        foreach (['blog', 'news'] as $collection) {
+            foreach (['feed.xml', 'rss.xml', 'feed.json'] as $filename) {
+                $feed = file_get_contents($this->outputDir . '/' . $collection . '/' . $filename);
+                assertNotFalse($feed);
+                if ($filename === 'feed.json') {
+                    $document = json_decode($feed, true, 512, JSON_THROW_ON_ERROR);
+                    self::assertCount(500, $document['items']);
+                    $feed = $document['items'][0]['content_html'];
+                }
+                assertStringContainsString('https://example.com/site/assets/' . basename($assets[0]), $feed);
+                assertStringNotContainsString('https://example.com/site/assets/logo.svg', $feed);
+            }
+        }
+    }
+
+    public function testBuildUpdatesCachedFeedImagesAfterAssetChanges(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'blog/_collection.yaml' => "title: Blog\npermalink: /blog/:slug/\nfeed: true\n",
+            'blog/post.md' => "---\ntitle: Post\ndate: 2024-01-01\n---\n\n![logo](/assets/logo.svg)",
+            'assets/logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+        ]);
+        file_put_contents(
+            $contentDir . '/config.yaml',
+            "title: Test Site\nbase_url: https://example.com/site/\nlanguages: [en]\n",
+        );
+        $this->runBuild($contentDir, '--workers=1');
+        $oldAssets = glob($this->outputDir . '/assets/logo.*.svg');
+        assertNotFalse($oldAssets);
+        self::assertCount(1, $oldAssets);
+        $unchanged = $this->runBuildResult($contentDir, '--workers=1');
+        assertSame(0, $unchanged['exitCode'], $unchanged['output']);
+        assertStringContainsString('No changes detected, nothing to build.', $unchanged['output']);
+        file_put_contents($contentDir . '/assets/logo.svg', '<svg xmlns="http://www.w3.org/2000/svg"><title>New</title></svg>');
+
+        $this->runBuild($contentDir, '--workers=1');
+
+        $assets = glob($this->outputDir . '/assets/logo.*.svg');
+        assertNotFalse($assets);
+        self::assertCount(1, $assets);
+        self::assertNotSame(basename($oldAssets[0]), basename($assets[0]));
+        foreach (['blog/', ''] as $prefix) {
+            foreach (['feed.xml', 'rss.xml', 'feed.json'] as $filename) {
+                $feed = file_get_contents($this->outputDir . '/' . $prefix . $filename);
+                assertNotFalse($feed);
+                if ($filename === 'feed.json') {
+                    $feed = json_decode($feed, true, 512, JSON_THROW_ON_ERROR)['items'][0]['content_html'];
+                }
+                assertStringContainsString('https://example.com/site/assets/' . basename($assets[0]), $feed);
+                assertStringNotContainsString(basename($oldAssets[0]), $feed);
+            }
+        }
     }
 
     public function testBuildOutputContainsRenderedHtml(): void

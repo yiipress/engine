@@ -961,12 +961,12 @@ final class BuildCommand extends Command
                 }));
             }
 
-            $feedWriter = new FeedWriter($this->feedPipeline, $authors);
+            $feedWriter = new FeedWriter($this->feedPipeline, $authors, $assetManifest);
             $feedCount = new ParallelTaskRunner()->run(
                 $feedTasks,
                 $feedWriter->workerCountFor($feedTasks, $workerCount),
                 fn(array $feedTask): int => $feedWriter->writeTask($feedTask, $siteConfig, $outputDir, $noWrite),
-                fn(array $chunk): WorkerJobInterface => new FeedWorkerJob($chunk, $siteConfig, $outputDir, $contentDir, $authors, $noWrite),
+                fn(array $chunk): WorkerJobInterface => new FeedWorkerJob($chunk, $siteConfig, $outputDir, $contentDir, $authors, $noWrite, $assetManifest),
                 minTasksPerWorker: 1,
             );
 
@@ -982,7 +982,7 @@ final class BuildCommand extends Command
                     [$collections, $sharedOutputs->entryKeys(array_slice($siteFeedEntries, 0, Collection::DEFAULT_FEED_LIMIT))],
                 ) ?? true;
                 if ($writeSiteFeed) {
-                    $feedGenerator = new FeedGenerator($this->feedPipeline, $authors);
+                    $feedGenerator = new FeedGenerator($this->feedPipeline, $authors, $assetManifest);
                     if ($noWrite) {
                         $feedGenerator->generateSiteAtom($siteConfig, $collections, $siteFeedEntries);
                         $feedGenerator->generateSiteRss($siteConfig, $collections, $siteFeedEntries);

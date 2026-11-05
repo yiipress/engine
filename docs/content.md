@@ -177,6 +177,8 @@ At build time, `.md` paths are resolved to the actual permalinks. Relative paths
 
 If a `.md` path does not match any known content file, the link is left unchanged.
 
+Root-relative links and image paths such as `[about](/about/)` or `![logo](/assets/logo.svg)` are YiiPress site-root paths. In rendered pages, `href` and `src` values that start with a single `/` (in Markdown links and raw HTML alike) are rewritten relative to the current page, the same way the `$url()` template helper does, so they keep working when `base_url` has a deployment path such as `https://user.github.io/project/`. Raw HTML values may be quoted (`href="/about/"`) or unquoted (`href=/about/`). In feeds they become absolute URLs under `base_url`. Protocol-relative (`//cdn.example.com/…`) and absolute URLs are left unchanged.
+
 ### Permalinks
 
 Permalink patterns support the following placeholders:
@@ -404,7 +406,18 @@ Reference assets from markdown using site-root paths:
 All `assets/` directories are copied to the build output preserving their path structure.
 When asset fingerprinting is enabled, these root-relative asset paths are rewritten relative to each
 generated page, which keeps them valid for deployments under a subdirectory such as GitHub Pages
-project sites.
+project sites. Atom, RSS and JSON feeds use absolute URLs with the same fingerprinted filenames.
+Absolute asset URLs match the configured site's scheme and host without regard to case, while paths remain
+case-sensitive and must stay within the configured base path.
+Explicit HTTPS port 443 and HTTP port 80 match their omitted defaults. Absolute base URLs may omit the
+trailing slash; asset URLs still keep the separator and do not match sibling base paths.
+Absolute asset paths resolve `.` and `..` segments before checking the base path. Paths that resolve outside
+that base are left unchanged. Percent-encoded asset filenames, such as `my%20photo.jpg`, can match local files.
+YiiPress decodes the filename once for lookup and encodes the fingerprinted path when writing the URL, keeping
+encoded spaces, `?` and `#` in the filename. Query strings and fragments stay unchanged. Encoded slashes and
+backslashes are not treated as directory separators, and an exact literal manifest path takes precedence over decoding.
+URL rewriting preserves comments, CDATA sections and literal text inside `script`, `style`,
+`textarea`, `title`, `xmp`, `iframe`, `noembed` and `noframes` elements.
 
 The project-level `assets/` directory (outside `content/`) is for build-time assets
 (CSS, JS) processed by the asset pipeline. Content assets are separate and copied as-is.

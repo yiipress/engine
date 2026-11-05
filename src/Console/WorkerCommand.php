@@ -140,7 +140,7 @@ final class WorkerCommand extends Command
     {
         $this->configureProcessors($job->contentDir(), $job->siteConfig());
 
-        $writer = new FeedWriter($this->feedPipeline, $job->authors());
+        $writer = new FeedWriter($this->feedPipeline, $job->authors(), $job->assetManifest());
 
         $count = 0;
         foreach ($job->tasks() as $task) {

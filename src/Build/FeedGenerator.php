@@ -23,13 +23,18 @@ final class FeedGenerator
     /** @var array<string, string> */
     private array $renderedContentCache = [];
 
+    private readonly ?AssetUrlRewriter $assetUrlRewriter;
+
     /**
      * @param array<string, Author> $authors
      */
     public function __construct(
         private readonly ContentProcessorPipeline $pipeline,
         private readonly array $authors = [],
-    ) {}
+        ?AssetFingerprintManifest $assetManifest = null,
+    ) {
+        $this->assetUrlRewriter = $assetManifest === null ? null : new AssetUrlRewriter($assetManifest);
+    }
 
     /**
      * @param list<Entry> $entries
@@ -521,10 +526,16 @@ final class FeedGenerator
         $rootPath = UrlResolver::absoluteUrl($siteConfig, '/');
         $cacheKey = $entry->filePath . ':' . $entry->slug . ':' . $rootPath;
 
-        return $this->renderedContentCache[$cacheKey] ?? ($this->renderedContentCache[$cacheKey] = $this->pipeline->process(
+        if (isset($this->renderedContentCache[$cacheKey])) {
+            return $this->renderedContentCache[$cacheKey];
+        }
+
+        $html = $this->pipeline->process(
             $entry->body(),
             $entry,
             $rootPath,
-        ));
+        );
+
+        return $this->renderedContentCache[$cacheKey] = $this->assetUrlRewriter?->rewrite($html, $rootPath) ?? $html;
     }
 }

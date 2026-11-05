@@ -27,6 +27,7 @@ final readonly class FeedWorkerJob implements WorkerJobInterface
         private string $contentDir,
         private array $authors,
         private bool $noWrite,
+        private ?AssetFingerprintManifest $assetManifest = null,
     ) {
         foreach ($tasks as &$task) {
             // Apply the feed limit before serializing entries for the worker.
@@ -69,5 +70,10 @@ final readonly class FeedWorkerJob implements WorkerJobInterface
     public function noWrite(): bool
     {
         return $this->noWrite;
+    }
+
+    public function assetManifest(): ?AssetFingerprintManifest
+    {
+        return $this->assetManifest;
     }
 }
