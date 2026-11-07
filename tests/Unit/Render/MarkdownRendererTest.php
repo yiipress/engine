@@ -159,11 +159,25 @@ MARKDOWN);
         $disabledHtml = new MarkdownRenderer(new MarkdownConfig(admonitions: false))->render($markdown);
         $enabledHtml = new MarkdownRenderer(new MarkdownConfig(admonitions: true))->render($markdown);
 
-        assertSame("<blockquote>\n<p>[!NOTE]<br />\nUseful information.</p>\n</blockquote>\n", $disabledHtml);
+        assertSame("<blockquote>\n<p>[!NOTE]\nUseful information.</p>\n</blockquote>\n", $disabledHtml);
         assertSame(
             "<div class=\"admonition-note\">\n<p class=\"admonition-title\">note</p>\n<p>Useful information.</p>\n</div>\n",
             $enabledHtml,
         );
+    }
+
+    public function testKeepsSoftBreaksByDefault(): void
+    {
+        $html = $this->renderer->render("first\nsecond\n");
+
+        assertSame("<p>first\nsecond</p>\n", $html);
+    }
+
+    public function testPreservesExplicitHardBreaksByDefault(): void
+    {
+        $html = $this->renderer->render("first  \nsecond\n");
+
+        assertSame("<p>first<br />\nsecond</p>\n", $html);
     }
 
     public function testKeepsSoftBreaksWhenHardSoftBreaksIsDisabled(): void
