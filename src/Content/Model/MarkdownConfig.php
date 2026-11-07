@@ -41,7 +41,7 @@ final readonly class MarkdownConfig
         public bool $noHtmlSpans = false,
         public bool $permissiveAtxHeaders = false,
         public bool $noIndentedCodeBlocks = false,
-        public bool $hardSoftBreaks = true,
+        public bool $hardSoftBreaks = false,
         public bool $insert = true,
     ) {}
 }
