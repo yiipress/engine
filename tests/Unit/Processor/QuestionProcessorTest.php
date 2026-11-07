@@ -7,6 +7,7 @@ namespace YiiPress\Tests\Unit\Processor;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 use YiiPress\Content\Model\Entry;
+use YiiPress\Content\Model\MarkdownConfig;
 use YiiPress\Processor\ContentProcessorPipeline;
 use YiiPress\Processor\MarkdownProcessor;
 use YiiPress\Processor\Question\QuestionProcessor;
@@ -92,10 +93,33 @@ final class QuestionProcessorTest extends TestCase
         assertStringContainsString('title=&quot;Outer?&quot;', $nested);
         assertStringContainsString('title=&quot;Inner?&quot;', $nested);
         assertStringNotContainsString('class="faq-question"', $nested);
+        assertStringNotContainsString('<!-- yiipress-question', $nested);
         assertStringContainsString('[question]', $shortClose);
         assertStringNotContainsString('class="faq-question"', $shortClose);
+        assertStringNotContainsString('<!-- yiipress-question', $shortClose);
         assertStringContainsString('Unclosed?', $unclosed);
         assertStringNotContainsString('class="faq-question"', $unclosed);
+        assertStringNotContainsString('<!-- yiipress-question', $unclosed);
+    }
+
+    public function testPreservesMalformedQuestionsWithHardSoftBreaksEnabled(): void
+    {
+        $questionProcessor = new QuestionProcessor();
+        $pipeline = new ContentProcessorPipeline(
+            $questionProcessor,
+            new MarkdownProcessor(new MarkdownRenderer(new MarkdownConfig(hardSoftBreaks: true))),
+            $questionProcessor,
+        );
+
+        $result = $pipeline->process(
+            "[question title=\"Outer?\"]\n[question title=\"Inner?\"]\nAnswer.\n[/question]\n[/question]",
+            $this->createEntry(null),
+        );
+
+        assertStringContainsString('title=&quot;Outer?&quot;', $result);
+        assertStringContainsString('title=&quot;Inner?&quot;', $result);
+        assertStringNotContainsString('class="faq-question"', $result);
+        assertStringNotContainsString('<!-- yiipress-question', $result);
     }
 
     public function testDoesNotInterpretQuestionSyntaxInsideCodeFences(): void
