@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiPress\Tests\Unit\Processor;
 
 use DateTimeImmutable;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiPress\Content\Model\Entry;
 use YiiPress\Content\Model\MarkdownConfig;
@@ -130,6 +131,39 @@ final class QuestionProcessorTest extends TestCase
 
         assertStringContainsString('[question title=&quot;Example only?&quot;]', $result);
         assertStringNotContainsString('class="faq-question"', $result);
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function literalQuestionContent(): array
+    {
+        return [
+            'missing title' => ["[question]\nAnswer.\n[/question]"],
+            'nested' => [
+                "[question title=\"Outer?\"]\n[question title=\"Inner?\"]\nAnswer.\n[/question]\n[/question]",
+            ],
+            'fenced example' => ["```markdown\n[question title=\"Example?\"]\nAnswer.\n[/question]\n```"],
+            'fenced marker example' => [
+                "```markdown\n<!-- yiipress-questions-preserved -->\n[question]\nAnswer.\n[/question]\n```",
+            ],
+        ];
+    }
+
+    #[DataProvider('literalQuestionContent')]
+    public function testPreservesLiteralQuestionContentWithHtmlDisabled(string $markdown): void
+    {
+        $questionProcessor = new QuestionProcessor();
+        $renderer = new MarkdownRenderer(new MarkdownConfig(noHtmlBlocks: true, noHtmlSpans: true));
+        $pipeline = new ContentProcessorPipeline(
+            $questionProcessor,
+            new MarkdownProcessor($renderer),
+            $questionProcessor,
+        );
+
+        $result = $pipeline->process($markdown, $this->createEntry(null));
+
+        assertSame(trim($renderer->render($markdown)), trim($result));
     }
 
     public function testPreservesAnswerIndentationBeforeMarkdownRendering(): void

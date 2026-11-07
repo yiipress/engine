@@ -20,7 +20,7 @@ use function preg_match_all;
 use function preg_replace_callback;
 use function sprintf;
 use function str_contains;
-use function str_replace;
+use function str_starts_with;
 use function stripos;
 use function trim;
 
@@ -39,8 +39,14 @@ final readonly class QuestionProcessor implements ContentProcessorInterface
 
     public function process(string $content, Entry $entry): string
     {
-        if (str_contains($content, self::START_MARKER) || str_contains($content, self::PRESERVED_MARKER)) {
-            return $this->renderQuestions(str_replace(self::PRESERVED_MARKER, '', $content), $entry->faqLevel);
+        if (str_contains($content, self::START_MARKER)) {
+            return $this->renderQuestions($content, $entry->faqLevel);
+        }
+        $escapedMarker = htmlspecialchars(self::PRESERVED_MARKER, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5);
+        foreach ([self::PRESERVED_MARKER, $escapedMarker] as $marker) {
+            if (str_starts_with($content, $marker)) {
+                return substr($content, strlen($marker));
+            }
         }
         if (stripos($content, '[question') === false) {
             return $content;
