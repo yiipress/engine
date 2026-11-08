@@ -300,6 +300,31 @@ search engines restrict FAQ rich results to specific authoritative sites and dup
 answer data can become stale. Custom layouts may derive structured data from their own
 content policy.
 
+### Shortcode passes in custom pipelines
+
+`QuestionProcessor` and `CodeGroupProcessor` preserve shortcode metadata before Markdown.
+Call `withRendering()` to obtain a separate instance that renders the preserved metadata after Markdown.
+The original instance stays in preservation mode. Custom pipelines that previously used the same instance
+twice must use the rendering instance for the second pass:
+
+```php
+$questions = new QuestionProcessor();
+$groups = new CodeGroupProcessor();
+$pipeline = new ContentProcessorPipeline(
+    $groups,
+    $questions,
+    new MarkdownProcessor(new MarkdownRenderer()),
+    // Place syntax highlighting and other HTML processors here.
+    $groups->withRendering(),
+    $questions->withRendering(),
+);
+```
+
+The configured page and feed pipelines already use separate instances. Code groups render after syntax
+highlighting in the page pipeline; the feed pipeline includes question processing only.
+The code-group rendering instance supplies the head stylesheet and script. Preservation instances do not
+emit head assets. Rendering instances leave malformed shortcode text unchanged and never parse it again.
+
 ### Project Processors
 
 Static binary users can add site-level content processors without editing Yii3 DI configuration. Put PHP processor files in `content/processors/`; files matching `*.php` are discovered automatically, sorted by filename, and inserted before Markdown rendering in both the page and feed pipelines. The `processors/` directory is never copied to the built site, so processor source stays private.

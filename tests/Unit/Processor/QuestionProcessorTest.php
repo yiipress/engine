@@ -20,6 +20,18 @@ use function PHPUnit\Framework\assertStringNotContainsString;
 
 final class QuestionProcessorTest extends TestCase
 {
+    public function testAuthoredPreservationCommentDoesNotSuppressQuestion(): void
+    {
+        $result = $this->process(
+            "<!-- yiipress-questions-preserved -->\n\n[question title=\"Real question?\"]\nAnswer.\n[/question]",
+        );
+
+        assertStringContainsString('<summary>Real question?</summary>', $result);
+        assertStringContainsString('<div class="faq-answer"><p>Answer.</p></div>', $result);
+        assertStringContainsString('<!-- yiipress-questions-preserved -->', $result);
+        assertStringNotContainsString('[question', $result);
+    }
+
     public function testRendersInlineQuestionWithMarkdownAnswerAndEscapedTitle(): void
     {
         $result = $this->process(
@@ -109,7 +121,7 @@ final class QuestionProcessorTest extends TestCase
         $pipeline = new ContentProcessorPipeline(
             $questionProcessor,
             new MarkdownProcessor(new MarkdownRenderer(new MarkdownConfig(hardSoftBreaks: true))),
-            $questionProcessor,
+            $questionProcessor->withRendering(),
         );
 
         $result = $pipeline->process(
@@ -158,7 +170,7 @@ final class QuestionProcessorTest extends TestCase
         $pipeline = new ContentProcessorPipeline(
             $questionProcessor,
             new MarkdownProcessor($renderer),
-            $questionProcessor,
+            $questionProcessor->withRendering(),
         );
 
         $result = $pipeline->process($markdown, $this->createEntry(null));
@@ -181,7 +193,7 @@ final class QuestionProcessorTest extends TestCase
         $pipeline = new ContentProcessorPipeline(
             $questionProcessor,
             new MarkdownProcessor(new MarkdownRenderer()),
-            $questionProcessor,
+            $questionProcessor->withRendering(),
         );
 
         return $pipeline->process($markdown, $this->createEntry($faqLevel));

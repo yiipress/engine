@@ -19,34 +19,37 @@ use function preg_match;
 use function preg_match_all;
 use function preg_replace_callback;
 use function sprintf;
-use function str_contains;
-use function str_starts_with;
 use function stripos;
 use function trim;
 
 /**
  * Preserves question containers before Markdown and renders or groups them afterwards.
  */
-final readonly class QuestionProcessor implements ContentProcessorInterface
+final class QuestionProcessor implements ContentProcessorInterface
 {
     use ParsesShortcodeAttributesTrait;
 
     private const string START_MARKER = '<!-- yiipress-question:';
     private const string END_MARKER = '<!-- /yiipress-question -->';
-    private const string PRESERVED_MARKER = '<!-- yiipress-questions-preserved -->';
     private const string QUESTION_PATTERN = '/<!-- yiipress-question:([A-Za-z0-9+\/=]+) -->\s*([\s\S]*?)\s*'
         . '<!-- \/yiipress-question -->/';
 
+    private bool $rendering = false;
+
+    /**
+     * Returns an independent processor for the post-Markdown rendering pass.
+     */
+    public function withRendering(): self
+    {
+        $new = clone $this;
+        $new->rendering = true;
+        return $new;
+    }
+
     public function process(string $content, Entry $entry): string
     {
-        if (str_contains($content, self::START_MARKER)) {
+        if ($this->rendering) {
             return $this->renderQuestions($content, $entry->faqLevel);
-        }
-        $escapedMarker = htmlspecialchars(self::PRESERVED_MARKER, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5);
-        foreach ([self::PRESERVED_MARKER, $escapedMarker] as $marker) {
-            if (str_starts_with($content, $marker)) {
-                return substr($content, strlen($marker));
-            }
         }
         if (stripos($content, '[question') === false) {
             return $content;
@@ -139,12 +142,7 @@ final readonly class QuestionProcessor implements ContentProcessorInterface
             $index = $closeIndex;
         }
 
-        $preserved = implode("\n", $output);
-
-        // Even malformed-only input must reach the render pass without being parsed again.
-        return str_contains($preserved, self::START_MARKER)
-            ? $preserved
-            : self::PRESERVED_MARKER . "\n\n" . $preserved;
+        return implode("\n", $output);
     }
 
     /**
