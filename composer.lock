@@ -2355,28 +2355,30 @@
         },
         {
             "name": "yiisoft/files",
-            "version": "2.1.0",
+            "version": "2.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/yiisoft/files.git",
-                "reference": "465650fd9e4295669f42ab7e9fec2386700540a7"
+                "reference": "6d1bd963afe514ec8be6e090e021659870bd2830"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/yiisoft/files/zipball/465650fd9e4295669f42ab7e9fec2386700540a7",
-                "reference": "465650fd9e4295669f42ab7e9fec2386700540a7",
+                "url": "https://api.github.com/repos/yiisoft/files/zipball/6d1bd963afe514ec8be6e090e021659870bd2830",
+                "reference": "6d1bd963afe514ec8be6e090e021659870bd2830",
                 "shasum": ""
             },
             "require": {
-                "php": "8.0 - 8.5",
+                "php": "8.0 - 8.6",
                 "yiisoft/strings": "^2.0"
             },
             "require-dev": {
-                "bamarni/composer-bin-plugin": "^1.8.3",
+                "bamarni/composer-bin-plugin": "^1.9.1",
                 "ext-zlib": "*",
-                "maglnet/composer-require-checker": "^4.4",
+                "friendsofphp/php-cs-fixer": "^3.66",
+                "phpstan/phpstan": "^2.3",
                 "phpunit/phpunit": "^9.6.22",
                 "rector/rector": "^2.0.10",
+                "shipmonk/composer-dependency-analyser": "^1.8",
                 "spatie/phpunit-watcher": "^1.23.6"
             },
             "type": "library",
@@ -2419,7 +2421,7 @@
                     "type": "opencollective"
                 }
             ],
-            "time": "2025-12-01T06:30:27+00:00"
+            "time": "2026-10-30T07:44:19+00:00"
         },
         {
             "name": "yiisoft/friendly-exception",
