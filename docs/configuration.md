@@ -333,7 +333,7 @@ markdown:
   no_html_spans: false
   permissive_atx_headers: false
   no_indented_code_blocks: false
-  hard_soft_breaks: true
+  hard_soft_breaks: false
 ```
 
 - **tables** — GitHub-style tables (default: `true`)
@@ -352,7 +352,11 @@ markdown:
 - **no_html_spans** — disable inline raw HTML (default: `false`)
 - **permissive_atx_headers** — do not require space in ATX headers ( `###header` ) (default: `false`)
 - **no_indented_code_blocks** — disable indented code blocks (only fenced code works) (default: `false`)
-- **hard_soft_breaks** — force all soft breaks to act as hard breaks (default: `true`)
+- **hard_soft_breaks** — force all soft breaks to act as hard breaks (default: `false`)
+
+By default, a single newline in a paragraph does not add an HTML `<br>` line break.
+Set `hard_soft_breaks: true` to preserve these line breaks. This is useful for Telegram imported content.
+Explicit Markdown hard breaks, such as two spaces at the end of a line, still work with the default setting.
 
 If the `markdown` section is omitted, all defaults apply.
 

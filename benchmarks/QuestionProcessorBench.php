@@ -27,7 +27,7 @@ final class QuestionProcessorBench
         $this->pipeline = new ContentProcessorPipeline(
             $questionProcessor,
             new MarkdownProcessor(new MarkdownRenderer()),
-            $questionProcessor,
+            $questionProcessor->withRendering(),
         );
         $this->inlineEntry = $this->entry(false);
         $this->groupedEntry = $this->entry(2);

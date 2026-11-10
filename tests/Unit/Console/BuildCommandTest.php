@@ -416,6 +416,19 @@ PHP,
         assertFalse(is_file($outputDir . '/blog/same/index.html'));
     }
 
+    public function testBuildKeepsSoftBreaksByDefault(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'index.md' => "---\ntitle: Home\n---\n\nfirst\nsecond\n",
+        ]);
+
+        $this->runBuild($contentDir, '--workers=1 --no-cache');
+
+        $html = file_get_contents($this->outputDir . '/index/index.html');
+        assertNotFalse($html);
+        assertMatchesRegularExpression('~<p>first\s+second</p>~', $html);
+    }
+
     public function testBuildAppliesMarkdownOptionsFromSiteConfig(): void
     {
         $contentDir = $this->createMinimalContent([
@@ -423,7 +436,7 @@ PHP,
         ]);
         file_put_contents(
             $contentDir . '/config.yaml',
-            "markdown:\n  hard_soft_breaks: false\n",
+            "markdown:\n  hard_soft_breaks: true\n",
             FILE_APPEND,
         );
 
@@ -431,7 +444,7 @@ PHP,
 
         $html = file_get_contents($this->outputDir . '/index/index.html');
         assertNotFalse($html);
-        assertMatchesRegularExpression('~<p>first\s+second</p>~', $html);
+        assertMatchesRegularExpression('~<p>first<br\s*/?>\s*second</p>~', $html);
     }
 
     public function testBuildRebasesRootRelativeMarkdownLinksForBaseUrlWithPath(): void

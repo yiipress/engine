@@ -36,7 +36,7 @@ final class MarkdownConfigTest extends TestCase
         assertFalse($config->noHtmlSpans);
         assertFalse($config->permissiveAtxHeaders);
         assertFalse($config->noIndentedCodeBlocks);
-        assertTrue($config->hardSoftBreaks);
+        assertFalse($config->hardSoftBreaks);
         assertTrue($config->insert);
     }
 
@@ -58,6 +58,7 @@ final class MarkdownConfigTest extends TestCase
 
         assertInstanceOf(MarkdownConfig::class, $siteConfig->markdown);
         assertTrue($siteConfig->markdown->tables);
+        assertFalse($siteConfig->markdown->hardSoftBreaks);
     }
 
     /**
@@ -104,7 +105,7 @@ YAML);
             assertFalse($config->markdown->noHtmlSpans, 'noHtmlSpans should be false (default)');
             assertFalse($config->markdown->permissiveAtxHeaders, 'permissiveAtxHeaders should be false (default)');
             assertFalse($config->markdown->noIndentedCodeBlocks, 'noIndentedCodeBlocks should be false (default)');
-            assertTrue($config->markdown->hardSoftBreaks, 'hardSoftBreaks should be true (default)');
+            assertFalse($config->markdown->hardSoftBreaks, 'hardSoftBreaks should be false (default)');
         } finally {
             unlink($tmpFile);
         }
@@ -125,6 +126,7 @@ YAML);
             assertTrue($config->markdown->tables);
             assertTrue($config->markdown->strikethrough);
             assertTrue($config->markdown->insert);
+            assertFalse($config->markdown->hardSoftBreaks);
         } finally {
             unlink($tmpFile);
         }

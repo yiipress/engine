@@ -14,6 +14,19 @@ use YiiPress\Render\MarkdownRenderer;
 
 final class CodeGroupProcessorTest extends TestCase
 {
+    public function testMalformedGroupWithEmptyLabelRemainsLiteralAfterMarkdown(): void
+    {
+        $processor = new CodeGroupProcessor();
+        $renderer = new MarkdownRenderer();
+        $pipeline = new ContentProcessorPipeline($processor, new MarkdownProcessor($renderer), $processor->withRendering());
+        $markdown = "Before.\n[code-group]\n[code-tab label=\"\"]\nOne.\n[/code-tab]\n"
+            . "[code-tab label=\"Two\"]\nTwo.\n[/code-tab]\n[/code-group]\nAfter.";
+
+        $result = $pipeline->process($markdown, $this->entry());
+
+        self::assertSame($renderer->render($markdown), $result);
+    }
+
     public function testRendersLabeledFallbackGroupAcrossMarkdownPass(): void
     {
         $processor = new CodeGroupProcessor();
@@ -34,7 +47,7 @@ MARKDOWN;
 
         $preserved = $processor->process($markdown, $this->entry());
         $html = new MarkdownProcessor(new MarkdownRenderer())->process($preserved, $this->entry());
-        $result = $processor->process($html, $this->entry());
+        $result = $processor->withRendering()->process($html, $this->entry());
 
         self::assertStringContainsString('class="code-group"', $result);
         self::assertStringContainsString('class="code-group-label"', $result);
@@ -88,7 +101,7 @@ MARKDOWN;
             . "[code-tab label=\"Two\"]\n```text\ntwo\n```\n[/code-tab]\n[/code-group]";
         $preserved = $processor->process($group('<b>One</b>') . "\n" . $group('Three'), $this->entry());
         $html = new MarkdownProcessor(new MarkdownRenderer())->process($preserved, $this->entry());
-        $result = $processor->process($html, $this->entry());
+        $result = $processor->withRendering()->process($html, $this->entry());
 
         self::assertStringContainsString('&lt;b&gt;One&lt;/b&gt;', $result);
         self::assertStringContainsString('id="code-group-1-panel-1"', $result);
@@ -97,7 +110,7 @@ MARKDOWN;
 
     public function testProvidesAssetsOnlyForRenderedGroups(): void
     {
-        $processor = new CodeGroupProcessor();
+        $processor = new CodeGroupProcessor()->withRendering();
 
         self::assertSame('', $processor->headAssets('<p>Plain</p>'));
         self::assertStringContainsString('code-groups.css', $processor->headAssets('<div class="code-group"></div>'));
@@ -106,7 +119,7 @@ MARKDOWN;
 
     public function testProvidesRootRelativePluginAssetsForNestedPages(): void
     {
-        $processor = new CodeGroupProcessor();
+        $processor = new CodeGroupProcessor()->withRendering();
         $processor->applyRootPath('../../');
 
         $assets = $processor->headAssets('<div class="code-group"></div>');
@@ -117,7 +130,7 @@ MARKDOWN;
 
     public function testEscapesPluginAssetUrls(): void
     {
-        $processor = new CodeGroupProcessor();
+        $processor = new CodeGroupProcessor()->withRendering();
         $processor->applyRootPath('./\"><script>alert(1)</script>');
 
         $assets = $processor->headAssets('<div class="code-group"></div>');
@@ -128,7 +141,7 @@ MARKDOWN;
 
     public function testPipelineResetsRootPathWhenNextPageDoesNotProvideOne(): void
     {
-        $processor = new CodeGroupProcessor();
+        $processor = new CodeGroupProcessor()->withRendering();
         $pipeline = new ContentProcessorPipeline($processor);
 
         $pipeline->process('nested', $this->entry(), '../../');

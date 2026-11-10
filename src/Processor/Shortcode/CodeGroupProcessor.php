@@ -22,14 +22,25 @@ use function trim;
 /**
  * Turns code-group and code-tab shortcodes into accessible tabbed code groups.
  *
- * The same processor is intentionally run on both sides of MarkdownProcessor: the first pass
- * preserves shortcode metadata in HTML comments, and the second pass builds the final markup.
+ * The default instance preserves shortcode metadata before MarkdownProcessor.
+ * A separate instance returned by withRendering() builds markup after syntax highlighting.
  */
 final class CodeGroupProcessor implements ContentProcessorInterface, AssetProcessorInterface, RootPathAwareProcessorInterface
 {
     use ParsesShortcodeAttributesTrait;
 
     private string $rootPath = './';
+    private bool $rendering = false;
+
+    /**
+     * Returns an independent processor for the post-Markdown rendering pass and its head assets.
+     */
+    public function withRendering(): self
+    {
+        $new = clone $this;
+        $new->rendering = true;
+        return $new;
+    }
 
     public function applyRootPath(string $rootPath): void
     {
@@ -38,7 +49,7 @@ final class CodeGroupProcessor implements ContentProcessorInterface, AssetProces
 
     public function process(string $content, Entry $entry): string
     {
-        if (str_contains($content, '<!-- yiipress-code-group:start -->')) {
+        if ($this->rendering) {
             return $this->renderGroups($content);
         }
 
@@ -51,7 +62,7 @@ final class CodeGroupProcessor implements ContentProcessorInterface, AssetProces
 
     public function headAssets(string $processedContent): string
     {
-        if (!str_contains($processedContent, 'class="code-group"')) {
+        if (!$this->rendering || !str_contains($processedContent, 'class="code-group"')) {
             return '';
         }
 

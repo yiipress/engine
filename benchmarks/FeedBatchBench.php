@@ -41,7 +41,12 @@ final class FeedBatchBench
         $parser = new ContentParser();
         $this->config = $parser->parseSiteConfig($this->contentDir);
         $question = new QuestionProcessor();
-        $pipeline = new ContentProcessorPipeline($question, new MarkdownProcessor(new MarkdownRenderer($this->config->markdown)), new TagLinkProcessor(), $question);
+        $pipeline = new ContentProcessorPipeline(
+            $question,
+            new MarkdownProcessor(new MarkdownRenderer($this->config->markdown)),
+            new TagLinkProcessor(),
+            $question->withRendering(),
+        );
         $pipeline->applySiteConfig($this->config);
         $this->writer = new FeedWriter($pipeline, []);
         $this->tasks = [20 => [], 100 => [], 0 => []];
@@ -49,9 +54,16 @@ final class FeedBatchBench
             $entries = iterator_to_array($parser->parseEntries($this->contentDir, $collection->name), false);
             foreach ([20, 100, 0] as $limit) {
                 $limited = new Collection(
-                    $collection->name, $collection->title, $collection->description, $collection->permalink,
-                    $collection->sortBy, $collection->sortOrder, $collection->entriesPerPage,
-                    true, $collection->listing, feedLimit: $limit,
+                    $collection->name,
+                    $collection->title,
+                    $collection->description,
+                    $collection->permalink,
+                    $collection->sortBy,
+                    $collection->sortOrder,
+                    $collection->entriesPerPage,
+                    true,
+                    $collection->listing,
+                    feedLimit: $limit,
                 );
                 $this->tasks[$limit][] = ['collectionName' => $collection->name, 'collection' => $limited, 'entries' => $entries];
             }
@@ -87,7 +99,8 @@ final class FeedBatchBench
     private function run(int $limit, int $workers): void
     {
         new ParallelTaskRunner()->run(
-            $this->tasks[$limit], $workers,
+            $this->tasks[$limit],
+            $workers,
             fn(array $task): int => $this->writer->writeTask($task, $this->config, '/unused', true),
             fn(array $chunk): WorkerJobInterface => new FeedWorkerJob($chunk, $this->config, '/unused', $this->contentDir, [], true),
             minTasksPerWorker: 1,

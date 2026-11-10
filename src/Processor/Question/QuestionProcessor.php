@@ -19,14 +19,13 @@ use function preg_match;
 use function preg_match_all;
 use function preg_replace_callback;
 use function sprintf;
-use function str_contains;
 use function stripos;
 use function trim;
 
 /**
  * Preserves question containers before Markdown and renders or groups them afterwards.
  */
-final readonly class QuestionProcessor implements ContentProcessorInterface
+final class QuestionProcessor implements ContentProcessorInterface
 {
     use ParsesShortcodeAttributesTrait;
 
@@ -35,9 +34,21 @@ final readonly class QuestionProcessor implements ContentProcessorInterface
     private const string QUESTION_PATTERN = '/<!-- yiipress-question:([A-Za-z0-9+\/=]+) -->\s*([\s\S]*?)\s*'
         . '<!-- \/yiipress-question -->/';
 
+    private bool $rendering = false;
+
+    /**
+     * Returns an independent processor for the post-Markdown rendering pass.
+     */
+    public function withRendering(): self
+    {
+        $new = clone $this;
+        $new->rendering = true;
+        return $new;
+    }
+
     public function process(string $content, Entry $entry): string
     {
-        if (str_contains($content, self::START_MARKER)) {
+        if ($this->rendering) {
             return $this->renderQuestions($content, $entry->faqLevel);
         }
         if (stripos($content, '[question') === false) {

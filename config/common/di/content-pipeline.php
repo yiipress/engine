@@ -32,6 +32,8 @@ use Yiisoft\Definitions\Reference;
 $workingDirectory = getcwd() ?: dirname(__DIR__, 3);
 
 return [
+    'questionRenderer' => static fn(QuestionProcessor $processor): QuestionProcessor => $processor->withRendering(),
+    'codeGroupRenderer' => static fn(CodeGroupProcessor $processor): CodeGroupProcessor => $processor->withRendering(),
     OEmbedProcessor::class => [
         'class' => OEmbedProcessor::class,
         '__construct()' => [
@@ -61,9 +63,9 @@ return [
             Reference::to(MermaidProcessor::class),
             Reference::to(SyntaxHighlightProcessor::class),
             // Complete the second code-group pass using the rendered, highlighted code blocks.
-            Reference::to(CodeGroupProcessor::class),
+            Reference::to('codeGroupRenderer'),
             // Render preserved question shortcodes after the later processors.
-            Reference::to(QuestionProcessor::class),
+            Reference::to('questionRenderer'),
             Reference::to(TocProcessor::class),
         ],
     ],
@@ -77,7 +79,7 @@ return [
             Reference::to(RootRelativeLinkProcessor::class),
             Reference::to(TagLinkProcessor::class),
             // Render preserved question shortcodes after the later processors.
-            Reference::to(QuestionProcessor::class),
+            Reference::to('questionRenderer'),
         ],
     ],
     BuildCommand::class => [
