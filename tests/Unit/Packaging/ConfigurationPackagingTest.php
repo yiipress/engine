@@ -635,6 +635,11 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('make bench-generate', $benchmark);
         self::assertStringContainsString('make bench-generate-realistic', $benchmark);
         self::assertStringContainsString('make bench-baseline', $benchmark);
+        self::assertStringContainsString(
+            "working-directory: current\n        run: |\n          make build\n"
+            . "          make -- composer install --no-progress --no-interaction\n",
+            $benchmark,
+        );
         self::assertStringContainsString('make bench-compare BENCH_ASSERT=', $benchmark);
         self::assertStringContainsString('make rector', $autoFormat);
         self::assertStringContainsString('make cs-fix', $autoFormat);

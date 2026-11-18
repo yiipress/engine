@@ -60,9 +60,11 @@ jobs:
         working-directory: baseline
         run: make bench-baseline
 
-      - name: Install pull request dependencies
+      - name: Build pull request image and install dependencies
         working-directory: current
-        run: make -- composer install --no-progress --no-interaction
+        run: |
+          make build
+          make -- composer install --no-progress --no-interaction
 
       - name: Generate pull request benchmark data
         working-directory: current
