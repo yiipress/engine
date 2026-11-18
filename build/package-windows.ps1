@@ -164,7 +164,8 @@ Invoke-NativeCommand "composer" @(
     "--no-progress",
     "--no-interaction",
     "iliaal/mdparser",
-    $mdparserPath
+    $mdparserPath,
+    "0.8.2"
 )
 Invoke-NativeCommand "composer" @(
     "create-project",

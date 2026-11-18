@@ -188,7 +188,8 @@ invoke composer create-project \
     --no-progress \
     --no-interaction \
     iliaal/mdparser \
-    "$MDPARSER_PATH"
+    "$MDPARSER_PATH" \
+    0.8.2
 invoke composer create-project \
     --no-dev \
     --no-progress \

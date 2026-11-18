@@ -38,7 +38,7 @@
         "ext-filter": "*",
         "ext-highlighter": "*",
         "ext-inotify": "*",
-        "ext-mdparser": ">=0.6.0",
+        "ext-mdparser": ">=0.8.2",
         "ext-mbstring": "*",
         "ext-pcntl": "*",
         "ext-xmlwriter": "*",
