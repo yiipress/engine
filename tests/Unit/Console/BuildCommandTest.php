@@ -12,6 +12,7 @@ use YiiPress\Build\Theme;
 use YiiPress\Build\ThemeRegistry;
 use YiiPress\Console\BuildCommand;
 use YiiPress\Content\Model\Collection;
+use YiiPress\Content\Parser\ContentParser;
 use YiiPress\Content\Parser\EntryParser;
 use YiiPress\Content\Parser\FilenameParser;
 use YiiPress\Content\Parser\FrontMatterParser;
@@ -1650,6 +1651,38 @@ PHP,
         if (is_file($manifestPath)) {
             unlink($manifestPath);
         }
+    }
+
+    public function testBuildRefreshesOutputFromBeforeParserVersionTracking(): void
+    {
+        $contentDir = $this->createMinimalContent([
+            'about.md' => "---\ntitle: About\n---\n\n| A | B | C |\n|---|---|---|\n| first || third |\n",
+        ]);
+        $options = '--drafts --future --workers=1';
+        $this->runBuild($contentDir, $options);
+
+        $path = $this->outputDir . '/about/index.html';
+        $currentHtml = (string) file_get_contents($path);
+        $currentRow = '<td>first</td><td></td><td>third</td>';
+        $legacyRow = '<td>first</td><td>third</td><td></td>';
+        assertStringContainsString($currentRow, $currentHtml);
+        file_put_contents($path, str_replace($currentRow, $legacyRow, $currentHtml));
+
+        $rootPath = dirname(__DIR__, 3);
+        $sharedOutputPath = RuntimePaths::cachePath($rootPath)
+            . '/shared-output-' . hash('xxh128', $this->outputDir) . '.json';
+        $cache = json_decode((string) file_get_contents($sharedOutputPath), true, 512, JSON_THROW_ON_ERROR);
+        $cache['scope'] = hash('xxh128', serialize([
+            $contentDir, new ContentParser()->parseSiteConfig($contentDir), true, true, [$rootPath . '/themes/minimal'],
+        ]));
+        file_put_contents($sharedOutputPath, json_encode($cache, JSON_THROW_ON_ERROR));
+
+        $this->runBuild($contentDir, $options);
+
+        assertStringContainsString($currentRow, (string) file_get_contents($path));
+        $unchanged = $this->runBuildResult($contentDir, $options);
+        assertSame(0, $unchanged['exitCode'], $unchanged['output']);
+        assertStringContainsString('No changes detected', $unchanged['output']);
     }
 
     public function testBuildRemovesProcessorOutputsFromLegacyCache(): void

@@ -1070,9 +1070,9 @@ PHP;
         self::assertIsString($windowsScript);
 
         self::assertStringContainsString('composer create-project --no-dev --no-progress --no-interaction iliaal/mdparser', $dockerfile);
-        self::assertStringContainsString('iliaal/mdparser /build/mdparser-extension 0.8.2', $dockerfile);
-        self::assertStringContainsString('iliaal/mdparser /opt/mdparser 0.8.2', $dockerfile);
-        self::assertStringContainsString('iliaal/mdparser \\' . "\n" . '    "$MDPARSER_PATH" \\' . "\n    0.8.2", $macosScript);
+        self::assertMatchesRegularExpression('~iliaal/mdparser /build/mdparser-extension 0\.8\.2(?:\s|$)~', $dockerfile);
+        self::assertMatchesRegularExpression('~iliaal/mdparser /opt/mdparser 0\.8\.2(?:\s|$)~', $dockerfile);
+        self::assertStringContainsString('iliaal/mdparser \\' . "\n" . '    "$MDPARSER_PATH" \\' . "\n    0.8.2\n", $macosScript);
         self::assertMatchesRegularExpression('/"iliaal\/mdparser",\s+\$mdparserPath,\s+"0\.8\.2"/', $windowsScript);
         self::assertStringContainsString('docker-php-ext-enable highlighter mdparser', $dockerfile);
         self::assertStringNotContainsString('md4c \\', $dockerfile);
