@@ -6,6 +6,7 @@ namespace YiiPress\Tests\Unit\Render;
 
 use YiiPress\Content\Model\MarkdownConfig;
 use YiiPress\Render\MarkdownRenderer;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 use function PHPUnit\Framework\assertSame;
@@ -67,6 +68,64 @@ final class MarkdownRendererTest extends TestCase
 
         assertStringContainsString('<table>', $html);
         assertStringContainsString('<td>1</td>', $html);
+    }
+
+    public function testKeepsEmptyTableCellsInTheirColumn(): void
+    {
+        $html = $this->renderer->render("| A | B | C |\n|---|---|---|\n| first || third |\n");
+
+        assertStringContainsString("<td>first</td>\n<td></td>\n<td>third</td>", $html);
+    }
+
+    #[DataProvider('autoLinkCases')]
+    public function testRendersBareLinks(string $markdown, string $expected): void
+    {
+        assertSame("<p>$expected</p>\n", $this->renderer->render($markdown));
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function autoLinkCases(): iterable
+    {
+        yield 'protocol in path and sentence punctuation' => [
+            'See https://example.com/go/https://example.org/a(b).',
+            'See <a href="https://example.com/go/https://example.org/a(b)">'
+                . 'https://example.com/go/https://example.org/a(b)</a>.',
+        ];
+        yield 'email with scheme' => [
+            'mailto:editor@example.com',
+            '<a href="mailto:editor@example.com">mailto:editor@example.com</a>',
+        ];
+        yield 'empty host' => ['https://.', 'https://.'];
+    }
+
+    public function testUsesFirstDecodedTokenAsCodeFenceLanguage(): void
+    {
+        $html = $this->renderer->render("```php&#32;extra\necho 1;\n```\n");
+
+        assertSame("<pre><code class=\"language-php\">echo 1;\n</code></pre>\n", $html);
+    }
+
+    public function testKeepsReferenceLabelMarkersSeparateFromFollowingText(): void
+    {
+        $html = $this->renderer->render("[link][*ref] text*\n\n[*ref]: /page");
+
+        assertSame("<p><a href=\"/page\">link</a> text*</p>\n", $html);
+    }
+
+    public function testKeepsIndentedParagraphAfterTwoBlankLinesInsideListItem(): void
+    {
+        $html = $this->renderer->render("- First paragraph\n\n\n  Second paragraph\n");
+
+        assertSame("<ul>\n<li>\n<p>First paragraph</p>\n<p>Second paragraph</p>\n</li>\n</ul>\n", $html);
+    }
+
+    public function testRendersHeadingAfterHtmlTagWithSimilarNameToPre(): void
+    {
+        $html = $this->renderer->render("<pre-note>Raw text</pre-note>\n\n# Heading\n");
+
+        assertSame("<p><pre-note>Raw text</pre-note></p>\n<h1>Heading</h1>\n", $html);
     }
 
     public function testRendersStrikethrough(): void

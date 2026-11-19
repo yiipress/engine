@@ -66,6 +66,18 @@ final class BuildCacheTest extends TestCase
         assertNull($cache->get($sourceFile));
     }
 
+    public function testRendererVersionSeparatesCachedHtml(): void
+    {
+        $templateDirs = [dirname(__DIR__, 3) . '/themes/minimal'];
+        $sourceFile = $this->fixtureDir . '/2024-03-15-test-post.md';
+        $oldCache = new BuildCache($this->cacheDir, $templateDirs, '0.6.2');
+        $oldCache->set($sourceFile, '<html>old</html>');
+
+        $newCache = new BuildCache($this->cacheDir, $templateDirs, '0.8.2');
+        assertNull($newCache->get($sourceFile));
+        assertSame('<html>old</html>', $oldCache->get($sourceFile));
+    }
+
     public function testTemplateHashIncludesNestedPartials(): void
     {
         $templateDir = dirname(__DIR__, 2) . '/Support/Data/cache-templates';

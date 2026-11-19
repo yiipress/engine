@@ -96,6 +96,7 @@ use function memory_get_peak_usage;
 use function min;
 use function number_format;
 use function pathinfo;
+use function phpversion;
 use function preg_match;
 use function range;
 use function realpath;
@@ -250,7 +251,15 @@ final class BuildCommand extends Command
         $themeAssetMappings = $themeAssetCopier->mappings($this->themeRegistry);
         $pipelineAssetMappings = $this->contentPipeline->collectAssetFiles();
         $allAssetMappings = $contentAssetMappings + $themeAssetMappings + $pipelineAssetMappings;
-        $sharedScope = [$contentDir, $siteConfig, $includeDrafts, $includeFuture, $this->templateResolver->templateDirs()];
+        $mdParserVersion = (string) phpversion('mdparser');
+        $sharedScope = [
+            $contentDir,
+            $siteConfig,
+            $includeDrafts,
+            $includeFuture,
+            $this->templateResolver->templateDirs(),
+            $mdParserVersion,
+        ];
         $sharedOutputs = (!$dryRun && !$noWrite)
             ? new SharedOutputCache(RuntimePaths::cachePath($rootPath) . '/shared-output-' . hash('xxh128', $outputDir) . '.json', $outputDir)
             : null;
@@ -649,7 +658,7 @@ final class BuildCommand extends Command
             $cache = null;
             if (!$noCache && !$noWrite && !$rebuildEntryDependencies) {
                 $cacheDir = RuntimePaths::cachePath($rootPath) . '/build';
-                $cache = new BuildCache($cacheDir, $this->templateResolver->templateDirs());
+                $cache = new BuildCache($cacheDir, $this->templateResolver->templateDirs(), $mdParserVersion);
             }
 
             $recordedSources = $manifest?->entries() ?? [];

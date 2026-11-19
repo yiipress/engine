@@ -635,6 +635,11 @@ final class ConfigurationPackagingTest extends TestCase
         self::assertStringContainsString('make bench-generate', $benchmark);
         self::assertStringContainsString('make bench-generate-realistic', $benchmark);
         self::assertStringContainsString('make bench-baseline', $benchmark);
+        self::assertStringContainsString(
+            "working-directory: current\n        run: |\n          make build\n"
+            . "          make -- composer install --no-progress --no-interaction\n",
+            $benchmark,
+        );
         self::assertStringContainsString('make bench-compare BENCH_ASSERT=', $benchmark);
         self::assertStringContainsString('make rector', $autoFormat);
         self::assertStringContainsString('make cs-fix', $autoFormat);
@@ -1059,14 +1064,21 @@ PHP;
     }
 
     #[Test]
-    public function dockerBuildsMdParserExtensionFromPackagistPackage(): void
+    public function buildsUseTheSameMdParserRelease(): void
     {
-        $dockerfile = file_get_contents(dirname(__DIR__, 3) . '/docker/Dockerfile');
+        $root = dirname(__DIR__, 3);
+        $dockerfile = file_get_contents($root . '/docker/Dockerfile');
+        $macosScript = file_get_contents($root . '/build/package-macos.sh');
+        $windowsScript = file_get_contents($root . '/build/package-windows.ps1');
         self::assertIsString($dockerfile);
+        self::assertIsString($macosScript);
+        self::assertIsString($windowsScript);
 
         self::assertStringContainsString('composer create-project --no-dev --no-progress --no-interaction iliaal/mdparser', $dockerfile);
-        self::assertStringContainsString('iliaal/mdparser /build/mdparser-extension "^0.6.1"', $dockerfile);
-        self::assertStringContainsString('iliaal/mdparser /opt/mdparser "^0.6.1"', $dockerfile);
+        self::assertMatchesRegularExpression('~iliaal/mdparser /build/mdparser-extension 0\.8\.2(?:\s|$)~', $dockerfile);
+        self::assertMatchesRegularExpression('~iliaal/mdparser /opt/mdparser 0\.8\.2(?:\s|$)~', $dockerfile);
+        self::assertStringContainsString('iliaal/mdparser \\' . "\n" . '    "$MDPARSER_PATH" \\' . "\n    0.8.2\n", $macosScript);
+        self::assertMatchesRegularExpression('/"iliaal\/mdparser",\s+\$mdparserPath,\s+"0\.8\.2"/', $windowsScript);
         self::assertStringContainsString('docker-php-ext-enable highlighter mdparser', $dockerfile);
         self::assertStringNotContainsString('md4c \\', $dockerfile);
         self::assertStringNotContainsString('pecl.php.net/get/md4c', $dockerfile);

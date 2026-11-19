@@ -15,7 +15,7 @@ use function hash_file;
 
 final class BuildCache
 {
-    private string $templateHash;
+    private string $renderHash;
 
     /**
      * @param list<string> $templateDirs
@@ -23,12 +23,16 @@ final class BuildCache
     public function __construct(
         private readonly string $cacheDir,
         array $templateDirs,
+        string $rendererVersion = '',
     ) {
         if (!is_dir($this->cacheDir) && !mkdir($this->cacheDir, 0o755, true) && !is_dir($this->cacheDir)) {
             throw new RuntimeException(sprintf('Directory "%s" was not created', $this->cacheDir));
         }
 
-        $this->templateHash = $this->hashTemplateDirs($templateDirs);
+        $templateHash = $this->hashTemplateDirs($templateDirs);
+        $this->renderHash = $rendererVersion === ''
+            ? $templateHash
+            : hash('xxh128', $rendererVersion . ':' . $templateHash);
     }
 
     public function get(string $sourceFilePath, string $context = ''): ?string
@@ -72,7 +76,7 @@ final class BuildCache
     private function buildKey(string $sourceFilePath, string $context = ''): string
     {
         $fileHash = $this->hashFile($sourceFilePath);
-        return hash('xxh128', $fileHash . $this->templateHash . $context);
+        return hash('xxh128', $fileHash . $this->renderHash . $context);
     }
 
     /**

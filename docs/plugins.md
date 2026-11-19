@@ -45,8 +45,8 @@ Converts Markdown to HTML using the reusable native PHP extension package, `ilia
 
 The extension exposes the PHP API as `MdParser\Parser` and
 `MdParser\Options`, backed by bundled MD4C sources. YiiPress
-downloads the package from Packagist during image and binary builds, compiles it,
-and enables it as `ext-mdparser`.
+downloads and compiles mdparser 0.8.2 from Packagist for Docker images and standalone Linux,
+macOS, and Windows binaries. Custom PHP installations need `ext-mdparser` 0.8.2 or newer.
 
 ### SyntaxHighlightProcessor
 
